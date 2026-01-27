@@ -179,7 +179,12 @@ const downloaderApp = {
                         <span class="file-name" title="${file.name}">${file.name}</span>
                         <span class="file-meta">${file.size}</span>
                     </div>
-                    <button class="btn-delete" onclick="downloaderApp.deleteFile('${file.name}')">🗑️</button>
+                    <div class="file-actions">
+                        <a href="/download/api/files/download/${encodeURIComponent(file.name)}" class="btn-icon download" title="下載到設備">
+                            📥
+                        </a>
+                        <button class="btn-delete" onclick="downloaderApp.deleteFile('${file.name}')" title="刪除檔案">🗑️</button>
+                    </div>
                 `;
                 list.appendChild(item);
             });

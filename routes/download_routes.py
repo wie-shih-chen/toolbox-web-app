@@ -55,6 +55,18 @@ def delete_file(filename):
         return jsonify({'success': True})
     return jsonify({'error': 'File not found'}), 404
 
+@download_bp.route('/api/files/download/<filename>')
+def download_file_to_browser(filename):
+    from flask import send_from_directory
+    from config import Config
+    import os
+    
+    directory = Config.DOWNLOAD_PATH
+    # Ensure file exists
+    if os.path.exists(os.path.join(directory, filename)):
+        return send_from_directory(directory, filename, as_attachment=True)
+    return "File not found", 404
+
 @download_bp.route('/api/open_folder', methods=['POST'])
 def open_folder():
     if manager.open_folder():
