@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}工具箱 Web{% endblock %}</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+TC:wght@400;500;700&display=swap"
+        rel="stylesheet">
+    <!-- Main CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    {% block extra_css %}{% endblock %}
+</head>
+
+<body>
+    <div class="app-container">
+        <nav class="sidebar">
+            <div class="logo">
+                <span class="logo-icon">🛠️</span>
+                <span class="logo-text">工具箱</span>
+            </div>
+            <ul class="nav-links">
+                <li><a href="{{ url_for('main.index') }}"
+                        class="nav-link {% if request.endpoint == 'main.index' %}active{% endif %}">🏠 首頁</a></li>
+                <li><a href="{{ url_for('salary.index') }}"
+                        class="nav-link {% if 'salary.index' in request.endpoint %}active{% endif %}">💰 薪水小幫手</a></li>
+                <li><a href="{{ url_for('salary.monthly') }}"
+                        class="nav-link {% if 'salary.monthly' in request.endpoint %}active{% endif %}">📅 月曆檢視</a></li>
+                <li><a href="{{ url_for('salary.history') }}"
+                        class="nav-link {% if 'salary.history' in request.endpoint %}active{% endif %}">📜 歷史排班</a></li>
+                <li><a href="{{ url_for('salary.settings') }}"
+                        class="nav-link {% if 'salary.settings' in request.endpoint %}active{% endif %}">⚙️ 設定</a></li>
+                <li><a href="{{ url_for('download.index') }}"
+                        class="nav-link {% if 'download' in request.endpoint %}active{% endif %}">🎬 影音下載器</a></li>
+            </ul>
+        </nav>
+
+        <main class="main-content">
+            <header class="top-bar">
+                <h1 class="page-title">{% block page_title %}{% endblock %}</h1>
+                <div class="user-actions">
+                    <!-- Placeholder for user settings or status -->
+                </div>
+            </header>
+
+            <div class="content-area">
+                {% block content %}{% endblock %}
+            </div>
+        </main>
+    </div>
+
+    <!-- Main JS -->
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+    {% block extra_js %}{% endblock %}
+</body>
+
+</html>

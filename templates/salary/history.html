@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+
+{% block title %}歷史排班 - 薪水計算小幫手{% endblock %}
+{% block page_title %}歷史排班{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/salary.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="salary-history">
+    <!-- Period Selector -->
+    <div class="history-controls card">
+        <label for="periodSelect">選擇區間：</label>
+        <select id="periodSelect" class="form-control">
+            <option value="">載入中...</option>
+        </select>
+    </div>
+
+    <!-- Summary Stats -->
+    <div class="history-summary">
+        <div class="card summary-box">
+            <h3>總時數</h3>
+            <p class="value" id="historyHours">0h</p>
+        </div>
+        <div class="card summary-box">
+            <h3>總薪資</h3>
+            <p class="value highlight" id="historyAmount">$0</p>
+        </div>
+        <div class="card summary-box">
+            <h3>紀錄筆數</h3>
+            <p class="value" id="historyCount">0</p>
+        </div>
+    </div>
+
+    <!-- Detailed List -->
+    <div class="history-list card">
+        <h3>詳細紀錄</h3>
+        <div class="table-responsive">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>日期</th>
+                        <th>類型</th>
+                        <th>時間</th>
+                        <th>時數</th>
+                        <th>金額</th>
+                        <th>備註</th>
+                    </tr>
+                </thead>
+                <tbody id="historyTableBody">
+                    <!-- Rows injected here -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/salary.js') }}"></script>
+{% endblock %}

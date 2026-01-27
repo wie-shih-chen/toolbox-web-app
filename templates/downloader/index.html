@@ -1,0 +1,107 @@
+{% extends "base.html" %}
+
+{% block title %}YouTube 下載器 - 工具箱 Web{% endblock %}
+{% block page_title %}YouTube 下載器 Pro{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/downloader.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="downloader-container">
+    <div class="left-panel">
+        <!-- Input Card -->
+        <div class="card input-card">
+            <h3>📺 YouTube 網址</h3>
+            <div class="input-group">
+                <input type="text" id="urlInput" placeholder="請貼上影片網址...">
+                <button class="btn btn-primary" id="previewBtn">🔍 預覽</button>
+            </div>
+        </div>
+
+        <!-- Options Card -->
+        <div class="card options-card">
+            <h3>🎯 下載選項</h3>
+            <div class="options-grid">
+                <div class="format-options">
+                    <label class="radio-label">
+                        <input type="radio" name="format" value="mp3">
+                        <span>🎵 MP3 音頻</span>
+                    </label>
+                    <label class="radio-label">
+                        <input type="radio" name="format" value="mp4_720p" checked>
+                        <span>🎥 MP4 720p</span>
+                    </label>
+                    <label class="radio-label">
+                        <input type="radio" name="format" value="mp4_1080p">
+                        <span>🎬 MP4 1080p</span>
+                    </label>
+                    <label class="radio-label">
+                        <input type="radio" name="format" value="mp4_480p">
+                        <span>📱 MP4 480p</span>
+                    </label>
+                </div>
+                <div class="extra-options">
+                    <label class="checkbox-label">
+                        <input type="checkbox" id="subtitles"> 📥 下載字幕
+                    </label>
+                    <label class="checkbox-label">
+                        <input type="checkbox" id="embedSubtitles"> 🎬 內嵌字幕
+                    </label>
+                </div>
+            </div>
+        </div>
+
+        <!-- Download Action -->
+        <button class="btn btn-primary btn-large" id="downloadBtn" disabled>🚀 開始下載</button>
+    </div>
+
+    <div class="right-panel">
+        <!-- Progress Card -->
+        <div class="card progress-card">
+            <h3>📊 下載進度</h3>
+            <div class="progress-container">
+                <div class="progress-bar-bg">
+                    <div class="progress-bar" id="mainProgress" style="width: 0%"></div>
+                </div>
+                <div class="status-text" id="statusText">準備就緒</div>
+                <div class="stats-row">
+                    <span id="speedStat">速度: --</span>
+                    <span id="etaStat">剩餘時間: --</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Video Info Card -->
+        <div class="card info-card hidden" id="videoInfoCard">
+            <h3>📺 影片資訊</h3>
+            <div class="video-info-content">
+                <img src="" alt="Thumbnail" id="videoThumb" class="video-thumb">
+                <div class="video-details">
+                    <h4 id="videoTitle">Title</h4>
+                    <p id="videoAuthor">Author</p>
+                    <p id="videoDuration">Duration</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- File List -->
+        <div class="card files-card">
+            <div class="card-header">
+                <h3>📚 下載紀錄</h3>
+                <div class="actions">
+                    <button class="btn btn-sm btn-secondary" id="refreshFilesBtn">🔄</button>
+                    <button class="btn btn-sm btn-secondary" id="openFolderBtn">📂</button>
+                </div>
+            </div>
+            <div class="files-list" id="filesList">
+                <!-- Files injected here -->
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/downloader.js') }}"></script>
+{% endblock %}

@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+
+{% block title %}首頁 - 工具箱 Web{% endblock %}
+{% block page_title %}歡迎回來{% endblock %}
+
+{% block content %}
+<div class="dashboard-grid">
+    <a href="{{ url_for('salary.index') }}" class="card tool-card">
+        <div class="card-icon">💰</div>
+        <div class="card-content">
+            <h3>薪水計算小幫手</h3>
+            <p>管理排班、計算薪資、查看歷史紀錄</p>
+        </div>
+    </a>
+
+    <a href="{{ url_for('download.index') }}" class="card tool-card">
+        <div class="card-icon">🎬</div>
+        <div class="card-content">
+            <h3>YouTube 下載器</h3>
+            <p>下載高畫質影片、MP3 音樂</p>
+        </div>
+    </a>
+</div>
+{% endblock %}

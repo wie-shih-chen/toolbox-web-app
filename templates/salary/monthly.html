@@ -1,0 +1,102 @@
+{% extends "base.html" %}
+
+{% block title %}月曆總覽 - 薪水計算小幫手{% endblock %}
+{% block page_title %}月曆總覽{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/salary.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="salary-monthly" data-current-month="{{ current_month }}">
+    <div class="dashboard-header">
+        <div class="week-nav">
+            <button class="btn btn-nav" id="prevMonthBtn">◀ 上個月</button>
+            <h2 id="currentMonthLabel">2024年 01月</h2>
+            <button class="btn btn-nav" id="nextMonthBtn">下個月 ▶</button>
+            <button class="btn btn-secondary" id="thisMonthBtn">回到本月</button>
+        </div>
+
+        <div class="summary-card">
+            <div class="summary-item">
+                <span class="label">本月時數</span>
+                <span class="value" id="monthlyHours">0h</span>
+            </div>
+            <div class="summary-item">
+                <span class="label">本月薪資</span>
+                <span class="value highlight" id="monthlyAmount">$0</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="calendar-grid">
+        <div class="calendar-header">
+            <div>週一</div>
+            <div>週二</div>
+            <div>週三</div>
+            <div>週四</div>
+            <div>週五</div>
+            <div>週六</div>
+            <div>週日</div>
+        </div>
+        <div class="calendar-body" id="calendarBody">
+            <!-- Days injected by JS -->
+        </div>
+    </div>
+</div>
+
+<!-- Re-use Modal from Dashboard or separate? -->
+<!-- For simplicity, let's re-use the same modal structure if possible, 
+     or just include it here too since it's a separate page rewrite -->
+<div id="recordModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3 id="modalTitle">新增紀錄</h3>
+            <span class="close-modal">&times;</span>
+        </div>
+        <div class="modal-body">
+            <div class="tabs">
+                <button class="tab-btn active" data-tab="shift">排班</button>
+                <button class="tab-btn" data-tab="bonus">獎金</button>
+            </div>
+
+            <form id="recordForm">
+                <input type="hidden" name="id" id="recordId">
+                <input type="hidden" name="date" id="recordDate">
+                <input type="hidden" name="type" id="recordType" value="shift">
+
+                <div class="tab-content active" id="shift-tab">
+                    <div class="form-group">
+                        <label>開始時間</label>
+                        <input type="time" name="start_time" id="startTime" required value="09:00">
+                    </div>
+                    <div class="form-group">
+                        <label>結束時間</label>
+                        <input type="time" name="end_time" id="endTime" required value="18:00">
+                    </div>
+                </div>
+
+                <div class="tab-content" id="bonus-tab">
+                    <div class="form-group">
+                        <label>金額</label>
+                        <input type="number" name="amount" id="bonusAmount">
+                    </div>
+                    <div class="form-group">
+                        <label>備註</label>
+                        <input type="text" name="note" id="bonusNote">
+                    </div>
+                </div>
+
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-danger hidden" id="deleteBtn">刪除</button>
+                    <button type="submit" class="btn btn-primary">儲存</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/salary.js') }}"></script>
+{% endblock %}

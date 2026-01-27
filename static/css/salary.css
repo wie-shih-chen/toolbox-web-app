@@ -1,0 +1,407 @@
+/* Salary Tool Specific Styles */
+
+.salary-dashboard {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+.dashboard-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+    gap: 15px;
+}
+
+.week-nav {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    background-color: var(--card-bg);
+    padding: 10px 20px;
+    border-radius: 50px;
+}
+
+#currentWeekLabel {
+    font-size: 1.1rem;
+    font-weight: 700;
+    min-width: 200px;
+    text-align: center;
+}
+
+.btn-nav {
+    background: transparent;
+    border: 1px solid var(--border-color);
+    color: var(--text-primary);
+    padding: 5px 10px;
+}
+
+.btn-nav:hover {
+    background-color: #404040;
+}
+
+.summary-card {
+    display: flex;
+    gap: 30px;
+    background-color: var(--card-bg);
+    padding: 10px 25px;
+    border-radius: 12px;
+}
+
+.summary-item {
+    display: flex;
+    flex-direction: column;
+}
+
+.summary-item .label {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+}
+
+.summary-item .value {
+    font-size: 1.5rem;
+    font-weight: 700;
+}
+
+.summary-item .value.highlight {
+    color: var(--accent-color);
+}
+
+/* Weekly Grid */
+.weekly-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 10px;
+    flex: 1;
+    min-height: 0;
+    /* Enable scrolling inside */
+}
+
+.day-column {
+    background-color: var(--card-bg);
+    border-radius: 8px;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.day-header {
+    background-color: #333;
+    padding: 10px;
+    text-align: center;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.day-name {
+    display: block;
+    font-weight: 700;
+    margin-bottom: 4px;
+}
+
+.day-date {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+}
+
+.day-column.today .day-header {
+    background-color: rgba(78, 205, 196, 0.2);
+    color: var(--accent-color);
+}
+
+.shifts-container {
+    flex: 1;
+    padding: 10px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.shift-card {
+    background-color: #404040;
+    padding: 10px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+    border-left: 3px solid var(--accent-color);
+}
+
+.shift-card:hover {
+    background-color: #505050;
+}
+
+.shift-card.bonus {
+    border-left-color: #ffd700;
+}
+
+.shift-time {
+    font-weight: 600;
+    font-size: 0.95rem;
+    margin-bottom: 4px;
+}
+
+.shift-info {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    display: flex;
+    justify-content: space-between;
+}
+
+.btn-add-shift {
+    background: transparent;
+    border: none;
+    border-top: 1px solid var(--border-color);
+    padding: 10px;
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.btn-add-shift:hover {
+    background-color: #404040;
+    color: var(--accent-color);
+}
+
+/* Modal */
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.6);
+    align-items: center;
+    justify-content: center;
+}
+
+.modal.show {
+    display: flex;
+}
+
+.modal-content {
+    background-color: var(--card-bg);
+    border-radius: 12px;
+    width: 100%;
+    max-width: 450px;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+}
+
+.modal-header {
+    padding: 20px;
+    border-bottom: 1px solid var(--border-color);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.close-modal {
+    font-size: 1.5rem;
+    cursor: pointer;
+    color: var(--text-secondary);
+}
+
+.modal-body {
+    padding: 20px;
+}
+
+.tabs {
+    display: flex;
+    margin-bottom: 20px;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.tab-btn {
+    flex: 1;
+    background: none;
+    border: none;
+    padding: 10px;
+    color: var(--text-secondary);
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+}
+
+.tab-btn.active {
+    color: var(--accent-color);
+    border-bottom-color: var(--accent-color);
+}
+
+.tab-content {
+    display: none;
+}
+
+.tab-content.active {
+    display: block;
+}
+
+.form-group {
+    margin-bottom: 15px;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 5px;
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+}
+
+.form-group input {
+    width: 100%;
+}
+
+.modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: 25px;
+}
+
+.hidden {
+    display: none !important;
+}
+
+/* History Page */
+.salary-history {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.history-controls {
+    padding: 20px;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.history-summary {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 20px;
+}
+
+.summary-box {
+    padding: 20px;
+    text-align: center;
+}
+
+.summary-box h3 {
+    font-size: 1rem;
+    color: var(--text-secondary);
+    margin-bottom: 10px;
+}
+
+.summary-box .value {
+    font-size: 2rem;
+    font-weight: 700;
+}
+
+.summary-box .value.highlight {
+    color: var(--accent-color);
+}
+
+.history-list {
+    padding: 20px;
+    overflow-x: auto;
+}
+
+.table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 15px;
+}
+
+.table th,
+.table td {
+    padding: 12px 15px;
+    text-align: left;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.table th {
+    color: var(--text-secondary);
+    font-weight: 600;
+}
+
+.table tr:hover {
+    background-color: #383838;
+}
+
+/* Monthly Calendar */
+.calendar-grid {
+    background-color: var(--card-bg);
+    border-radius: 12px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+
+.calendar-header {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    background-color: #333;
+    text-align: center;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--border-color);
+    font-weight: 700;
+}
+
+.calendar-body {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    /* grid-auto-rows: minmax(100px, 1fr); */
+    flex: 1;
+    overflow-y: auto;
+}
+
+.calendar-day {
+    border-right: 1px solid var(--border-color);
+    border-bottom: 1px solid var(--border-color);
+    min-height: 100px;
+    padding: 5px;
+    cursor: pointer;
+    transition: background 0.2s;
+    display: flex;
+    flex-direction: column;
+}
+
+.calendar-day:hover {
+    background-color: #404040;
+}
+
+.calendar-day.other-month {
+    opacity: 0.3;
+    background-color: #222;
+}
+
+.calendar-day.today {
+    background-color: rgba(78, 205, 196, 0.1);
+}
+
+.cal-day-header {
+    text-align: right;
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    margin-bottom: 5px;
+}
+
+.cal-day-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.cal-item {
+    font-size: 0.75rem;
+    background-color: #505050;
+    padding: 2px 4px;
+    border-radius: 3px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}

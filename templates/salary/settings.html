@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+
+{% block title %}設定 - 薪水計算小幫手{% endblock %}
+{% block page_title %}設定{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/salary.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="settings-container">
+    <div class="card setting-card">
+        <h3>基本設定</h3>
+        <form id="settingsForm">
+            <div class="form-group">
+                <label>時薪設定</label>
+                <div class="input-group">
+                    <input type="number" name="hourly_rate" id="hourlyRate" value="{{ settings.hourly_rate }}" required>
+                    <span class="unit">NTD/hr</span>
+                </div>
+                <p class="help-text">修改時薪將會記錄在歷史費率中，不會影響過去已建立的排班紀錄金額（除非編輯它們）。</p>
+            </div>
+
+            <button type="submit" class="btn btn-primary">儲存設定</button>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/salary.js') }}"></script>
+{% endblock %}
