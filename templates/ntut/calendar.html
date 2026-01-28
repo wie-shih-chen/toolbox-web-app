@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+
+{% block title %}北科生活 - 行事曆{% endblock %}
+{% block page_title %}🎓 北科生活 - 行事曆{% endblock %}
+
+{% block extra_css %}
+<style>
+    .calendar-container {
+        width: 100%;
+        height: min(80vh, 800px);
+        background: rgba(255, 255, 255, 0.05);
+        backdrop-filter: blur(10px);
+        border-radius: 20px;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        padding: 15px;
+        box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .calendar-iframe {
+        width: 100%;
+        flex-grow: 1;
+        border: none;
+        border-radius: 12px;
+        filter: invert(0.9) hue-rotate(180deg);
+        /* Dark mode hack for Google Calendar if needed, can adjust */
+    }
+
+    @media (max-width: 768px) {
+        .calendar-container {
+            height: calc(100vh - 180px);
+            padding: 10px;
+            border-radius: 12px;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="calendar-container">
+    <iframe
+        src="https://calendar.google.com/calendar/embed?src=docfuhim9b22fqvp2tk842ak3c%40group.calendar.google.com&ctz=Asia%2FTaipei&showTitle=0&showNav=1&showDate=1&showPrint=0&showTabs=1&showCalendars=0"
+        class="calendar-iframe" frameborder="0" scrolling="no">
+    </iframe>
+</div>
+{% endblock %}
