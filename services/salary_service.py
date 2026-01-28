@@ -73,12 +73,22 @@ class SalaryService:
         if new_record['type'] == 'shift':
             # Ensure proper types
             hours = float(new_record['hours'])
-            rate = float(new_record.get('rate', data['settings']['hourly_rate']))
+            
+            # Handle rate: empty string or missing -> use default
+            raw_rate = new_record.get('rate')
+            if raw_rate == '' or raw_rate is None:
+                rate = float(data['settings']['hourly_rate'])
+            else:
+                rate = float(raw_rate)
+                
             new_record['rate'] = rate
             new_record['amount'] = hours * rate
         else:
             # Bonus
-            new_record['amount'] = int(new_record['amount'])
+            try:
+                new_record['amount'] = int(new_record['amount'])
+            except (ValueError, TypeError):
+                new_record['amount'] = 0
 
         data['records'].append(new_record)
         self._save_data(data)
@@ -96,10 +106,21 @@ class SalaryService:
                 # Recalculate if shift
                 if r['type'] == 'shift':
                     r['hours'] = float(r['hours'])
-                    r['rate'] = float(r.get('rate', data['settings']['hourly_rate']))
+                    
+                    # Handle rate: empty string or missing -> use default
+                    raw_rate = r.get('rate')
+                    if raw_rate == '' or raw_rate is None:
+                        rate = float(data['settings']['hourly_rate'])
+                    else:
+                        rate = float(raw_rate)
+                        
+                    r['rate'] = rate
                     r['amount'] = r['hours'] * r['rate']
                 else:
-                    r['amount'] = int(r['amount'])
+                    try:
+                        r['amount'] = int(r['amount'])
+                    except (ValueError, TypeError):
+                        r['amount'] = 0
                 
                 records[i] = r
                 self._save_data(data)
