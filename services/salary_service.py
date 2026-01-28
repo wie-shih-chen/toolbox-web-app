@@ -263,12 +263,21 @@ class SalaryService:
         
         lines = ["日期,類型,開始時間,結束時間,時數,時薪/金額,備註"]
         
+        total_hours = 0
+        total_amount = 0
+        
         for r in records:
             if r['type'] == 'shift':
                 line = f"{r['date']},排班,{r['start_time']},{r['end_time']},{r['hours']},{r['rate']},"
+                total_hours += r['hours']
+                total_amount += r['amount']
             else:
                 line = f"{r['date']},獎金,,,{r['amount']},{r.get('note', '')}"
+                total_amount += r['amount']
             lines.append(line)
+        
+        # Add summary line
+        lines.append(f"總計,,,,{total_hours},{total_amount},")
             
         return "\n".join(lines)
 
