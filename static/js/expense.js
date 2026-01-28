@@ -105,17 +105,16 @@ const expenseApp = {
         const now = new Date();
         const year = now.getFullYear();
         const month = now.getMonth();
-        let start, end;
+        let start;
 
         if (now.getDate() >= 10) {
             start = new Date(year, month, 10);
-            end = new Date(year, month + 1, 10);
         } else {
             start = new Date(year, month - 1, 10);
-            end = new Date(year, month, 10);
         }
-        return { start, end };
+        return { start };
     },
+
 
     isDateEditable(dateStr) {
         const period = this.getActivePeriod();
