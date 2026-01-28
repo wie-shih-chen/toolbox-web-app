@@ -272,11 +272,12 @@ class SalaryService:
                 total_hours += r['hours']
                 total_amount += r['amount']
             else:
-                line = f"{r['date']},獎金,,,{r['amount']},{r.get('note', '')}"
+                # 獎金: 跳過 開始、結束、時數 欄位 (3個逗號)，金額在第6欄
+                line = f"{r['date']},獎金,,,,{r['amount']},{r.get('note', '')}"
                 total_amount += r['amount']
             lines.append(line)
         
-        # Add summary line
+        # Add summary line: 總計,,,,時數,金額,
         lines.append(f"總計,,,,{total_hours},{total_amount},")
             
         return "\n".join(lines)
