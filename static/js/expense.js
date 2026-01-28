@@ -383,6 +383,14 @@ const expenseApp = {
         if (submitBtn) submitBtn.classList.remove('hidden');
 
         this.triggerHaptic();
+
+        // Enforce cycle boundary for adding records
+        const period = this.getActivePeriod();
+        const dateInput = document.getElementById('expenseDate');
+        if (dateInput) {
+            dateInput.min = this.formatDate(period.start);
+        }
+
         document.getElementById('expenseModal').classList.add('show');
     },
 

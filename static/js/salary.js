@@ -194,6 +194,9 @@ const salaryApp = {
         const targetDate = new Date(this.currentWeekStart);
         targetDate.setDate(targetDate.getDate() + dayIndex);
 
+        if (!this.isDateEditable(this.formatDate(targetDate))) return;
+
+
         this.resetForm();
         document.getElementById('recordDate').value = this.formatDate(targetDate);
         document.getElementById('modalTitle').textContent = `新增紀錄 (${targetDate.getMonth() + 1}/${targetDate.getDate()})`;
@@ -470,7 +473,10 @@ const salaryApp = {
     },
 
     openAddModalForDate(date) {
+        if (!this.isDateEditable(this.formatDate(date))) return;
+
         this.resetForm();
+
         document.getElementById('recordDate').value = this.formatDate(date);
         document.getElementById('modalTitle').textContent = `新增紀錄 (${date.getMonth() + 1}/${date.getDate()})`;
         document.getElementById('deleteBtn').classList.add('hidden');
