@@ -151,19 +151,29 @@
 }
 
 .btn-add-shift {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
     background: transparent;
     border: none;
     border-top: 1px solid var(--border-color);
-    padding: 10px;
+    padding: 12px;
     color: var(--text-secondary);
+    font-size: 1.5rem;
     cursor: pointer;
     transition: all 0.2s;
 }
 
+.btn-add-shift span {
+    line-height: 1;
+}
+
 .btn-add-shift:hover {
-    background-color: #404040;
+    background-color: rgba(255, 255, 255, 0.05);
     color: var(--accent-color);
 }
+
 
 /* Hidden Helper */
 .hidden {
@@ -390,9 +400,10 @@
     }
 
     .btn-add-shift {
-        padding: 15px;
-        font-size: 1.2rem;
+        padding: 18px;
+        font-size: 1.8rem;
     }
+
 
     .actions-container {
         display: grid;
