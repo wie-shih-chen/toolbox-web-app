@@ -109,7 +109,7 @@ const expenseApp = {
         } catch (error) { console.error(error); }
     },
 
-    async loadData() {
+    async loadData(preserveState = false) {
         if (this.isTodayOnly) return this.loadTodayData();
         if (!this.currentPeriod.start) return;
 
@@ -127,10 +127,25 @@ const expenseApp = {
             this.groupedData = data;
             this.renderSummary(data.total_amount);
 
-            this.navStack = ['weeks'];
-            this.renderWeeks();
+            if (!preserveState) {
+                this.navStack = ['weeks'];
+                this.switchLevel('weeks');
+            } else {
+                // Refresh the current level's DOM
+                if (this.viewState.level === 'weeks') this.renderWeeks();
+                else if (this.viewState.level === 'days') {
+                    // Update currentWeek reference with new data from groupedData
+                    const newWk = this.groupedData.weeks.find(w => w.week_start === this.viewState.currentWeek.week_start);
+                    if (newWk) this.viewState.currentWeek = newWk;
+                    this.renderDays(this.viewState.currentWeek);
+                }
+                else if (this.viewState.level === 'records') {
+                    this.renderRecords(this.viewState.currentDay);
+                }
+            }
         } catch (error) { console.error(error); }
     },
+
 
     async loadTodayData() {
         const today = new Date();
@@ -177,9 +192,11 @@ const expenseApp = {
             if (localNav) localNav.classList.remove('hidden');
             if (backText) backText.textContent = '返回本週';
             if (levelTitle) levelTitle.textContent = `${context.day.date} 明細`;
+            this.viewState.currentDay = context.day;
             this.renderRecords(context.day);
         }
     },
+
 
     popNavigation() {
         if (this.viewState.level === 'records') {
@@ -377,9 +394,10 @@ const expenseApp = {
         if (res.ok) {
             this.triggerHaptic();
             this.closeModal();
-            this.loadData();
+            this.loadData(true); // Preserve state!
         }
     },
+
 
 
     async deleteCurrentRecord() {
@@ -389,9 +407,10 @@ const expenseApp = {
         const res = await fetch(`/expense/api/records/${id}`, { method: 'DELETE' });
         if (res.ok) {
             this.closeModal();
-            this.loadData(); // This currently refreshes everything based on current period or today status
+            this.loadData(true); // Preserve state!
         }
     },
+
 
 
     changePeriod(delta) {
