@@ -237,17 +237,43 @@ const expenseApp = {
             container.innerHTML = '<p style="text-align:center; padding:30px; opacity:0.5;">無紀錄</p>';
             return;
         }
+        const colorMap = {
+            '飲食': 'var(--cat-food)',
+            '飲料': 'var(--cat-food)',
+            '衣著': 'var(--cat-clothing)',
+            '居住': 'var(--cat-housing)',
+            '交通': 'var(--cat-transport)',
+            '教育': 'var(--cat-edu)',
+            '娛樂': 'var(--cat-play)',
+            '其他': 'var(--cat-other)'
+        };
+
+        const emojiMap = {
+            '飲食': '🍽️',
+            '飲料': '☕',
+            '衣著': '👕',
+            '居住': '🏠',
+            '交通': '🚌',
+            '教育': '📖',
+            '娛樂': '🎮',
+            '其他': '📦'
+        };
+
         this.records.forEach(r => {
             const item = document.createElement('div');
             item.className = 'expense-item';
             item.onclick = () => this.openEditModal(r);
-            const cat = r.category ? r.category.split(' ')[0] : '📦';
+
+            const categoryName = r.category ? (r.category.includes(' ') ? r.category.split(' ')[1] : r.category) : '其他';
+            const catEmoji = r.category ? r.category.split(' ')[0] : (emojiMap[categoryName] || '📦');
+            const catColor = colorMap[categoryName] || 'var(--cat-other)';
+
             item.innerHTML = `
                 <div class="expense-item-left">
-                    <div class="category-icon-wrapper">${cat}</div>
+                    <div class="category-icon-wrapper" style="background: ${catColor}20; color: ${catColor}">${catEmoji}</div>
                     <div class="expense-details">
                         <span class="expense-name">${r.note}</span>
-                        <div class="expense-meta"><span>${r.timestamp.substring(11, 16)}</span></div>
+                        <div class="expense-meta"><span>${r.timestamp.substring(11, 16)} ${categoryName}</span></div>
                     </div>
                 </div>
                 <div class="expense-amount">$${Math.round(r.amount).toLocaleString()}</div>

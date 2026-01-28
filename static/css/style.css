@@ -180,6 +180,9 @@ a {
     gap: 4px;
     transition: opacity 0.2s;
     user-select: none;
+    padding: 10px 0;
+    /* Increase tap area */
+    z-index: 10;
 }
 
 .back-button:active {
