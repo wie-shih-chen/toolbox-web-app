@@ -181,8 +181,11 @@ const salaryApp = {
         } else {
             this.switchTab('bonus');
             document.getElementById('bonusAmount').value = record.amount;
-            document.getElementById('bonusNote').value = record.note;
+            document.getElementById('bonusNote').value = record.note || '';
+            const hoursField = document.getElementById('bonusHours');
+            if (hoursField) hoursField.value = record.hours || '';
         }
+
 
         document.getElementById('recordModal').classList.add('show');
     },
@@ -246,7 +249,12 @@ const salaryApp = {
                 return;
             }
             data.hours = this.calculateHours(data.start_time, data.end_time);
+        } else {
+            // For bonus, hours are optional but should be numeric if present
+            if (data.hours === '') delete data.hours;
+            else data.hours = parseFloat(data.hours);
         }
+
 
         try {
             const res = await fetch(url, {
