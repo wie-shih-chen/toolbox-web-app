@@ -81,11 +81,10 @@ const expenseApp = {
                 const noteInput = document.getElementById('expenseNote');
                 const categorySelect = document.getElementById('expenseCategory');
                 if (noteInput) noteInput.value = pill.dataset.value;
-                if (categorySelect) {
-                    categorySelect.value = (pill.dataset.value === '飲料') ? '飲料' : '飲食';
-                }
+                if (categorySelect) categorySelect.value = '飲食';
             });
         });
+
 
 
         window.onclick = (e) => { if (e.target.classList.contains('modal')) this.closeModal(); };
@@ -265,7 +264,6 @@ const expenseApp = {
 
         const emojiMap = {
             '飲食': '🍽️',
-            '飲料': '☕',
             '衣著': '👕',
             '居住': '🏠',
             '交通': '🚌',
@@ -280,7 +278,13 @@ const expenseApp = {
             item.onclick = () => this.openEditModal(r);
 
             const categoryName = r.category ? (r.category.includes(' ') ? r.category.split(' ')[1] : r.category) : '其他';
-            const catEmoji = r.category ? r.category.split(' ')[0] : (emojiMap[categoryName] || '📦');
+            let catEmoji = r.category ? r.category.split(' ')[0] : (emojiMap[categoryName] || '📦');
+
+            // Contextual emoji override for drinks within diet category
+            if (categoryName === '飲食' && (r.note.includes('飲料') || r.note.includes('咖啡') || r.note.includes('茶'))) {
+                catEmoji = '☕';
+            }
+
             const catColor = colorMap[categoryName] || 'var(--cat-other)';
 
             item.innerHTML = `
