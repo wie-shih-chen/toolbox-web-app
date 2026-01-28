@@ -112,15 +112,22 @@
 
                 <!-- Bonus Fields -->
                 <div class="tab-content" id="bonus-tab">
-                    <div class="form-group">
-                        <label>金額</label>
-                        <input type="number" name="amount" id="bonusAmount" placeholder="輸入金額">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>金額</label>
+                            <input type="number" name="amount" id="bonusAmount" min="0" placeholder="輸入金額">
+                        </div>
+                        <div class="form-group">
+                            <label>時數 (選填)</label>
+                            <input type="number" name="hours" id="bonusHours" step="0.1" min="0" placeholder="例如：2.5">
+                        </div>
                     </div>
                     <div class="form-group">
                         <label>備註</label>
                         <input type="text" name="note" id="bonusNote" placeholder="例如：全勤獎金">
                     </div>
                 </div>
+
 
                 <div class="modal-actions">
                     <button type="button" class="btn btn-danger hidden" id="deleteBtn">刪除</button>
