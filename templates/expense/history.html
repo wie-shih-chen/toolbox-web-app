@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 
-{% block title %}記帳管家 - 工具箱 Web{% endblock %}
-{% block page_title %}💳 記帳控制台{% endblock %}
+{% block title %}歷史帳務 - 記帳管家{% endblock %}
+{% block page_title %}📜 歷史期數帳務{% endblock %}
 
 {% block extra_css %}
 <link rel="stylesheet" href="{{ url_for('static', filename='css/expense.css') }}">
@@ -24,54 +24,43 @@
     </a>
 </div>
 
-<div class="expense-dashboard" data-start-date="{{ start_date }}" data-end-date="{{ end_date }}">
+<div class="expense-history">
+    <!-- Period Selector -->
+    <div class="history-controls glass"
+        style="padding: 20px; display: flex; align-items: center; gap: 15px; margin-bottom: 25px;">
+        <label for="periodSelect" style="color: var(--text-secondary); font-weight: 500;">選擇帳務週期：</label>
+        <select id="periodSelect" class="form-control"
+            style="flex-grow: 1; padding: 10px; background: rgba(0,0,0,0.2); border: 1px solid var(--border-color); color: white; border-radius: 8px;">
+            <option value="">載入中...</option>
+        </select>
+    </div>
 
-    <!-- Summary Highlighting -->
+    <!-- Summary Stats -->
     <div class="expense-summary-grid">
         <div class="expense-summary-card glass">
-            <span class="label">本期總支出 (10號起)</span>
-            <span class="value highlight" id="totalExpense">$0</span>
+            <span class="label">該期總支出</span>
+            <span class="value highlight" id="historyTotal">$0</span>
         </div>
         <div class="expense-summary-card glass">
-            <span class="label">本月預算剩餘</span>
-            <div class="budget-progress-container">
-                <div class="progress-bar">
-                    <div class="progress-fill" id="budgetProgress" style="width: 0%"></div>
-                </div>
-                <span class="value" id="remainingBudget">$10,000</span>
-            </div>
+            <span class="label">支出筆數</span>
+            <span class="value" id="historyCount">0</span>
         </div>
     </div>
 
-    <!-- Quick Add Bar -->
-    <div class="quick-add-container glass">
-        <button class="btn btn-primary btn-block" id="openAddExpenseBtn">
-            <span class="material-icons">add_circle_outline</span> 新增一筆紀錄
-        </button>
-    </div>
-
-    <!-- Period View -->
-    <div class="period-header">
-        <span class="period-label">當前週期：<span id="periodDisplay">{{ start_date }} ~ {{ end_date }}</span></span>
-        <button class="btn btn-secondary btn-sm" id="prevPeriodBtn">◀</button>
-        <button class="btn btn-secondary btn-sm" id="nextPeriodBtn">▶</button>
-    </div>
-
-    <!-- Recent Activities -->
+    <!-- Detailed List -->
     <div class="expense-list-container">
-        <h3 class="section-title">最近活動</h3>
-        <div id="expenseList" class="expense-list">
+        <h3 class="section-title">該期消費明細</h3>
+        <div id="historyExpenseList" class="expense-list">
             <!-- Records injected here -->
-            <div class="loading-placeholder">載入中...</div>
         </div>
     </div>
 </div>
 
-<!-- Add/Edit Expense Modal -->
+<!-- Modal reuse via standard JS -->
 <div id="expenseModal" class="modal">
     <div class="modal-content glass">
         <div class="modal-header">
-            <h3 id="modalTitle">新增支出</h3>
+            <h3 id="modalTitle">編輯紀錄</h3>
             <span class="close-modal" id="closeExpenseModalBtn">&times;</span>
         </div>
         <div class="modal-body">
@@ -80,18 +69,18 @@
 
                 <div class="form-group">
                     <label>項目名稱</label>
-                    <input type="text" name="note" id="expenseNote" placeholder="例如：午餐、捷運..." required>
+                    <input type="text" name="note" id="expenseNote" required>
                 </div>
 
                 <div class="form-row">
                     <div class="form-group">
                         <label>金額 (NTD)</label>
-                        <input type="number" name="amount" id="expenseAmount" placeholder="輸入金額" required>
+                        <input type="number" name="amount" id="expenseAmount" required>
                     </div>
                     <div class="form-group">
                         <label>類別</label>
                         <select name="category" id="expenseCategory">
-                            <option value="飲食" selected>🍽️ 飲食</option>
+                            <option value="飲食">🍽️ 飲食</option>
                             <option value="衣著">👕 衣著</option>
                             <option value="居住">🏠 居住</option>
                             <option value="交通">🚌 交通</option>
@@ -108,8 +97,8 @@
                 </div>
 
                 <div class="modal-actions">
-                    <button type="button" class="btn btn-danger hidden" id="deleteExpenseBtn">刪除</button>
-                    <button type="submit" class="btn btn-primary">儲存紀錄</button>
+                    <button type="button" class="btn btn-danger" id="deleteExpenseBtn">刪除</button>
+                    <button type="submit" class="btn btn-primary">儲存修改</button>
                 </div>
             </form>
         </div>

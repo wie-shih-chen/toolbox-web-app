@@ -122,3 +122,57 @@ class ExpenseService:
             "category_split": categories,
             "period": {"start": start_date_str, "end": end_date_str}
         }
+    def get_settings(self):
+        data = self._load_data()
+        return data.get('settings', {"monthly_budget": 10000})
+
+    def update_settings(self, settings_data):
+        data = self._load_data()
+        if 'monthly_budget' in settings_data:
+            data['settings']['monthly_budget'] = float(settings_data['monthly_budget'])
+        self._save_data(data)
+        return data['settings']
+
+    def get_monthly_periods(self):
+        """
+        Generate a list of available periods: 10th to 10th.
+        """
+        records = self.get_all_records()
+        if not records:
+            # Current period only
+            start, end = self.get_current_period()
+            label = f"{start} ~ {end}"
+            return [{"label": label, "start": start, "end": end}]
+
+        dates = [r['timestamp'][:10] for r in records]
+        dates.sort()
+        
+        # Start from the first record's month 10th
+        first_date = datetime.strptime(dates[0], '%Y-%m-%d')
+        if first_date.day < 10:
+            current = datetime(first_date.year, first_date.month, 10) - timedelta(days=32)
+            current = datetime(current.year, current.month, 10)
+        else:
+            current = datetime(first_date.year, first_date.month, 10)
+
+        periods = []
+        now = datetime.now()
+        # Cover until tomorrow to be safe for current period
+        final_cutoff = now + timedelta(days=1)
+
+        while current <= final_cutoff:
+            next_p = current + timedelta(days=32)
+            next_p = datetime(next_p.year, next_p.month, 10)
+            
+            p_start = current.strftime('%Y-%m-%d')
+            p_end = next_p.strftime('%Y-%m-%d')
+            label = f"{p_start} ~ {p_end}"
+            
+            periods.append({
+                "label": label,
+                "start": p_start,
+                "end": p_end
+            })
+            current = next_p
+
+        return periods

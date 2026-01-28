@@ -10,6 +10,16 @@ def index():
     start, end = expense_service.get_current_period()
     return render_template('expense/dashboard.html', start_date=start, end_date=end)
 
+@expense_bp.route('/history')
+def history():
+    return render_template('expense/history.html')
+
+@expense_bp.route('/settings')
+def settings():
+    settings = expense_service.get_settings()
+    return render_template('expense/settings.html', settings=settings)
+
+
 @expense_bp.route('/api/records', methods=['GET'])
 def get_records():
     start_date = request.args.get('start_date')
@@ -56,3 +66,19 @@ def handle_record(record_id):
     if record:
         return jsonify(record)
     return jsonify({"error": "Not found"}), 404
+
+@expense_bp.route('/api/history/periods')
+def get_periods():
+    periods = expense_service.get_monthly_periods()
+    return jsonify(periods)
+
+@expense_bp.route('/api/settings', methods=['GET', 'POST'])
+def handle_settings():
+    if request.method == 'POST':
+        data = request.json
+        settings = expense_service.update_settings(data)
+        return jsonify(settings)
+    
+    settings = expense_service.get_settings()
+    return jsonify(settings)
+

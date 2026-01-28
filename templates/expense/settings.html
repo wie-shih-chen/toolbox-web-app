@@ -1,0 +1,69 @@
+{% extends "base.html" %}
+
+{% block title %}設定 - 記帳管家{% endblock %}
+{% block page_title %}⚙️ 記帳設定{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/expense.css') }}">
+{% endblock %}
+
+{% block content %}
+<!-- Horizontal Navigation Bar -->
+<div class="salary-nav">
+    <a href="{{ url_for('expense.index') }}"
+        class="salary-nav-item {% if request.endpoint == 'expense.index' %}active{% endif %}">
+        📅 本週記帳
+    </a>
+    <a href="{{ url_for('expense.history') }}"
+        class="salary-nav-item {% if request.endpoint == 'expense.history' %}active{% endif %}">
+        📜 歷史記帳
+    </a>
+    <a href="{{ url_for('expense.settings') }}"
+        class="salary-nav-item {% if request.endpoint == 'expense.settings' %}active{% endif %}">
+        ⚙️ 設定
+    </a>
+</div>
+
+<div class="expense-settings" style="max-width: 600px; margin: 0 auto;">
+    <div class="glass" style="padding: 30px;">
+        <h3 style="margin-bottom: 25px; display: flex; align-items: center; gap: 10px;">
+            <span class="material-icons" style="color: var(--accent-color)">toll</span>
+            每期預算上限
+        </h3>
+
+        <form id="settingsForm">
+            <div class="form-group">
+                <label>每月可支配預算 (10號至下月10號)</label>
+                <div style="position: relative; display: flex; align-items: center;">
+                    <span
+                        style="position: absolute; left: 15px; color: var(--text-secondary); font-size: 1.2rem;">$</span>
+                    <input type="number" name="monthly_budget" id="budgetInput" value="{{ settings.monthly_budget }}"
+                        style="padding-left: 35px; font-size: 1.5rem; font-weight: 700; width: 100%; height: 60px;">
+                </div>
+                <p style="margin-top: 10px; font-size: 0.85rem; color: var(--text-secondary)">
+                    * 預算將影響首頁進度條的顏色警示。
+                </p>
+            </div>
+
+            <button type="submit" class="btn btn-primary btn-block"
+                style="height: 55px; font-size: 1.1rem; margin-top: 10px;">
+                儲存設定
+            </button>
+        </form>
+    </div>
+
+    <!-- Info Card -->
+    <div class="glass" style="margin-top: 25px; padding: 20px; border-left: 4px solid #5eead4;">
+        <div style="display: flex; gap: 15px; align-items: flex-start;">
+            <span class="material-icons" style="color: #5eead4">info</span>
+            <div style="font-size: 0.9rem; color: var(--text-secondary); line-height: 1.6;">
+                記帳週期說明：系統自動以每月 <strong>10 號</strong> 為起始點，至下個月 <strong>10 號</strong> 為一個週期（不包含末日）。這與薪水計算工具的週期保持一致。
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/expense.js') }}"></script>
+{% endblock %}

@@ -3,16 +3,46 @@ const expenseApp = {
     records: [],
     monthlyBudget: 10000,
 
+    // Initializers
     init() {
         const dashboard = document.querySelector('.expense-dashboard');
-        // Fix potential camelCase mismatch from data-attributes
         this.currentPeriod.start = dashboard.dataset.startDate;
         this.currentPeriod.end = dashboard.dataset.endDate;
 
         this.bindEvents();
-        this.loadData();
+        this.loadSettings().then(() => this.loadData());
     },
 
+    initHistory() {
+        this.bindEvents();
+        const select = document.getElementById('periodSelect');
+        if (select) select.addEventListener('change', () => this.loadHistoryData());
+        this.loadHistoryPeriods();
+    },
+
+    initSettings() {
+        const form = document.getElementById('settingsForm');
+        if (form) {
+            form.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const formData = new FormData(e.target);
+                const data = Object.fromEntries(formData.entries());
+
+                try {
+                    const res = await fetch('/expense/api/settings', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(data)
+                    });
+                    if (res.ok) alert('設定已儲存');
+                } catch (error) {
+                    console.error(error);
+                }
+            });
+        }
+    },
+
+    // Core Logic
     bindEvents() {
         const addSafeListener = (id, event, callback) => {
             const el = document.getElementById(id);
@@ -38,6 +68,16 @@ const expenseApp = {
         });
     },
 
+    async loadSettings() {
+        try {
+            const res = await fetch('/expense/api/settings');
+            const data = await res.json();
+            this.monthlyBudget = data.monthly_budget;
+        } catch (error) {
+            console.error(error);
+        }
+    },
+
     async loadData() {
         const url = `/expense/api/records?start_date=${this.currentPeriod.start}&end_date=${this.currentPeriod.end}`;
         try {
@@ -45,16 +85,64 @@ const expenseApp = {
             const data = await res.json();
             this.records = data.records;
             this.renderSummary(data.total_amount);
-            this.renderList();
+            this.renderList('expenseList');
 
-            document.getElementById('periodDisplay').textContent = `${data.period.start} ~ ${data.period.end}`;
+            const display = document.getElementById('periodDisplay');
+            if (display) display.textContent = `${data.period.start} ~ ${data.period.end}`;
         } catch (error) {
             console.error('Error loading expenses:', error);
         }
     },
 
+    async loadHistoryPeriods() {
+        try {
+            const res = await fetch('/expense/api/history/periods');
+            const periods = await res.json();
+            const select = document.getElementById('periodSelect');
+            select.innerHTML = '';
+
+            periods.reverse().forEach(p => {
+                const opt = document.createElement('option');
+                opt.value = `${p.start},${p.end}`;
+                opt.textContent = p.label;
+                select.appendChild(opt);
+            });
+
+            // Auto trigger first load
+            if (select.value) this.loadHistoryData();
+        } catch (error) {
+            console.error(error);
+        }
+    },
+
+    async loadHistoryData() {
+        const select = document.getElementById('periodSelect');
+        const [start, end] = select.value.split(',');
+        const url = `/expense/api/records?start_date=${start}&end_date=${end}`;
+
+        try {
+            const res = await fetch(url);
+            const data = await res.json();
+            this.records = data.records;
+
+            // Update Mini Summary in History
+            const histTotal = document.getElementById('historyTotal');
+            if (histTotal) histTotal.textContent = `$${Math.round(data.total_amount).toLocaleString()}`;
+
+            const histCount = document.getElementById('historyCount');
+            if (histCount) histCount.textContent = data.records.length;
+
+            this.renderList('historyExpenseList');
+        } catch (error) {
+            console.error(error);
+        }
+    },
+
     renderSummary(total) {
-        document.getElementById('totalExpense').textContent = `$${Math.round(total).toLocaleString()}`;
+        const el = document.getElementById('totalExpense');
+        if (!el) return;
+
+        el.textContent = `$${Math.round(total).toLocaleString()}`;
         const remaining = Math.max(0, this.monthlyBudget - total);
         document.getElementById('remainingBudget').textContent = `$${Math.round(remaining).toLocaleString()}`;
 
@@ -62,23 +150,20 @@ const expenseApp = {
         const progressFill = document.getElementById('budgetProgress');
         progressFill.style.width = `${percent}%`;
 
-        // Modern Gradient Alerting
-        if (percent > 90) {
-            progressFill.style.background = 'linear-gradient(90deg, #ff4d4d, #f9ca24)';
-        } else if (percent > 70) {
-            progressFill.style.background = 'linear-gradient(90deg, #f0932b, #ffbe76)';
-        } else {
-            progressFill.style.background = 'linear-gradient(90deg, #4ecdc4, #abe9cd)';
-        }
+        if (percent > 90) progressFill.style.background = 'linear-gradient(90deg, #ff4d4d, #f9ca24)';
+        else if (percent > 70) progressFill.style.background = 'linear-gradient(90deg, #f0932b, #ffbe76)';
+        else progressFill.style.background = 'linear-gradient(90deg, #4ecdc4, #abe9cd)';
     },
 
-    renderList() {
-        const container = document.getElementById('expenseList');
+    renderList(containerID) {
+        const container = document.getElementById(containerID);
+        if (!container) return;
+
         if (this.records.length === 0) {
             container.innerHTML = `
                 <div class="empty-state" style="text-align:center; padding:50px 20px; color:var(--text-secondary)">
                     <span class="material-icons" style="font-size: 3rem; margin-bottom: 15px; display: block; opacity: 0.5">receipt_long</span>
-                    <p>本期尚無紀錄，開始記帳吧！</p>
+                    <p>本期尚無紀錄</p>
                 </div>`;
             return;
         }
@@ -100,12 +185,11 @@ const expenseApp = {
             item.onclick = () => this.openEditModal(r);
 
             const categoryEmoji = r.category ? r.category.split(' ')[0] : '📦';
-            const categoryName = r.category ? r.category.split(' ')[1] : '其他';
+            const categoryName = r.category ? (r.category.includes(' ') ? r.category.split(' ')[1] : r.category) : '其他';
             const catColor = colorMap[categoryName] || 'var(--cat-other)';
 
-            // Format time: YYYY-MM-DD HH:mm:ss -> HH:mm
             const timePart = r.timestamp.split(' ')[1].substring(0, 5);
-            const datePart = r.timestamp.split(' ')[0].substring(5).replace('-', '/'); // MM/DD
+            const datePart = r.timestamp.split(' ')[0].substring(5).replace('-', '/');
 
             item.innerHTML = `
                 <div class="expense-item-left">
@@ -127,10 +211,10 @@ const expenseApp = {
         });
     },
 
+    // Modal Handling
     openAddModal() {
         this.resetForm();
         const now = new Date();
-        // Adjust for local time ISO format: YYYY-MM-DDTHH:mm
         const timezoneOffset = now.getTimezoneOffset() * 60000;
         const localISOTime = (new Date(now - timezoneOffset)).toISOString().slice(0, 16);
 
@@ -146,11 +230,9 @@ const expenseApp = {
         document.getElementById('expenseNote').value = record.note;
         document.getElementById('expenseAmount').value = record.amount;
 
-        // Handle category (strip emoji if needed for select value matching)
-        const catValue = record.category ? record.category.split(' ')[1] : '其他';
-        document.getElementById('expenseCategory').value = catValue;
+        const catName = record.category ? (record.category.includes(' ') ? record.category.split(' ')[1] : record.category) : '其他';
+        document.getElementById('expenseCategory').value = catName;
 
-        // Convert timestamp to input format
         const ts = record.timestamp.replace(' ', 'T').substring(0, 16);
         document.getElementById('expenseTimestamp').value = ts;
 
@@ -160,20 +242,22 @@ const expenseApp = {
     },
 
     closeModal() {
-        document.getElementById('expenseModal').classList.remove('show');
+        const modal = document.getElementById('expenseModal');
+        if (modal) modal.classList.remove('show');
     },
 
     resetForm() {
-        document.getElementById('expenseForm').reset();
-        document.getElementById('expenseId').value = '';
+        const form = document.getElementById('expenseForm');
+        if (form) {
+            form.reset();
+            document.getElementById('expenseId').value = '';
+        }
     },
 
     async handleSubmit(e) {
         e.preventDefault();
         const formData = new FormData(e.target);
         const data = Object.fromEntries(formData.entries());
-
-        // Format timestamp for storage YYYY-MM-DD HH:mm:ss
         data.timestamp = data.timestamp.replace('T', ' ') + ':00';
 
         const id = data.id;
@@ -189,7 +273,9 @@ const expenseApp = {
 
             if (res.ok) {
                 this.closeModal();
-                this.loadData();
+                // Smart Refresh
+                if (document.querySelector('.expense-dashboard')) this.loadData();
+                else if (document.querySelector('.expense-history')) this.loadHistoryData();
             } else {
                 alert('儲存失敗');
             }
@@ -205,7 +291,8 @@ const expenseApp = {
             const res = await fetch(`/expense/api/records/${id}`, { method: 'DELETE' });
             if (res.ok) {
                 this.closeModal();
-                this.loadData();
+                if (document.querySelector('.expense-dashboard')) this.loadData();
+                else if (document.querySelector('.expense-history')) this.loadHistoryData();
             }
         } catch (error) {
             console.error(error);
@@ -213,13 +300,10 @@ const expenseApp = {
     },
 
     changePeriod(delta) {
-        // Simple period calculator based on current start date
         const currentStart = new Date(this.currentPeriod.start);
         currentStart.setMonth(currentStart.getMonth() + delta);
-
         const nextMonth = new Date(currentStart);
         nextMonth.setMonth(nextMonth.getMonth() + 1);
-
         this.currentPeriod.start = this.formatDate(currentStart);
         this.currentPeriod.end = this.formatDate(nextMonth);
         this.loadData();
@@ -231,7 +315,7 @@ const expenseApp = {
 };
 
 document.addEventListener('DOMContentLoaded', () => {
-    if (document.querySelector('.expense-dashboard')) {
-        expenseApp.init();
-    }
+    if (document.querySelector('.expense-dashboard')) expenseApp.init();
+    else if (document.querySelector('.expense-history')) expenseApp.initHistory();
+    else if (document.querySelector('.expense-settings')) expenseApp.initSettings();
 });
