@@ -216,358 +216,381 @@ const salaryApp = {
         document.getElementById('recordModal').classList.add('show');
     },
 
-    const tabs = document.querySelector('.tabs');
-    if(tabs) tabs.classList.toggle('hidden', !isEditable || !!record.id);
+    openEditModal(record) {
+        const isEditable = this.isDateEditable(record.date);
 
-    if(record.type === 'shift') {
-        this.switchTab('shift');
-document.getElementById('startTime').value = record.start_time;
-document.getElementById('endTime').value = record.end_time;
-document.getElementById('shiftRate').value = record.rate || '';
+        document.getElementById('recordId').value = record.id;
+        document.getElementById('recordDate').value = record.date;
+        document.getElementById('recordType').value = record.type;
+        document.getElementById('modalTitle').textContent = isEditable ? '編輯紀錄' : '查看紀錄 (唯讀)';
+
+        const deleteBtn = document.getElementById('deleteBtn');
+        const submitBtn = document.querySelector('#recordForm button[type="submit"]');
+
+        if (deleteBtn) deleteBtn.classList.toggle('hidden', !isEditable || !record.id);
+        if (submitBtn) submitBtn.classList.toggle('hidden', !isEditable);
+
+        const formElements = document.querySelectorAll('#recordForm input, #recordForm select, #recordForm textarea');
+        formElements.forEach(el => {
+            if (el.type !== 'hidden') {
+                el.readOnly = !isEditable;
+                el.disabled = !isEditable;
+            }
+        });
+
+        const tabs = document.querySelector('.tabs');
+        if (tabs) tabs.classList.toggle('hidden', !isEditable || !!record.id);
+
+        if (record.type === 'shift') {
+            this.switchTab('shift');
+            document.getElementById('startTime').value = record.start_time;
+            document.getElementById('endTime').value = record.end_time;
+            document.getElementById('shiftRate').value = record.rate || '';
         } else {
-    this.switchTab('bonus');
-    document.getElementById('bonusAmount').value = record.amount;
-    document.getElementById('bonusNote').value = record.note || '';
-    const hoursField = document.getElementById('bonusHours');
-    if (hoursField) hoursField.value = record.hours || '';
-}
+            this.switchTab('bonus');
+            document.getElementById('bonusAmount').value = record.amount;
+            document.getElementById('bonusNote').value = record.note || '';
+            const hoursField = document.getElementById('bonusHours');
+            if (hoursField) hoursField.value = record.hours || '';
+        }
 
-document.getElementById('recordModal').classList.add('show');
+        document.getElementById('recordModal').classList.add('show');
     },
 
 
-closeModal() {
-    document.getElementById('recordModal').classList.remove('show');
-},
 
-switchTab(tabName) {
-    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+    closeModal() {
+        document.getElementById('recordModal').classList.remove('show');
+    },
 
-    const activeBtn = document.querySelector(`.tab-btn[data-tab="${tabName}"]`);
-    const activeContent = document.getElementById(`${tabName}-tab`);
+    switchTab(tabName) {
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
 
-    if (activeBtn) activeBtn.classList.add('active');
-    if (activeContent) {
-        activeContent.classList.add('active');
-        activeContent.querySelectorAll('input').forEach(input => {
-            // Only re-enable if NOT in read-only mode (checking modal title or similar)
-            // But generally, tab switching only happens in Add mode or if isEditable is true.
-            if (!document.getElementById('modalTitle').textContent.includes('唯讀')) {
-                input.disabled = false;
-            }
-        });
-    }
-    document.getElementById('recordType').value = tabName;
-},
+        const activeBtn = document.querySelector(`.tab-btn[data-tab="${tabName}"]`);
+        const activeContent = document.getElementById(`${tabName}-tab`);
 
-resetForm() {
-    document.getElementById('recordForm').reset();
-    document.getElementById('recordId').value = '';
-    document.getElementById('startTime').value = '09:00';
-    document.getElementById('endTime').value = '18:00';
-    const rateInput = document.getElementById('shiftRate');
-    if (rateInput) rateInput.value = '';
-},
+        if (activeBtn) activeBtn.classList.add('active');
+        if (activeContent) {
+            activeContent.classList.add('active');
+            activeContent.querySelectorAll('input').forEach(input => {
+                // Only re-enable if NOT in read-only mode (checking modal title or similar)
+                // But generally, tab switching only happens in Add mode or if isEditable is true.
+                if (!document.getElementById('modalTitle').textContent.includes('唯讀')) {
+                    input.disabled = false;
+                }
+            });
+        }
+        document.getElementById('recordType').value = tabName;
+    },
+
+    resetForm() {
+        document.getElementById('recordForm').reset();
+        document.getElementById('recordId').value = '';
+        document.getElementById('startTime').value = '09:00';
+        document.getElementById('endTime').value = '18:00';
+        const rateInput = document.getElementById('shiftRate');
+        if (rateInput) rateInput.value = '';
+    },
 
     async handleSubmit(e) {
-    e.preventDefault();
-    const formData = new FormData(e.target);
-    const data = Object.fromEntries(formData.entries());
+        e.preventDefault();
+        const formData = new FormData(e.target);
+        const data = Object.fromEntries(formData.entries());
 
-    const id = data.id;
-    const method = id ? 'PUT' : 'POST';
-    const url = id ? `/salary/api/records/${id}` : '/salary/api/records';
+        const id = data.id;
+        const method = id ? 'PUT' : 'POST';
+        const url = id ? `/salary/api/records/${id}` : '/salary/api/records';
 
-    if (data.type === 'shift') {
-        if (data.start_time >= data.end_time) {
-            alert('結束時間必須晚於開始時間');
-            return;
-        }
-    } else {
-        if (data.hours === '') delete data.hours;
-        else data.hours = parseFloat(data.hours);
-    }
-
-    try {
-        const res = await fetch(url, {
-            method: method,
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(data)
-        });
-
-        if (res.ok) {
-            this.closeModal();
-            if (document.querySelector('.salary-dashboard')) this.loadWeek();
-            else if (document.querySelector('.salary-monthly')) this.loadMonth();
-            else if (document.querySelector('.salary-history')) this.loadHistoryData();
+        if (data.type === 'shift') {
+            if (data.start_time >= data.end_time) {
+                alert('結束時間必須晚於開始時間');
+                return;
+            }
         } else {
-            const err = await res.json();
-            alert(err.error || '儲存失敗');
+            if (data.hours === '') delete data.hours;
+            else data.hours = parseFloat(data.hours);
         }
-    } catch (error) {
-        alert('網路錯誤');
-    }
-},
+
+        try {
+            const res = await fetch(url, {
+                method: method,
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+
+            if (res.ok) {
+                this.closeModal();
+                if (document.querySelector('.salary-dashboard')) this.loadWeek();
+                else if (document.querySelector('.salary-monthly')) this.loadMonth();
+                else if (document.querySelector('.salary-history')) this.loadHistoryData();
+            } else {
+                const err = await res.json();
+                alert(err.error || '儲存失敗');
+            }
+        } catch (error) {
+            alert('網路錯誤');
+        }
+    },
 
     async deleteCurrentRecord() {
-    if (!confirm('確定要刪除嗎？')) return;
-    const id = document.getElementById('recordId').value;
-    if (!id) return;
+        if (!confirm('確定要刪除嗎？')) return;
+        const id = document.getElementById('recordId').value;
+        if (!id) return;
 
-    try {
-        const res = await fetch(`/salary/api/records/${id}`, { method: 'DELETE' });
-        if (res.ok) {
-            this.closeModal();
-            if (document.querySelector('.salary-dashboard')) this.loadWeek();
-            else if (document.querySelector('.salary-monthly')) this.loadMonth();
-            else if (document.querySelector('.salary-history')) this.loadHistoryData();
+        try {
+            const res = await fetch(`/salary/api/records/${id}`, { method: 'DELETE' });
+            if (res.ok) {
+                this.closeModal();
+                if (document.querySelector('.salary-dashboard')) this.loadWeek();
+                else if (document.querySelector('.salary-monthly')) this.loadMonth();
+                else if (document.querySelector('.salary-history')) this.loadHistoryData();
+            }
+        } catch (error) {
+            console.error(error);
         }
-    } catch (error) {
-        console.error(error);
-    }
-},
+    },
 
     async copyLastWeek() {
-    if (!confirm('確定要複製上週的班表到本週嗎？')) return;
-    const targetDate = this.formatDate(this.currentWeekStart);
+        if (!confirm('確定要複製上週的班表到本週嗎？')) return;
+        const targetDate = this.formatDate(this.currentWeekStart);
 
-    try {
-        const res = await fetch('/salary/api/actions/copy_week', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ target_date: targetDate })
-        });
+        try {
+            const res = await fetch('/salary/api/actions/copy_week', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ target_date: targetDate })
+            });
 
-        if (res.ok) {
-            const data = await res.json();
-            alert(`已複製 ${data.count} 筆紀錄`);
-            this.loadWeek();
-        }
-    } catch (error) { }
-},
+            if (res.ok) {
+                const data = await res.json();
+                alert(`已複製 ${data.count} 筆紀錄`);
+                this.loadWeek();
+            }
+        } catch (error) { }
+    },
 
     async clearThisWeek() {
-    if (!confirm('確定要清空本週的所有排班與獎金嗎？')) return;
-    const weekStart = this.formatDate(this.currentWeekStart);
+        if (!confirm('確定要清空本週的所有排班與獎金嗎？')) return;
+        const weekStart = this.formatDate(this.currentWeekStart);
 
-    try {
-        const res = await fetch('/salary/api/actions/clear_week', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ week_start: weekStart })
-        });
+        try {
+            const res = await fetch('/salary/api/actions/clear_week', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ week_start: weekStart })
+            });
 
-        if (res.ok) {
-            this.loadWeek();
-        }
-    } catch (error) { }
-},
+            if (res.ok) {
+                this.loadWeek();
+            }
+        } catch (error) { }
+    },
 
-formatDate(date) {
-    const y = date.getFullYear();
-    const m = String(date.getMonth() + 1).padStart(2, '0');
-    const d = String(date.getDate()).padStart(2, '0');
-    return `${y}-${m}-${d}`;
-},
+    formatDate(date) {
+        const y = date.getFullYear();
+        const m = String(date.getMonth() + 1).padStart(2, '0');
+        const d = String(date.getDate()).padStart(2, '0');
+        return `${y}-${m}-${d}`;
+    },
 
-// Monthly View
-initMonthly() {
-    const now = new Date();
-    this.currentMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-    this.bindEvents();
-    this.loadMonth();
-},
+    // Monthly View
+    initMonthly() {
+        const now = new Date();
+        this.currentMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+        this.bindEvents();
+        this.loadMonth();
+    },
 
-changeMonth(delta) {
-    this.currentMonth.setMonth(this.currentMonth.getMonth() + delta);
-    this.loadMonth();
-},
+    changeMonth(delta) {
+        this.currentMonth.setMonth(this.currentMonth.getMonth() + delta);
+        this.loadMonth();
+    },
 
     async loadMonth() {
-    const y = this.currentMonth.getFullYear();
-    const m = this.currentMonth.getMonth();
-    const label = document.getElementById('currentMonthLabel');
-    if (label) label.textContent = `${y}年 ${String(m + 1).padStart(2, '0')}月`;
+        const y = this.currentMonth.getFullYear();
+        const m = this.currentMonth.getMonth();
+        const label = document.getElementById('currentMonthLabel');
+        if (label) label.textContent = `${y}年 ${String(m + 1).padStart(2, '0')}月`;
 
-    const firstDay = new Date(y, m, 1);
-    const gridStart = new Date(firstDay);
-    gridStart.setDate(1 - (firstDay.getDay() || 7) + 1);
+        const firstDay = new Date(y, m, 1);
+        const gridStart = new Date(firstDay);
+        gridStart.setDate(1 - (firstDay.getDay() || 7) + 1);
 
-    try {
-        const res = await fetch(`/salary/api/records?start_date=${this.formatDate(gridStart)}&end_date=${this.formatDate(new Date(gridStart.getTime() + 42 * 864e5))}`);
-        this.records = await res.json();
-        this.renderCalendar(gridStart);
-        this.updateMonthlySummary(new Date(y, m, 10), new Date(y, m + 1, 10));
-    } catch (error) { }
-},
+        try {
+            const res = await fetch(`/salary/api/records?start_date=${this.formatDate(gridStart)}&end_date=${this.formatDate(new Date(gridStart.getTime() + 42 * 864e5))}`);
+            this.records = await res.json();
+            this.renderCalendar(gridStart);
+            this.updateMonthlySummary(new Date(y, m, 10), new Date(y, m + 1, 10));
+        } catch (error) { }
+    },
 
-renderCalendar(startDate) {
-    const container = document.getElementById('calendarBody');
-    if (!container) return;
-    container.innerHTML = '';
-    const todayStr = this.formatDate(new Date());
+    renderCalendar(startDate) {
+        const container = document.getElementById('calendarBody');
+        if (!container) return;
+        container.innerHTML = '';
+        const todayStr = this.formatDate(new Date());
 
-    for (let i = 0; i < 42; i++) {
-        const current = new Date(startDate);
-        current.setDate(startDate.getDate() + i);
-        const dateStr = this.formatDate(current);
+        for (let i = 0; i < 42; i++) {
+            const current = new Date(startDate);
+            current.setDate(startDate.getDate() + i);
+            const dateStr = this.formatDate(current);
 
-        const cell = document.createElement('div');
-        cell.className = `calendar-day ${current.getMonth() !== this.currentMonth.getMonth() ? 'other-month' : ''} ${dateStr === todayStr ? 'today' : ''}`;
+            const cell = document.createElement('div');
+            cell.className = `calendar-day ${current.getMonth() !== this.currentMonth.getMonth() ? 'other-month' : ''} ${dateStr === todayStr ? 'today' : ''}`;
 
-        const header = document.createElement('div');
-        header.className = 'cal-day-header';
-        header.textContent = current.getDate();
-        cell.appendChild(header);
+            const header = document.createElement('div');
+            header.className = 'cal-day-header';
+            header.textContent = current.getDate();
+            cell.appendChild(header);
 
-        const content = document.createElement('div');
-        content.className = 'cal-day-content';
+            const content = document.createElement('div');
+            content.className = 'cal-day-content';
 
-        if (this.isDateEditable(dateStr)) {
-            cell.onclick = () => this.openAddModalForDate(new Date(current));
+            if (this.isDateEditable(dateStr)) {
+                cell.onclick = () => this.openAddModalForDate(new Date(current));
+            }
+
+            const dayRecords = this.records.filter(r => r.date === dateStr);
+            dayRecords.forEach(r => {
+                const item = document.createElement('div');
+                item.className = 'cal-item';
+                item.textContent = r.type === 'shift' ? `• ${r.start_time}` : `• 💰`;
+                if (r.type === 'bonus') item.style.color = '#ffd700';
+                item.onclick = (e) => {
+                    e.stopPropagation();
+                    this.openEditModal(r);
+                };
+                content.appendChild(item);
+            });
+
+            cell.appendChild(content);
+            container.appendChild(cell);
         }
+    },
 
-        const dayRecords = this.records.filter(r => r.date === dateStr);
-        dayRecords.forEach(r => {
-            const item = document.createElement('div');
-            item.className = 'cal-item';
-            item.textContent = r.type === 'shift' ? `• ${r.start_time}` : `• 💰`;
-            if (r.type === 'bonus') item.style.color = '#ffd700';
-            item.onclick = (e) => {
-                e.stopPropagation();
-                this.openEditModal(r);
-            };
-            content.appendChild(item);
+    openAddModalForDate(date) {
+        this.resetForm();
+        document.getElementById('recordDate').value = this.formatDate(date);
+        document.getElementById('modalTitle').textContent = `新增紀錄 (${date.getMonth() + 1}/${date.getDate()})`;
+        document.getElementById('deleteBtn').classList.add('hidden');
+
+        document.querySelectorAll('#recordForm input').forEach(el => {
+            if (el.type !== 'hidden') {
+                el.readOnly = false;
+                el.disabled = false;
+            }
+        });
+        const submitBtn = document.querySelector('#recordForm button[type="submit"]');
+        if (submitBtn) submitBtn.classList.remove('hidden');
+
+        this.switchTab('shift');
+        const tabs = document.querySelector('.tabs');
+        if (tabs) tabs.classList.remove('hidden');
+        document.getElementById('recordModal').classList.add('show');
+    },
+
+    updateMonthlySummary(start, end) {
+        const startStr = this.formatDate(start);
+        const endStr = this.formatDate(end);
+        let hours = 0, amount = 0;
+
+        this.records.forEach(r => {
+            if (r.date >= startStr && r.date <= endStr) {
+                if (r.type === 'shift') hours += r.hours;
+                amount += r.amount;
+            }
         });
 
-        cell.appendChild(content);
-        container.appendChild(cell);
-    }
-},
+        const hEl = document.getElementById('monthlyHours');
+        const aEl = document.getElementById('monthlyAmount');
+        if (hEl) hEl.textContent = `${hours.toFixed(1)}h`;
+        if (aEl) aEl.textContent = `$${Math.round(amount)}`;
+    },
 
-openAddModalForDate(date) {
-    this.resetForm();
-    document.getElementById('recordDate').value = this.formatDate(date);
-    document.getElementById('modalTitle').textContent = `新增紀錄 (${date.getMonth() + 1}/${date.getDate()})`;
-    document.getElementById('deleteBtn').classList.add('hidden');
-
-    document.querySelectorAll('#recordForm input').forEach(el => {
-        if (el.type !== 'hidden') {
-            el.readOnly = false;
-            el.disabled = false;
+    // History
+    initHistory() {
+        this.bindEvents();
+        const select = document.getElementById('periodSelect');
+        if (select) {
+            select.addEventListener('change', () => this.loadHistoryData());
+            this.loadHistoryPeriods();
         }
-    });
-    const submitBtn = document.querySelector('#recordForm button[type="submit"]');
-    if (submitBtn) submitBtn.classList.remove('hidden');
-
-    this.switchTab('shift');
-    const tabs = document.querySelector('.tabs');
-    if (tabs) tabs.classList.remove('hidden');
-    document.getElementById('recordModal').classList.add('show');
-},
-
-updateMonthlySummary(start, end) {
-    const startStr = this.formatDate(start);
-    const endStr = this.formatDate(end);
-    let hours = 0, amount = 0;
-
-    this.records.forEach(r => {
-        if (r.date >= startStr && r.date <= endStr) {
-            if (r.type === 'shift') hours += r.hours;
-            amount += r.amount;
-        }
-    });
-
-    const hEl = document.getElementById('monthlyHours');
-    const aEl = document.getElementById('monthlyAmount');
-    if (hEl) hEl.textContent = `${hours.toFixed(1)}h`;
-    if (aEl) aEl.textContent = `$${Math.round(amount)}`;
-},
-
-// History
-initHistory() {
-    this.bindEvents();
-    const select = document.getElementById('periodSelect');
-    if (select) {
-        select.addEventListener('change', () => this.loadHistoryData());
-        this.loadHistoryPeriods();
-    }
-},
+    },
 
     async loadHistoryPeriods() {
-    try {
-        const res = await fetch('/salary/api/history/periods');
-        const periods = await res.json();
-        const select = document.getElementById('periodSelect');
-        select.innerHTML = '';
+        try {
+            const res = await fetch('/salary/api/history/periods');
+            const periods = await res.json();
+            const select = document.getElementById('periodSelect');
+            select.innerHTML = '';
 
-        if (periods.length === 0) {
-            select.innerHTML = '<option>無資料</option>';
-            return;
-        }
+            if (periods.length === 0) {
+                select.innerHTML = '<option>無資料</option>';
+                return;
+            }
 
-        const todayStr = this.formatDate(new Date());
-        periods.forEach(p => {
-            const opt = document.createElement('option');
-            opt.value = `${p.start},${p.end}`;
-            opt.textContent = p.label;
-            select.appendChild(opt);
-            if (todayStr >= p.start && todayStr <= p.end) select.value = opt.value;
-        });
+            const todayStr = this.formatDate(new Date());
+            periods.forEach(p => {
+                const opt = document.createElement('option');
+                opt.value = `${p.start},${p.end}`;
+                opt.textContent = p.label;
+                select.appendChild(opt);
+                if (todayStr >= p.start && todayStr <= p.end) select.value = opt.value;
+            });
 
-        this.loadHistoryData();
-    } catch (error) { }
-},
+            this.loadHistoryData();
+        } catch (error) { }
+    },
 
     async loadHistoryData() {
-    const select = document.getElementById('periodSelect');
-    if (!select || !select.value) return;
-    const [start, end] = select.value.split(',');
+        const select = document.getElementById('periodSelect');
+        if (!select || !select.value) return;
+        const [start, end] = select.value.split(',');
 
-    try {
-        const res = await fetch(`/salary/api/history/data?start_date=${start}&end_date=${end}`);
-        const data = await res.json();
+        try {
+            const res = await fetch(`/salary/api/history/data?start_date=${start}&end_date=${end}`);
+            const data = await res.json();
 
-        document.getElementById('historyHours').textContent = `${data.total_hours.toFixed(1)}h`;
-        document.getElementById('historyAmount').textContent = `$${Math.round(data.total_amount)}`;
-        document.getElementById('historyCount').textContent = data.record_count;
+            document.getElementById('historyHours').textContent = `${data.total_hours.toFixed(1)}h`;
+            document.getElementById('historyAmount').textContent = `$${Math.round(data.total_amount)}`;
+            document.getElementById('historyCount').textContent = data.record_count;
 
-        const tbody = document.getElementById('historyTableBody');
-        tbody.innerHTML = '';
-        data.records.sort((a, b) => a.date < b.date ? 1 : -1);
+            const tbody = document.getElementById('historyTableBody');
+            tbody.innerHTML = '';
+            data.records.sort((a, b) => a.date < b.date ? 1 : -1);
 
-        data.records.forEach(r => {
-            const tr = document.createElement('tr');
-            tr.style.cursor = 'pointer';
-            tr.onclick = () => this.openEditModal(r);
-            tr.innerHTML = r.type === 'shift' ? `
+            data.records.forEach(r => {
+                const tr = document.createElement('tr');
+                tr.style.cursor = 'pointer';
+                tr.onclick = () => this.openEditModal(r);
+                tr.innerHTML = r.type === 'shift' ? `
                     <td>${r.date}</td><td>排班</td><td>${r.start_time} - ${r.end_time}</td><td>${r.hours}</td><td>${r.rate}/hr -> $${Math.round(r.amount)}</td><td></td>
                 ` : `
                     <td>${r.date}</td><td style="color:#ffd700">獎金</td><td></td><td></td><td>$${r.amount}</td><td>${r.note || ''}</td>
                 `;
-            tbody.appendChild(tr);
-        });
-    } catch (error) { }
-},
+                tbody.appendChild(tr);
+            });
+        } catch (error) { }
+    },
 
-initSettings() {
-    const form = document.getElementById('settingsForm');
-    if (form) {
-        form.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const data = Object.fromEntries(new FormData(e.target).entries());
-            try {
-                const res = await fetch('/salary/api/settings', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(data)
-                });
-                if (res.ok) alert('設定已儲存');
-            } catch (error) { alert('網路錯誤'); }
-        });
+    initSettings() {
+        const form = document.getElementById('settingsForm');
+        if (form) {
+            form.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const data = Object.fromEntries(new FormData(e.target).entries());
+                try {
+                    const res = await fetch('/salary/api/settings', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(data)
+                    });
+                    if (res.ok) alert('設定已儲存');
+                } catch (error) { alert('網路錯誤'); }
+            });
+        }
     }
-}
 };
 
 document.addEventListener('DOMContentLoaded', () => {
