@@ -29,7 +29,18 @@
 </div>
 
 <div class="expense-dashboard today-view">
+    <!-- Today's Total Summary -->
+    <div class="today-summary-header" style="margin-bottom: 25px;">
+        <div class="card summary-card glass-premium" style="text-align: center; padding: 25px;">
+            <span class="label"
+                style="font-size: 0.9rem; opacity: 0.7; display: block; margin-bottom: 5px;">今日累計支出</span>
+            <span class="value" id="todayTotalAmount"
+                style="font-size: 2.2rem; font-weight: 800; color: var(--accent-color);">$0</span>
+        </div>
+    </div>
+
     <!-- Quick Add Bar -->
+
     <div class="quick-add-container" style="margin-bottom: 30px;">
         <button class="btn btn-primary btn-block" id="openAddExpenseBtn"
             style="height: 60px; font-size: 1.1rem; border-radius: 16px;">

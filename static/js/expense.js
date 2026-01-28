@@ -131,13 +131,23 @@ const expenseApp = {
     },
 
     async loadTodayData() {
-        const today = new Date().toISOString().split('T')[0];
-        const tomorrow = new Date(new Date().getTime() + 86400000).toISOString().split('T')[0];
-        const res = await fetch(`/expense/api/records?start_date=${today}&end_date=${tomorrow}`);
+        const today = new Date();
+        const offset = today.getTimezoneOffset() * 60000;
+        const localDate = new Date(today - offset).toISOString().split('T')[0];
+        const tomorrow = new Date(today.getTime() + 86400000 - offset).toISOString().split('T')[0];
+
+        const res = await fetch(`/expense/api/records?start_date=${localDate}&end_date=${tomorrow}`);
         const data = await res.json();
         this.records = data.records;
+
+        // Update today's total
+        const total = data.total_amount || 0;
+        const totalEl = document.getElementById('todayTotalAmount');
+        if (totalEl) totalEl.textContent = `$${Math.round(total).toLocaleString()}`;
+
         this.renderList('expenseList');
     },
+
 
     // Navigation Logic (iOS Way)
     switchLevel(level, context = {}) {
