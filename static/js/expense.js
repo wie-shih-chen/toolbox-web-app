@@ -172,9 +172,9 @@ const expenseApp = {
 
     async loadTodayData() {
         const today = new Date();
-        const offset = today.getTimezoneOffset() * 60000;
-        const localDate = new Date(today - offset).toISOString().split('T')[0];
-        const tomorrow = new Date(today.getTime() + 86400000 - offset).toISOString().split('T')[0];
+        const localDate = this.formatDate(today);
+        const tomorrow = this.formatDate(new Date(today.getTime() + 86400000));
+
 
         const res = await fetch(`/expense/api/records?start_date=${localDate}&end_date=${tomorrow}`);
         const data = await res.json();
@@ -283,7 +283,9 @@ const expenseApp = {
     },
 
     async renderRecords(day) {
-        const res = await fetch(`/expense/api/records?start_date=${day.date}&end_date=${new Date(new Date(day.date).getTime() + 86400000).toISOString().split('T')[0]}`);
+        const nextDay = new Date(new Date(day.date).getTime() + 86400000);
+        const res = await fetch(`/expense/api/records?start_date=${day.date}&end_date=${this.formatDate(nextDay)}`);
+
         const data = await res.json();
         this.records = data.records;
         this.renderList('expenseList');
@@ -359,11 +361,8 @@ const expenseApp = {
     openAddModal() {
         this.resetForm();
         const now = new Date();
-        // Correctly handle local timezone offset for YYYY-MM-DD
-        const offset = now.getTimezoneOffset() * 60000;
-        const localISOTime = new Date(now - offset).toISOString();
 
-        document.getElementById('expenseDate').value = localISOTime.split('T')[0];
+        document.getElementById('expenseDate').value = this.formatDate(now);
         document.getElementById('expenseTime').value = now.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
         document.getElementById('modalTitle').textContent = '新增支出';
         document.getElementById('deleteExpenseBtn').classList.add('hidden');
@@ -485,7 +484,13 @@ const expenseApp = {
         this.currentPeriod.end = this.formatDate(n);
         this.loadData();
     },
-    formatDate(d) { return d.toISOString().split('T')[0]; },
+    formatDate(date) {
+        const y = date.getFullYear();
+        const m = String(date.getMonth() + 1).padStart(2, '0');
+        const d = String(date.getDate()).padStart(2, '0');
+        return `${y}-${m}-${d}`;
+    },
+
     updateDaysInMonth() {
         const y = parseInt(document.getElementById('yearSelect').value);
         const m = parseInt(document.getElementById('monthSelect').value);
@@ -507,7 +512,7 @@ const expenseApp = {
         const s = d ? `${y}-${m}-${d}` : `${y}-${m}-10`;
         let e;
         if (d) {
-            e = new Date(new Date(s).getTime() + 86400000).toISOString().split('T')[0];
+            e = this.formatDate(new Date(new Date(s).getTime() + 86400000));
         } else {
             let ey = parseInt(y); let em = parseInt(m) + 1; if (em > 12) { em = 1; ey++; }
             e = `${ey}-${String(em).padStart(2, '0')}-10`;
