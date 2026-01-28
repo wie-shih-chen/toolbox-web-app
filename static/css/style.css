@@ -9,7 +9,7 @@
     --danger-color: #ff6b6b;
     --success-color: #2ed573;
     --border-color: #404040;
-    
+
     --font-main: 'Inter', 'Noto Sans TC', sans-serif;
 }
 
@@ -71,13 +71,49 @@ a {
     transition: all 0.2s;
 }
 
-.nav-link:hover, .nav-link.active {
+.nav-link:hover,
+.nav-link.active {
     background-color: var(--card-bg);
     color: var(--text-primary);
 }
 
-.nav-link.active {
+.nav-link.active:not(.sub) {
     border-left: 3px solid var(--accent-color);
+}
+
+/* Hierarchical Navigation */
+.nav-group {
+    margin-bottom: 10px;
+}
+
+.nav-link-parent {
+    padding: 12px 15px;
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: var(--text-secondary);
+    letter-spacing: 0.5px;
+    margin-bottom: 5px;
+    display: flex;
+    align-items: center;
+}
+
+.sub-nav-links {
+    list-style: none;
+    margin-left: 15px;
+    border-left: 1px solid var(--border-color);
+}
+
+.nav-link.sub {
+    padding: 8px 15px;
+    font-size: 0.95rem;
+    margin-left: 5px;
+}
+
+.nav-link.sub.active {
+    background-color: var(--card-bg);
+    border-left: 2px solid var(--accent-color);
+    margin-left: 0;
+    border-radius: 0 8px 8px 0;
 }
 
 /* Main Content */
@@ -179,7 +215,9 @@ a {
 }
 
 /* Common form elements */
-input, select, textarea {
+input,
+select,
+textarea {
     background-color: #404040;
     border: 1px solid var(--border-color);
     color: white;
@@ -188,7 +226,9 @@ input, select, textarea {
     font-family: var(--font-main);
 }
 
-input:focus, select:focus, textarea:focus {
+input:focus,
+select:focus,
+textarea:focus {
     outline: none;
     border-color: var(--accent-color);
 }

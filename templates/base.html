@@ -26,14 +26,9 @@
             <ul class="nav-links">
                 <li><a href="{{ url_for('main.index') }}"
                         class="nav-link {% if request.endpoint == 'main.index' %}active{% endif %}">🏠 首頁</a></li>
+
                 <li><a href="{{ url_for('salary.index') }}"
-                        class="nav-link {% if 'salary.index' in request.endpoint %}active{% endif %}">💰 薪水小幫手</a></li>
-                <li><a href="{{ url_for('salary.monthly') }}"
-                        class="nav-link {% if 'salary.monthly' in request.endpoint %}active{% endif %}">📅 月曆檢視</a></li>
-                <li><a href="{{ url_for('salary.history') }}"
-                        class="nav-link {% if 'salary.history' in request.endpoint %}active{% endif %}">📜 歷史排班</a></li>
-                <li><a href="{{ url_for('salary.settings') }}"
-                        class="nav-link {% if 'salary.settings' in request.endpoint %}active{% endif %}">⚙️ 設定</a></li>
+                        class="nav-link {% if 'salary' in request.endpoint %}active{% endif %}">💰 薪水小幫手</a></li>
                 <li><a href="{{ url_for('download.index') }}"
                         class="nav-link {% if 'download' in request.endpoint %}active{% endif %}">🎬 影音下載器</a></li>
             </ul>

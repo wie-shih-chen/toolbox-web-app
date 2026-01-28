@@ -8,6 +8,26 @@
 {% endblock %}
 
 {% block content %}
+<!-- Horizontal Navigation Bar -->
+<div class="salary-nav">
+    <a href="{{ url_for('salary.index') }}"
+        class="salary-nav-item {% if request.endpoint == 'salary.index' %}active{% endif %}">
+        📅 本週排班
+    </a>
+    <a href="{{ url_for('salary.monthly') }}"
+        class="salary-nav-item {% if request.endpoint == 'salary.monthly' %}active{% endif %}">
+        🗓️ 月曆檢視
+    </a>
+    <a href="{{ url_for('salary.history') }}"
+        class="salary-nav-item {% if request.endpoint == 'salary.history' %}active{% endif %}">
+        📜 歷史排班
+    </a>
+    <a href="{{ url_for('salary.settings') }}"
+        class="salary-nav-item {% if request.endpoint == 'salary.settings' %}active{% endif %}">
+        ⚙️ 設定
+    </a>
+</div>
+
 <div class="salary-history">
     <!-- Period Selector -->
     <div class="history-controls card">
