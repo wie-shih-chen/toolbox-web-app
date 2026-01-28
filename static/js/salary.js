@@ -193,12 +193,28 @@ const salaryApp = {
 
     switchTab(tabName) {
         document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-        document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+        document.querySelectorAll('.tab-content').forEach(c => {
+            c.classList.remove('active');
+            // Disable required for hidden fields so they don't block submit
+            c.querySelectorAll('input[required]').forEach(input => {
+                input.disabled = true;
+            });
+        });
 
-        document.querySelector(`.tab-btn[data-tab="${tabName}"]`).classList.add('active');
-        document.getElementById(`${tabName}-tab`).classList.add('active');
+        const activeBtn = document.querySelector(`.tab-btn[data-tab="${tabName}"]`);
+        const activeContent = document.getElementById(`${tabName}-tab`);
+
+        if (activeBtn) activeBtn.classList.add('active');
+        if (activeContent) {
+            activeContent.classList.add('active');
+            activeContent.querySelectorAll('input').forEach(input => {
+                input.disabled = false;
+            });
+        }
+
         document.getElementById('recordType').value = tabName;
     },
+
 
     resetForm() {
         document.getElementById('recordForm').reset();
