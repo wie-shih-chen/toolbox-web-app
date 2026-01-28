@@ -47,19 +47,21 @@
         </div>
     </div>
 
-    <!-- Quick Add Bar -->
-    <div class="quick-add-container glass">
-        <button class="btn btn-primary btn-block" id="openAddExpenseBtn">
-            <span class="material-icons">add_circle_outline</span> 新增一筆紀錄
-        </button>
-    </div>
-
     <!-- Period View Control -->
-    <div class="period-header">
-        <span class="period-label" id="periodDisplayTitle">當前週期 (10號起)</span>
-        <div class="nav-controls">
-            <button class="btn btn-secondary btn-sm" id="prevPeriodBtn">◀</button>
-            <button class="btn btn-secondary btn-sm" id="nextPeriodBtn">▶</button>
+    <div class="period-header" style="flex-direction: column; align-items: flex-start; gap: 10px; padding: 15px 20px;">
+        <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
+            <span class="period-label">
+                帳務週期：<span id="periodDisplayTitle" style="color: var(--accent-color); font-weight: 700;">{{ start_date
+                    }} ~ {{ end_date }}</span>
+            </span>
+            <div class="nav-controls">
+                <button class="btn btn-secondary btn-sm" id="prevPeriodBtn">◀</button>
+                <button class="btn btn-secondary btn-sm" id="nextPeriodBtn">▶</button>
+            </div>
+        </div>
+        <div id="weekRangeBar"
+            style="font-size: 0.85rem; color: var(--text-secondary); background: rgba(255,255,255,0.05); padding: 5px 12px; border-radius: 20px;">
+            本週區間：<span id="weekDisplayRange" style="color: white; font-weight: 500;">載入中...</span>
         </div>
     </div>
 

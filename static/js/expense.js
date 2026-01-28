@@ -109,6 +109,13 @@ const expenseApp = {
         try {
             const res = await fetch(url);
             const data = await res.json();
+            const display = document.getElementById('periodDisplayTitle');
+            if (display) display.textContent = `${data.period.start} ~ ${data.period.end}`;
+
+            const weekDisp = document.getElementById('weekDisplayRange');
+            if (weekDisp && data.this_week_range) {
+                weekDisp.textContent = `${data.this_week_range.start} ~ ${data.this_week_range.end}`;
+            }
             this.groupedData = data;
             this.renderSummary(data.total_amount);
 

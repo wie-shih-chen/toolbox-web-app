@@ -202,11 +202,18 @@ class ExpenseService:
             w_data['days'] = sorted_days
             sorted_weeks.append(w_data)
 
+        # Calculate current week range (Mon-Sun) for UI display
+        now = datetime.now()
+        this_wk_start = (now - timedelta(days=now.weekday())).strftime('%Y-%m-%d')
+        this_wk_end = (now - timedelta(days=now.weekday()) + timedelta(days=6)).strftime('%Y-%m-%d')
+
         return {
             "weeks": sorted_weeks,
             "total_amount": data['total_amount'],
-            "period": data['period']
+            "period": data['period'],
+            "this_week_range": {"start": this_wk_start, "end": this_wk_end}
         }
+
 
     def get_settings(self):
         data = self._load_data()
