@@ -311,9 +311,16 @@ const salaryApp = {
                 alert('結束時間必須晚於開始時間');
                 return;
             }
+            // Logic handled by backend now, but let's be clean
+            delete data.hours;
+            if (data.rate === '') delete data.rate;
         } else {
+            // Bonus mode
             if (data.hours === '') delete data.hours;
             else data.hours = parseFloat(data.hours);
+
+            if (data.amount === '') data.amount = 0;
+            else data.amount = parseFloat(data.amount);
         }
 
         try {

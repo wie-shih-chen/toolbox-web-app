@@ -63,6 +63,24 @@ class SalaryService:
         filtered.sort(key=lambda x: (x['date'], x.get('start_time', '')))
         return filtered
 
+    def _calculate_hours(self, start_time_str, end_time_str):
+        """
+        Calculate duration in hours between two time strings in 'HH:MM' format.
+        Handles cases where end time is after midnight (not implemented yet, but good for future).
+        """
+        try:
+            start_dt = datetime.strptime(start_time_str, '%H:%M')
+            end_dt = datetime.strptime(end_time_str, '%H:%M')
+            
+            # If end time is before start time, assume it's the next day
+            if end_dt < start_dt:
+                end_dt += timedelta(days=1)
+                
+            delta = end_dt - start_dt
+            return delta.total_seconds() / 3600.0
+        except (ValueError, TypeError):
+            return 0.0
+
     def add_record(self, record_data):
         data = self._load_data()
         
@@ -71,16 +89,30 @@ class SalaryService:
         
         # Calculate amount if shift
         if new_record['type'] == 'shift':
+            # Calculate hours from times if not provided or empty
+            start_t = new_record.get('start_time')
+            end_t = new_record.get('end_time')
+            
+            if start_t and end_t:
+                new_record['hours'] = self._calculate_hours(start_t, end_t)
+            
             # Ensure proper types
-            hours = float(new_record['hours'])
+            try:
+                hours = float(new_record.get('hours', 0))
+            except (ValueError, TypeError):
+                hours = 0.0
             
             # Handle rate: empty string or missing -> use default
             raw_rate = new_record.get('rate')
             if raw_rate == '' or raw_rate is None:
                 rate = float(data['settings']['hourly_rate'])
             else:
-                rate = float(raw_rate)
+                try:
+                    rate = float(raw_rate)
+                except (ValueError, TypeError):
+                    rate = float(data['settings']['hourly_rate'])
                 
+            new_record['hours'] = hours
             new_record['rate'] = rate
             new_record['amount'] = hours * rate
         else:
@@ -105,14 +137,25 @@ class SalaryService:
                 
                 # Recalculate if shift
                 if r['type'] == 'shift':
-                    r['hours'] = float(r['hours'])
+                    start_t = r.get('start_time')
+                    end_t = r.get('end_time')
+                    if start_t and end_t:
+                        r['hours'] = self._calculate_hours(start_t, end_t)
+                    
+                    try:
+                        r['hours'] = float(r.get('hours', 0))
+                    except (ValueError, TypeError):
+                        r['hours'] = 0.0
                     
                     # Handle rate: empty string or missing -> use default
                     raw_rate = r.get('rate')
                     if raw_rate == '' or raw_rate is None:
                         rate = float(data['settings']['hourly_rate'])
                     else:
-                        rate = float(raw_rate)
+                        try:
+                            rate = float(raw_rate)
+                        except (ValueError, TypeError):
+                            rate = float(data['settings']['hourly_rate'])
                         
                     r['rate'] = rate
                     r['amount'] = r['hours'] * r['rate']
