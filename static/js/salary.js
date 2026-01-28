@@ -165,6 +165,7 @@ const salaryApp = {
             this.switchTab('shift');
             document.getElementById('startTime').value = record.start_time;
             document.getElementById('endTime').value = record.end_time;
+            document.getElementById('shiftRate').value = record.rate || '';
         } else {
             this.switchTab('bonus');
             document.getElementById('bonusAmount').value = record.amount;
@@ -193,6 +194,8 @@ const salaryApp = {
         // Set defaults
         document.getElementById('startTime').value = '09:00';
         document.getElementById('endTime').value = '18:00';
+        const rateInput = document.getElementById('shiftRate');
+        if (rateInput) rateInput.value = '';
     },
 
     // API Actions
@@ -561,6 +564,9 @@ const salaryApp = {
 
             data.records.forEach(r => {
                 const tr = document.createElement('tr');
+                tr.style.cursor = 'pointer';
+                tr.onclick = () => this.openEditModal(r);
+
                 if (r.type === 'shift') {
                     tr.innerHTML = `
                         <td>${r.date}</td>
