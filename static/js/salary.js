@@ -585,7 +585,7 @@ const salaryApp = {
                 tr.innerHTML = r.type === 'shift' ? `
                     <td>${r.date}</td><td>排班</td><td>${r.start_time} - ${r.end_time}</td><td>${r.hours}</td><td>${r.rate}/hr -> $${Math.round(r.amount)}</td><td></td>
                 ` : `
-                    <td>${r.date}</td><td style="color:#ffd700">獎金</td><td></td><td></td><td>$${r.amount}</td><td>${r.note || ''}</td>
+                    <td>${r.date}</td><td style="color:#ffd700">獎金</td><td></td><td>${r.hours || ''}</td><td>$${r.amount}</td><td>${r.note || ''}</td>
                 `;
                 tbody.appendChild(tr);
             });

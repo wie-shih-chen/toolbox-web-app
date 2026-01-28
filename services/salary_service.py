@@ -218,8 +218,7 @@ class SalaryService:
         total_amount = 0
         
         for r in records:
-            if r['type'] == 'shift':
-                total_hours += r['hours']
+            total_hours += float(r.get('hours', 0))
             total_amount += r['amount']
             
         return {
@@ -315,8 +314,8 @@ class SalaryService:
                 total_hours += r['hours']
                 total_amount += r['amount']
             else:
-                # 獎金: 跳過 開始、結束、時數 欄位 (3個逗號)，金額在第6欄
-                line = f"{r['date']},獎金,,,,{r['amount']},{r.get('note', '')}"
+                # 獎金: 跳過 開始、結束 欄位 (2個逗號)，時數在第5欄，金額在第6欄
+                line = f"{r['date']},獎金,,,{r.get('hours', '')},{r['amount']},{r.get('note', '')}"
                 total_amount += r['amount']
             lines.append(line)
         
@@ -389,8 +388,7 @@ class SalaryService:
         total_amount = 0
         
         for r in records:
-            if r['type'] == 'shift':
-                total_hours += r['hours']
+            total_hours += float(r.get('hours', 0))
             total_amount += r['amount']
             
         return {
