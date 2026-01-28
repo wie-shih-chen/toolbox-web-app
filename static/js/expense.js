@@ -334,116 +334,118 @@ const expenseApp = {
         this.triggerHaptic();
         document.getElementById('expenseModal').classList.add('show');
     },
+    openEditModal(record) {
+        this.resetForm();
+        document.getElementById('expenseId').value = record.id;
+        document.getElementById('expenseNote').value = record.note;
+        document.getElementById('expenseAmount').value = record.amount;
+        document.getElementById('expenseDate').value = record.timestamp.split(' ')[0];
+        document.getElementById('expenseTime').value = record.timestamp.split(' ')[1].substring(0, 5);
 
-
-
-    document.getElementById('expenseDate').value = record.timestamp.split(' ')[0];
-    document.getElementById('expenseTime').value = record.timestamp.split(' ')[1].substring(0, 5);
-
-    if(record.category) {
-        const catName = record.category.includes(' ') ? record.category.split(' ')[1] : record.category;
-document.getElementById('expenseCategory').value = catName;
+        if (record.category) {
+            const catName = record.category.includes(' ') ? record.category.split(' ')[1] : record.category;
+            document.getElementById('expenseCategory').value = catName;
         }
 
-// Lock category on edit
-const catSelect = document.getElementById('expenseCategory');
-if (catSelect) catSelect.disabled = true;
+        // Lock category on edit
+        const catSelect = document.getElementById('expenseCategory');
+        if (catSelect) catSelect.disabled = true;
 
-this.triggerHaptic();
-document.getElementById('expenseModal').classList.add('show');
+        this.triggerHaptic();
+        document.getElementById('expenseModal').classList.add('show');
     },
 
 
-closeModal() { document.getElementById('expenseModal').classList.remove('show'); },
-resetForm() {
-    document.getElementById('expenseForm').reset();
-    const id = document.getElementById('expenseId');
-    if (id) id.value = '';
-},
+    closeModal() { document.getElementById('expenseModal').classList.remove('show'); },
+    resetForm() {
+        document.getElementById('expenseForm').reset();
+        const id = document.getElementById('expenseId');
+        if (id) id.value = '';
+    },
 
     async handleSubmit(e) {
-    e.preventDefault();
-    const fd = new FormData(e.target);
-    const data = Object.fromEntries(fd.entries());
-    data.timestamp = `${document.getElementById('expenseDate').value} ${document.getElementById('expenseTime').value}:00`;
-    const id = data.id;
-    const res = await fetch(id ? `/expense/api/records/${id}` : '/expense/api/records', {
-        method: id ? 'PUT' : 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data)
-    });
-    if (res.ok) {
-        this.triggerHaptic();
-        this.closeModal();
-        this.loadData();
-    }
-},
+        e.preventDefault();
+        const fd = new FormData(e.target);
+        const data = Object.fromEntries(fd.entries());
+        data.timestamp = `${document.getElementById('expenseDate').value} ${document.getElementById('expenseTime').value}:00`;
+        const id = data.id;
+        const res = await fetch(id ? `/expense/api/records/${id}` : '/expense/api/records', {
+            method: id ? 'PUT' : 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+        });
+        if (res.ok) {
+            this.triggerHaptic();
+            this.closeModal();
+            this.loadData();
+        }
+    },
 
 
     async deleteCurrentRecord() {
-    if (!confirm('刪除？')) return;
-    this.triggerHaptic();
-    const id = document.getElementById('expenseId').value;
-    const res = await fetch(`/expense/api/records/${id}`, { method: 'DELETE' });
-    if (res.ok) {
-        this.closeModal();
-        this.loadData(); // This currently refreshes everything based on current period or today status
-    }
-},
+        if (!confirm('刪除？')) return;
+        this.triggerHaptic();
+        const id = document.getElementById('expenseId').value;
+        const res = await fetch(`/expense/api/records/${id}`, { method: 'DELETE' });
+        if (res.ok) {
+            this.closeModal();
+            this.loadData(); // This currently refreshes everything based on current period or today status
+        }
+    },
 
 
-changePeriod(delta) {
-    const d = new Date(this.currentPeriod.start);
-    d.setMonth(d.getMonth() + delta);
-    this.currentPeriod.start = this.formatDate(d);
-    const n = new Date(d); n.setMonth(n.getMonth() + 1);
-    this.currentPeriod.end = this.formatDate(n);
-    this.loadData();
-},
-formatDate(d) { return d.toISOString().split('T')[0]; },
-updateDaysInMonth() {
-    const y = parseInt(document.getElementById('yearSelect').value);
-    const m = parseInt(document.getElementById('monthSelect').value);
-    const ds = document.getElementById('daySelect');
-    if (!ds) return;
-    const dim = new Date(y, m, 0).getDate();
-    ds.innerHTML = '<option value="">全月份</option>';
-    for (let i = 1; i <= dim; i++) {
-        const opt = document.createElement('option');
-        opt.value = String(i).padStart(2, '0');
-        opt.textContent = `${i} 號`;
-        ds.appendChild(opt);
-    }
-},
+    changePeriod(delta) {
+        const d = new Date(this.currentPeriod.start);
+        d.setMonth(d.getMonth() + delta);
+        this.currentPeriod.start = this.formatDate(d);
+        const n = new Date(d); n.setMonth(n.getMonth() + 1);
+        this.currentPeriod.end = this.formatDate(n);
+        this.loadData();
+    },
+    formatDate(d) { return d.toISOString().split('T')[0]; },
+    updateDaysInMonth() {
+        const y = parseInt(document.getElementById('yearSelect').value);
+        const m = parseInt(document.getElementById('monthSelect').value);
+        const ds = document.getElementById('daySelect');
+        if (!ds) return;
+        const dim = new Date(y, m, 0).getDate();
+        ds.innerHTML = '<option value="">全月份</option>';
+        for (let i = 1; i <= dim; i++) {
+            const opt = document.createElement('option');
+            opt.value = String(i).padStart(2, '0');
+            opt.textContent = `${i} 號`;
+            ds.appendChild(opt);
+        }
+    },
     async loadHistoryData() {
-    const y = document.getElementById('yearSelect').value;
-    const m = document.getElementById('monthSelect').value;
-    const d = document.getElementById('daySelect').value;
-    const s = d ? `${y}-${m}-${d}` : `${y}-${m}-10`;
-    let e;
-    if (d) {
-        e = new Date(new Date(s).getTime() + 86400000).toISOString().split('T')[0];
-    } else {
-        let ey = parseInt(y); let em = parseInt(m) + 1; if (em > 12) { em = 1; ey++; }
-        e = `${ey}-${String(em).padStart(2, '0')}-10`;
+        const y = document.getElementById('yearSelect').value;
+        const m = document.getElementById('monthSelect').value;
+        const d = document.getElementById('daySelect').value;
+        const s = d ? `${y}-${m}-${d}` : `${y}-${m}-10`;
+        let e;
+        if (d) {
+            e = new Date(new Date(s).getTime() + 86400000).toISOString().split('T')[0];
+        } else {
+            let ey = parseInt(y); let em = parseInt(m) + 1; if (em > 12) { em = 1; ey++; }
+            e = `${ey}-${String(em).padStart(2, '0')}-10`;
+        }
+        const res = await fetch(`/expense/api/records?start_date=${s}&end_date=${e}`);
+        const data = await res.json();
+        this.records = data.records;
+        const ht = document.getElementById('historyTotal'); if (ht) ht.textContent = `$${Math.round(data.total_amount).toLocaleString()}`;
+        this.renderList('historyExpenseList');
+    },
+    downloadCsv() {
+        // Simplified range logic for download
+        const y = document.getElementById('yearSelect').value;
+        const m = document.getElementById('monthSelect').value;
+        const d = document.getElementById('daySelect').value;
+        const s = d ? `${y}-${m}-${d}` : `${y}-${m}-10`;
+        let e;
+        if (d) { e = new Date(new Date(s).getTime() + 86400000).toISOString().split('T')[0]; }
+        else { let ey = parseInt(y); let em = parseInt(m) + 1; if (em > 12) { em = 1; ey++; } e = `${ey}-${String(em).padStart(2, '0')}-10`; }
+        window.location.href = `/expense/api/records/export?start_date=${s}&end_date=${e}`;
     }
-    const res = await fetch(`/expense/api/records?start_date=${s}&end_date=${e}`);
-    const data = await res.json();
-    this.records = data.records;
-    const ht = document.getElementById('historyTotal'); if (ht) ht.textContent = `$${Math.round(data.total_amount).toLocaleString()}`;
-    this.renderList('historyExpenseList');
-},
-downloadCsv() {
-    // Simplified range logic for download
-    const y = document.getElementById('yearSelect').value;
-    const m = document.getElementById('monthSelect').value;
-    const d = document.getElementById('daySelect').value;
-    const s = d ? `${y}-${m}-${d}` : `${y}-${m}-10`;
-    let e;
-    if (d) { e = new Date(new Date(s).getTime() + 86400000).toISOString().split('T')[0]; }
-    else { let ey = parseInt(y); let em = parseInt(m) + 1; if (em > 12) { em = 1; ey++; } e = `${ey}-${String(em).padStart(2, '0')}-10`; }
-    window.location.href = `/expense/api/records/export?start_date=${s}&end_date=${e}`;
-}
 };
 
 document.addEventListener('DOMContentLoaded', () => {
