@@ -161,9 +161,12 @@ const salaryApp = {
         document.getElementById('modalTitle').textContent = `新增紀錄 (${targetDate.getMonth() + 1}/${targetDate.getDate()})`;
         document.getElementById('deleteBtn').classList.add('hidden');
         this.switchTab('shift');
+        const tabs = document.querySelector('.tabs');
+        if (tabs) tabs.classList.remove('hidden');
 
         document.getElementById('recordModal').classList.add('show');
     },
+
 
     openEditModal(record) {
         this.resetForm();
@@ -186,9 +189,12 @@ const salaryApp = {
             if (hoursField) hoursField.value = record.hours || '';
         }
 
+        const tabs = document.querySelector('.tabs');
+        if (tabs) tabs.classList.add('hidden');
 
         document.getElementById('recordModal').classList.add('show');
     },
+
 
     closeModal() {
         document.getElementById('recordModal').classList.remove('show');
@@ -483,8 +489,11 @@ const salaryApp = {
         document.getElementById('modalTitle').textContent = `新增紀錄 (${date.getMonth() + 1}/${date.getDate()})`;
         document.getElementById('deleteBtn').classList.add('hidden');
         this.switchTab('shift');
+        const tabs = document.querySelector('.tabs');
+        if (tabs) tabs.classList.remove('hidden');
         document.getElementById('recordModal').classList.add('show');
     },
+
 
     updateMonthlySummary(start, end) {
         const startStr = this.formatDate(start);
