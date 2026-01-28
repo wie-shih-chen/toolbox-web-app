@@ -413,10 +413,12 @@ const expenseApp = {
         });
 
         const deleteBtn = document.getElementById('deleteExpenseBtn');
-        const submitBtn = document.querySelector('#expenseForm button[type="submit"]');
+        const submitBtn = document.querySelector('#recordForm button[type="submit"]');
+        const quickTags = document.getElementById('mealQuickTags');
 
         if (deleteBtn) deleteBtn.classList.toggle('hidden', !isEditable);
         if (submitBtn) submitBtn.classList.toggle('hidden', !isEditable);
+        if (quickTags) quickTags.classList.toggle('hidden', !isEditable);
 
         this.triggerHaptic();
         document.getElementById('expenseModal').classList.add('show');

@@ -481,6 +481,11 @@ input[type="time"].input-pill::-webkit-calendar-picker-indicator {
         transform: translateY(0);
     }
 
+    .hidden {
+        display: none !important;
+    }
+
+
     .modal-body {
         padding: 20px;
     }
