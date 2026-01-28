@@ -413,7 +413,7 @@ const expenseApp = {
         });
 
         const deleteBtn = document.getElementById('deleteExpenseBtn');
-        const submitBtn = document.querySelector('#recordForm button[type="submit"]');
+        const submitBtn = document.querySelector('#expenseForm button[type="submit"]');
         const quickTags = document.getElementById('mealQuickTags');
 
         if (deleteBtn) deleteBtn.classList.toggle('hidden', !isEditable);
