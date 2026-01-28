@@ -299,10 +299,18 @@ const salaryApp = {
             const res = await fetch(`/salary/api/records/${id}`, { method: 'DELETE' });
             if (res.ok) {
                 this.closeModal();
-                this.loadWeek();
+                // Context-aware refresh
+                if (document.querySelector('.salary-dashboard')) {
+                    this.loadWeek();
+                } else if (document.querySelector('.salary-monthly')) {
+                    this.loadMonth();
+                } else if (document.querySelector('.salary-history')) {
+                    this.loadHistoryData();
+                }
             } else {
                 alert('刪除失敗');
             }
+
         } catch (error) {
             console.error(error);
         }
