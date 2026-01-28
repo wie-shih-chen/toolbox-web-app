@@ -101,6 +101,30 @@ const expenseApp = {
         }
     },
 
+    getActivePeriod() {
+        const now = new Date();
+        const year = now.getFullYear();
+        const month = now.getMonth();
+        let start, end;
+
+        if (now.getDate() >= 10) {
+            start = new Date(year, month, 10);
+            end = new Date(year, month + 1, 10);
+        } else {
+            start = new Date(year, month - 1, 10);
+            end = new Date(year, month, 10);
+        }
+        return { start, end };
+    },
+
+    isDateEditable(dateStr) {
+        const period = this.getActivePeriod();
+        const date = new Date(dateStr);
+        // Records on or after the start of current cycle are editable
+        return date >= period.start;
+    },
+
+
     async loadSettings() {
         try {
             const res = await fetch('/expense/api/settings');
@@ -348,29 +372,56 @@ const expenseApp = {
         const catSelect = document.getElementById('expenseCategory');
         if (catSelect) catSelect.disabled = false;
 
+        // Reset read-only status for inputs
+        document.querySelectorAll('#expenseForm input').forEach(input => {
+            if (input.type !== 'hidden') {
+                input.readOnly = false;
+                input.disabled = false;
+            }
+        });
+        const submitBtn = document.querySelector('#expenseForm button[type="submit"]');
+        if (submitBtn) submitBtn.classList.remove('hidden');
+
         this.triggerHaptic();
         document.getElementById('expenseModal').classList.add('show');
     },
+
     openEditModal(record) {
         this.resetForm();
+        const isEditable = this.isDateEditable(record.timestamp.split(' ')[0]);
+
         document.getElementById('expenseId').value = record.id;
         document.getElementById('expenseNote').value = record.note;
         document.getElementById('expenseAmount').value = record.amount;
         document.getElementById('expenseDate').value = record.timestamp.split(' ')[0];
         document.getElementById('expenseTime').value = record.timestamp.split(' ')[1].substring(0, 5);
 
+        document.getElementById('modalTitle').textContent = isEditable ? '編輯支出' : '查看支出 (唯讀)';
+
         if (record.category) {
             const catName = record.category.includes(' ') ? record.category.split(' ')[1] : record.category;
             document.getElementById('expenseCategory').value = catName;
         }
 
-        // Lock category on edit
+        // Lock category on edit or if read-only
         const catSelect = document.getElementById('expenseCategory');
         if (catSelect) catSelect.disabled = true;
+
+        // Force read-only state for past periods
+        document.querySelectorAll('#expenseForm input').forEach(input => {
+            if (input.type !== 'hidden') input.readOnly = !isEditable;
+        });
+
+        const deleteBtn = document.getElementById('deleteExpenseBtn');
+        const submitBtn = document.querySelector('#expenseForm button[type="submit"]');
+
+        if (deleteBtn) deleteBtn.classList.toggle('hidden', !isEditable);
+        if (submitBtn) submitBtn.classList.toggle('hidden', !isEditable);
 
         this.triggerHaptic();
         document.getElementById('expenseModal').classList.add('show');
     },
+
 
 
     closeModal() { document.getElementById('expenseModal').classList.remove('show'); },
