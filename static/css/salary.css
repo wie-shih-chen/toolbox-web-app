@@ -227,101 +227,7 @@
     color: var(--accent-color);
 }
 
-/* Modal */
-.modal {
-    display: none;
-    position: fixed;
-    z-index: 1000;
-    left: 0;
-    top: 0;
-    width: 100%;
-    height: 100%;
-    background-color: rgba(0, 0, 0, 0.6);
-    align-items: center;
-    justify-content: center;
-}
-
-.modal.show {
-    display: flex;
-}
-
-.modal-content {
-    background-color: var(--card-bg);
-    border-radius: 12px;
-    width: 100%;
-    max-width: 450px;
-    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
-}
-
-.modal-header {
-    padding: 20px;
-    border-bottom: 1px solid var(--border-color);
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-}
-
-.close-modal {
-    font-size: 1.5rem;
-    cursor: pointer;
-    color: var(--text-secondary);
-}
-
-.modal-body {
-    padding: 20px;
-}
-
-.tabs {
-    display: flex;
-    margin-bottom: 20px;
-    border-bottom: 1px solid var(--border-color);
-}
-
-.tab-btn {
-    flex: 1;
-    background: none;
-    border: none;
-    padding: 10px;
-    color: var(--text-secondary);
-    cursor: pointer;
-    border-bottom: 2px solid transparent;
-}
-
-.tab-btn.active {
-    color: var(--accent-color);
-    border-bottom-color: var(--accent-color);
-}
-
-.tab-content {
-    display: none;
-}
-
-.tab-content.active {
-    display: block;
-}
-
-.form-group {
-    margin-bottom: 15px;
-}
-
-.form-group label {
-    display: block;
-    margin-bottom: 5px;
-    color: var(--text-secondary);
-    font-size: 0.9rem;
-}
-
-.form-group input {
-    width: 100%;
-}
-
-.modal-actions {
-    display: flex;
-    justify-content: flex-end;
-    gap: 10px;
-    margin-top: 25px;
-}
-
+/* Hidden Helper */
 .hidden {
     display: none !important;
 }
@@ -468,6 +374,7 @@
     overflow: hidden;
     text-overflow: ellipsis;
 }
+
 /* Salary Tool Mobile Responsiveness */
 @media (max-width: 768px) {
     .salary-nav {
@@ -483,19 +390,78 @@
         -ms-overflow-style: none;
         scrollbar-width: none;
     }
-    
-    .salary-nav::-webkit-scrollbar { display: none; }
-    .salary-nav-item { padding: 10px 20px; font-size: 0.9rem; }
-    .dashboard-header { flex-direction: column; align-items: stretch; gap: 15px; }
-    .week-nav { justify-content: space-between; padding: 8px 15px; }
-    #currentWeekLabel { min-width: unset; font-size: 0.95rem; }
-    .summary-card { justify-content: space-around; padding: 15px; }
-    .weekly-grid { grid-template-columns: 1fr; max-height: none; gap: 15px; }
-    .day-column { min-height: unset; border: 1px solid var(--border-color); }
-    .day-header { display: flex; justify-content: space-between; align-items: center; padding: 12px 15px; background: rgba(255,255,255,0.03); }
-    .day-name { margin-bottom: 0; }
-    .btn-add-shift { padding: 15px; font-size: 1.2rem; }
-    .actions-container { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-    .actions-container a.btn { grid-column: span 2; }
-    .modal-content { max-width: 95%; margin: 10px; border-radius: 16px; }
+
+    .salary-nav::-webkit-scrollbar {
+        display: none;
+    }
+
+    .salary-nav-item {
+        padding: 10px 20px;
+        font-size: 0.9rem;
+    }
+
+    .dashboard-header {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 15px;
+    }
+
+    .week-nav {
+        justify-content: space-between;
+        padding: 8px 15px;
+    }
+
+    #currentWeekLabel {
+        min-width: unset;
+        font-size: 0.95rem;
+    }
+
+    .summary-card {
+        justify-content: space-around;
+        padding: 15px;
+    }
+
+    .weekly-grid {
+        grid-template-columns: 1fr;
+        max-height: none;
+        gap: 15px;
+    }
+
+    .day-column {
+        min-height: unset;
+        border: 1px solid var(--border-color);
+    }
+
+    .day-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 12px 15px;
+        background: rgba(255, 255, 255, 0.03);
+    }
+
+    .day-name {
+        margin-bottom: 0;
+    }
+
+    .btn-add-shift {
+        padding: 15px;
+        font-size: 1.2rem;
+    }
+
+    .actions-container {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+    }
+
+    .actions-container a.btn {
+        grid-column: span 2;
+    }
+
+    .modal-content {
+        max-width: 95%;
+        margin: 10px;
+        border-radius: 16px;
+    }
 }

@@ -5,6 +5,7 @@ const expenseApp = {
 
     init() {
         const dashboard = document.querySelector('.expense-dashboard');
+        // Fix potential camelCase mismatch from data-attributes
         this.currentPeriod.start = dashboard.dataset.startDate;
         this.currentPeriod.end = dashboard.dataset.endDate;
 
@@ -30,6 +31,11 @@ const expenseApp = {
         window.onclick = (e) => {
             if (e.target.classList.contains('modal')) this.closeModal();
         };
+
+        // Esc key close
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') this.closeModal();
+        });
     },
 
     async loadData() {
@@ -56,18 +62,36 @@ const expenseApp = {
         const progressFill = document.getElementById('budgetProgress');
         progressFill.style.width = `${percent}%`;
 
-        // Color alerting
-        if (percent > 90) progressFill.style.background = 'var(--danger-color)';
-        else if (percent > 70) progressFill.style.background = '#f59e0b'; // Amber
-        else progressFill.style.background = 'linear-gradient(90deg, var(--accent-color), #5eead4)';
+        // Modern Gradient Alerting
+        if (percent > 90) {
+            progressFill.style.background = 'linear-gradient(90deg, #ff4d4d, #f9ca24)';
+        } else if (percent > 70) {
+            progressFill.style.background = 'linear-gradient(90deg, #f0932b, #ffbe76)';
+        } else {
+            progressFill.style.background = 'linear-gradient(90deg, #4ecdc4, #abe9cd)';
+        }
     },
 
     renderList() {
         const container = document.getElementById('expenseList');
         if (this.records.length === 0) {
-            container.innerHTML = '<div style="text-align:center; padding:30px; color:var(--text-secondary)">本期尚無紀錄</div>';
+            container.innerHTML = `
+                <div class="empty-state" style="text-align:center; padding:50px 20px; color:var(--text-secondary)">
+                    <span class="material-icons" style="font-size: 3rem; margin-bottom: 15px; display: block; opacity: 0.5">receipt_long</span>
+                    <p>本期尚無紀錄，開始記帳吧！</p>
+                </div>`;
             return;
         }
+
+        const colorMap = {
+            '飲食': 'var(--cat-food)',
+            '衣著': 'var(--cat-clothing)',
+            '居住': 'var(--cat-housing)',
+            '交通': 'var(--cat-transport)',
+            '教育': 'var(--cat-edu)',
+            '娛樂': 'var(--cat-play)',
+            '其他': 'var(--cat-other)'
+        };
 
         container.innerHTML = '';
         this.records.forEach(r => {
@@ -77,6 +101,7 @@ const expenseApp = {
 
             const categoryEmoji = r.category ? r.category.split(' ')[0] : '📦';
             const categoryName = r.category ? r.category.split(' ')[1] : '其他';
+            const catColor = colorMap[categoryName] || 'var(--cat-other)';
 
             // Format time: YYYY-MM-DD HH:mm:ss -> HH:mm
             const timePart = r.timestamp.split(' ')[1].substring(0, 5);
@@ -84,13 +109,19 @@ const expenseApp = {
 
             item.innerHTML = `
                 <div class="expense-item-left">
-                    <div class="expense-category-icon">${categoryEmoji}</div>
+                    <div class="category-icon-wrapper" style="background: ${catColor}20; color: ${catColor}">
+                        ${categoryEmoji}
+                    </div>
                     <div class="expense-details">
                         <span class="expense-name">${r.note}</span>
-                        <span class="expense-time">${datePart} ${timePart} • ${categoryName}</span>
+                        <div class="expense-meta">
+                            <span>${datePart} ${timePart}</span>
+                            <span class="dot"></span>
+                            <span>${categoryName}</span>
+                        </div>
                     </div>
                 </div>
-                <div class="expense-amount">$${Math.round(r.amount)}</div>
+                <div class="expense-amount" style="color: ${catColor}">$${Math.round(r.amount).toLocaleString()}</div>
             `;
             container.appendChild(item);
         });
