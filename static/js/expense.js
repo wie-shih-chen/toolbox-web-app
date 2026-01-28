@@ -75,14 +75,18 @@ const expenseApp = {
         // Native Back Button
         addSafeListener('navBackButton', 'click', () => this.popNavigation());
 
+        // Quick Tags Logic
         document.querySelectorAll('.tag-pill').forEach(pill => {
             pill.addEventListener('click', () => {
                 const noteInput = document.getElementById('expenseNote');
+                const categorySelect = document.getElementById('expenseCategory');
                 if (noteInput) noteInput.value = pill.dataset.value;
-                const cat = document.getElementById('expenseCategory');
-                if (cat) cat.value = '飲食';
+                if (categorySelect) {
+                    categorySelect.value = (pill.dataset.value === '飲料') ? '飲料' : '飲食';
+                }
             });
         });
+
 
         window.onclick = (e) => { if (e.target.classList.contains('modal')) this.closeModal(); };
     },
