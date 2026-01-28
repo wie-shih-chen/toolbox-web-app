@@ -404,6 +404,20 @@ input[type="time"].input-pill::-webkit-calendar-picker-indicator {
     letter-spacing: -0.5px;
 }
 
+.modal-content.glass {
+    background: rgba(30, 30, 30, 0.5);
+    backdrop-filter: blur(40px);
+    -webkit-backdrop-filter: blur(40px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+    border-radius: 24px;
+}
+
+.modal-header {
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+
 /* Modal Body spacing */
 .modal-body .form-row {
     display: grid;
@@ -455,7 +469,13 @@ input[type="time"].input-pill::-webkit-calendar-picker-indicator {
         transform: translateY(100%);
         transition: transform 0.3s cubic-bezier(0.32, 1, 0.23, 1);
         padding-bottom: env(safe-area-inset-bottom);
+        /* Ensure mobile is also glass premium */
+        background: rgba(45, 45, 45, 0.6);
+        backdrop-filter: blur(40px);
+        -webkit-backdrop-filter: blur(40px);
+        border: 1px solid rgba(255, 255, 255, 0.1);
     }
+
 
     .modal.show .modal-content {
         transform: translateY(0);
