@@ -10,13 +10,17 @@
 {% block content %}
 <!-- Horizontal Navigation Bar -->
 <div class="salary-nav">
+    <a href="{{ url_for('expense.today') }}"
+        class="salary-nav-item {% if request.endpoint == 'expense.today' %}active{% endif %}">
+        📅 本日記帳
+    </a>
     <a href="{{ url_for('expense.index') }}"
         class="salary-nav-item {% if request.endpoint == 'expense.index' %}active{% endif %}">
-        📅 本週記帳
+        📊 本週期
     </a>
     <a href="{{ url_for('expense.history') }}"
         class="salary-nav-item {% if request.endpoint == 'expense.history' %}active{% endif %}">
-        📜 歷史記帳
+        📜 歷史
     </a>
     <a href="{{ url_for('expense.settings') }}"
         class="salary-nav-item {% if request.endpoint == 'expense.settings' %}active{% endif %}">

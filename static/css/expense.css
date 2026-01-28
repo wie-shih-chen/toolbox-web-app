@@ -292,6 +292,85 @@ input[type="time"].input-pill::-webkit-calendar-picker-indicator {
 }
 
 /* Dynamic category colors via inline or classes if we add them */
+/* Hierarchical Grid Summaries */
+.weekly-grid-summary,
+.daily-grid-summary {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.week-summary-card,
+.day-summary-card {
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 18px;
+    padding: 20px 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.2, 1, 0.2, 1);
+}
+
+.week-summary-card:hover,
+.day-summary-card:hover {
+    background: rgba(255, 255, 255, 0.08);
+    transform: scale(0.985);
+    border-color: rgba(78, 205, 196, 0.3);
+}
+
+.week-summary-card:active,
+.day-summary-card:active {
+    transform: scale(0.96);
+}
+
+.card-info {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.week-title,
+.day-title {
+    font-weight: 700;
+    font-size: 1.1rem;
+    color: white;
+}
+
+.week-days-count,
+.record-meta {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+}
+
+.card-amount {
+    font-size: 1.25rem;
+    font-weight: 800;
+    color: var(--accent-color);
+    margin-left: auto;
+    margin-right: 15px;
+}
+
+.chevron {
+    color: rgba(255, 255, 255, 0.2);
+}
+
+.glass-premium {
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+}
+
+/* Breadcrumb Styling */
+.drill-down-breadcrumb button {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 8px;
+    padding: 6px 12px;
+    font-size: 0.85rem;
+}
+
+/* List Styling inherited ... */
 .expense-details {
     display: flex;
     flex-direction: column;

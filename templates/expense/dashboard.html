@@ -10,13 +10,17 @@
 {% block content %}
 <!-- Horizontal Navigation Bar -->
 <div class="salary-nav">
+    <a href="{{ url_for('expense.today') }}"
+        class="salary-nav-item {% if request.endpoint == 'expense.today' %}active{% endif %}">
+        📅 本日記帳
+    </a>
     <a href="{{ url_for('expense.index') }}"
         class="salary-nav-item {% if request.endpoint == 'expense.index' %}active{% endif %}">
-        📅 本週記帳
+        📊 本週期
     </a>
     <a href="{{ url_for('expense.history') }}"
         class="salary-nav-item {% if request.endpoint == 'expense.history' %}active{% endif %}">
-        📜 歷史記帳
+        📜 歷史
     </a>
     <a href="{{ url_for('expense.settings') }}"
         class="salary-nav-item {% if request.endpoint == 'expense.settings' %}active{% endif %}">
@@ -50,19 +54,37 @@
         </button>
     </div>
 
-    <!-- Period View -->
+    <!-- Period View Control -->
     <div class="period-header">
-        <span class="period-label">當前週期：<span id="periodDisplay">{{ start_date }} ~ {{ end_date }}</span></span>
-        <button class="btn btn-secondary btn-sm" id="prevPeriodBtn">◀</button>
-        <button class="btn btn-secondary btn-sm" id="nextPeriodBtn">▶</button>
+        <span class="period-label" id="periodDisplayTitle">當前週期 (10號起)</span>
+        <div class="nav-controls">
+            <button class="btn btn-secondary btn-sm" id="prevPeriodBtn">◀</button>
+            <button class="btn btn-secondary btn-sm" id="nextPeriodBtn">▶</button>
+        </div>
     </div>
 
-    <!-- Recent Activities -->
-    <div class="expense-list-container">
-        <h3 class="section-title">最近活動</h3>
-        <div id="expenseList" class="expense-list">
-            <!-- Records injected here -->
-            <div class="loading-placeholder">載入中...</div>
+    <!-- Hierarchical Transition Viewport -->
+    <div class="drill-down-viewport">
+        <div id="levelContainer" class="level-container level-weeks">
+            <!-- Level 1: Weekly Overview -->
+            <div id="weeklyLevel" class="list-level">
+                <h3 class="section-title">週期概覽 (週一至週日)</h3>
+                <div id="weeklyList" class="weekly-grid-summary">
+                    <div class="loading-placeholder">數據分析中...</div>
+                </div>
+            </div>
+
+            <!-- Level 2: Daily Breakdown -->
+            <div id="dailyLevel" class="list-level">
+                <h3 class="section-title">每日支出統計</h3>
+                <div id="dailyList" class="daily-grid-summary"></div>
+            </div>
+
+            <!-- Level 3: Record Detail -->
+            <div id="recordLevel" class="list-level">
+                <h3 class="section-title">詳細消費清單</h3>
+                <div id="expenseList" class="expense-list"></div>
+            </div>
         </div>
     </div>
 </div>

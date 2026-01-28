@@ -145,6 +145,69 @@ class ExpenseService:
             "category_split": categories,
             "period": {"start": start_date_str, "end": end_date_str}
         }
+
+    def get_grouped_summary(self, start_date_str, end_date_str):
+        """
+        Group records by weeks (Mon-Sun) within the period.
+        Returning totals for weeks and totals for days within weeks.
+        """
+        data = self.get_summary(start_date_str, end_date_str)
+        records = data['records']
+        
+        # Helper to get week start (Monday)
+        def get_week_start(date_obj):
+            return date_obj - timedelta(days=date_obj.weekday())
+
+        weeks_grouped = {}
+        
+        # Iterate through the period to define weeks
+        curr_start = datetime.strptime(start_date_str, '%Y-%m-%d')
+        end_limit = datetime.strptime(end_date_str, '%Y-%m-%d')
+        
+        # Standardize range: from the Monday of the first week to the End of the last week
+        # Actually just group existing records into their respective weeks
+        for r in records:
+            dt = datetime.strptime(r['timestamp'][:10], '%Y-%m-%d')
+            wk_start = get_week_start(dt).strftime('%Y-%m-%d')
+            day_str = dt.strftime('%Y-%m-%d')
+            
+            if wk_start not in weeks_grouped:
+                weeks_grouped[wk_start] = {
+                    "week_start": wk_start,
+                    "total": 0,
+                    "days": {}
+                }
+            
+            weeks_grouped[wk_start]['total'] += r['amount']
+            
+            if day_str not in weeks_grouped[wk_start]['days']:
+                weeks_grouped[wk_start]['days'][day_str] = {
+                    "date": day_str,
+                    "total": 0,
+                    "records_count": 0
+                }
+            
+            weeks_grouped[wk_start]['days'][day_str]['total'] += r['amount']
+            weeks_grouped[wk_start]['days'][day_str]['records_count'] += 1
+
+        # Flatten and sort
+        sorted_weeks = []
+        for ws in sorted(weeks_grouped.keys(), reverse=True):
+            w_data = weeks_grouped[ws]
+            # Sort days within week
+            sorted_days = []
+            for ds in sorted(w_data['days'].keys(), reverse=True):
+                sorted_days.append(w_data['days'][ds])
+            
+            w_data['days'] = sorted_days
+            sorted_weeks.append(w_data)
+
+        return {
+            "weeks": sorted_weeks,
+            "total_amount": data['total_amount'],
+            "period": data['period']
+        }
+
     def get_settings(self):
         data = self._load_data()
         return data.get('settings', {"monthly_budget": 10000})

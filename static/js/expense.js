@@ -2,8 +2,14 @@ const expenseApp = {
     currentPeriod: { start: null, end: null },
     records: [],
     monthlyBudget: 10000,
+    isTodayOnly: false,
+    navStack: [], // To manage back button history ['weeks', 'days', 'records']
+    viewState: {
+        level: 'weeks',
+        currentWeek: null,
+        currentDay: null
+    },
 
-    // Initializers
     init() {
         const dashboard = document.querySelector('.expense-dashboard');
         if (dashboard) {
@@ -17,43 +23,41 @@ const expenseApp = {
 
     initHistory() {
         this.bindEvents();
+        this.initHistoryPriors();
+    },
+
+    initHistoryPriors() {
+        // ... (previously established logic)
         const yearSelect = document.getElementById('yearSelect');
         const monthSelect = document.getElementById('monthSelect');
-        const daySelect = document.getElementById('daySelect');
+        if (!yearSelect) return;
 
-        if (yearSelect) yearSelect.addEventListener('change', () => { this.updateDaysInMonth(); this.loadHistoryData(); });
-        if (monthSelect) monthSelect.addEventListener('change', () => { this.updateDaysInMonth(); this.loadHistoryData(); });
+        const now = new Date();
+        const currentYear = now.getFullYear();
+        yearSelect.innerHTML = '';
+        for (let y = currentYear; y >= currentYear - 3; y--) {
+            const opt = document.createElement('option');
+            opt.value = y;
+            opt.textContent = `${y} 年`;
+            yearSelect.appendChild(opt);
+        }
+
+        let targetMonth = (now.getDate() < 10) ? now.getMonth() : now.getMonth() + 1;
+        if (targetMonth === 0) { targetMonth = 12; yearSelect.value = currentYear - 1; }
+
+        monthSelect.value = String(targetMonth).padStart(2, '0');
+        this.updateDaysInMonth();
+        this.loadHistoryData();
+
+        yearSelect.addEventListener('change', () => { this.updateDaysInMonth(); this.loadHistoryData(); });
+        monthSelect.addEventListener('change', () => { this.updateDaysInMonth(); this.loadHistoryData(); });
+        const daySelect = document.getElementById('daySelect');
         if (daySelect) daySelect.addEventListener('change', () => this.loadHistoryData());
 
         const exportBtn = document.getElementById('exportCsvBtn');
         if (exportBtn) exportBtn.addEventListener('click', () => this.downloadCsv());
-
-        this.initHistoryPriors();
     },
 
-    initSettings() {
-        const form = document.getElementById('settingsForm');
-        if (form) {
-            form.addEventListener('submit', async (e) => {
-                e.preventDefault();
-                const formData = new FormData(e.target);
-                const data = Object.fromEntries(formData.entries());
-
-                try {
-                    const res = await fetch('/expense/api/settings', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(data)
-                    });
-                    if (res.ok) alert('設定已儲存');
-                } catch (error) {
-                    console.error(error);
-                }
-            });
-        }
-    },
-
-    // Core Logic
     bindEvents() {
         const addSafeListener = (id, event, callback) => {
             const el = document.getElementById(id);
@@ -68,25 +72,25 @@ const expenseApp = {
         addSafeListener('prevPeriodBtn', 'click', () => this.changePeriod(-1));
         addSafeListener('nextPeriodBtn', 'click', () => this.changePeriod(1));
 
-        // Quick Tags Logic
+        // Native Back Button
+        addSafeListener('navBackButton', 'click', () => this.popNavigation());
+
         document.querySelectorAll('.tag-pill').forEach(pill => {
             pill.addEventListener('click', () => {
                 const noteInput = document.getElementById('expenseNote');
-                const categorySelect = document.getElementById('expenseCategory');
                 if (noteInput) noteInput.value = pill.dataset.value;
-                if (categorySelect) categorySelect.value = '飲食';
+                const cat = document.getElementById('expenseCategory');
+                if (cat) cat.value = '飲食';
             });
         });
 
-        // Outside click close
-        window.onclick = (e) => {
-            if (e.target.classList.contains('modal')) this.closeModal();
-        };
+        window.onclick = (e) => { if (e.target.classList.contains('modal')) this.closeModal(); };
+    },
 
-        // Esc key close
-        document.addEventListener('keydown', (e) => {
-            if (e.key === 'Escape') this.closeModal();
-        });
+    triggerHaptic() {
+        if (navigator.vibrate) {
+            navigator.vibrate(10); // Ultra light tap
+        }
     },
 
     async loadSettings() {
@@ -94,203 +98,159 @@ const expenseApp = {
             const res = await fetch('/expense/api/settings');
             const data = await res.json();
             this.monthlyBudget = data.monthly_budget;
-        } catch (error) {
-            console.error(error);
-        }
+        } catch (error) { console.error(error); }
     },
 
     async loadData() {
+        if (this.isTodayOnly) return this.loadTodayData();
         if (!this.currentPeriod.start) return;
-        const url = `/expense/api/records?start_date=${this.currentPeriod.start}&end_date=${this.currentPeriod.end}`;
+
+        const url = `/expense/api/records/grouped?start_date=${this.currentPeriod.start}&end_date=${this.currentPeriod.end}`;
         try {
             const res = await fetch(url);
             const data = await res.json();
-            this.records = data.records;
+            this.groupedData = data;
             this.renderSummary(data.total_amount);
-            this.renderList('expenseList');
 
-            const display = document.getElementById('periodDisplay');
-            if (display) display.textContent = `${data.period.start} ~ ${data.period.end}`;
-        } catch (error) {
-            console.error('Error loading expenses:', error);
-        }
+            this.navStack = ['weeks'];
+            this.renderWeeks();
+        } catch (error) { console.error(error); }
     },
 
-    async initHistoryPriors() {
-        const yearSelect = document.getElementById('yearSelect');
-        const monthSelect = document.getElementById('monthSelect');
-        if (!yearSelect) return;
-
-        // Fill Year Range
-        const now = new Date();
-        const currentYear = now.getFullYear();
-        yearSelect.innerHTML = '';
-        for (let y = currentYear; y >= currentYear - 3; y--) {
-            const opt = document.createElement('option');
-            opt.value = y;
-            opt.textContent = `${y} 年`;
-            yearSelect.appendChild(opt);
-        }
-
-        // Set current month correctly based on accounting logic (10th)
-        let targetMonth = (now.getDate() < 10) ? now.getMonth() : now.getMonth() + 1;
-        if (targetMonth === 0) {
-            targetMonth = 12;
-            yearSelect.value = currentYear - 1;
-        } else if (targetMonth > 12) {
-            targetMonth = 1;
-            yearSelect.value = currentYear;
-        }
-
-        monthSelect.value = String(targetMonth).padStart(2, '0');
-        this.updateDaysInMonth();
-        this.loadHistoryData();
+    async loadTodayData() {
+        const today = new Date().toISOString().split('T')[0];
+        const tomorrow = new Date(new Date().getTime() + 86400000).toISOString().split('T')[0];
+        const res = await fetch(`/expense/api/records?start_date=${today}&end_date=${tomorrow}`);
+        const data = await res.json();
+        this.records = data.records;
+        this.renderList('expenseList');
     },
 
-    updateDaysInMonth() {
-        const yearSelect = document.getElementById('yearSelect');
-        const monthSelect = document.getElementById('monthSelect');
-        const daySelect = document.getElementById('daySelect');
-        if (!yearSelect || !daySelect) return;
-
-        const year = parseInt(yearSelect.value);
-        const month = parseInt(monthSelect.value);
-
-        const daysInMonth = new Date(year, month, 0).getDate();
-        const currentVal = daySelect.value;
-
-        daySelect.innerHTML = '<option value="">全月份</option>';
-        for (let d = 1; d <= daysInMonth; d++) {
-            const opt = document.createElement('option');
-            const dStr = String(d).padStart(2, '0');
-            opt.value = dStr;
-            opt.textContent = `${dStr} 號`;
-            daySelect.appendChild(opt);
-        }
-
-        if (currentVal && parseInt(currentVal) <= daysInMonth) {
-            daySelect.value = currentVal;
-        }
-    },
-
-    async loadHistoryData() {
-        const params = this.getHistoryParams();
-        const url = `/expense/api/records?start_date=${params.start}&end_date=${params.end}`;
-        try {
-            const res = await fetch(url);
-            const data = await res.json();
-            this.records = data.records;
-
-            const histTotal = document.getElementById('historyTotal');
-            if (histTotal) histTotal.textContent = `$${Math.round(data.total_amount).toLocaleString()}`;
-
-            const histCount = document.getElementById('historyCount');
-            if (histCount) histCount.textContent = data.records.length;
-
-            this.renderList('historyExpenseList');
-        } catch (error) {
-            console.error(error);
-        }
-    },
-
-    getHistoryParams() {
-        const year = document.getElementById('yearSelect').value;
-        const month = document.getElementById('monthSelect').value;
-        const day = document.getElementById('daySelect').value;
-
-        let start, end;
-
-        if (day) {
-            start = `${year}-${month}-${day}`;
-            const startDate = new Date(`${year}-${month}-${day}`);
-            const endDate = new Date(startDate.getTime() + 86400000);
-            end = endDate.toISOString().split('T')[0];
-        } else {
-            start = `${year}-${month}-10`;
-            let endYear = parseInt(year);
-            let endMonth = parseInt(month) + 1;
-            if (endMonth > 12) {
-                endMonth = 1;
-                endYear++;
-            }
-            end = `${endYear}-${String(endMonth).padStart(2, '0')}-10`;
-        }
-        return { start, end };
-    },
-
-    downloadCsv() {
-        const params = this.getHistoryParams();
-        window.location.href = `/expense/api/records/export?start_date=${params.start}&end_date=${params.end}`;
-    },
-
-    renderSummary(total) {
-        const el = document.getElementById('totalExpense');
-        if (!el) return;
-
-        el.textContent = `$${Math.round(total).toLocaleString()}`;
-        const remaining = Math.max(0, this.monthlyBudget - total);
-        document.getElementById('remainingBudget').textContent = `$${Math.round(remaining).toLocaleString()}`;
-
-        const percent = Math.min(100, (total / this.monthlyBudget) * 100);
-        const progressFill = document.getElementById('budgetProgress');
-        progressFill.style.width = `${percent}%`;
-
-        if (percent > 90) progressFill.style.background = 'linear-gradient(90deg, #ff4d4d, #f9ca24)';
-        else if (percent > 70) progressFill.style.background = 'linear-gradient(90deg, #f0932b, #ffbe76)';
-        else progressFill.style.background = 'linear-gradient(90deg, #4ecdc4, #abe9cd)';
-    },
-
-    renderList(containerID) {
-        const container = document.getElementById(containerID);
+    // Navigation Logic (iOS Way)
+    switchLevel(level, context = {}) {
+        this.triggerHaptic();
+        const container = document.getElementById('levelContainer');
         if (!container) return;
 
-        if (this.records.length === 0) {
-            container.innerHTML = `
-                <div class="empty-state" style="text-align:center; padding:50px 20px; color:var(--text-secondary)">
-                    <span class="material-icons" style="font-size: 3rem; margin-bottom: 15px; display: block; opacity: 0.5">receipt_long</span>
-                    <p>本期尚無紀錄</p>
-                </div>`;
+        container.className = `level-container level-${level}`;
+        this.viewState.level = level;
+
+        const backBtn = document.getElementById('navBackButton');
+        const pageTitle = document.getElementById('mainPageTitle');
+
+        if (level === 'weeks') {
+            backBtn.classList.add('hidden');
+            pageTitle.textContent = '本週期記帳';
+            this.renderWeeks();
+        } else if (level === 'days') {
+            backBtn.classList.remove('hidden');
+            document.getElementById('backButtonText').textContent = '週期概覽';
+            pageTitle.textContent = `週份: ${context.week.week_start}`;
+            this.viewState.currentWeek = context.week;
+            this.renderDays(context.week);
+        } else if (level === 'records') {
+            backBtn.classList.remove('hidden');
+            document.getElementById('backButtonText').textContent = '返回本週';
+            pageTitle.textContent = `${context.day.date} 明細`;
+            this.renderRecords(context.day);
+        }
+    },
+
+    popNavigation() {
+        if (this.viewState.level === 'records') {
+            this.switchLevel('days', { week: this.viewState.currentWeek });
+        } else if (this.viewState.level === 'days') {
+            this.switchLevel('weeks');
+        }
+    },
+
+    renderWeeks() {
+        const list = document.getElementById('weeklyList');
+        if (!list) return;
+        list.innerHTML = '';
+        if (!this.groupedData.weeks.length) {
+            list.innerHTML = '<p style="text-align:center; padding:20px; opacity:0.5;">本週期尚無花費</p>';
             return;
         }
 
-        const colorMap = {
-            '飲食': 'var(--cat-food)',
-            '衣著': 'var(--cat-clothing)',
-            '居住': 'var(--cat-housing)',
-            '交通': 'var(--cat-transport)',
-            '教育': 'var(--cat-edu)',
-            '娛樂': 'var(--cat-play)',
-            '其他': 'var(--cat-other)'
-        };
+        this.groupedData.weeks.forEach(wk => {
+            const el = document.createElement('div');
+            el.className = 'week-summary-card glass-premium';
+            el.onclick = () => this.switchLevel('days', { week: wk });
+            el.innerHTML = `
+                <div class="card-info">
+                    <span class="week-title">${wk.week_start} 進入此週</span>
+                    <span class="week-days-count">${wk.days.length} 天紀錄</span>
+                </div>
+                <div class="card-amount">$${Math.round(wk.total).toLocaleString()}</div>
+                <span class="material-icons chevron">chevron_right</span>
+            `;
+            list.appendChild(el);
+        });
+    },
 
+    renderDays(week) {
+        const list = document.getElementById('dailyList');
+        if (!list) return;
+        list.innerHTML = '';
+        week.days.forEach(day => {
+            const el = document.createElement('div');
+            el.className = 'day-summary-card glass-premium';
+            el.onclick = () => this.switchLevel('records', { day: day });
+
+            const dateObj = new Date(day.date);
+            const weekDay = dateObj.toLocaleDateString('zh-TW', { weekday: 'short' });
+
+            el.innerHTML = `
+                <div class="card-info">
+                    <span class="day-title">${day.date} (${weekDay})</span>
+                    <span class="record-meta">${day.records_count} 筆消費</span>
+                </div>
+                <div class="card-amount">$${Math.round(day.total).toLocaleString()}</div>
+                <span class="material-icons chevron">chevron_right</span>
+            `;
+            list.appendChild(el);
+        });
+    },
+
+    async renderRecords(day) {
+        const res = await fetch(`/expense/api/records?start_date=${day.date}&end_date=${new Date(new Date(day.date).getTime() + 86400000).toISOString().split('T')[0]}`);
+        const data = await res.json();
+        this.records = data.records;
+        this.renderList('expenseList');
+    },
+
+    renderSummary(total) {
+        const tel = document.getElementById('totalExpense');
+        if (tel) tel.textContent = `$${Math.round(total).toLocaleString()}`;
+        const rel = document.getElementById('remainingBudget');
+        if (rel) rel.textContent = `$${Math.round(Math.max(0, this.monthlyBudget - total)).toLocaleString()}`;
+        const pf = document.getElementById('budgetProgress');
+        if (pf) pf.style.width = `${Math.min(100, (total / this.monthlyBudget) * 100)}%`;
+    },
+
+    renderList(cid) {
+        const container = document.getElementById(cid);
+        if (!container) return;
         container.innerHTML = '';
+        if (this.records.length === 0) {
+            container.innerHTML = '<p style="text-align:center; padding:30px; opacity:0.5;">無紀錄</p>';
+            return;
+        }
         this.records.forEach(r => {
             const item = document.createElement('div');
             item.className = 'expense-item';
             item.onclick = () => this.openEditModal(r);
-
-            const categoryEmoji = r.category ? r.category.split(' ')[0] : '📦';
-            const categoryName = r.category ? (r.category.includes(' ') ? r.category.split(' ')[1] : r.category) : '其他';
-            const catColor = colorMap[categoryName] || 'var(--cat-other)';
-
-            const timePart = r.timestamp.split(' ')[1].substring(0, 5);
-            const datePart = r.timestamp.split(' ')[0].substring(5).replace('-', '/');
-
+            const cat = r.category ? r.category.split(' ')[0] : '📦';
             item.innerHTML = `
                 <div class="expense-item-left">
-                    <div class="category-icon-wrapper" style="background: ${catColor}20; color: ${catColor}">
-                        ${categoryEmoji}
-                    </div>
+                    <div class="category-icon-wrapper">${cat}</div>
                     <div class="expense-details">
                         <span class="expense-name">${r.note}</span>
-                        <div class="expense-meta">
-                            <span>${datePart} ${timePart}</span>
-                            <span class="dot"></span>
-                            <span>${categoryName}</span>
-                        </div>
+                        <div class="expense-meta"><span>${r.timestamp.substring(11, 16)}</span></div>
                     </div>
                 </div>
-                <div class="expense-amount" style="color: ${catColor}">$${Math.round(r.amount).toLocaleString()}</div>
+                <div class="expense-amount">$${Math.round(r.amount).toLocaleString()}</div>
             `;
             container.appendChild(item);
         });
@@ -299,13 +259,8 @@ const expenseApp = {
     openAddModal() {
         this.resetForm();
         const now = new Date();
-        const dateStr = now.toISOString().split('T')[0];
-        const timeStr = now.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
-
-        document.getElementById('expenseDate').value = dateStr;
-        document.getElementById('expenseTime').value = timeStr;
-        document.getElementById('modalTitle').textContent = '新增支出';
-        document.getElementById('deleteExpenseBtn').classList.add('hidden');
+        document.getElementById('expenseDate').value = now.toISOString().split('T')[0];
+        document.getElementById('expenseTime').value = now.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
         document.getElementById('expenseModal').classList.add('show');
     },
 
@@ -314,91 +269,93 @@ const expenseApp = {
         document.getElementById('expenseId').value = record.id;
         document.getElementById('expenseNote').value = record.note;
         document.getElementById('expenseAmount').value = record.amount;
-
-        const catName = record.category ? (record.category.includes(' ') ? record.category.split(' ')[1] : record.category) : '其他';
-        document.getElementById('expenseCategory').value = catName;
-
-        const parts = record.timestamp.split(' ');
-        document.getElementById('expenseDate').value = parts[0];
-        document.getElementById('expenseTime').value = parts[1].substring(0, 5);
-
-        document.getElementById('modalTitle').textContent = '編輯紀錄';
-        document.getElementById('deleteExpenseBtn').classList.remove('hidden');
+        document.getElementById('expenseDate').value = record.timestamp.split(' ')[0];
+        document.getElementById('expenseTime').value = record.timestamp.split(' ')[1].substring(0, 5);
         document.getElementById('expenseModal').classList.add('show');
     },
 
-    closeModal() {
-        const modal = document.getElementById('expenseModal');
-        if (modal) modal.classList.remove('show');
-    },
-
+    closeModal() { document.getElementById('expenseModal').classList.remove('show'); },
     resetForm() {
-        const form = document.getElementById('expenseForm');
-        if (form) {
-            form.reset();
-            document.getElementById('expenseId').value = '';
-        }
+        document.getElementById('expenseForm').reset();
+        const id = document.getElementById('expenseId');
+        if (id) id.value = '';
     },
 
     async handleSubmit(e) {
         e.preventDefault();
-        const formData = new FormData(e.target);
-        const data = Object.fromEntries(formData.entries());
-
-        const d = document.getElementById('expenseDate').value;
-        const t = document.getElementById('expenseTime').value;
-        data.timestamp = `${d} ${t}:00`;
-
+        const fd = new FormData(e.target);
+        const data = Object.fromEntries(fd.entries());
+        data.timestamp = `${document.getElementById('expenseDate').value} ${document.getElementById('expenseTime').value}:00`;
         const id = data.id;
-        const method = id ? 'PUT' : 'POST';
-        const url = id ? `/expense/api/records/${id}` : '/expense/api/records';
-
-        try {
-            const res = await fetch(url, {
-                method: method,
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(data)
-            });
-
-            if (res.ok) {
-                this.closeModal();
-                if (document.querySelector('.expense-dashboard')) this.loadData();
-                else if (document.querySelector('.expense-history')) this.loadHistoryData();
-            } else {
-                alert('儲存失敗');
-            }
-        } catch (error) {
-            console.error(error);
+        const res = await fetch(id ? `/expense/api/records/${id}` : '/expense/api/records', {
+            method: id ? 'PUT' : 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+        });
+        if (res.ok) {
+            this.closeModal();
+            this.loadData();
         }
     },
 
     async deleteCurrentRecord() {
-        if (!confirm('確定要刪除這筆紀錄嗎？')) return;
+        if (!confirm('刪除？')) return;
         const id = document.getElementById('expenseId').value;
-        try {
-            const res = await fetch(`/expense/api/records/${id}`, { method: 'DELETE' });
-            if (res.ok) {
-                this.closeModal();
-                if (document.querySelector('.expense-dashboard')) this.loadData();
-                else if (document.querySelector('.expense-history')) this.loadHistoryData();
-            }
-        } catch (error) {
-            console.error(error);
-        }
+        const res = await fetch(`/expense/api/records/${id}`, { method: 'DELETE' });
+        if (res.ok) { this.closeModal(); this.loadData(); }
     },
 
     changePeriod(delta) {
-        const currentStart = new Date(this.currentPeriod.start);
-        currentStart.setMonth(currentStart.getMonth() + delta);
-        const nextMonth = new Date(currentStart);
-        nextMonth.setMonth(nextMonth.getMonth() + 1);
-        this.currentPeriod.start = this.formatDate(currentStart);
-        this.currentPeriod.end = this.formatDate(nextMonth);
+        const d = new Date(this.currentPeriod.start);
+        d.setMonth(d.getMonth() + delta);
+        this.currentPeriod.start = this.formatDate(d);
+        const n = new Date(d); n.setMonth(n.getMonth() + 1);
+        this.currentPeriod.end = this.formatDate(n);
         this.loadData();
     },
-
-    formatDate(date) {
-        return date.toISOString().split('T')[0];
+    formatDate(d) { return d.toISOString().split('T')[0]; },
+    updateDaysInMonth() {
+        const y = parseInt(document.getElementById('yearSelect').value);
+        const m = parseInt(document.getElementById('monthSelect').value);
+        const ds = document.getElementById('daySelect');
+        if (!ds) return;
+        const dim = new Date(y, m, 0).getDate();
+        ds.innerHTML = '<option value="">全月份</option>';
+        for (let i = 1; i <= dim; i++) {
+            const opt = document.createElement('option');
+            opt.value = String(i).padStart(2, '0');
+            opt.textContent = `${i} 號`;
+            ds.appendChild(opt);
+        }
+    },
+    async loadHistoryData() {
+        const y = document.getElementById('yearSelect').value;
+        const m = document.getElementById('monthSelect').value;
+        const d = document.getElementById('daySelect').value;
+        const s = d ? `${y}-${m}-${d}` : `${y}-${m}-10`;
+        let e;
+        if (d) {
+            e = new Date(new Date(s).getTime() + 86400000).toISOString().split('T')[0];
+        } else {
+            let ey = parseInt(y); let em = parseInt(m) + 1; if (em > 12) { em = 1; ey++; }
+            e = `${ey}-${String(em).padStart(2, '0')}-10`;
+        }
+        const res = await fetch(`/expense/api/records?start_date=${s}&end_date=${e}`);
+        const data = await res.json();
+        this.records = data.records;
+        const ht = document.getElementById('historyTotal'); if (ht) ht.textContent = `$${Math.round(data.total_amount).toLocaleString()}`;
+        this.renderList('historyExpenseList');
+    },
+    downloadCsv() {
+        // Simplified range logic for download
+        const y = document.getElementById('yearSelect').value;
+        const m = document.getElementById('monthSelect').value;
+        const d = document.getElementById('daySelect').value;
+        const s = d ? `${y}-${m}-${d}` : `${y}-${m}-10`;
+        let e;
+        if (d) { e = new Date(new Date(s).getTime() + 86400000).toISOString().split('T')[0]; }
+        else { let ey = parseInt(y); let em = parseInt(m) + 1; if (em > 12) { em = 1; ey++; } e = `${ey}-${String(em).padStart(2, '0')}-10`; }
+        window.location.href = `/expense/api/records/export?start_date=${s}&end_date=${e}`;
     }
 };
 

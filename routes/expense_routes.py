@@ -7,8 +7,15 @@ expense_service = ExpenseService()
 
 @expense_bp.route('/')
 def index():
+    """本週期記帳"""
     start, end = expense_service.get_current_period()
     return render_template('expense/dashboard.html', start_date=start, end_date=end)
+
+@expense_bp.route('/today')
+def today():
+    """本日記帳"""
+    return render_template('expense/today.html')
+
 
 @expense_bp.route('/history')
 def history():
@@ -19,6 +26,17 @@ def settings():
     settings = expense_service.get_settings()
     return render_template('expense/settings.html', settings=settings)
 
+
+@expense_bp.route('/api/records/grouped', methods=['GET'])
+def get_grouped_records():
+    start_date = request.args.get('start_date')
+    end_date = request.args.get('end_date')
+    
+    if not start_date or not end_date:
+        start_date, end_date = expense_service.get_current_period()
+        
+    summary = expense_service.get_grouped_summary(start_date, end_date)
+    return jsonify(summary)
 
 @expense_bp.route('/api/records', methods=['GET'])
 def get_records():

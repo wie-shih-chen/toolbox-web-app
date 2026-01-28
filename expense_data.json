@@ -2,5 +2,20 @@
   "settings": {
     "monthly_budget": 12000.0
   },
-  "records": []
+  "records": [
+    {
+      "id": "9510cb65-565b-4529-bb70-af5155d226cd",
+      "note": "晚餐",
+      "amount": 140.0,
+      "category": "🍽️ 飲食",
+      "timestamp": "2026-01-26 18:00:00"
+    },
+    {
+      "id": "333ac09e-c095-4d90-81d0-72c82c423273",
+      "note": "飲料",
+      "amount": 50.0,
+      "category": "飲食",
+      "timestamp": "2026-01-26 18:30:00"
+    }
+  ]
 }
