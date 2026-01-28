@@ -135,23 +135,23 @@ const expenseApp = {
         container.className = `level-container level-${level}`;
         this.viewState.level = level;
 
-        const backBtn = document.getElementById('navBackButton');
-        const pageTitle = document.getElementById('mainPageTitle');
+        const localNav = document.getElementById('localNav');
+        const levelTitle = document.getElementById('levelTitle');
+        const backText = document.getElementById('backButtonText');
 
         if (level === 'weeks') {
-            backBtn.classList.add('hidden');
-            pageTitle.textContent = '本週期記帳';
+            if (localNav) localNav.classList.add('hidden');
             this.renderWeeks();
         } else if (level === 'days') {
-            backBtn.classList.remove('hidden');
-            document.getElementById('backButtonText').textContent = '週期概覽';
-            pageTitle.textContent = `週份: ${context.week.week_start}`;
+            if (localNav) localNav.classList.remove('hidden');
+            if (backText) backText.textContent = '返回週期';
+            if (levelTitle) levelTitle.textContent = `週份: ${context.week.week_start}`;
             this.viewState.currentWeek = context.week;
             this.renderDays(context.week);
         } else if (level === 'records') {
-            backBtn.classList.remove('hidden');
-            document.getElementById('backButtonText').textContent = '返回本週';
-            pageTitle.textContent = `${context.day.date} 明細`;
+            if (localNav) localNav.classList.remove('hidden');
+            if (backText) backText.textContent = '返回本週';
+            if (levelTitle) levelTitle.textContent = `${context.day.date} 明細`;
             this.renderRecords(context.day);
         }
     },
