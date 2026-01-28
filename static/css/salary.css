@@ -468,3 +468,34 @@
     overflow: hidden;
     text-overflow: ellipsis;
 }
+/* Salary Tool Mobile Responsiveness */
+@media (max-width: 768px) {
+    .salary-nav {
+        overflow-x: auto;
+        justify-content: flex-start;
+        width: calc(100% + 30px);
+        margin-left: -15px;
+        left: 0;
+        transform: none;
+        border-radius: 0;
+        padding: 10px 15px;
+        background: rgba(45, 45, 45, 0.6);
+        -ms-overflow-style: none;
+        scrollbar-width: none;
+    }
+    
+    .salary-nav::-webkit-scrollbar { display: none; }
+    .salary-nav-item { padding: 10px 20px; font-size: 0.9rem; }
+    .dashboard-header { flex-direction: column; align-items: stretch; gap: 15px; }
+    .week-nav { justify-content: space-between; padding: 8px 15px; }
+    #currentWeekLabel { min-width: unset; font-size: 0.95rem; }
+    .summary-card { justify-content: space-around; padding: 15px; }
+    .weekly-grid { grid-template-columns: 1fr; max-height: none; gap: 15px; }
+    .day-column { min-height: unset; border: 1px solid var(--border-color); }
+    .day-header { display: flex; justify-content: space-between; align-items: center; padding: 12px 15px; background: rgba(255,255,255,0.03); }
+    .day-name { margin-bottom: 0; }
+    .btn-add-shift { padding: 15px; font-size: 1.2rem; }
+    .actions-container { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .actions-container a.btn { grid-column: span 2; }
+    .modal-content { max-width: 95%; margin: 10px; border-radius: 16px; }
+}
