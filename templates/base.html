@@ -70,11 +70,6 @@
             <span class="material-icons">payments</span>
             <span class="nav-text">薪資</span>
         </a>
-        <a href="{{ url_for('download.index') }}"
-            class="mobile-nav-item {% if 'download' in request.endpoint %}active{% endif %}">
-            <span class="material-icons">cloud_download</span>
-            <span class="nav-text">下載</span>
-        </a>
         <a href="{{ url_for('ntut.calendar') }}"
             class="mobile-nav-item {% if 'ntut' in request.endpoint %}active{% endif %}">
             <span class="material-icons">school</span>
