@@ -72,6 +72,11 @@
             <span class="material-icons">cloud_download</span>
             <span class="nav-text">下載</span>
         </a>
+        <a href="{{ url_for('ntut.calendar') }}"
+            class="mobile-nav-item {% if 'ntut' in request.endpoint %}active{% endif %}">
+            <span class="material-icons">school</span>
+            <span class="nav-text">北科</span>
+        </a>
     </nav>
 </body>
 
