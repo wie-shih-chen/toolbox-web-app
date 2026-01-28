@@ -104,11 +104,4 @@
 
 {% block extra_js %}
 <script src="{{ url_for('static', filename='js/expense.js') }}"></script>
-<script>
-    document.addEventListener('DOMContentLoaded', () => {
-        // Force today level for this page
-        expenseApp.isTodayOnly = true;
-        expenseApp.init();
-    });
-</script>
 {% endblock %}
