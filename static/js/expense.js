@@ -6,8 +6,10 @@ const expenseApp = {
     // Initializers
     init() {
         const dashboard = document.querySelector('.expense-dashboard');
-        this.currentPeriod.start = dashboard.dataset.startDate;
-        this.currentPeriod.end = dashboard.dataset.endDate;
+        if (dashboard) {
+            this.currentPeriod.start = dashboard.dataset.startDate;
+            this.currentPeriod.end = dashboard.dataset.endDate;
+        }
 
         this.bindEvents();
         this.loadSettings().then(() => this.loadData());
@@ -18,9 +20,11 @@ const expenseApp = {
         const yearSelect = document.getElementById('yearSelect');
         const monthSelect = document.getElementById('monthSelect');
         const daySelect = document.getElementById('daySelect');
+
         if (yearSelect) yearSelect.addEventListener('change', () => { this.updateDaysInMonth(); this.loadHistoryData(); });
         if (monthSelect) monthSelect.addEventListener('change', () => { this.updateDaysInMonth(); this.loadHistoryData(); });
         if (daySelect) daySelect.addEventListener('change', () => this.loadHistoryData());
+
         this.initHistoryPriors();
     },
 
@@ -93,6 +97,7 @@ const expenseApp = {
     },
 
     async loadData() {
+        if (!this.currentPeriod.start) return;
         const url = `/expense/api/records?start_date=${this.currentPeriod.start}&end_date=${this.currentPeriod.end}`;
         try {
             const res = await fetch(url);
@@ -124,12 +129,14 @@ const expenseApp = {
             yearSelect.appendChild(opt);
         }
 
-        // Set current month correctly based on accounting logic
-        // If today is < 10, current accounting month is last month
+        // Set current month correctly based on accounting logic (10th)
         let targetMonth = (now.getDate() < 10) ? now.getMonth() : now.getMonth() + 1;
         if (targetMonth === 0) {
             targetMonth = 12;
             yearSelect.value = currentYear - 1;
+        } else if (targetMonth > 12) {
+            targetMonth = 1;
+            yearSelect.value = currentYear;
         }
 
         monthSelect.value = String(targetMonth).padStart(2, '0');
@@ -146,7 +153,6 @@ const expenseApp = {
         const year = parseInt(yearSelect.value);
         const month = parseInt(monthSelect.value);
 
-        // Days in month logic (month is 1-indexed for the '0' trick)
         const daysInMonth = new Date(year, month, 0).getDate();
         const currentVal = daySelect.value;
 
@@ -172,7 +178,7 @@ const expenseApp = {
         let start, end;
 
         if (day) {
-            // Specific day filtering (24h window)
+            // Specific day query
             start = `${year}-${month}-${day}`;
             const startDate = new Date(`${year}-${month}-${day}`);
             const endDate = new Date(startDate.getTime() + 86400000);
@@ -190,7 +196,6 @@ const expenseApp = {
         }
 
         const url = `/expense/api/records?start_date=${start}&end_date=${end}`;
-
         try {
             const res = await fetch(url);
             const data = await res.json();
@@ -207,23 +212,6 @@ const expenseApp = {
             console.error(error);
         }
     },
-
-    try {
-        const res = await fetch(url);
-        const data = await res.json();
-        this.records = data.records;
-
-        const histTotal = document.getElementById('historyTotal');
-        if(histTotal) histTotal.textContent = `$${Math.round(data.total_amount).toLocaleString()}`;
-
-        const histCount = document.getElementById('historyCount');
-        if(histCount) histCount.textContent = data.records.length;
-
-        this.renderList('historyExpenseList');
-    } catch(error) {
-        console.error(error);
-    }
-},
 
     renderSummary(total) {
         const el = document.getElementById('totalExpense');
@@ -242,43 +230,43 @@ const expenseApp = {
         else progressFill.style.background = 'linear-gradient(90deg, #4ecdc4, #abe9cd)';
     },
 
-        renderList(containerID) {
-    const container = document.getElementById(containerID);
-    if (!container) return;
+    renderList(containerID) {
+        const container = document.getElementById(containerID);
+        if (!container) return;
 
-    if (this.records.length === 0) {
-        container.innerHTML = `
+        if (this.records.length === 0) {
+            container.innerHTML = `
                 <div class="empty-state" style="text-align:center; padding:50px 20px; color:var(--text-secondary)">
                     <span class="material-icons" style="font-size: 3rem; margin-bottom: 15px; display: block; opacity: 0.5">receipt_long</span>
                     <p>本期尚無紀錄</p>
                 </div>`;
-        return;
-    }
+            return;
+        }
 
-    const colorMap = {
-        '飲食': 'var(--cat-food)',
-        '衣著': 'var(--cat-clothing)',
-        '居住': 'var(--cat-housing)',
-        '交通': 'var(--cat-transport)',
-        '教育': 'var(--cat-edu)',
-        '娛樂': 'var(--cat-play)',
-        '其他': 'var(--cat-other)'
-    };
+        const colorMap = {
+            '飲食': 'var(--cat-food)',
+            '衣著': 'var(--cat-clothing)',
+            '居住': 'var(--cat-housing)',
+            '交通': 'var(--cat-transport)',
+            '教育': 'var(--cat-edu)',
+            '娛樂': 'var(--cat-play)',
+            '其他': 'var(--cat-other)'
+        };
 
-    container.innerHTML = '';
-    this.records.forEach(r => {
-        const item = document.createElement('div');
-        item.className = 'expense-item';
-        item.onclick = () => this.openEditModal(r);
+        container.innerHTML = '';
+        this.records.forEach(r => {
+            const item = document.createElement('div');
+            item.className = 'expense-item';
+            item.onclick = () => this.openEditModal(r);
 
-        const categoryEmoji = r.category ? r.category.split(' ')[0] : '📦';
-        const categoryName = r.category ? (r.category.includes(' ') ? r.category.split(' ')[1] : r.category) : '其他';
-        const catColor = colorMap[categoryName] || 'var(--cat-other)';
+            const categoryEmoji = r.category ? r.category.split(' ')[0] : '📦';
+            const categoryName = r.category ? (r.category.includes(' ') ? r.category.split(' ')[1] : r.category) : '其他';
+            const catColor = colorMap[categoryName] || 'var(--cat-other)';
 
-        const timePart = r.timestamp.split(' ')[1].substring(0, 5);
-        const datePart = r.timestamp.split(' ')[0].substring(5).replace('-', '/');
+            const timePart = r.timestamp.split(' ')[1].substring(0, 5);
+            const datePart = r.timestamp.split(' ')[0].substring(5).replace('-', '/');
 
-        item.innerHTML = `
+            item.innerHTML = `
                 <div class="expense-item-left">
                     <div class="category-icon-wrapper" style="background: ${catColor}20; color: ${catColor}">
                         ${categoryEmoji}
@@ -294,117 +282,114 @@ const expenseApp = {
                 </div>
                 <div class="expense-amount" style="color: ${catColor}">$${Math.round(r.amount).toLocaleString()}</div>
             `;
-        container.appendChild(item);
-    });
-},
-// Modal Handling
-openAddModal() {
-    this.resetForm();
-    const now = new Date();
-    const dateStr = now.toISOString().split('T')[0];
-    const timeStr = now.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+            container.appendChild(item);
+        });
+    },
 
-    document.getElementById('expenseDate').value = dateStr;
-    document.getElementById('expenseTime').value = timeStr;
-    document.getElementById('modalTitle').textContent = '新增支出';
-    document.getElementById('deleteExpenseBtn').classList.add('hidden');
-    document.getElementById('expenseModal').classList.add('show');
-},
+    openAddModal() {
+        this.resetForm();
+        const now = new Date();
+        const dateStr = now.toISOString().split('T')[0];
+        const timeStr = now.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
 
-openEditModal(record) {
-    this.resetForm();
-    document.getElementById('expenseId').value = record.id;
-    document.getElementById('expenseNote').value = record.note;
-    document.getElementById('expenseAmount').value = record.amount;
+        document.getElementById('expenseDate').value = dateStr;
+        document.getElementById('expenseTime').value = timeStr;
+        document.getElementById('modalTitle').textContent = '新增支出';
+        document.getElementById('deleteExpenseBtn').classList.add('hidden');
+        document.getElementById('expenseModal').classList.add('show');
+    },
 
-    const catName = record.category ? (record.category.includes(' ') ? record.category.split(' ')[1] : record.category) : '其他';
-    document.getElementById('expenseCategory').value = catName;
+    openEditModal(record) {
+        this.resetForm();
+        document.getElementById('expenseId').value = record.id;
+        document.getElementById('expenseNote').value = record.note;
+        document.getElementById('expenseAmount').value = record.amount;
 
-    // Split timestamp YYYY-MM-DD HH:mm:ss
-    const parts = record.timestamp.split(' ');
-    document.getElementById('expenseDate').value = parts[0];
-    document.getElementById('expenseTime').value = parts[1].substring(0, 5);
+        const catName = record.category ? (record.category.includes(' ') ? record.category.split(' ')[1] : record.category) : '其他';
+        document.getElementById('expenseCategory').value = catName;
 
-    document.getElementById('modalTitle').textContent = '編輯紀錄';
-    document.getElementById('deleteExpenseBtn').classList.remove('hidden');
-    document.getElementById('expenseModal').classList.add('show');
-},
+        const parts = record.timestamp.split(' ');
+        document.getElementById('expenseDate').value = parts[0];
+        document.getElementById('expenseTime').value = parts[1].substring(0, 5);
 
-closeModal() {
-    const modal = document.getElementById('expenseModal');
-    if (modal) modal.classList.remove('show');
-},
+        document.getElementById('modalTitle').textContent = '編輯紀錄';
+        document.getElementById('deleteExpenseBtn').classList.remove('hidden');
+        document.getElementById('expenseModal').classList.add('show');
+    },
 
-resetForm() {
-    const form = document.getElementById('expenseForm');
-    if (form) {
-        form.reset();
-        document.getElementById('expenseId').value = '';
-    }
-},
+    closeModal() {
+        const modal = document.getElementById('expenseModal');
+        if (modal) modal.classList.remove('show');
+    },
+
+    resetForm() {
+        const form = document.getElementById('expenseForm');
+        if (form) {
+            form.reset();
+            document.getElementById('expenseId').value = '';
+        }
+    },
 
     async handleSubmit(e) {
-    e.preventDefault();
-    const formData = new FormData(e.target);
-    const data = Object.fromEntries(formData.entries());
+        e.preventDefault();
+        const formData = new FormData(e.target);
+        const data = Object.fromEntries(formData.entries());
 
-    // Merge Date and Time
-    const d = document.getElementById('expenseDate').value;
-    const t = document.getElementById('expenseTime').value;
-    data.timestamp = `${d} ${t}:00`;
+        const d = document.getElementById('expenseDate').value;
+        const t = document.getElementById('expenseTime').value;
+        data.timestamp = `${d} ${t}:00`;
 
-    const id = data.id;
-    const method = id ? 'PUT' : 'POST';
-    const url = id ? `/expense/api/records/${id}` : '/expense/api/records';
+        const id = data.id;
+        const method = id ? 'PUT' : 'POST';
+        const url = id ? `/expense/api/records/${id}` : '/expense/api/records';
 
-    try {
-        const res = await fetch(url, {
-            method: method,
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(data)
-        });
+        try {
+            const res = await fetch(url, {
+                method: method,
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
 
-        if (res.ok) {
-            this.closeModal();
-            // Smart Refresh
-            if (document.querySelector('.expense-dashboard')) this.loadData();
-            else if (document.querySelector('.expense-history')) this.loadHistoryData();
-        } else {
-            alert('儲存失敗');
+            if (res.ok) {
+                this.closeModal();
+                if (document.querySelector('.expense-dashboard')) this.loadData();
+                else if (document.querySelector('.expense-history')) this.loadHistoryData();
+            } else {
+                alert('儲存失敗');
+            }
+        } catch (error) {
+            console.error(error);
         }
-    } catch (error) {
-        console.error(error);
-    }
-},
+    },
 
     async deleteCurrentRecord() {
-    if (!confirm('確定要刪除這筆紀錄嗎？')) return;
-    const id = document.getElementById('expenseId').value;
-    try {
-        const res = await fetch(`/expense/api/records/${id}`, { method: 'DELETE' });
-        if (res.ok) {
-            this.closeModal();
-            if (document.querySelector('.expense-dashboard')) this.loadData();
-            else if (document.querySelector('.expense-history')) this.loadHistoryData();
+        if (!confirm('確定要刪除這筆紀錄嗎？')) return;
+        const id = document.getElementById('expenseId').value;
+        try {
+            const res = await fetch(`/expense/api/records/${id}`, { method: 'DELETE' });
+            if (res.ok) {
+                this.closeModal();
+                if (document.querySelector('.expense-dashboard')) this.loadData();
+                else if (document.querySelector('.expense-history')) this.loadHistoryData();
+            }
+        } catch (error) {
+            console.error(error);
         }
-    } catch (error) {
-        console.error(error);
+    },
+
+    changePeriod(delta) {
+        const currentStart = new Date(this.currentPeriod.start);
+        currentStart.setMonth(currentStart.getMonth() + delta);
+        const nextMonth = new Date(currentStart);
+        nextMonth.setMonth(nextMonth.getMonth() + 1);
+        this.currentPeriod.start = this.formatDate(currentStart);
+        this.currentPeriod.end = this.formatDate(nextMonth);
+        this.loadData();
+    },
+
+    formatDate(date) {
+        return date.toISOString().split('T')[0];
     }
-},
-
-changePeriod(delta) {
-    const currentStart = new Date(this.currentPeriod.start);
-    currentStart.setMonth(currentStart.getMonth() + delta);
-    const nextMonth = new Date(currentStart);
-    nextMonth.setMonth(nextMonth.getMonth() + 1);
-    this.currentPeriod.start = this.formatDate(currentStart);
-    this.currentPeriod.end = this.formatDate(nextMonth);
-    this.loadData();
-},
-
-formatDate(date) {
-    return date.toISOString().split('T')[0];
-}
 };
 
 document.addEventListener('DOMContentLoaded', () => {
