@@ -408,8 +408,12 @@ const expenseApp = {
         if (catSelect) catSelect.disabled = true;
 
         // Force read-only state for past periods
-        document.querySelectorAll('#expenseForm input').forEach(input => {
-            if (input.type !== 'hidden') input.readOnly = !isEditable;
+        const formElements = document.querySelectorAll('#expenseForm input, #expenseForm select, #expenseForm textarea');
+        formElements.forEach(el => {
+            if (el.type !== 'hidden') {
+                el.readOnly = !isEditable;
+                el.disabled = !isEditable;
+            }
         });
 
         const deleteBtn = document.getElementById('deleteExpenseBtn');

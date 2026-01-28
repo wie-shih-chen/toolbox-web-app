@@ -2,5 +2,13 @@
   "settings": {
     "monthly_budget": 12000.0
   },
-  "records": []
+  "records": [
+    {
+      "id": "ab16927b-9826-4057-a5ee-a885b2409aff",
+      "note": "早餐",
+      "amount": 100.0,
+      "category": "🍽️ 飲食",
+      "timestamp": "2025-12-31 03:46:00"
+    }
+  ]
 }

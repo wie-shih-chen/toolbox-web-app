@@ -227,8 +227,12 @@ openEditModal(record) {
     if (submitBtn) submitBtn.classList.toggle('hidden', !isEditable);
 
     // Toggle Read-Only for inputs
-    document.querySelectorAll('#recordForm input').forEach(input => {
-        if (input.type !== 'hidden') input.readOnly = !isEditable;
+    const formElements = document.querySelectorAll('#recordForm input, #recordForm select, #recordForm textarea');
+    formElements.forEach(el => {
+        if (el.type !== 'hidden') {
+            el.readOnly = !isEditable;
+            el.disabled = !isEditable;
+        }
     });
 
     const tabs = document.querySelector('.tabs');
