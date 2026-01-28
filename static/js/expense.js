@@ -184,9 +184,13 @@ const expenseApp = {
             const el = document.createElement('div');
             el.className = 'week-summary-card glass-premium';
             el.onclick = () => this.switchLevel('days', { week: wk });
+
+            const startShort = wk.week_start.substring(5).replace('-', '/');
+            const endShort = wk.week_end.substring(5).replace('-', '/');
+
             el.innerHTML = `
                 <div class="card-info">
-                    <span class="week-title">${wk.week_start} 進入此週</span>
+                    <span class="week-title">${startShort} ~ ${endShort}</span>
                     <span class="week-days-count">${wk.days.length} 天紀錄</span>
                 </div>
                 <div class="card-amount">$${Math.round(wk.total).toLocaleString()}</div>

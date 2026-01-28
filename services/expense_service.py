@@ -194,6 +194,11 @@ class ExpenseService:
         sorted_weeks = []
         for ws in sorted(weeks_grouped.keys(), reverse=True):
             w_data = weeks_grouped[ws]
+            # Calculate weekend (ws is Monday)
+            ws_dt = datetime.strptime(ws, '%Y-%m-%d')
+            we_dt = ws_dt + timedelta(days=6)
+            w_data['week_end'] = we_dt.strftime('%Y-%m-%d')
+            
             # Sort days within week
             sorted_days = []
             for ds in sorted(w_data['days'].keys(), reverse=True):
