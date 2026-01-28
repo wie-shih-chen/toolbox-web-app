@@ -1,0 +1,162 @@
+/* Expense Specific Styles */
+
+.expense-summary-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin-bottom: 25px;
+}
+
+.expense-summary-card {
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    justify-content: center;
+}
+
+.expense-summary-card .label {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+}
+
+.expense-summary-card .value {
+    font-size: 1.8rem;
+    font-weight: 700;
+}
+
+.expense-summary-card .value.highlight {
+    color: var(--accent-color);
+}
+
+/* Progress Bar */
+.budget-progress-container {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.progress-bar {
+    width: 100%;
+    height: 8px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+.progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent-color), #5eead4);
+    box-shadow: 0 0 10px rgba(78, 205, 196, 0.5);
+    transition: width 0.5s ease-out;
+}
+
+/* Quick Add Bar */
+.quick-add-container {
+    padding: 15px;
+    margin-bottom: 25px;
+}
+
+.btn-block {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+}
+
+/* Expense List */
+.expense-list-container {
+    margin-top: 30px;
+}
+
+.expense-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.expense-item {
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid var(--border-color);
+    border-radius: 15px;
+    padding: 15px 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    transition: transform 0.2s, background 0.2s;
+    cursor: pointer;
+}
+
+.expense-item:hover {
+    background: rgba(255, 255, 255, 0.07);
+    transform: translateY(-2px);
+}
+
+.expense-item-left {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.expense-category-icon {
+    width: 45px;
+    height: 45px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+}
+
+.expense-details {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.expense-name {
+    font-weight: 600;
+    font-size: 1rem;
+}
+
+.expense-time {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+}
+
+.expense-amount {
+    font-weight: 700;
+    font-size: 1.1rem;
+    color: var(--text-main);
+}
+
+.period-header {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    margin-bottom: 20px;
+}
+
+.period-label {
+    font-weight: 500;
+    color: var(--text-secondary);
+}
+
+/* Form Layout */
+.form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 15px;
+}
+
+@media (max-width: 768px) {
+    .expense-summary-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .form-row {
+        grid-template-columns: 1fr;
+    }
+}
