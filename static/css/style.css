@@ -476,7 +476,7 @@ textarea:focus {
     }
 
     .dashboard-grid {
-        grid-template-columns: 1fr;
+        grid-template_columns: 1fr;
     }
 
     .modal {
@@ -485,5 +485,62 @@ textarea:focus {
 
     .modal-content {
         max-width: 100%;
+    }
+}
+
+/* Segmented Navigation (iOS Style) */
+.salary-nav {
+    display: inline-flex;
+    position: relative;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(118, 118, 128, 0.24);
+    /* Authentic iOS Track */
+    backdrop-filter: blur(25px);
+    -webkit-backdrop-filter: blur(25px);
+    border-radius: 12px;
+    padding: 3px;
+    margin-bottom: 35px;
+    border: 1px solid rgba(255, 255, 255, 0.03);
+    gap: 2px;
+}
+
+.salary-nav-item {
+    padding: 8px 16px;
+    color: rgba(255, 255, 255, 0.6);
+    border-radius: 10px;
+    font-weight: 500;
+    font-size: 0.92rem;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    white-space: nowrap;
+    text-decoration: none;
+}
+
+.salary-nav-item.active {
+    background: #636366;
+    /* Authentic iOS Thumb */
+    color: white;
+    box-shadow: 0 3px 8px rgba(0, 0, 0, 0.2);
+}
+
+@media (max-width: 768px) {
+    .salary-nav {
+        left: 0;
+        transform: none;
+        width: auto;
+        max-width: 100%;
+        overflow-x: auto;
+        justify-content: flex-start;
+        display: flex;
+        align-self: center;
+        margin-left: auto;
+        margin-right: auto;
+    }
+
+    .salary-nav::-webkit-scrollbar {
+        display: none;
     }
 }
