@@ -12,28 +12,12 @@
 
     --font-main: 'Inter', 'Noto Sans TC', sans-serif;
 
-    /* Authentic iOS System Colors (Dark Mode) */
-    --ios-bg: #000000;
-    /* Deep black for OLED/Dark mode */
-    --ios-secondary-bg: #1C1C1E;
-    /* Primary system background */
-    --ios-tertiary-bg: #2C2C2E;
-    /* Secondary system background */
-    --ios-accent: #0A84FF;
-    /* San Francisco Blue */
-    --ios-label: #FFFFFF;
-    --ios-secondary-label: #8E8E93;
-
-    /* Segmented Control & Glass */
-    --ios-track: rgba(118, 118, 128, 0.24);
-    --ios-thumb: #636366;
-    --ios-blur: blur(30px);
-    --ios-radius: 12px;
-    /* iOS uses smaller radii for inputs, larger for cards */
-    --ios-card-radius: 22px;
-
-    /* Typography Fine-tuning */
-    --ios-letter-spacing: -0.022em;
+    /* iOS System Tokens */
+    --ios-blur: blur(25px);
+    --ios-bg: rgba(255, 255, 255, 0.06);
+    --ios-border: rgba(255, 255, 255, 0.08);
+    --ios-radius: 24px;
+    --ios-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
 
     /* Legacy Sync */
     --glass-bg: var(--ios-bg);
@@ -50,11 +34,10 @@
 
 body {
     font-family: var(--font-main);
-    background-color: var(--ios-bg);
-    color: var(--ios-label);
+    background-color: var(--bg-color);
+    color: var(--text-primary);
     height: 100vh;
     overflow: hidden;
-    letter-spacing: var(--ios-letter-spacing);
 }
 
 a {
@@ -158,22 +141,17 @@ a {
 }
 
 .top-bar {
-    padding: 40px 30px 10px 30px;
-    /* More top padding for Large Title start */
-    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    padding: 20px 30px;
+    border-bottom: 1px solid var(--border-color);
     display: flex;
     justify-content: space-between;
-    align-items: flex-end;
-    /* Align title to bottom of long row */
-    background-color: var(--ios-bg);
+    align-items: center;
+    background-color: var(--bg-color);
 }
 
 .page-title {
-    font-size: 34px;
-    /* iOS Large Title Size */
-    font-weight: 800;
-    letter-spacing: -0.04em;
-    color: white;
+    font-size: 1.5rem;
+    font-weight: 600;
 }
 
 .content-area {

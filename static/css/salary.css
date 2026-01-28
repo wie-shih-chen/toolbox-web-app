@@ -5,38 +5,40 @@
     position: relative;
     left: 50%;
     transform: translateX(-50%);
-    background: var(--ios-track);
-    /* Authentic iOS Track */
-    backdrop-filter: var(--ios-blur);
-    -webkit-backdrop-filter: var(--ios-blur);
+    background: rgba(255, 255, 255, 0.05);
+    /* iOS Dark Segmented Control Track */
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
     border-radius: 12px;
-    padding: 2px;
+    padding: 3px;
     margin-bottom: 35px;
-    gap: 0;
+    border: 1px solid rgba(255, 255, 255, 0.03);
+    gap: 2px;
 }
 
 .salary-nav-item {
     padding: 8px 16px;
-    color: var(--ios-label);
-    border-radius: 10px;
+    color: var(--text-secondary);
+    border-radius: 9px;
     font-weight: 500;
-    font-size: 0.92rem;
-    transition: all 0.2s cubic-bezier(0.2, 1.0, 0.2, 1.0);
+    font-size: 0.95rem;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
     display: flex;
     align-items: center;
-    gap: 8px;
-    /* Balanced spacing */
+    gap: 6px;
     white-space: nowrap;
     text-decoration: none;
-    flex: 1;
-    justify-content: center;
+}
+
+.salary-nav-item:hover {
+    color: var(--text-primary);
 }
 
 .salary-nav-item.active {
-    background: var(--ios-thumb);
-    /* Authentic iOS Thumb */
-    color: white;
-    box-shadow: 0 3px 8px rgba(0, 0, 0, 0.15), 0 3px 1px rgba(0, 0, 0, 0.05);
+    background: rgba(255, 255, 255, 0.12);
+    /* iOS Active Segment Thumb */
+    color: var(--text-primary);
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
 }
 
 .salary-nav-item i {
