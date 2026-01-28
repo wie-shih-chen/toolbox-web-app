@@ -300,10 +300,17 @@ const expenseApp = {
     openAddModal() {
         this.resetForm();
         const now = new Date();
-        document.getElementById('expenseDate').value = now.toISOString().split('T')[0];
+        // Correctly handle local timezone offset for YYYY-MM-DD
+        const offset = now.getTimezoneOffset() * 60000;
+        const localISOTime = new Date(now - offset).toISOString();
+
+        document.getElementById('expenseDate').value = localISOTime.split('T')[0];
         document.getElementById('expenseTime').value = now.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+        document.getElementById('modalTitle').textContent = '新增支出';
+        document.getElementById('deleteExpenseBtn').classList.add('hidden');
         document.getElementById('expenseModal').classList.add('show');
     },
+
 
     openEditModal(record) {
         this.resetForm();
