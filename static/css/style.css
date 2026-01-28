@@ -46,6 +46,42 @@ a {
 }
 
 /* Layout */
+/* Responsive Mobile Overrides */
+@media (max-width: 768px) {
+    .salary-nav {
+        margin: 15px 10px;
+        padding: 4px;
+        gap: 2px;
+        justify-content: space-between;
+    }
+
+    .salary-nav-item {
+        padding: 8px 10px;
+        font-size: 0.8rem;
+        flex: 1;
+        text-align: center;
+        white-space: nowrap;
+    }
+
+    .main-content {
+        padding-bottom: 80px;
+        /* Space for mobile bottom nav */
+    }
+
+    .content-area {
+        padding: 15px;
+        /* Tighter padding on mobile */
+    }
+
+    .top-bar {
+        padding: 15px 20px;
+    }
+
+    .page-title {
+        font-size: 1.25rem;
+    }
+}
+
 .app-container {
     display: flex;
     height: 100vh;
