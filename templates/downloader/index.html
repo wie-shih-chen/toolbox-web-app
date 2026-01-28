@@ -11,46 +11,69 @@
 <div class="downloader-container">
     <div class="left-panel">
         <!-- Input Card -->
-        <div class="card input-card">
-            <h3>📺 YouTube 網址</h3>
+        <div class="card input-card glass-premium">
+            <h3 class="panel-title"><span class="material-icons">link</span> YouTube 網址</h3>
             <div class="input-group">
                 <input type="text" id="urlInput" placeholder="請貼上影片網址...">
                 <button class="btn btn-primary" id="previewBtn">🔍 預覽</button>
             </div>
         </div>
 
+
         <!-- Options Card -->
-        <div class="card options-card">
-            <h3>🎯 下載選項</h3>
-            <div class="options-grid">
-                <div class="format-options">
-                    <label class="radio-label">
+        <div class="card options-card glass-premium">
+            <h3 class="panel-title"><span class="material-icons">tune</span> 下載選項</h3>
+            <div class="options-wrapper">
+                <div class="format-grid">
+                    <label class="segment-item">
                         <input type="radio" name="format" value="mp3">
-                        <span>🎵 MP3 音頻</span>
+                        <div class="segment-content">
+                            <span class="material-icons">music_note</span>
+                            <span>MP3</span>
+                        </div>
                     </label>
-                    <label class="radio-label">
-                        <input type="radio" name="format" value="mp4_720p" checked>
-                        <span>🎥 MP4 720p</span>
-                    </label>
-                    <label class="radio-label">
-                        <input type="radio" name="format" value="mp4_1080p">
-                        <span>🎬 MP4 1080p</span>
-                    </label>
-                    <label class="radio-label">
+                    <label class="segment-item">
                         <input type="radio" name="format" value="mp4_480p">
-                        <span>📱 MP4 480p</span>
+                        <div class="segment-content">
+                            <span class="material-icons">smartphone</span>
+                            <span>480p</span>
+                        </div>
+                    </label>
+                    <label class="segment-item">
+                        <input type="radio" name="format" value="mp4_720p" checked>
+                        <div class="segment-content">
+                            <span class="material-icons">hd</span>
+                            <span>720p</span>
+                        </div>
+                    </label>
+                    <label class="segment-item">
+                        <input type="radio" name="format" value="mp4_1080p">
+                        <div class="segment-content">
+                            <span class="material-icons">high_quality</span>
+                            <span>1080p</span>
+                        </div>
                     </label>
                 </div>
-                <div class="extra-options">
-                    <label class="checkbox-label">
-                        <input type="checkbox" id="subtitles"> 📥 下載字幕
+
+                <div class="extra-switches">
+                    <label class="switch-row">
+                        <div class="switch-label">
+                            <span class="material-icons">subtitles</span>
+                            <span>下載字幕</span>
+                        </div>
+                        <input type="checkbox" id="subtitles" class="ios-switch">
                     </label>
-                    <label class="checkbox-label">
-                        <input type="checkbox" id="embedSubtitles"> 🎬 內嵌字幕
+                    <label class="switch-row">
+                        <div class="switch-label">
+                            <span class="material-icons">closed_caption</span>
+                            <span>內嵌字幕</span>
+                        </div>
+                        <input type="checkbox" id="embedSubtitles" class="ios-switch">
                     </label>
                 </div>
             </div>
         </div>
+
 
         <!-- Download Action -->
         <button class="btn btn-primary btn-large" id="downloadBtn" disabled>🚀 開始下載</button>
@@ -58,8 +81,8 @@
 
     <div class="right-panel">
         <!-- Progress Card -->
-        <div class="card progress-card">
-            <h3>📊 下載進度</h3>
+        <div class="card progress-card glass-premium">
+            <h3 class="panel-title"><span class="material-icons">analytics</span> 下載進度</h3>
             <div class="progress-container">
                 <div class="progress-bar-bg">
                     <div class="progress-bar" id="mainProgress" style="width: 0%"></div>
@@ -72,28 +95,33 @@
             </div>
         </div>
 
+
         <!-- Video Info Card -->
-        <div class="card info-card hidden" id="videoInfoCard">
-            <h3>📺 影片資訊</h3>
+        <div class="card info-card hidden glass-premium" id="videoInfoCard"
+            style="border: 1px solid var(--accent-color);">
+            <h3 class="panel-title"><span class="material-icons" style="color: var(--accent-color)">visibility</span>
+                影片資訊</h3>
             <div class="video-info-content">
                 <img src="" alt="Thumbnail" id="videoThumb" class="video-thumb">
                 <div class="video-details">
-                    <h4 id="videoTitle">Title</h4>
-                    <p id="videoAuthor">Author</p>
-                    <p id="videoDuration">Duration</p>
+                    <h4 id="videoTitle" style="color: var(--accent-color); font-weight: 700;">Title</h4>
+                    <p id="videoAuthor" style="opacity: 0.8;">Author</p>
+                    <p id="videoDuration" style="font-family: monospace; font-size: 0.9rem;">Duration</p>
                 </div>
             </div>
         </div>
 
+
         <!-- File List -->
-        <div class="card files-card">
-            <div class="card-header">
-                <h3>📚 下載紀錄</h3>
+        <div class="card files-card glass-premium">
+            <div class="card-header" style="margin-bottom: 15px;">
+                <h3 class="panel-title"><span class="material-icons">history</span> 下載紀錄</h3>
                 <div class="actions">
                     <button class="btn btn-sm btn-secondary" id="refreshFilesBtn">🔄</button>
                     <button class="btn btn-sm btn-secondary" id="openFolderBtn">📂</button>
                 </div>
             </div>
+
             <div class="files-list" id="filesList">
                 <!-- Files injected here -->
             </div>
