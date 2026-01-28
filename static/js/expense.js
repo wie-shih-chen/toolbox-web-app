@@ -434,6 +434,17 @@ const expenseApp = {
         document.getElementById('expenseModal').classList.add('show');
     },
 
+    refreshData() {
+        if (document.querySelector('.today-view')) {
+            this.loadTodayData();
+        } else if (document.querySelector('.expense-dashboard')) {
+            this.loadData(true);
+        } else if (document.querySelector('.expense-history')) {
+            this.loadHistoryData();
+        }
+    },
+
+
 
 
     closeModal() { document.getElementById('expenseModal').classList.remove('show'); },
@@ -457,8 +468,9 @@ const expenseApp = {
         if (res.ok) {
             this.triggerHaptic();
             this.closeModal();
-            this.loadData(true); // Preserve state!
+            this.refreshData();
         }
+
     },
 
 
@@ -470,8 +482,9 @@ const expenseApp = {
         const res = await fetch(`/expense/api/records/${id}`, { method: 'DELETE' });
         if (res.ok) {
             this.closeModal();
-            this.loadData(true); // Preserve state!
+            this.refreshData();
         }
+
     },
 
 
@@ -530,7 +543,8 @@ const expenseApp = {
         const d = document.getElementById('daySelect').value;
         const s = d ? `${y}-${m}-${d}` : `${y}-${m}-10`;
         let e;
-        if (d) { e = new Date(new Date(s).getTime() + 86400000).toISOString().split('T')[0]; }
+        if (d) { e = this.formatDate(new Date(new Date(s).getTime() + 86400000)); }
+
         else { let ey = parseInt(y); let em = parseInt(m) + 1; if (em > 12) { em = 1; ey++; } e = `${ey}-${String(em).padStart(2, '0')}-10`; }
         window.location.href = `/expense/api/records/export?start_date=${s}&end_date=${e}`;
     }
