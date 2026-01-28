@@ -98,10 +98,17 @@
                     </div>
                 </div>
 
-                <div class="form-group with-icon">
-                    <label>日期與時間</label>
-                    <input type="datetime-local" name="timestamp" id="expenseTimestamp" required>
-                    <span class="material-icons">calendar_today</span>
+                <div class="form-group">
+                    <div class="date-time-row">
+                        <div class="date-icon-box">
+                            <span class="material-icons">calendar_today</span>
+                        </div>
+                        <span class="date-label">Date</span>
+                        <div class="pills-container">
+                            <input type="date" id="expenseDate" class="input-pill" required>
+                            <input type="time" id="expenseTime" class="input-pill" required>
+                        </div>
+                    </div>
                 </div>
 
                 <div class="modal-actions">

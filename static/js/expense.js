@@ -220,15 +220,15 @@ const expenseApp = {
             container.appendChild(item);
         });
     },
-
     // Modal Handling
     openAddModal() {
         this.resetForm();
         const now = new Date();
-        const timezoneOffset = now.getTimezoneOffset() * 60000;
-        const localISOTime = (new Date(now - timezoneOffset)).toISOString().slice(0, 16);
+        const dateStr = now.toISOString().split('T')[0];
+        const timeStr = now.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
 
-        document.getElementById('expenseTimestamp').value = localISOTime;
+        document.getElementById('expenseDate').value = dateStr;
+        document.getElementById('expenseTime').value = timeStr;
         document.getElementById('modalTitle').textContent = '新增支出';
         document.getElementById('deleteExpenseBtn').classList.add('hidden');
         document.getElementById('expenseModal').classList.add('show');
@@ -243,8 +243,10 @@ const expenseApp = {
         const catName = record.category ? (record.category.includes(' ') ? record.category.split(' ')[1] : record.category) : '其他';
         document.getElementById('expenseCategory').value = catName;
 
-        const ts = record.timestamp.replace(' ', 'T').substring(0, 16);
-        document.getElementById('expenseTimestamp').value = ts;
+        // Split timestamp YYYY-MM-DD HH:mm:ss
+        const parts = record.timestamp.split(' ');
+        document.getElementById('expenseDate').value = parts[0];
+        document.getElementById('expenseTime').value = parts[1].substring(0, 5);
 
         document.getElementById('modalTitle').textContent = '編輯紀錄';
         document.getElementById('deleteExpenseBtn').classList.remove('hidden');
@@ -268,7 +270,11 @@ const expenseApp = {
         e.preventDefault();
         const formData = new FormData(e.target);
         const data = Object.fromEntries(formData.entries());
-        data.timestamp = data.timestamp.replace('T', ' ') + ':00';
+
+        // Merge Date and Time
+        const d = document.getElementById('expenseDate').value;
+        const t = document.getElementById('expenseTime').value;
+        data.timestamp = `${d} ${t}:00`;
 
         const id = data.id;
         const method = id ? 'PUT' : 'POST';
