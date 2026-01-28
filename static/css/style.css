@@ -476,7 +476,7 @@ textarea:focus {
     }
 
     .dashboard-grid {
-        grid-template_columns: 1fr;
+        grid-template-columns: 1fr;
     }
 
     .modal {
