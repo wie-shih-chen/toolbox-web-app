@@ -25,14 +25,34 @@
 </div>
 
 <div class="expense-history">
-    <!-- Period Selector -->
     <div class="history-controls glass"
         style="padding: 20px; display: flex; align-items: center; gap: 15px; margin-bottom: 25px;">
-        <label for="periodSelect" style="color: var(--text-secondary); font-weight: 500;">選擇帳務週期：</label>
-        <select id="periodSelect" class="form-control"
-            style="flex-grow: 1; padding: 10px; background: rgba(0,0,0,0.2); border: 1px solid var(--border-color); color: white; border-radius: 8px;">
-            <option value="">載入中...</option>
-        </select>
+        <div style="display: flex; align-items: center; gap: 10px; flex-grow: 1;">
+            <span class="material-icons" style="color: var(--text-secondary)">event</span>
+            <label style="color: var(--text-secondary); font-weight: 500; white-space: nowrap;">查詢年份：</label>
+            <select id="yearSelect" class="form-control"
+                style="flex-grow: 1; padding: 10px; background: rgba(0,0,0,0.2); border: 1px solid var(--border-color); color: white; border-radius: 8px;">
+                <!-- Auto-populated -->
+            </select>
+        </div>
+        <div style="display: flex; align-items: center; gap: 10px; flex-grow: 1;">
+            <label style="color: var(--text-secondary); font-weight: 500; white-space: nowrap;">查詢月份：</label>
+            <select id="monthSelect" class="form-control"
+                style="flex-grow: 1; padding: 10px; background: rgba(0,0,0,0.2); border: 1px solid var(--border-color); color: white; border-radius: 8px;">
+                <option value="01">01 月 (10號起)</option>
+                <option value="02">02 月 (10號起)</option>
+                <option value="03">03 月 (10號起)</option>
+                <option value="04">04 月 (10號起)</option>
+                <option value="05">05 月 (10號起)</option>
+                <option value="06">06 月 (10號起)</option>
+                <option value="07">07 月 (10號起)</option>
+                <option value="08">08 月 (10號起)</option>
+                <option value="09">09 月 (10號起)</option>
+                <option value="10">10 月 (10號起)</option>
+                <option value="11">11 月 (10號起)</option>
+                <option value="12">12 月 (10號起)</option>
+            </select>
+        </div>
     </div>
 
     <!-- Summary Stats -->

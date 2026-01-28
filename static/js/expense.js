@@ -15,9 +15,11 @@ const expenseApp = {
 
     initHistory() {
         this.bindEvents();
-        const select = document.getElementById('periodSelect');
-        if (select) select.addEventListener('change', () => this.loadHistoryData());
-        this.loadHistoryPeriods();
+        const yearSelect = document.getElementById('yearSelect');
+        const monthSelect = document.getElementById('monthSelect');
+        if (yearSelect) yearSelect.addEventListener('change', () => this.loadHistoryData());
+        if (monthSelect) monthSelect.addEventListener('change', () => this.loadHistoryData());
+        this.initHistoryPriors();
     },
 
     initSettings() {
@@ -104,30 +106,48 @@ const expenseApp = {
         }
     },
 
-    async loadHistoryPeriods() {
-        try {
-            const res = await fetch('/expense/api/history/periods');
-            const periods = await res.json();
-            const select = document.getElementById('periodSelect');
-            select.innerHTML = '';
+    async initHistoryPriors() {
+        const yearSelect = document.getElementById('yearSelect');
+        const monthSelect = document.getElementById('monthSelect');
+        if (!yearSelect) return;
 
-            periods.reverse().forEach(p => {
-                const opt = document.createElement('option');
-                opt.value = `${p.start},${p.end}`;
-                opt.textContent = p.label;
-                select.appendChild(opt);
-            });
-
-            // Auto trigger first load
-            if (select.value) this.loadHistoryData();
-        } catch (error) {
-            console.error(error);
+        // Fill Year Range
+        const now = new Date();
+        const currentYear = now.getFullYear();
+        yearSelect.innerHTML = '';
+        for (let y = currentYear; y >= currentYear - 3; y--) {
+            const opt = document.createElement('option');
+            opt.value = y;
+            opt.textContent = `${y} 年`;
+            yearSelect.appendChild(opt);
         }
+
+        // Set current month correctly based on accounting logic
+        // If today is < 10, current accounting month is last month
+        let targetMonth = (now.getDate() < 10) ? now.getMonth() : now.getMonth() + 1;
+        if (targetMonth === 0) {
+            targetMonth = 12;
+            yearSelect.value = currentYear - 1;
+        }
+
+        monthSelect.value = String(targetMonth).padStart(2, '0');
+        this.loadHistoryData();
     },
 
     async loadHistoryData() {
-        const select = document.getElementById('periodSelect');
-        const [start, end] = select.value.split(',');
+        const year = document.getElementById('yearSelect').value;
+        const month = parseInt(document.getElementById('monthSelect').value);
+
+        // Calculate 10th to 10th
+        const start = `${year}-${String(month).padStart(2, '0')}-10`;
+        let endYear = year;
+        let endMonth = month + 1;
+        if (endMonth > 12) {
+            endMonth = 1;
+            endYear = parseInt(year) + 1;
+        }
+        const end = `${endYear}-${String(endMonth).padStart(2, '0')}-10`;
+
         const url = `/expense/api/records?start_date=${start}&end_date=${end}`;
 
         try {
@@ -135,7 +155,6 @@ const expenseApp = {
             const data = await res.json();
             this.records = data.records;
 
-            // Update Mini Summary in History
             const histTotal = document.getElementById('historyTotal');
             if (histTotal) histTotal.textContent = `$${Math.round(data.total_amount).toLocaleString()}`;
 
