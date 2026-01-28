@@ -261,7 +261,15 @@ const salaryApp = {
         document.getElementById('recordModal').classList.add('show');
     },
 
-
+    refreshData() {
+        if (document.querySelector('.salary-dashboard')) {
+            this.loadWeek();
+        } else if (document.querySelector('.salary-monthly')) {
+            this.loadMonth();
+        } else if (document.querySelector('.salary-history')) {
+            this.loadHistoryData();
+        }
+    },
 
     closeModal() {
         document.getElementById('recordModal').classList.remove('show');
@@ -332,9 +340,7 @@ const salaryApp = {
 
             if (res.ok) {
                 this.closeModal();
-                if (document.querySelector('.salary-dashboard')) this.loadWeek();
-                else if (document.querySelector('.salary-monthly')) this.loadMonth();
-                else if (document.querySelector('.salary-history')) this.loadHistoryData();
+                this.refreshData();
             } else {
                 const err = await res.json();
                 alert(err.error || '儲存失敗');
@@ -353,9 +359,7 @@ const salaryApp = {
             const res = await fetch(`/salary/api/records/${id}`, { method: 'DELETE' });
             if (res.ok) {
                 this.closeModal();
-                if (document.querySelector('.salary-dashboard')) this.loadWeek();
-                else if (document.querySelector('.salary-monthly')) this.loadMonth();
-                else if (document.querySelector('.salary-history')) this.loadHistoryData();
+                this.refreshData();
             }
         } catch (error) {
             console.error(error);
