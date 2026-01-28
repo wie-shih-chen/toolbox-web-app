@@ -72,7 +72,7 @@
     <div class="modal-content">
         <div class="modal-header">
             <h3 id="modalTitle">新增紀錄</h3>
-            <span class="close-modal">&times;</span>
+            <span class="close-modal" id="closeModalBtn">&times;</span>
         </div>
         <div class="modal-body">
             <div class="tabs">
@@ -93,6 +93,10 @@
                     <div class="form-group">
                         <label>結束時間</label>
                         <input type="time" name="end_time" id="endTime" required value="18:00">
+                    </div>
+                    <div class="form-group">
+                        <label>時薪 (NTD/hr)</label>
+                        <input type="number" name="rate" id="shiftRate" placeholder="留空則使用預設時薪">
                     </div>
                 </div>
 

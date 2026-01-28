@@ -11,26 +11,33 @@ const salaryApp = {
     },
 
     bindEvents() {
-        document.getElementById('prevWeekBtn').addEventListener('click', () => this.changeWeek(-7));
-        document.getElementById('nextWeekBtn').addEventListener('click', () => this.changeWeek(7));
-        document.getElementById('todayBtn').addEventListener('click', () => this.goToToday());
+        const addSafeListener = (id, event, callback) => {
+            const el = document.getElementById(id);
+            if (el) el.addEventListener(event, callback);
+        };
+
+        addSafeListener('prevWeekBtn', 'click', () => this.changeWeek(-7));
+        addSafeListener('nextWeekBtn', 'click', () => this.changeWeek(7));
+        addSafeListener('todayBtn', 'click', () => this.goToToday());
+
+        addSafeListener('prevMonthBtn', 'click', () => this.changeMonth(-1));
+        addSafeListener('nextMonthBtn', 'click', () => this.changeMonth(1));
+        addSafeListener('thisMonthBtn', 'click', () => {
+            const n = new Date();
+            this.currentMonth = new Date(n.getFullYear(), n.getMonth(), 1);
+            this.loadMonth();
+        });
 
         // Actions
-        const copyBtn = document.getElementById('copyLastWeekBtn');
-        if (copyBtn) copyBtn.addEventListener('click', () => this.copyLastWeek());
-
-        const clearBtn = document.getElementById('clearThisWeekBtn');
-        if (clearBtn) clearBtn.addEventListener('click', () => this.clearThisWeek());
+        addSafeListener('copyLastWeekBtn', 'click', () => this.copyLastWeek());
+        addSafeListener('clearThisWeekBtn', 'click', () => this.clearThisWeek());
 
         // Modal Events
         const closeBtns = document.querySelectorAll('.close-modal');
         closeBtns.forEach(btn => btn.addEventListener('click', () => this.closeModal()));
 
-        const recordForm = document.getElementById('recordForm');
-        if (recordForm) recordForm.addEventListener('submit', (e) => this.handleSubmit(e));
-
-        const deleteBtn = document.getElementById('deleteBtn');
-        if (deleteBtn) deleteBtn.addEventListener('click', () => this.deleteCurrentRecord());
+        addSafeListener('recordForm', 'submit', (e) => this.handleSubmit(e));
+        addSafeListener('deleteBtn', 'click', () => this.deleteCurrentRecord());
 
         // Tabs
         document.querySelectorAll('.tab-btn').forEach(btn => {
@@ -345,26 +352,7 @@ const salaryApp = {
         const now = new Date();
         this.currentMonth = new Date(now.getFullYear(), now.getMonth(), 1);
 
-        // Bind Monthly Events
-        document.getElementById('prevMonthBtn').addEventListener('click', () => this.changeMonth(-1));
-        document.getElementById('nextMonthBtn').addEventListener('click', () => this.changeMonth(1));
-        document.getElementById('thisMonthBtn').addEventListener('click', () => {
-            const n = new Date();
-            this.currentMonth = new Date(n.getFullYear(), n.getMonth(), 1);
-            this.loadMonth();
-        });
-
-        // Bind Modal Events (re-use)
-        document.querySelector('.close-modal').addEventListener('click', () => this.closeModal());
-        document.getElementById('recordForm').addEventListener('submit', (e) => this.handleSubmit(e));
-        document.getElementById('deleteBtn').addEventListener('click', () => this.deleteCurrentRecord());
-        document.querySelectorAll('.tab-btn').forEach(btn => {
-            btn.addEventListener('click', (e) => this.switchTab(e.target.dataset.tab));
-        });
-        window.addEventListener('click', (e) => {
-            if (e.target.classList.contains('modal')) this.closeModal();
-        });
-
+        this.bindEvents();
         this.loadMonth();
     },
 
@@ -494,8 +482,9 @@ const salaryApp = {
 
     // History Logic
     initHistory() {
+        this.bindEvents();
         const select = document.getElementById('periodSelect');
-        select.addEventListener('change', () => this.loadHistoryData());
+        if (select) select.addEventListener('change', () => this.loadHistoryData());
 
         // Load Periods
         this.loadHistoryPeriods();
