@@ -57,6 +57,16 @@ const expenseApp = {
         addSafeListener('prevPeriodBtn', 'click', () => this.changePeriod(-1));
         addSafeListener('nextPeriodBtn', 'click', () => this.changePeriod(1));
 
+        // Quick Tags Logic
+        document.querySelectorAll('.tag-pill').forEach(pill => {
+            pill.addEventListener('click', () => {
+                const noteInput = document.getElementById('expenseNote');
+                const categorySelect = document.getElementById('expenseCategory');
+                if (noteInput) noteInput.value = pill.dataset.value;
+                if (categorySelect) categorySelect.value = '飲食';
+            });
+        });
+
         // Outside click close
         window.onclick = (e) => {
             if (e.target.classList.contains('modal')) this.closeModal();

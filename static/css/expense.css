@@ -139,6 +139,79 @@
     gap: 8px;
 }
 
+/* Quick Tags */
+.quick-tags {
+    display: flex;
+    gap: 8px;
+    margin-top: 10px;
+    overflow-x: auto;
+    padding-bottom: 5px;
+    scrollbar-width: none;
+    /* Hide scrollbar */
+}
+
+.quick-tags::-webkit-scrollbar {
+    display: none;
+}
+
+.tag-pill {
+    padding: 6px 14px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 20px;
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all 0.2s;
+}
+
+.tag-pill:hover {
+    background: rgba(78, 205, 196, 0.15);
+    border-color: var(--accent-color);
+    color: var(--accent-color);
+}
+
+/* Custom Date/Time Input Overhaul */
+input[type="datetime-local"] {
+    position: relative;
+    background: rgba(255, 255, 255, 0.05) !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    color: white !important;
+    padding: 12px 15px !important;
+    border-radius: 12px !important;
+    font-family: var(--font-main) !important;
+    font-size: 1rem !important;
+    appearance: none;
+    -webkit-appearance: none;
+}
+
+input[type="datetime-local"]::-webkit-calendar-picker-indicator {
+    background: transparent;
+    bottom: 0;
+    color: transparent;
+    cursor: pointer;
+    height: auto;
+    left: 0;
+    position: absolute;
+    right: 0;
+    top: 0;
+    width: auto;
+}
+
+.form-group.with-icon {
+    position: relative;
+}
+
+.form-group.with-icon span.material-icons {
+    position: absolute;
+    right: 15px;
+    top: 38px;
+    color: var(--accent-color);
+    pointer-events: none;
+    font-size: 1.2rem;
+}
+
 /* List Styling */
 .section-title {
     font-size: 1.2rem;

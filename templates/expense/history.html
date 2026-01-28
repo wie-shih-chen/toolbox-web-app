@@ -70,6 +70,13 @@
                 <div class="form-group">
                     <label>項目名稱</label>
                     <input type="text" name="note" id="expenseNote" required>
+                    <div class="quick-tags" id="mealQuickTags">
+                        <div class="tag-pill" data-value="早餐">🍳 早餐</div>
+                        <div class="tag-pill" data-value="午餐">🍱 午餐</div>
+                        <div class="tag-pill" data-value="晚餐">🍜 晚餐</div>
+                        <div class="tag-pill" data-value="宵夜">🍢 宵夜</div>
+                        <div class="tag-pill" data-value="飲料">☕ 飲料</div>
+                    </div>
                 </div>
 
                 <div class="form-row">
@@ -91,9 +98,10 @@
                     </div>
                 </div>
 
-                <div class="form-group">
+                <div class="form-group with-icon">
                     <label>日期與時間</label>
                     <input type="datetime-local" name="timestamp" id="expenseTimestamp" required>
+                    <span class="material-icons">calendar_today</span>
                 </div>
 
                 <div class="modal-actions">
