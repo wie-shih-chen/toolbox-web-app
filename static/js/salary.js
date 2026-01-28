@@ -23,9 +23,14 @@ const salaryApp = {
         if (clearBtn) clearBtn.addEventListener('click', () => this.clearThisWeek());
 
         // Modal Events
-        document.querySelector('.close-modal').addEventListener('click', () => this.closeModal());
-        document.getElementById('recordForm').addEventListener('submit', (e) => this.handleSubmit(e));
-        document.getElementById('deleteBtn').addEventListener('click', () => this.deleteCurrentRecord());
+        const closeBtns = document.querySelectorAll('.close-modal');
+        closeBtns.forEach(btn => btn.addEventListener('click', () => this.closeModal()));
+
+        const recordForm = document.getElementById('recordForm');
+        if (recordForm) recordForm.addEventListener('submit', (e) => this.handleSubmit(e));
+
+        const deleteBtn = document.getElementById('deleteBtn');
+        if (deleteBtn) deleteBtn.addEventListener('click', () => this.deleteCurrentRecord());
 
         // Tabs
         document.querySelectorAll('.tab-btn').forEach(btn => {
@@ -229,7 +234,14 @@ const salaryApp = {
 
             if (res.ok) {
                 this.closeModal();
-                this.loadWeek();
+                // Page-aware refresh
+                if (document.querySelector('.salary-dashboard')) {
+                    this.loadWeek();
+                } else if (document.querySelector('.salary-monthly')) {
+                    this.loadMonth();
+                } else if (document.querySelector('.salary-history')) {
+                    this.loadHistoryData();
+                }
             } else {
                 const err = await res.json();
                 alert(err.error || '儲存失敗');
