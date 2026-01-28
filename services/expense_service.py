@@ -67,6 +67,29 @@ class ExpenseService:
                 return r
         return None
 
+    def export_records_csv(self, start_date, end_date):
+        import io
+        import csv
+        
+        filtered = self.get_summary(start_date, end_date)['records']
+        
+        output = io.StringIO()
+        # Add BOM for Excel UTF-8 support
+        output.write('\ufeff')
+        
+        writer = csv.writer(output)
+        writer.writerow(['日期時間', '類別', '項目名稱', '金額'])
+        
+        for r in filtered:
+            writer.writerow([
+                r.get('timestamp', ''),
+                r.get('category', '其他'),
+                r.get('note', ''),
+                r.get('amount', 0)
+            ])
+            
+        return output.getvalue()
+
     def delete_record(self, record_id):
         data = self._load_data()
         original_len = len(data['records'])

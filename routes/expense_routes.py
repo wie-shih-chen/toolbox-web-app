@@ -81,4 +81,19 @@ def handle_settings():
     
     settings = expense_service.get_settings()
     return jsonify(settings)
-
+@expense_bp.route('/api/records/export', methods=['GET'])
+def export_records():
+    start_date = request.args.get('start_date')
+    end_date = request.args.get('end_date')
+    
+    if not start_date or not end_date:
+        return jsonify({"error": "Missing dates"}), 400
+        
+    csv_data = expense_service.export_records_csv(start_date, end_date)
+    
+    from flask import Response
+    return Response(
+        csv_data,
+        mimetype="text/csv",
+        headers={"Content-disposition": f"attachment; filename=expense_export_{start_date}_{end_date}.csv"}
+    )

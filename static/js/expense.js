@@ -25,6 +25,9 @@ const expenseApp = {
         if (monthSelect) monthSelect.addEventListener('change', () => { this.updateDaysInMonth(); this.loadHistoryData(); });
         if (daySelect) daySelect.addEventListener('change', () => this.loadHistoryData());
 
+        const exportBtn = document.getElementById('exportCsvBtn');
+        if (exportBtn) exportBtn.addEventListener('click', () => this.downloadCsv());
+
         this.initHistoryPriors();
     },
 
@@ -171,31 +174,8 @@ const expenseApp = {
     },
 
     async loadHistoryData() {
-        const year = document.getElementById('yearSelect').value;
-        const month = document.getElementById('monthSelect').value;
-        const day = document.getElementById('daySelect').value;
-
-        let start, end;
-
-        if (day) {
-            // Specific day query
-            start = `${year}-${month}-${day}`;
-            const startDate = new Date(`${year}-${month}-${day}`);
-            const endDate = new Date(startDate.getTime() + 86400000);
-            end = endDate.toISOString().split('T')[0];
-        } else {
-            // Standard accounting month (10th to 10th)
-            start = `${year}-${month}-10`;
-            let endYear = parseInt(year);
-            let endMonth = parseInt(month) + 1;
-            if (endMonth > 12) {
-                endMonth = 1;
-                endYear++;
-            }
-            end = `${endYear}-${String(endMonth).padStart(2, '0')}-10`;
-        }
-
-        const url = `/expense/api/records?start_date=${start}&end_date=${end}`;
+        const params = this.getHistoryParams();
+        const url = `/expense/api/records?start_date=${params.start}&end_date=${params.end}`;
         try {
             const res = await fetch(url);
             const data = await res.json();
@@ -211,6 +191,36 @@ const expenseApp = {
         } catch (error) {
             console.error(error);
         }
+    },
+
+    getHistoryParams() {
+        const year = document.getElementById('yearSelect').value;
+        const month = document.getElementById('monthSelect').value;
+        const day = document.getElementById('daySelect').value;
+
+        let start, end;
+
+        if (day) {
+            start = `${year}-${month}-${day}`;
+            const startDate = new Date(`${year}-${month}-${day}`);
+            const endDate = new Date(startDate.getTime() + 86400000);
+            end = endDate.toISOString().split('T')[0];
+        } else {
+            start = `${year}-${month}-10`;
+            let endYear = parseInt(year);
+            let endMonth = parseInt(month) + 1;
+            if (endMonth > 12) {
+                endMonth = 1;
+                endYear++;
+            }
+            end = `${endYear}-${String(endMonth).padStart(2, '0')}-10`;
+        }
+        return { start, end };
+    },
+
+    downloadCsv() {
+        const params = this.getHistoryParams();
+        window.location.href = `/expense/api/records/export?start_date=${params.start}&end_date=${params.end}`;
     },
 
     renderSummary(total) {
