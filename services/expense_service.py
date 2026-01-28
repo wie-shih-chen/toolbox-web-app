@@ -42,9 +42,9 @@ class ExpenseService:
         if 'timestamp' not in new_record:
             new_record['timestamp'] = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
         
-        # Ensure price is numeric
+        # Ensure price is numeric and non-negative
         try:
-            new_record['amount'] = float(new_record['amount'])
+            new_record['amount'] = max(0.0, float(new_record['amount']))
         except:
             new_record['amount'] = 0.0
 
@@ -59,7 +59,7 @@ class ExpenseService:
             if r['id'] == record_id:
                 r.update(record_data)
                 try:
-                    r['amount'] = float(r['amount'])
+                    r['amount'] = max(0.0, float(r['amount']))
                 except:
                     r['amount'] = 0.0
                 records[i] = r
