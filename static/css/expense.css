@@ -464,22 +464,20 @@ input[type="time"].input-pill::-webkit-calendar-picker-indicator {
     /* Mobile-Native Modal Feel */
     .modal-content {
         width: 100%;
-        height: auto;
-        max-height: 90vh;
+        max-height: 85vh;
         margin: 0;
-        position: fixed;
-        bottom: 0;
-        left: 0;
+        position: relative;
         border-radius: 24px 24px 0 0;
         transform: translateY(100%);
         transition: transform 0.3s cubic-bezier(0.32, 1, 0.23, 1);
-        padding-bottom: env(safe-area-inset-bottom);
-        /* Ensure mobile is also glass premium */
+        padding-bottom: calc(85px + env(safe-area-inset-bottom));
         background: rgba(45, 45, 45, 0.6);
         backdrop-filter: blur(40px);
         -webkit-backdrop-filter: blur(40px);
         border: 1px solid rgba(255, 255, 255, 0.1);
+        overflow-y: auto;
     }
+
 
 
     .modal.show .modal-content {

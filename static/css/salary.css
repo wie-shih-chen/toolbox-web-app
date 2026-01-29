@@ -416,10 +416,14 @@
     }
 
     .modal-content {
-        max-width: 95%;
-        margin: 10px;
-        border-radius: 16px;
+        max-width: 100%;
+        max-height: 85vh;
+        margin: 0;
+        border-radius: 24px 24px 0 0;
+        overflow-y: auto;
+        padding-bottom: calc(85px + env(safe-area-inset-bottom));
     }
+
 }
 
 /* Tab & Segmented Control System */
