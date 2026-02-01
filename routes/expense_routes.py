@@ -131,7 +131,7 @@ def export_records():
     if current_user.email:
         # Get full data for email rendering
         summary_data = expense_service.get_summary(start_date, end_date)
-        records = expense_service.get_records(start_date, end_date)
+        records = summary_data['records']
         
         # Calculate category stats for the email
         category_stats = {}
