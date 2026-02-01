@@ -536,17 +536,63 @@ const expenseApp = {
         const ht = document.getElementById('historyTotal'); if (ht) ht.textContent = `$${Math.round(data.total_amount).toLocaleString()}`;
         this.renderList('historyExpenseList');
     },
-    downloadCsv() {
-        // Simplified range logic for download
+    async downloadCsv() {
         const y = document.getElementById('yearSelect').value;
         const m = document.getElementById('monthSelect').value;
         const d = document.getElementById('daySelect').value;
         const s = d ? `${y}-${m}-${d}` : `${y}-${m}-10`;
         let e;
         if (d) { e = this.formatDate(new Date(new Date(s).getTime() + 86400000)); }
-
         else { let ey = parseInt(y); let em = parseInt(m) + 1; if (em > 12) { em = 1; ey++; } e = `${ey}-${String(em).padStart(2, '0')}-10`; }
-        window.location.href = `/expense/api/records/export?start_date=${s}&end_date=${e}`;
+
+        const btn = document.getElementById('exportCsvBtn');
+        const originalText = btn ? btn.innerHTML : '匯出';
+        if (btn) {
+            btn.disabled = true;
+            btn.innerHTML = '⏳ 處理中...';
+        }
+
+        try {
+            const url = `/expense/api/records/export?start_date=${s}&end_date=${e}`;
+            const res = await fetch(url);
+            const contentType = res.headers.get('content-type');
+
+            if (contentType && contentType.includes('application/json')) {
+                const data = await res.json();
+                if (data.success && data.method === 'email') {
+                    alert('✅ ' + data.message);
+                } else {
+                    if (data.error) alert('❌ ' + data.error);
+                }
+            } else {
+                const blob = await res.blob();
+                const downloadUrl = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = downloadUrl;
+
+                const disposition = res.headers.get('Content-Disposition');
+                let filename = 'expense_export.csv';
+                if (disposition && disposition.indexOf('filename=') !== -1) {
+                    const matches = /filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/.exec(disposition);
+                    if (matches != null && matches[1]) {
+                        filename = matches[1].replace(/['"]/g, '');
+                    }
+                }
+                a.download = filename;
+                document.body.appendChild(a);
+                a.click();
+                a.remove();
+                window.URL.revokeObjectURL(downloadUrl);
+            }
+        } catch (error) {
+            alert('匯出失敗：網路錯誤');
+            console.error(error);
+        } finally {
+            if (btn) {
+                btn.disabled = false;
+                btn.innerHTML = originalText;
+            }
+        }
     }
 };
 

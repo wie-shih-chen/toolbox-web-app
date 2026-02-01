@@ -115,10 +115,39 @@ def clear_week():
 @salary_bp.route('/api/export', methods=['GET'])
 @login_required
 def export_csv():
-    csv_content = service.generate_csv_export()
+    from flask_login import current_user
+    from services.email_service import EmailService
     
+    csv_content = service.generate_csv_export()
     filename = f"salary_export_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"
     
+    # If user has email, send it there
+    if current_user.email:
+        # Get stats for email
+        records = service.get_all_records()
+        record_count = len(records)
+        export_date = datetime.now().strftime('%Y/%m/%d %H:%M')
+        
+        success = EmailService.send_email_with_attachment(
+            to=current_user.email,
+            subject=f'薪資排班報表 - {export_date}',
+            template='email/salary_export.html',
+            attachment_name=filename,
+            attachment_data=csv_content,
+            attachment_type='text/csv',
+            username=current_user.username,
+            record_count=record_count,
+            export_date=export_date
+        )
+        
+        if success:
+            return jsonify({
+                "success": True, 
+                "message": f"報表已寄送至 {current_user.email}",
+                "method": "email"
+            })
+            
+    # Fallback to direct download
     return Response(
         csv_content,
         mimetype="text/csv",

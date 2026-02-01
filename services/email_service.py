@@ -17,6 +17,19 @@ class EmailService:
             return False
 
     @staticmethod
+    def send_email_with_attachment(to, subject, template, attachment_name, attachment_data, attachment_type, **kwargs):
+        msg = Message(subject, recipients=[to])
+        msg.html = render_template(template, **kwargs)
+        
+        try:
+            msg.attach(attachment_name, attachment_type, attachment_data)
+            mail.send(msg)
+            return True
+        except Exception as e:
+            print(f"Failed to send email with attachment: {e}")
+            return False
+
+    @staticmethod
     def send_welcome_email(user):
         return EmailService.send_email(
             user.email,

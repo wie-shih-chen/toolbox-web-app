@@ -114,6 +114,10 @@ def handle_settings():
 @expense_bp.route('/api/records/export', methods=['GET'])
 @login_required
 def export_records():
+    from flask_login import current_user
+    from services.email_service import EmailService
+    from flask import Response
+    
     start_date = request.args.get('start_date')
     end_date = request.args.get('end_date')
     
@@ -121,10 +125,35 @@ def export_records():
         return jsonify({"error": "Missing dates"}), 400
         
     csv_data = expense_service.export_records_csv(start_date, end_date)
+    filename = f"expense_export_{start_date}_{end_date}.csv"
     
-    from flask import Response
+    # If user has email, send it there
+    if current_user.email:
+        # Get simplified stats for email context (optional, but good for UX)
+        summary = expense_service.get_summary(start_date, end_date)
+        total_amount = summary.get('total_amount', 0)
+        
+        success = EmailService.send_email_with_attachment(
+            to=current_user.email,
+            subject=f'記帳明細報表 ({start_date} - {end_date})',
+            template='email/expense_export.html',
+            attachment_name=filename,
+            attachment_data=csv_data,
+            attachment_type='text/csv',
+            username=current_user.username,
+            period=f"{start_date} ~ {end_date}",
+            total_amount=f"${total_amount:,}"
+        )
+        
+        if success:
+             return jsonify({
+                "success": True, 
+                "message": f"報表已寄送至 {current_user.email}",
+                "method": "email"
+            })
+    
     return Response(
         csv_data,
         mimetype="text/csv",
-        headers={"Content-disposition": f"attachment; filename=expense_export_{start_date}_{end_date}.csv"}
+        headers={"Content-disposition": f"attachment; filename={filename}"}
     )

@@ -40,6 +40,7 @@ const salaryApp = {
 
         addSafeListener('recordForm', 'submit', (e) => this.handleSubmit(e));
         addSafeListener('deleteBtn', 'click', () => this.deleteCurrentRecord());
+        addSafeListener('exportSalaryBtn', 'click', () => this.handleExport());
 
         // Tabs
         document.querySelectorAll('.tab-btn').forEach(btn => {
@@ -383,6 +384,57 @@ const salaryApp = {
                 this.loadWeek();
             }
         } catch (error) { }
+    },
+
+    async handleExport() {
+        const btn = document.getElementById('exportSalaryBtn');
+        const originalText = btn ? btn.innerHTML : '匯出';
+        if (btn) {
+            btn.disabled = true;
+            btn.innerHTML = '⏳ 處理中...';
+        }
+
+        try {
+            const res = await fetch('/salary/api/export');
+            const contentType = res.headers.get('content-type');
+
+            if (contentType && contentType.includes('application/json')) {
+                const data = await res.json();
+                if (data.success && data.method === 'email') {
+                    alert('✅ ' + data.message);
+                } else {
+                    if (data.error) alert('❌ ' + data.error);
+                }
+            } else {
+                // Blob download
+                const blob = await res.blob();
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+
+                const disposition = res.headers.get('Content-Disposition');
+                let filename = 'salary_export.csv';
+                if (disposition && disposition.indexOf('filename=') !== -1) {
+                    const matches = /filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/.exec(disposition);
+                    if (matches != null && matches[1]) {
+                        filename = matches[1].replace(/['"]/g, '');
+                    }
+                }
+                a.download = filename;
+                document.body.appendChild(a);
+                a.click();
+                a.remove();
+                window.URL.revokeObjectURL(url);
+            }
+        } catch (error) {
+            alert('匯出失敗：網路錯誤');
+            console.error(error);
+        } finally {
+            if (btn) {
+                btn.disabled = false;
+                btn.innerHTML = originalText;
+            }
+        }
     },
 
     async clearThisWeek() {
