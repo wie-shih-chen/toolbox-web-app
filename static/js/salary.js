@@ -489,12 +489,12 @@ const salaryApp = {
             this.records = await res.json();
             this.renderCalendar(gridStart);
 
-            // Cycle: Previous Month 10th ~ This Month 10th
-            // For Feb View (m=1), we want Jan 10 ~ Feb 10.
-            const cycleStart = new Date(y, m - 1, 10);
-            const cycleEnd = new Date(y, m, 10);
+            // Cycle: This Month 10th ~ Next Month 10th (Original Logic)
+            // For Feb View (m=1), this is Feb 10 ~ Mar 10.
+            const cycleStart = new Date(y, m, 10);
+            const cycleEnd = new Date(y, m + 1, 10);
 
-            // Adjust label to show cycle
+            // Adjust label to show cycle clearly
             const cycleLabel = document.createElement('div');
             cycleLabel.className = 'cycle-label';
             cycleLabel.style.fontSize = '0.8rem';
@@ -505,15 +505,39 @@ const salaryApp = {
             // Check if label already exists to avoid duplication
             let existingLabel = label.querySelector('.cycle-label');
             if (existingLabel) existingLabel.remove();
-            // Append to header (need to handle slightly differently as label is a h2)
-            // Just appending text content to summary label might be cleaner
 
+            // Append the label to the header area or near the title
+            // Note: 'label' here is the h2#currentMonthLabel.
+            // Appending a div inside h2 usually works but might break layout slightly, 
+            // but it's the most direct place requested "beside" or "near". 
+            // To make it look like "beside", we might need CSS, but appending to the container is safer.
+            // Let's check DOM structure. #currentMonthLabel is inside .week-nav.
+            // It might be better to append to .summary-card logic or modify tooltips.
+            // But strict instruction: "Also add the calculation time next to it". 'it' likely refers to stats or title.
+            // Let's put it as a tooltip on the Labels "本月時數" / "本月薪資" AND verify visual.
+            // The previous code tried to set 'title' attribute. I will do that AND update the text below the stats.
+
+            const summaryCard = document.querySelector('.summary-card');
+            if (summaryCard) {
+                let rangeDisplay = summaryCard.querySelector('.range-display');
+                if (!rangeDisplay) {
+                    rangeDisplay = document.createElement('div');
+                    rangeDisplay.className = 'range-display';
+                    rangeDisplay.style.fontSize = '0.7em';
+                    rangeDisplay.style.color = '#aaa';
+                    rangeDisplay.style.textAlign = 'right';
+                    rangeDisplay.style.width = '100%';
+                    rangeDisplay.style.marginTop = '4px';
+                    summaryCard.appendChild(rangeDisplay);
+                }
+                rangeDisplay.textContent = `${cycleStart.getMonth() + 1}/${cycleStart.getDate()} ~ ${cycleEnd.getMonth() + 1}/${cycleEnd.getDate()}`;
+            }
 
             this.updateMonthlySummary(cycleStart, cycleEnd);
 
-            // Update summary labels to indicate range
+            // Also update tooltip
             const hLabel = document.querySelector('.summary-item:first-child .label');
-            if (hLabel) hLabel.setAttribute('title', `區間: ${this.formatDate(cycleStart)} ~ ${this.formatDate(cycleEnd)}`);
+            if (hLabel) hLabel.setAttribute('title', `${this.formatDate(cycleStart)} ~ ${this.formatDate(cycleEnd)}`);
         } catch (error) { }
     },
 
