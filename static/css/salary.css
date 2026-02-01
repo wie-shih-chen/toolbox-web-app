@@ -325,35 +325,7 @@
 
 /* Salary Tool Mobile Responsiveness */
 @media (max-width: 768px) {
-    .salary-nav {
-        overflow-x: auto;
-        justify-content: flex-start;
-        width: auto;
-        max-width: 100%;
-        margin-left: 0;
-        left: 0;
-        transform: none;
-        border-radius: 12px;
-        padding: 4px;
-        margin-bottom: 25px;
-        background: rgba(255, 255, 255, 0.08);
-        /* Slightly more visible on mobile */
-        -ms-overflow-style: none;
-        scrollbar-width: none;
-        display: flex;
-        align-self: center;
-        margin-left: auto;
-        margin-right: auto;
-    }
 
-    .salary-nav::-webkit-scrollbar {
-        display: none;
-    }
-
-    .salary-nav-item {
-        padding: 8px 15px;
-        font-size: 0.9rem;
-    }
 
     .dashboard-header {
         flex-direction: column;
