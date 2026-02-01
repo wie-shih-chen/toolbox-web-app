@@ -8,6 +8,13 @@ class EmailService:
     @staticmethod
     def send_email(to, subject, template, raise_error=False, **kwargs):
         sender = current_app.config.get('MAIL_USERNAME')
+        if not sender:
+            error_msg = "未設定寄件者 (MAIL_USERNAME)。請檢查 .env 檔案設定。"
+            print(error_msg)
+            if raise_error:
+                raise ValueError(error_msg)
+            return False
+
         msg = Message(subject, recipients=[to], sender=sender)
         msg.html = render_template(template, **kwargs)
         try:
