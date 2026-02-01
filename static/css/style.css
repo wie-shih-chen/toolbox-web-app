@@ -225,6 +225,14 @@ a {
     /* Support absolute slide overlays if needed */
 }
 
+.content-area::after {
+    content: "";
+    display: block;
+    height: 150px;
+    width: 100%;
+    flex-shrink: 0;
+}
+
 /* iOS Navigation & Transitions */
 .top-bar {
     position: relative;
