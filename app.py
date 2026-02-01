@@ -1,12 +1,13 @@
+import os
+from dotenv import load_dotenv
+
+# Load environment variables from .env file before importing config
+load_dotenv(os.path.join(os.path.dirname(os.path.abspath(__file__)), '.env'))
+
 from flask import Flask, render_template
 from config import Config
 from models import db, User
 from flask_login import LoginManager
-from dotenv import load_dotenv
-
-import os
-load_dotenv(os.path.join(os.path.dirname(os.path.abspath(__file__)), '.env')) # Load .env using absolute path
-
 from extensions import mail
 
 app = Flask(__name__)
