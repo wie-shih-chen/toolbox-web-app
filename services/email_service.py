@@ -7,7 +7,8 @@ from extensions import mail
 class EmailService:
     @staticmethod
     def send_email(to, subject, template, raise_error=False, **kwargs):
-        msg = Message(subject, recipients=[to])
+        sender = current_app.config.get('MAIL_USERNAME')
+        msg = Message(subject, recipients=[to], sender=sender)
         msg.html = render_template(template, **kwargs)
         try:
             mail.send(msg)
