@@ -11,8 +11,12 @@ service = SalaryService()
 @login_required
 def index():
     # Lazy Automation: Check if monthly report needs sending
-    from services.report_service import ReportService
-    ReportService.check_and_send_pending_reports(current_user)
+    # Wrapped in try-except to ensures dashboard NEVER crashes due to background tasks
+    try:
+        from services.report_service import ReportService
+        ReportService.check_and_send_pending_reports(current_user)
+    except Exception as e:
+        print(f"Lazy Report Error: {e}")
 
     # Default to current week
     today = datetime.now()
