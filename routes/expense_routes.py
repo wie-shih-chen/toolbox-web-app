@@ -129,28 +129,43 @@ def export_records():
     
     # If user has email, send it there
     if current_user.email:
-        # Get simplified stats for email context (optional, but good for UX)
-        summary = expense_service.get_summary(start_date, end_date)
-        total_amount = summary.get('total_amount', 0)
+        # Get full data for email rendering
+        summary_data = expense_service.get_summary(start_date, end_date)
+        records = expense_service.get_records(start_date, end_date)
         
-        success = EmailService.send_email_with_attachment(
+        # Calculate category stats for the email
+        category_stats = {}
+        for r in records:
+            cat = r.get('category', '其他')
+            cat_name = cat.split(' ')[1] if ' ' in cat else cat
+            category_stats[cat_name] = category_stats.get(cat_name, 0) + r['amount']
+            
+        # Simplified top 5 categories
+        top_categories = sorted(category_stats.items(), key=lambda x: x[1], reverse=True)[:5]
+        
+        success = EmailService.send_email(
             to=current_user.email,
             subject=f'記帳明細報表 ({start_date} - {end_date})',
             template='email/expense_export.html',
-            attachment_name=filename,
-            attachment_data=csv_data,
-            attachment_type='text/csv',
             username=current_user.username,
             period=f"{start_date} ~ {end_date}",
-            total_amount=f"${total_amount:,}"
+            total_amount=f"${summary_data.get('total_amount', 0):,}",
+            records=records,
+            top_categories=top_categories
         )
         
         if success:
              return jsonify({
                 "success": True, 
-                "message": f"報表已寄送至 {current_user.email}",
+                "message": f"報表內容已寄送至 {current_user.email}",
                 "method": "email"
             })
+    
+    return Response(
+        csv_data,
+        mimetype="text/csv",
+        headers={"Content-disposition": f"attachment; filename={filename}"}
+    )
     
     return Response(
         csv_data,

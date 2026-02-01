@@ -73,6 +73,66 @@
             color: #30D158;
         }
 
+        /* Table Styles */
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            font-size: 14px;
+        }
+
+        .data-table th {
+            text-align: left;
+            padding: 10px;
+            border-bottom: 1px solid #444;
+            color: #888;
+            font-weight: normal;
+        }
+
+        .data-table td {
+            padding: 12px 10px;
+            border-bottom: 1px solid #333;
+            color: #eee;
+        }
+
+        .amount-cell {
+            text-align: right;
+            font-family: monospace;
+            font-size: 15px;
+        }
+
+        .category-tag {
+            display: inline-block;
+            padding: 3px 8px;
+            border-radius: 4px;
+            background: rgba(255, 255, 255, 0.1);
+            font-size: 12px;
+        }
+
+        .cat-bar-container {
+            margin-bottom: 15px;
+        }
+
+        .cat-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 5px;
+            font-size: 13px;
+        }
+
+        .progress-bar-bg {
+            height: 6px;
+            background: #404040;
+            border-radius: 3px;
+            overflow: hidden;
+        }
+
+        .progress-bar-fill {
+            height: 100%;
+            background: #30D158;
+            border-radius: 3px;
+        }
+
         .footer {
             background-color: #252525;
             padding: 20px;
@@ -87,16 +147,17 @@
 <body>
     <div class="container">
         <div class="header">
-            <h1>記帳明細匯出</h1>
+            <h1>記帳明細</h1>
         </div>
         <div class="content">
             <p class="message">Hi {{ username }},</p>
-            <p class="message">這是您申請的記帳明細報表。CSV 檔案已隨信附上。</p>
+            <p class="message">這是您在 {{ period }} 的收支紀錄明細。</p>
 
             <div class="stats-grid">
                 <div class="stat-box">
-                    <div class="stat-label">區間</div>
-                    <div class="stat-value" style="font-size: 14px;">{{ period }}</div>
+                    <div class="stat-label">期間</div>
+                    <div class="stat-value" style="font-size: 14px;">{{ period.split('~')[0] }}<br>{{
+                        period.split('~')[1] }}</div>
                 </div>
                 <div class="stat-box">
                     <div class="stat-label">總支出</div>
@@ -104,8 +165,50 @@
                 </div>
             </div>
 
-            <p class="message" style="font-size: 14px; color: #888;">
-                若您沒有提出此請求，請忽略此郵件。
+            <h3 style="color: #fff; margin-top: 30px; border-bottom: 1px solid #444; padding-bottom: 10px;">消費類別 (Top 5)
+            </h3>
+            <div style="margin-top: 20px;">
+                {% for cat, amount in top_categories %}
+                <div class="cat-bar-container">
+                    <div class="cat-row">
+                        <span>{{ cat }}</span>
+                        <span>${{ amount }}</span>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+
+            <h3 style="color: #fff; margin-top: 40px; border-bottom: 1px solid #444; padding-bottom: 10px;">詳細紀錄</h3>
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th width="25%">日期</th>
+                        <th width="25%">類別</th>
+                        <th width="30%">備註</th>
+                        <th width="20%" style="text-align: right;">金額</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for record in records[:50] %}
+                    <tr>
+                        <td style="color:#aaa;">{{ record.timestamp.split(' ')[0] }}</td>
+                        <td><span class="category-tag">{{ record.category if record.category else '其他' }}</span></td>
+                        <td>{{ record.note }}</td>
+                        <td class="amount-cell">${{ record.amount }}</td>
+                    </tr>
+                    {% endfor %}
+                    {% if records|length > 50 %}
+                    <tr>
+                        <td colspan="4" style="text-align: center; padding: 20px; color: #888;">
+                            ... 還有 {{ records|length - 50 }} 筆紀錄 ...
+                        </td>
+                    </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+
+            <p class="message" style="font-size: 14px; color: #888; margin-top: 30px;">
+                * 僅顯示最近 50 筆紀錄
             </p>
         </div>
         <div class="footer">

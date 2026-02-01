@@ -73,6 +73,53 @@
             color: #FFD60A;
         }
 
+        /* Table Styles */
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            font-size: 14px;
+        }
+
+        .data-table th {
+            text-align: left;
+            padding: 10px;
+            border-bottom: 1px solid #444;
+            color: #888;
+            font-weight: normal;
+        }
+
+        .data-table td {
+            padding: 12px 10px;
+            border-bottom: 1px solid #333;
+            color: #eee;
+        }
+
+        .amount-cell {
+            text-align: right;
+            font-family: monospace;
+            font-size: 15px;
+            color: #FFD60A;
+        }
+
+        .shift-badge {
+            display: inline-block;
+            padding: 3px 8px;
+            border-radius: 4px;
+            background: rgba(255, 214, 10, 0.2);
+            color: #FFD60A;
+            font-size: 12px;
+        }
+
+        .bonus-badge {
+            display: inline-block;
+            padding: 3px 8px;
+            border-radius: 4px;
+            background: rgba(48, 209, 88, 0.2);
+            color: #30D158;
+            font-size: 12px;
+        }
+
         .footer {
             background-color: #252525;
             padding: 20px;
@@ -87,16 +134,16 @@
 <body>
     <div class="container">
         <div class="header">
-            <h1>薪資報表匯出</h1>
+            <h1>薪資排班表</h1>
         </div>
         <div class="content">
             <p class="message">Hi {{ username }},</p>
-            <p class="message">這是您申請的薪資排班報表。CSV 檔案已隨信附上，您可以直接使用 Excel 或 Numbers 開啟。</p>
+            <p class="message">這是您目前的薪資排班紀錄。</p>
 
             <div class="stats-grid">
                 <div class="stat-box">
                     <div class="stat-label">匯出日期</div>
-                    <div class="stat-value">{{ export_date }}</div>
+                    <div class="stat-value" style="font-size: 14px;">{{ export_date }}</div>
                 </div>
                 <div class="stat-box">
                     <div class="stat-label">資料筆數</div>
@@ -104,8 +151,44 @@
                 </div>
             </div>
 
-            <p class="message" style="font-size: 14px; color: #888;">
-                若您沒有提出此請求，請忽略此郵件。
+            <h3 style="color: #fff; margin-top: 40px; border-bottom: 1px solid #444; padding-bottom: 10px;">最近紀錄</h3>
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th width="20%">日期</th>
+                        <th width="20%">類型</th>
+                        <th width="40%">時段/備註</th>
+                        <th width="20%" style="text-align: right;">金額</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for record in records[:30] %}
+                    <tr>
+                        <td style="color:#aaa;">{{ record.date }}</td>
+                        <td>
+                            {% if record.type == 'shift' %}
+                            <span class="shift-badge">排班</span>
+                            {% else %}
+                            <span class="bonus-badge">獎金</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if record.type == 'shift' %}
+                            {{ record.start_time }} - {{ record.end_time }}<br>
+                            <span style="font-size:12px; color:#666;">{{ record.hours }} hrs @ ${{ record.rate if
+                                record.rate else 'Default' }}/hr</span>
+                            {% else %}
+                            {{ record.note }}
+                            {% endif %}
+                        </td>
+                        <td class="amount-cell">${{ record.amount }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+
+            <p class="message" style="font-size: 14px; color: #888; margin-top: 30px;">
+                * 僅顯示最近 30 筆紀錄
             </p>
         </div>
         <div class="footer">

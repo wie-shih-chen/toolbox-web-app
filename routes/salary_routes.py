@@ -125,25 +125,25 @@ def export_csv():
     if current_user.email:
         # Get stats for email
         records = service.get_all_records()
-        record_count = len(records)
+        # Sort records by date desc
+        records.sort(key=lambda x: x['date'], reverse=True)
+        
         export_date = datetime.now().strftime('%Y/%m/%d %H:%M')
         
-        success = EmailService.send_email_with_attachment(
+        success = EmailService.send_email(
             to=current_user.email,
             subject=f'薪資排班報表 - {export_date}',
             template='email/salary_export.html',
-            attachment_name=filename,
-            attachment_data=csv_content,
-            attachment_type='text/csv',
             username=current_user.username,
-            record_count=record_count,
-            export_date=export_date
+            record_count=len(records),
+            export_date=export_date,
+            records=records
         )
         
         if success:
             return jsonify({
                 "success": True, 
-                "message": f"報表已寄送至 {current_user.email}",
+                "message": f"報表內容已寄送至 {current_user.email}",
                 "method": "email"
             })
             
