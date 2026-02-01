@@ -107,56 +107,46 @@ def forgot_password():
         user = User.query.filter_by(email=email).first()
         
         if user:
-            code = EmailService.generate_verification_code()
-            # Store code in session for verification (valid for this session)
-            session['reset_code'] = code
-            session['reset_email'] = email
-            
-            if EmailService.send_password_reset_email(user, code):
-                flash('驗證碼已發送至您的信箱')
-                return redirect(url_for('auth.reset_password'))
+            token = user.get_reset_token()
+            if EmailService.send_password_reset_email(user, token):
+                flash('重設密碼連結已發送至您的信箱，請查看郵件 (30分鐘內有效)')
+                return redirect(url_for('auth.login'))
             else:
                 flash('發送郵件失敗，請稍後再試')
         else:
-            flash('此 Email 尚未註冊') # Security note: usually vague error is better, but focused on UX here
+            flash('此 Email 尚未註冊')
             
     return render_template('auth/forgot_password.html')
 
-@auth_bp.route('/reset-password', methods=['GET', 'POST'])
-def reset_password():
-    if 'reset_code' not in session or 'reset_email' not in session:
+@auth_bp.route('/reset-password/<token>', methods=['GET', 'POST'])
+def reset_password(token):
+    if current_user.is_authenticated:
+        return redirect(url_for('main.index'))
+    
+    user = User.verify_reset_token(token)
+    if not user:
+        flash('無效或過期的連結，請重新申請')
         return redirect(url_for('auth.forgot_password'))
-        
+
     if request.method == 'POST':
-        code = request.form.get('code')
         password = request.form.get('password')
         confirm_password = request.form.get('confirm_password')
         
-        if code != session['reset_code']:
-            flash('驗證碼錯誤')
-            return render_template('auth/reset_password.html')
-            
         if password != confirm_password:
             flash('兩次密碼輸入不一致')
-            return render_template('auth/reset_password.html')
+            return render_template('auth/reset_password.html', token=token) # Pass token for form action
 
         if not re.match("^[a-zA-Z0-9]+$", password):
             flash('密碼只能包含英文字母和數字')
-            return render_template('auth/reset_password.html')
+            return render_template('auth/reset_password.html', token=token)
             
-        user = User.query.filter_by(email=session['reset_email']).first()
-        if user:
-            user.set_password(password)
-            db.session.commit()
+        user.set_password(password)
+        db.session.commit()
+        
+        flash('密碼重設成功，請使用新密碼登入')
+        return redirect(url_for('auth.login'))
             
-            # Clear session
-            session.pop('reset_code', None)
-            session.pop('reset_email', None)
-            
-            flash('密碼重設成功，請使用新密碼登入')
-            return redirect(url_for('auth.login'))
-            
-    return render_template('auth/reset_password.html')
+    return render_template('auth/reset_password.html', token=token)
 
 @auth_bp.route('/settings', methods=['GET', 'POST'])
 @login_required

@@ -49,13 +49,13 @@ class EmailService:
         )
 
     @staticmethod
-    def send_password_reset_email(user, code):
+    def send_password_reset_email(user, token):
         return EmailService.send_email(
             user.email,
             '重設您的密碼',
             'email/reset_password.html',
             user=user,
-            code=code
+            token=token
         )
     
     @staticmethod
