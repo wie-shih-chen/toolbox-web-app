@@ -100,10 +100,9 @@ a {
     }
 
     .content-area {
-        padding: 15px;
-        padding-top: 100px;
-        /* Prevent fixed header overlap */
-        /* Tighter padding on mobile */
+        padding: 100px 15px 150px 15px;
+        /* Top Right Bottom Left */
+        overflow-y: visible;
     }
 
     .top-bar {
