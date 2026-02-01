@@ -1,33 +1,40 @@
 from flask import Blueprint, render_template, request, jsonify
+from flask_login import login_required
 from datetime import datetime
+
 from services.expense_service import ExpenseService
 
 expense_bp = Blueprint('expense', __name__, url_prefix='/expense')
 expense_service = ExpenseService()
 
 @expense_bp.route('/')
+@login_required
 def index():
     """本週期記帳"""
     start, end = expense_service.get_current_period()
     return render_template('expense/dashboard.html', start_date=start, end_date=end)
 
 @expense_bp.route('/today')
+@login_required
 def today():
     """本日記帳"""
     return render_template('expense/today.html')
 
 
 @expense_bp.route('/history')
+@login_required
 def history():
     return render_template('expense/history.html')
 
 @expense_bp.route('/settings')
+@login_required
 def settings():
     settings = expense_service.get_settings()
     return render_template('expense/settings.html', settings=settings)
 
 
 @expense_bp.route('/api/records/grouped', methods=['GET'])
+@login_required
 def get_grouped_records():
     start_date = request.args.get('start_date')
     end_date = request.args.get('end_date')
@@ -39,6 +46,7 @@ def get_grouped_records():
     return jsonify(summary)
 
 @expense_bp.route('/api/records', methods=['GET'])
+@login_required
 def get_records():
     start_date = request.args.get('start_date')
     end_date = request.args.get('end_date')
@@ -50,6 +58,7 @@ def get_records():
     return jsonify(summary)
 
 @expense_bp.route('/api/records', methods=['POST'])
+@login_required
 def add_record():
     data = request.json
     if not data or 'amount' not in data:
@@ -73,6 +82,7 @@ def add_record():
     return jsonify(record), 201
 
 @expense_bp.route('/api/records/<record_id>', methods=['PUT', 'DELETE'])
+@login_required
 def handle_record(record_id):
     if request.method == 'DELETE':
         if expense_service.delete_record(record_id):
@@ -86,11 +96,13 @@ def handle_record(record_id):
     return jsonify({"error": "Not found"}), 404
 
 @expense_bp.route('/api/history/periods')
+@login_required
 def get_periods():
     periods = expense_service.get_monthly_periods()
     return jsonify(periods)
 
 @expense_bp.route('/api/settings', methods=['GET', 'POST'])
+@login_required
 def handle_settings():
     if request.method == 'POST':
         data = request.json
@@ -100,6 +112,7 @@ def handle_settings():
     settings = expense_service.get_settings()
     return jsonify(settings)
 @expense_bp.route('/api/records/export', methods=['GET'])
+@login_required
 def export_records():
     start_date = request.args.get('start_date')
     end_date = request.args.get('end_date')

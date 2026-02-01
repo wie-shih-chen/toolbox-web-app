@@ -1,144 +1,104 @@
-import json
-import os
-import uuid
+from models import db, ExpenseRecord, UserSettings
+from flask_login import current_user
 from datetime import datetime, timedelta
-from config import Config
+from sqlalchemy import func
 
 class ExpenseService:
-    def __init__(self):
-        self.data_file = os.path.join(os.path.dirname(Config.SALARY_DATA_FILE), 'expense_data.json')
-        self._ensure_file_exists()
-
     def _ensure_file_exists(self):
-        if not os.path.exists(self.data_file):
-            self._save_data({"settings": {"monthly_budget": 10000}, "records": []})
-
-    def _load_data(self):
-        try:
-            with open(self.data_file, 'r', encoding='utf-8') as f:
-                return json.load(f)
-        except:
-            return {"settings": {"monthly_budget": 10000}, "records": []}
-
-    def _save_data(self, data):
-        try:
-            with open(self.data_file, 'w', encoding='utf-8') as f:
-                json.dump(data, f, ensure_ascii=False, indent=2)
-            return True
-        except Exception as e:
-            print(f"Error saving expense data: {e}")
-            return False
+        # Deprecated: DB handles this
+        pass
 
     def get_all_records(self):
-        data = self._load_data()
-        return data.get('records', [])
+        if not current_user.is_authenticated:
+            return []
+        records = ExpenseRecord.query.filter_by(user_id=current_user.id).order_by(ExpenseRecord.timestamp.desc()).all()
+        return [self._to_dict(r) for r in records]
 
     def add_record(self, record_data):
-        data = self._load_data()
-        new_record = record_data.copy()
-        new_record['id'] = str(uuid.uuid4())
+        if not current_user.is_authenticated:
+            return None
+            
+        new_record = ExpenseRecord(
+            user_id=current_user.id,
+            category=record_data.get('category'),
+            note=record_data.get('note')
+        )
         
-        # Ensure timestamp if not provided
-        if 'timestamp' not in new_record:
-            new_record['timestamp'] = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-        
-        # Ensure price is numeric and non-negative
+        # Timestamp
+        if 'timestamp' in record_data:
+            new_record.timestamp = record_data['timestamp']
+        else:
+            new_record.timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+            
+        # Amount
         try:
-            new_record['amount'] = max(0.0, float(new_record['amount']))
+            new_record.amount = max(0.0, float(record_data.get('amount', 0.0)))
         except:
-            new_record['amount'] = 0.0
-
-        data['records'].append(new_record)
-        self._save_data(data)
-        return new_record
+            new_record.amount = 0.0
+            
+        db.session.add(new_record)
+        db.session.commit()
+        return self._to_dict(new_record)
 
     def update_record(self, record_id, record_data):
-        data = self._load_data()
-        records = data.get('records', [])
-        for i, r in enumerate(records):
-            if r['id'] == record_id:
-                r.update(record_data)
-                try:
-                    r['amount'] = max(0.0, float(r['amount']))
-                except:
-                    r['amount'] = 0.0
-                records[i] = r
-                self._save_data(data)
-                return r
-        return None
-
-    def export_records_csv(self, start_date, end_date):
-        import io
-        import csv
-        
-        filtered = self.get_summary(start_date, end_date)['records']
-        
-        output = io.StringIO()
-        # Add BOM for Excel UTF-8 support
-        output.write('\ufeff')
-        
-        writer = csv.writer(output)
-        writer.writerow(['日期時間', '類別', '項目名稱', '金額'])
-        
-        for r in filtered:
-            writer.writerow([
-                r.get('timestamp', ''),
-                r.get('category', '其他'),
-                r.get('note', ''),
-                r.get('amount', 0)
-            ])
+        if not current_user.is_authenticated:
+            return None
             
-        return output.getvalue()
+        record = ExpenseRecord.query.filter_by(id=record_id, user_id=current_user.id).first()
+        if not record:
+            return None
+            
+        if 'category' in record_data: record.category = record_data['category']
+        if 'note' in record_data: record.note = record_data['note']
+        if 'timestamp' in record_data: record.timestamp = record_data['timestamp']
+        
+        if 'amount' in record_data:
+            try:
+                record.amount = max(0.0, float(record_data['amount']))
+            except:
+                pass
+                
+        db.session.commit()
+        return self._to_dict(record)
 
     def delete_record(self, record_id):
-        data = self._load_data()
-        original_len = len(data['records'])
-        data['records'] = [r for r in data['records'] if r['id'] != record_id]
-        if len(data['records']) < original_len:
-            self._save_data(data)
+        if not current_user.is_authenticated:
+            return False
+            
+        record = ExpenseRecord.query.filter_by(id=record_id, user_id=current_user.id).first()
+        if record:
+            db.session.delete(record)
+            db.session.commit()
             return True
         return False
 
-    def get_current_period(self):
-        """
-        Calculate current billing period: 10th to 10th.
-        Example: If today is Jan 29, period is Jan 10 to Feb 10.
-        If today is Feb 5, period is Jan 10 to Feb 10.
-        If today is Feb 11, period is Feb 10 to Mar 10.
-        """
-        now = datetime.now()
-        year = now.year
-        month = now.month
-
-        if now.day < 10:
-            # Current period started last month 10th
-            start_date = datetime(year, month - 1, 10) if month > 1 else datetime(year - 1, 12, 10)
-            end_date = datetime(year, month, 10)
-        else:
-            # Current period started this month 10th
-            start_date = datetime(year, month, 10)
-            end_date = datetime(year, month + 1, 10) if month < 12 else datetime(year + 1, 1, 10)
-            
-        return start_date.strftime('%Y-%m-%d'), end_date.strftime('%Y-%m-%d')
-
     def get_summary(self, start_date_str, end_date_str):
-        records = self.get_all_records()
+        if not current_user.is_authenticated:
+             return {"records": [], "total_amount": 0, "category_split": {}}
+             
+        # Filter: timestamp string comparison works for YYYY-MM-DD format if dates are YYYY-MM-DD
+        # But timestamps are YYYY-MM-DD HH:MM:SS
+        # start_date_str is YYYY-MM-DD
+        
+        records = ExpenseRecord.query.filter_by(user_id=current_user.id)\
+            .filter(ExpenseRecord.timestamp >= start_date_str)\
+            .filter(ExpenseRecord.timestamp < end_date_str + " 23:59:59")\
+            .order_by(ExpenseRecord.timestamp.desc())\
+            .all()
+            
+        # Refine filter logic to strictly match date prefix
         filtered = []
         total = 0
         categories = {}
-
+        
         for r in records:
-            # Record date is usually the first 10 chars of timestamp YYYY-MM-DD
-            rec_date = r['timestamp'][:10]
+            rec_date = r.timestamp[:10]
             if start_date_str <= rec_date < end_date_str:
-                filtered.append(r)
-                total += r['amount']
-                cat = r.get('category', '其他')
-                categories[cat] = categories.get(cat, 0) + r['amount']
-
-        # Sort records by timestamp descending
-        filtered.sort(key=lambda x: x['timestamp'], reverse=True)
-
+                filtered.append(self._to_dict(r))
+                total += r.amount
+                cat = r.category or '其他'
+                categories[cat] = categories.get(cat, 0) + r.amount
+                
         return {
             "records": filtered,
             "total_amount": total,
@@ -147,25 +107,14 @@ class ExpenseService:
         }
 
     def get_grouped_summary(self, start_date_str, end_date_str):
-        """
-        Group records by weeks (Mon-Sun) within the period.
-        Returning totals for weeks and totals for days within weeks.
-        """
-        data = self.get_summary(start_date_str, end_date_str)
-        records = data['records']
+        summary_data = self.get_summary(start_date_str, end_date_str)
+        records = summary_data['records']
         
-        # Helper to get week start (Monday)
         def get_week_start(date_obj):
             return date_obj - timedelta(days=date_obj.weekday())
 
         weeks_grouped = {}
         
-        # Iterate through the period to define weeks
-        curr_start = datetime.strptime(start_date_str, '%Y-%m-%d')
-        end_limit = datetime.strptime(end_date_str, '%Y-%m-%d')
-        
-        # Standardize range: from the Monday of the first week to the End of the last week
-        # Actually just group existing records into their respective weeks
         for r in records:
             dt = datetime.strptime(r['timestamp'][:10], '%Y-%m-%d')
             wk_start = get_week_start(dt).strftime('%Y-%m-%d')
@@ -190,16 +139,13 @@ class ExpenseService:
             weeks_grouped[wk_start]['days'][day_str]['total'] += r['amount']
             weeks_grouped[wk_start]['days'][day_str]['records_count'] += 1
 
-        # Flatten and sort
         sorted_weeks = []
         for ws in sorted(weeks_grouped.keys(), reverse=True):
             w_data = weeks_grouped[ws]
-            # Calculate weekend (ws is Monday)
             ws_dt = datetime.strptime(ws, '%Y-%m-%d')
             we_dt = ws_dt + timedelta(days=6)
             w_data['week_end'] = we_dt.strftime('%Y-%m-%d')
             
-            # Sort days within week
             sorted_days = []
             for ds in sorted(w_data['days'].keys(), reverse=True):
                 sorted_days.append(w_data['days'][ds])
@@ -207,46 +153,70 @@ class ExpenseService:
             w_data['days'] = sorted_days
             sorted_weeks.append(w_data)
 
-        # Calculate current week range (Mon-Sun) for UI display
         now = datetime.now()
         this_wk_start = (now - timedelta(days=now.weekday())).strftime('%Y-%m-%d')
         this_wk_end = (now - timedelta(days=now.weekday()) + timedelta(days=6)).strftime('%Y-%m-%d')
 
         return {
             "weeks": sorted_weeks,
-            "total_amount": data['total_amount'],
-            "period": data['period'],
+            "total_amount": summary_data['total_amount'],
+            "period": summary_data['period'],
             "this_week_range": {"start": this_wk_start, "end": this_wk_end}
         }
 
+    def get_current_period(self):
+        now = datetime.now()
+        year = now.year
+        month = now.month
+
+        if now.day < 10:
+            start_date = datetime(year, month - 1, 10) if month > 1 else datetime(year - 1, 12, 10)
+            end_date = datetime(year, month, 10)
+        else:
+            start_date = datetime(year, month, 10)
+            end_date = datetime(year, month + 1, 10) if month < 12 else datetime(year + 1, 1, 10)
+            
+        return start_date.strftime('%Y-%m-%d'), end_date.strftime('%Y-%m-%d')
 
     def get_settings(self):
-        data = self._load_data()
-        return data.get('settings', {"monthly_budget": 10000})
+        if not current_user.is_authenticated:
+            return {"monthly_budget": 10000}
+            
+        settings = current_user.settings
+        if not settings:
+            settings = UserSettings(user_id=current_user.id)
+            db.session.add(settings)
+            db.session.commit()
+            
+        return {"monthly_budget": settings.monthly_budget}
 
     def update_settings(self, settings_data):
-        data = self._load_data()
+        if not current_user.is_authenticated:
+            return {}
+            
         if 'monthly_budget' in settings_data:
-            data['settings']['monthly_budget'] = float(settings_data['monthly_budget'])
-        self._save_data(data)
-        return data['settings']
+            try:
+                current_user.settings.monthly_budget = float(settings_data['monthly_budget'])
+                db.session.commit()
+            except:
+                pass
+        return self.get_settings()
 
     def get_monthly_periods(self):
-        """
-        Generate a list of available periods: 10th to 10th.
-        """
-        records = self.get_all_records()
-        if not records:
-            # Current period only
-            start, end = self.get_current_period()
-            label = f"{start} ~ {end}"
-            return [{"label": label, "start": start, "end": end}]
+        if not current_user.is_authenticated:
+             return []
+             
+        # Find min and max date
+        result = db.session.query(
+             func.min(ExpenseRecord.timestamp), 
+             func.max(ExpenseRecord.timestamp)
+        ).filter_by(user_id=current_user.id).first()
 
-        dates = [r['timestamp'][:10] for r in records]
-        dates.sort()
-        
-        # Start from the first record's month 10th
-        first_date = datetime.strptime(dates[0], '%Y-%m-%d')
+        if not result or not result[0]:
+            start, end = self.get_current_period()
+            return [{"label": f"{start} ~ {end}", "start": start, "end": end}]
+
+        first_date = datetime.strptime(result[0][:10], '%Y-%m-%d')
         if first_date.day < 10:
             current = datetime(first_date.year, first_date.month, 10) - timedelta(days=32)
             current = datetime(current.year, current.month, 10)
@@ -255,7 +225,6 @@ class ExpenseService:
 
         periods = []
         now = datetime.now()
-        # Cover until tomorrow to be safe for current period
         final_cutoff = now + timedelta(days=1)
 
         while current <= final_cutoff:
@@ -264,13 +233,42 @@ class ExpenseService:
             
             p_start = current.strftime('%Y-%m-%d')
             p_end = next_p.strftime('%Y-%m-%d')
-            label = f"{p_start} ~ {p_end}"
-            
             periods.append({
-                "label": label,
+                "label": f"{p_start} ~ {p_end}",
                 "start": p_start,
                 "end": p_end
             })
             current = next_p
 
         return periods
+        
+    def export_records_csv(self, start_date, end_date):
+        import io
+        import csv
+        
+        filtered = self.get_summary(start_date, end_date)['records']
+        
+        output = io.StringIO()
+        output.write('\ufeff')
+        
+        writer = csv.writer(output)
+        writer.writerow(['日期時間', '類別', '項目名稱', '金額'])
+        
+        for r in filtered:
+            writer.writerow([
+                r.get('timestamp', ''),
+                r.get('category', '其他'),
+                r.get('note', ''),
+                r.get('amount', 0)
+            ])
+            
+        return output.getvalue()
+
+    def _to_dict(self, record):
+        return {
+            'id': record.id,
+            'timestamp': record.timestamp,
+            'category': record.category,
+            'note': record.note,
+            'amount': record.amount
+        }

@@ -17,40 +17,28 @@
 </head>
 
 <body>
-    <div class="app-container">
-        <nav class="sidebar">
-            <div class="logo">
-                <span class="logo-icon">🛠️</span>
-                <span class="logo-text">工具箱</span>
+    <div class="container">
+        <nav class="nav-bar glass">
+            <a href="{{ url_for('main.index') }}" class="nav-brand">
+                <span class="material-icons">home_repair_service</span>
+                工具箱 Web
+            </a>
+
+            <div class="nav-links">
+                {% if current_user.is_authenticated %}
+                <span class="user-greeting">Hi, {{ current_user.username }}</span>
+                <a href="{{ url_for('auth.settings') }}" class="nav-link" title="設定">
+                    <span class="material-icons" style="font-size: 20px;">settings</span>
+                </a>
+                <a href="{{ url_for('auth.logout') }}" class="nav-link">登出</a>
+                {% else %}
+                <a href="{{ url_for('auth.login') }}" class="nav-link">登入</a>
+                <a href="{{ url_for('auth.register') }}" class="nav-link">註冊</a>
+                {% endif %}
             </div>
-            <ul class="nav-links">
-                <li><a href="{{ url_for('main.index') }}"
-                        class="nav-link {% if request.endpoint == 'main.index' %}active{% endif %}">🏠 首頁</a></li>
-
-                <li><a href="{{ url_for('salary.index') }}"
-                        class="nav-link {% if 'salary' in request.endpoint %}active{% endif %}">💰 薪水小幫手</a></li>
-                <li><a href="{{ url_for('download.index') }}"
-                        class="nav-link {% if 'download' in request.endpoint %}active{% endif %}">🎬 影音下載器</a></li>
-                <li><a href="{{ url_for('ntut.calendar') }}"
-                        class="nav-link {% if 'ntut' in request.endpoint %}active{% endif %}">🎓 北科生活</a></li>
-                <li><a href="{{ url_for('expense.today') }}"
-                        class="nav-link {% if 'expense' in request.endpoint %}active{% endif %}">💳 記帳管家</a></li>
-
-            </ul>
         </nav>
 
-        <main class="main-content">
-            <header class="top-bar">
-                <h1 class="page-title">{% block page_title %}{% endblock %}</h1>
-                <div class="user-actions">
-                    <!-- Placeholder for user settings or status -->
-                </div>
-            </header>
-
-            <div class="content-area">
-                {% block content %}{% endblock %}
-            </div>
-        </main>
+        {% block content %}{% endblock %}
     </div>
 
     <!-- Main JS -->

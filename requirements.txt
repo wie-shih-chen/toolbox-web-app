@@ -1,3 +1,7 @@
 flask
 yt-dlp
 gunicorn
+flask-sqlalchemy
+flask-login
+flask-mail
+python-dotenv

@@ -5,3 +5,6 @@ __pycache__/
 salary_data.json
 expense_data.json
 downloads/
+.env
+app.db
+instance/

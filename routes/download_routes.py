@@ -1,20 +1,24 @@
 from flask import Blueprint, render_template, request, jsonify
+from flask_login import login_required
 from services.download_service import DownloadManager
 
 download_bp = Blueprint('download', __name__)
 manager = DownloadManager()
 
 @download_bp.route('/')
+@login_required
 def index():
     return render_template('downloader/index.html')
 
 @download_bp.route('/api/validate', methods=['POST'])
+@login_required
 def validate():
     url = request.json.get('url')
     is_valid = manager.validate_url(url)
     return jsonify({'valid': is_valid})
 
 @download_bp.route('/api/info', methods=['POST'])
+@login_required
 def get_info():
     url = request.json.get('url')
     info = manager.get_video_info(url)
@@ -23,6 +27,7 @@ def get_info():
     return jsonify({'error': 'Could not get video info'}), 400
 
 @download_bp.route('/api/download', methods=['POST'])
+@login_required
 def start_download():
     data = request.json
     url = data.get('url')
@@ -35,6 +40,7 @@ def start_download():
     return jsonify({'id': download_id, 'status': 'started'})
 
 @download_bp.route('/api/status/<download_id>')
+@login_required
 def get_status(download_id):
     status = manager.get_status(download_id)
     if status:
@@ -42,20 +48,24 @@ def get_status(download_id):
     return jsonify({'error': 'Download not found'}), 404
 
 @download_bp.route('/api/tasks')
+@login_required
 def get_all_tasks():
     return jsonify(manager.get_all_downloads())
 
 @download_bp.route('/api/files')
+@login_required
 def list_files():
     return jsonify(manager.list_local_files())
 
 @download_bp.route('/api/files/<filename>', methods=['DELETE'])
+@login_required
 def delete_file(filename):
     if manager.delete_file(filename):
         return jsonify({'success': True})
     return jsonify({'error': 'File not found'}), 404
 
 @download_bp.route('/api/files/download/<filename>')
+@login_required
 def download_file_to_browser(filename):
     from flask import send_from_directory
     from config import Config
@@ -68,12 +78,14 @@ def download_file_to_browser(filename):
     return "File not found", 404
 
 @download_bp.route('/api/open_folder', methods=['POST'])
+@login_required
 def open_folder():
     if manager.open_folder():
         return jsonify({'success': True})
     return jsonify({'error': 'Failed to open folder'}), 500
 
 @download_bp.route('/api/cleanup', methods=['POST'])
+@login_required
 def cleanup():
     manager.clear_completed()
     return jsonify({'success': True})
