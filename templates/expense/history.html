@@ -29,20 +29,17 @@
 </div>
 
 <div class="expense-history">
-    <div class="history-controls glass"
-        style="padding: 20px; display: flex; align-items: center; gap: 15px; margin-bottom: 25px;">
-        <div style="display: flex; align-items: center; gap: 10px; flex-grow: 1;">
+    <div class="history-controls glass">
+        <div class="history-filter-group">
             <span class="material-icons" style="color: var(--text-secondary)">event</span>
-            <label style="color: var(--text-secondary); font-weight: 500; white-space: nowrap;">查詢年份：</label>
-            <select id="yearSelect" class="form-control"
-                style="flex-grow: 1; padding: 10px; background: rgba(0,0,0,0.2); border: 1px solid var(--border-color); color: white; border-radius: 8px;">
+            <label>查詢年份：</label>
+            <select id="yearSelect" class="form-control">
                 <!-- Auto-populated -->
             </select>
         </div>
-        <div style="display: flex; align-items: center; gap: 10px; flex-grow: 1;">
-            <label style="color: var(--text-secondary); font-weight: 500; white-space: nowrap;">查詢月份：</label>
-            <select id="monthSelect" class="form-control"
-                style="flex-grow: 1; padding: 10px; background: rgba(0,0,0,0.2); border: 1px solid var(--border-color); color: white; border-radius: 8px;">
+        <div class="history-filter-group">
+            <label>查詢月份：</label>
+            <select id="monthSelect" class="form-control">
                 <option value="01">01 月 (10號起)</option>
                 <option value="02">02 月 (10號起)</option>
                 <option value="03">03 月 (10號起)</option>
@@ -57,10 +54,9 @@
                 <option value="12">12 月 (10號起)</option>
             </select>
         </div>
-        <div style="display: flex; align-items: center; gap: 10px; flex-grow: 1;">
-            <label style="color: var(--text-secondary); font-weight: 500; white-space: nowrap;">查詢日期：</label>
-            <select id="daySelect" class="form-control"
-                style="flex-grow: 1; padding: 10px; background: rgba(0,0,0,0.2); border: 1px solid var(--border-color); color: white; border-radius: 8px;">
+        <div class="history-filter-group">
+            <label>查詢日期：</label>
+            <select id="daySelect" class="form-control">
                 <option value="">全月份</option>
             </select>
         </div>

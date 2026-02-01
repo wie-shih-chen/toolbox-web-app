@@ -507,3 +507,68 @@ input[type="time"].input-pill::-webkit-calendar-picker-indicator {
         font-size: 1.05rem;
     }
 }
+/* 
+   History Page Controls Logic
+   Refactored for mobile responsiveness 
+*/
+.history-controls {
+    padding: 20px;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    margin-bottom: 25px;
+    flex-wrap: wrap; /* Allow wrapping on tablets */
+}
+
+.history-filter-group {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-grow: 1;
+    min-width: 200px; /* Prevent crushing on small desktop */
+}
+
+.history-filter-group label {
+    color: var(--text-secondary);
+    font-weight: 500;
+    white-space: nowrap;
+    margin: 0;
+}
+
+.history-filter-group .form-control {
+    flex-grow: 1;
+    padding: 10px;
+    background: rgba(0, 0, 0, 0.2);
+    border: 1px solid var(--border-color);
+    color: white;
+    border-radius: 8px;
+    min-width: 0; /* Fix flex child overflow */
+}
+
+@media (max-width: 768px) {
+    .history-controls {
+        flex-direction: column;
+        align-items: stretch;
+        padding: 15px;
+        gap: 15px;
+    }
+
+    .history-filter-group {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 8px;
+        width: 100%;
+        min-width: 0;
+    }
+
+    .history-filter-group label {
+        font-size: 0.9rem;
+    }
+
+    #exportCsvBtn {
+        width: 100%;
+        justify-content: center;
+        margin-top: 5px;
+        height: 50px; /* Larger touch target */
+    }
+}
