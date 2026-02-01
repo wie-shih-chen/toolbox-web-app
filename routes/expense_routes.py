@@ -143,22 +143,29 @@ def export_records():
         # Simplified top 5 categories
         top_categories = sorted(category_stats.items(), key=lambda x: x[1], reverse=True)[:5]
         
-        success = EmailService.send_email(
-            to=current_user.email,
-            subject=f'記帳明細報表 ({start_date} - {end_date})',
-            template='email/expense_export.html',
-            username=current_user.username,
-            period=f"{start_date} ~ {end_date}",
-            total_amount=f"${summary_data.get('total_amount', 0):,}",
-            records=records,
-            top_categories=top_categories
-        )
-        
-        if success:
-             return jsonify({
+        try:
+            EmailService.send_email(
+                to=current_user.email,
+                subject=f'記帳明細報表 ({start_date} - {end_date})',
+                template='email/expense_export.html',
+                username=current_user.username,
+                period=f"{start_date} ~ {end_date}",
+                total_amount=f"${summary_data.get('total_amount', 0):,}",
+                records=records,
+                top_categories=top_categories,
+                raise_error=True
+            )
+            
+            return jsonify({
                 "success": True, 
                 "message": f"報表內容已寄送至 {current_user.email}",
                 "method": "email"
+            })
+        except Exception as e:
+            return jsonify({
+                "success": False,
+                "error": f"Email 寄送失敗: {str(e)}",
+                "method": "error"
             })
     
     return Response(

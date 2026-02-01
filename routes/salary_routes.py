@@ -130,21 +130,28 @@ def export_csv():
         
         export_date = datetime.now().strftime('%Y/%m/%d %H:%M')
         
-        success = EmailService.send_email(
-            to=current_user.email,
-            subject=f'薪資排班報表 - {export_date}',
-            template='email/salary_export.html',
-            username=current_user.username,
-            record_count=len(records),
-            export_date=export_date,
-            records=records
-        )
-        
-        if success:
+        try:
+            EmailService.send_email(
+                to=current_user.email,
+                subject=f'薪資排班報表 - {export_date}',
+                template='email/salary_export.html',
+                username=current_user.username,
+                record_count=len(records),
+                export_date=export_date,
+                records=records,
+                raise_error=True
+            )
+            
             return jsonify({
                 "success": True, 
                 "message": f"報表內容已寄送至 {current_user.email}",
                 "method": "email"
+            })
+        except Exception as e:
+            return jsonify({
+                "success": False,
+                "error": f"Email 寄送失敗: {str(e)}",
+                "method": "error"
             })
             
     # Fallback to direct download

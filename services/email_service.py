@@ -6,7 +6,7 @@ from extensions import mail
 
 class EmailService:
     @staticmethod
-    def send_email(to, subject, template, **kwargs):
+    def send_email(to, subject, template, raise_error=False, **kwargs):
         msg = Message(subject, recipients=[to])
         msg.html = render_template(template, **kwargs)
         try:
@@ -14,6 +14,8 @@ class EmailService:
             return True
         except Exception as e:
             print(f"Failed to send email: {e}")
+            if raise_error:
+                raise e
             return False
 
     @staticmethod
