@@ -257,6 +257,12 @@ input[type="time"].input-pill::-webkit-calendar-picker-indicator {
     display: flex;
     flex-direction: column;
     gap: 15px;
+    padding-bottom: 200px !important;
+    /* Force space at end of list */
+}
+
+.expense-list> :last-child {
+    margin-bottom: 50px;
 }
 
 .expense-item {
