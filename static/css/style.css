@@ -932,3 +932,19 @@ textarea:focus {
         padding: 25px;
     }
 }
+/* 
+   Final Mobile Overrides
+   Placed at the end to ensure they override all previous styles 
+*/
+@media (max-width: 768px) {
+    .content-area {
+        /* Force enough space for fixed header and prevent bottom cutoff */
+        padding: 120px 15px 150px 15px !important; 
+        width: 100%;
+        overflow-x: hidden;
+    }
+
+    .nav-bar {
+        padding: 15px 20px; /* Ensure header doesn't get too tall due to padding */
+    }
+}
