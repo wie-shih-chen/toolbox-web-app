@@ -72,3 +72,11 @@ class UserSettings(db.Model):
     
     # Expense settings
     monthly_budget = db.Column(db.Float, default=10000.0)
+
+class ReportLog(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    period_start = db.Column(db.String(10), nullable=False) # YYYY-MM-DD
+    period_end = db.Column(db.String(10), nullable=False)   # YYYY-MM-DD
+    report_type = db.Column(db.String(20), nullable=False)  # 'salary' or 'expense'
+    sent_at = db.Column(db.String(20), nullable=False)      # Timestamp

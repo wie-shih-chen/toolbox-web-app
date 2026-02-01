@@ -10,6 +10,10 @@ service = SalaryService()
 @salary_bp.route('/')
 @login_required
 def index():
+    # Lazy Automation: Check if monthly report needs sending
+    from services.report_service import ReportService
+    ReportService.check_and_send_pending_reports(current_user)
+
     # Default to current week
     today = datetime.now()
     monday = today - timedelta(days=today.weekday())
