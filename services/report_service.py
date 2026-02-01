@@ -54,7 +54,7 @@ class ReportService:
         If not, sends it.
         Uses threading to avoid blocking the request.
         """
-        if not user.email:
+        if not user.is_authenticated:
             return
             
         start_date, end_date = ReportService.get_billing_period()
@@ -69,23 +69,22 @@ class ReportService:
         if log_exist:
             return # Already sent
             
-        # Not sent yet. Perform sending logic.
-        # Note: We do this synchronously or via robust threading. 
-        # Simple implementation: direct call (safer for Flask context in basic setting)
-        # To avoid lag, we could use a thread, but context needs to be passed.
+        # Pass user_id instead of user object to avoid threading context issues
+        user_id = user.id
         
         report_thread = threading.Thread(
             target=ReportService._generate_and_send,
-            args=(current_app._get_current_object(), user, start_date, end_date)
+            args=(current_app._get_current_object(), user_id, start_date, end_date)
         )
         report_thread.start()
         
     @staticmethod
-    def _generate_and_send(app, user, start_date, end_date):
+    def _generate_and_send(app, user_id, start_date, end_date):
         with app.app_context():
-            # Double check inside thread to prevent race condition slightly (though uncommon per user)
-            # Re-bind user to session if needed, but we passed user object which is detached or attached.
-            # Best to query user again by ID to be safe with session.
+            # Re-fetch user inside the thread's context
+            user = User.query.get(user_id)
+            if not user or not user.email:
+                return
             
             # --- Salary Report ---
             try:

@@ -6,7 +6,7 @@ load_dotenv(os.path.join(os.path.dirname(os.path.abspath(__file__)), '.env'))
 
 from flask import Flask, render_template
 from config import Config
-from models import db, User
+from models import db, User, ReportLog
 from flask_login import LoginManager
 from extensions import mail
 
