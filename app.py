@@ -4,7 +4,8 @@ from models import db, User
 from flask_login import LoginManager
 from dotenv import load_dotenv
 
-load_dotenv() # Load environment variables from .env file
+import os
+load_dotenv(os.path.join(os.path.dirname(os.path.abspath(__file__)), '.env')) # Load .env using absolute path
 
 from extensions import mail
 
