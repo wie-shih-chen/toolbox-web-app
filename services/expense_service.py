@@ -72,15 +72,18 @@ class ExpenseService:
             return True
         return False
 
-    def get_summary(self, start_date_str, end_date_str):
-        if not current_user.is_authenticated:
+    def get_summary(self, start_date_str, end_date_str, user=None):
+        target_user = user or current_user
+        if hasattr(target_user, 'is_authenticated') and not target_user.is_authenticated and not user:
+             return {"records": [], "total_amount": 0, "category_split": {}}
+        if not target_user:
              return {"records": [], "total_amount": 0, "category_split": {}}
              
         # Filter: timestamp string comparison works for YYYY-MM-DD format if dates are YYYY-MM-DD
         # But timestamps are YYYY-MM-DD HH:MM:SS
         # start_date_str is YYYY-MM-DD
         
-        records = ExpenseRecord.query.filter_by(user_id=current_user.id)\
+        records = ExpenseRecord.query.filter_by(user_id=target_user.id)\
             .filter(ExpenseRecord.timestamp >= start_date_str)\
             .filter(ExpenseRecord.timestamp < end_date_str + " 23:59:59")\
             .order_by(ExpenseRecord.timestamp.desc())\

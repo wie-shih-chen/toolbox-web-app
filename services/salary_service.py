@@ -4,18 +4,26 @@ from datetime import datetime, timedelta
 from sqlalchemy import func
 
 class SalaryService:
-    def get_all_records(self):
-        if not current_user.is_authenticated:
+    def get_all_records(self, user=None):
+        target_user = user or current_user
+        # Check if we have a valid user (either passed or logged in)
+        if hasattr(target_user, 'is_authenticated') and not target_user.is_authenticated and not user:
             return []
-        # Return dict representations to match expected format
-        records = SalaryRecord.query.filter_by(user_id=current_user.id).order_by(SalaryRecord.date.asc()).all()
-        return [self._to_dict(r) for r in records]
-
-    def get_records_by_range(self, start_date_str, end_date_str):
-        if not current_user.is_authenticated:
+        if not target_user:
             return []
             
-        records = SalaryRecord.query.filter_by(user_id=current_user.id)\
+        # Return dict representations to match expected format
+        records = SalaryRecord.query.filter_by(user_id=target_user.id).order_by(SalaryRecord.date.asc()).all()
+        return [self._to_dict(r) for r in records]
+
+    def get_records_by_range(self, start_date_str, end_date_str, user=None):
+        target_user = user or current_user
+        if hasattr(target_user, 'is_authenticated') and not target_user.is_authenticated and not user:
+            return []
+        if not target_user:
+            return []
+            
+        records = SalaryRecord.query.filter_by(user_id=target_user.id)\
             .filter(SalaryRecord.date >= start_date_str)\
             .filter(SalaryRecord.date <= end_date_str)\
             .order_by(SalaryRecord.date.asc(), SalaryRecord.start_time.asc())\
