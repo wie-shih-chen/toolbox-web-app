@@ -488,7 +488,32 @@ const salaryApp = {
             const res = await fetch(`/salary/api/records?start_date=${this.formatDate(gridStart)}&end_date=${this.formatDate(new Date(gridStart.getTime() + 42 * 864e5))}`);
             this.records = await res.json();
             this.renderCalendar(gridStart);
-            this.updateMonthlySummary(new Date(y, m, 10), new Date(y, m + 1, 10));
+
+            // Cycle: Previous Month 10th ~ This Month 10th
+            // For Feb View (m=1), we want Jan 10 ~ Feb 10.
+            const cycleStart = new Date(y, m - 1, 10);
+            const cycleEnd = new Date(y, m, 10);
+
+            // Adjust label to show cycle
+            const cycleLabel = document.createElement('div');
+            cycleLabel.className = 'cycle-label';
+            cycleLabel.style.fontSize = '0.8rem';
+            cycleLabel.style.color = '#888';
+            cycleLabel.style.marginTop = '4px';
+            cycleLabel.textContent = `統計區間: ${cycleStart.getMonth() + 1}/${cycleStart.getDate()} ~ ${cycleEnd.getMonth() + 1}/${cycleEnd.getDate()}`;
+
+            // Check if label already exists to avoid duplication
+            let existingLabel = label.querySelector('.cycle-label');
+            if (existingLabel) existingLabel.remove();
+            // Append to header (need to handle slightly differently as label is a h2)
+            // Just appending text content to summary label might be cleaner
+
+
+            this.updateMonthlySummary(cycleStart, cycleEnd);
+
+            // Update summary labels to indicate range
+            const hLabel = document.querySelector('.summary-item:first-child .label');
+            if (hLabel) hLabel.setAttribute('title', `區間: ${this.formatDate(cycleStart)} ~ ${this.formatDate(cycleEnd)}`);
         } catch (error) { }
     },
 
@@ -566,7 +591,8 @@ const salaryApp = {
         let hours = 0, amount = 0;
 
         this.records.forEach(r => {
-            if (r.date >= startStr && r.date <= endStr) {
+            // Logic: start <= date < end (e.g. Jan 10 <= date < Feb 10)
+            if (r.date >= startStr && r.date < endStr) {
                 if (r.type === 'shift') hours += r.hours;
                 amount += r.amount;
             }
