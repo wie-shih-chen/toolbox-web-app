@@ -603,6 +603,7 @@ textarea:focus {
 
     .content-area {
         padding: 15px;
+        padding-bottom: 150px;
         overflow-y: visible;
     }
 
