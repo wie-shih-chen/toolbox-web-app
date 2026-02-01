@@ -507,6 +507,7 @@ input[type="time"].input-pill::-webkit-calendar-picker-indicator {
         font-size: 1.05rem;
     }
 }
+
 /* 
    History Page Controls Logic
    Refactored for mobile responsiveness 
@@ -517,7 +518,8 @@ input[type="time"].input-pill::-webkit-calendar-picker-indicator {
     align-items: center;
     gap: 15px;
     margin-bottom: 25px;
-    flex-wrap: wrap; /* Allow wrapping on tablets */
+    flex-wrap: wrap;
+    /* Allow wrapping on tablets */
 }
 
 .history-filter-group {
@@ -525,7 +527,8 @@ input[type="time"].input-pill::-webkit-calendar-picker-indicator {
     align-items: center;
     gap: 10px;
     flex-grow: 1;
-    min-width: 200px; /* Prevent crushing on small desktop */
+    min-width: 200px;
+    /* Prevent crushing on small desktop */
 }
 
 .history-filter-group label {
@@ -542,33 +545,60 @@ input[type="time"].input-pill::-webkit-calendar-picker-indicator {
     border: 1px solid var(--border-color);
     color: white;
     border-radius: 8px;
-    min-width: 0; /* Fix flex child overflow */
+    min-width: 0;
+    /* Fix flex child overflow */
 }
 
 @media (max-width: 768px) {
     .history-controls {
         flex-direction: column;
         align-items: stretch;
-        padding: 15px;
-        gap: 15px;
+        padding: 20px !important;
+        gap: 20px;
+        background: rgba(30, 30, 30, 0.6);
+        border-radius: 20px;
+        margin-bottom: 20px;
     }
 
     .history-filter-group {
         flex-direction: column;
-        align-items: stretch;
+        align-items: flex-start;
         gap: 8px;
         width: 100%;
         min-width: 0;
+        background: rgba(255, 255, 255, 0.03);
+        padding: 12px;
+        border-radius: 12px;
+        border: 1px solid rgba(255, 255, 255, 0.05);
     }
 
     .history-filter-group label {
-        font-size: 0.9rem;
+        font-size: 0.85rem;
+        color: var(--text-secondary);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-left: 2px;
+    }
+
+    .history-filter-group .form-control {
+        width: 100%;
+        height: 44px;
+        /* iOS friendly touch target */
+        background: transparent;
+        border: none;
+        color: white;
+        font-size: 1rem;
+        padding: 0 5px;
     }
 
     #exportCsvBtn {
         width: 100%;
         justify-content: center;
-        margin-top: 5px;
-        height: 50px; /* Larger touch target */
+        margin-top: 10px;
+        height: 50px;
+        font-size: 1rem;
+        background: linear-gradient(135deg, #4ecdc4 0%, #2980b9 100%);
+        box-shadow: 0 4px 15px rgba(41, 128, 185, 0.3);
+        border: none;
     }
 }
