@@ -101,6 +101,8 @@ a {
 
     .content-area {
         padding: 15px;
+        padding-top: 100px;
+        /* Prevent fixed header overlap */
         /* Tighter padding on mobile */
     }
 
