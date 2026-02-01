@@ -515,21 +515,16 @@ const salaryApp = {
             // It might be better to append to .summary-card logic or modify tooltips.
             // But strict instruction: "Also add the calculation time next to it". 'it' likely refers to stats or title.
             // Let's put it as a tooltip on the Labels "本月時數" / "本月薪資" AND verify visual.
-            // The previous code tried to set 'title' attribute. I will do that AND update the text below the stats.
-
+            // The previous code tried to set 'title' attribute. I will do that AND update the text below            
             const summaryCard = document.querySelector('.summary-card');
             if (summaryCard) {
                 let rangeDisplay = summaryCard.querySelector('.range-display');
                 if (!rangeDisplay) {
                     rangeDisplay = document.createElement('div');
                     rangeDisplay.className = 'range-display';
-                    rangeDisplay.style.fontSize = '0.7em';
-                    rangeDisplay.style.color = '#aaa';
-                    rangeDisplay.style.textAlign = 'right';
-                    rangeDisplay.style.width = '100%';
-                    rangeDisplay.style.marginTop = '4px';
                     summaryCard.appendChild(rangeDisplay);
                 }
+                // Format: 2/10 ~ 3/10
                 rangeDisplay.textContent = `${cycleStart.getMonth() + 1}/${cycleStart.getDate()} ~ ${cycleEnd.getMonth() + 1}/${cycleEnd.getDate()}`;
             }
 

@@ -43,11 +43,26 @@
 }
 
 .summary-card {
+    position: relative;
+    /* Validation for absolute children */
     display: flex;
     gap: 30px;
     background-color: var(--card-bg);
     padding: 10px 25px;
+    padding-bottom: 20px;
+    /* Space for date range */
     border-radius: 12px;
+}
+
+.range-display {
+    position: absolute;
+    bottom: 4px;
+    right: 12px;
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    opacity: 0.7;
+    font-weight: 500;
+    letter-spacing: 0.5px;
 }
 
 .summary-item {
@@ -58,6 +73,8 @@
 .summary-item .label {
     font-size: 0.8rem;
     color: var(--text-secondary);
+    white-space: nowrap;
+    /* Prevent wrapping */
 }
 
 .summary-item .value {
