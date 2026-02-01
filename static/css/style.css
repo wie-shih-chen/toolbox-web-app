@@ -627,20 +627,18 @@ textarea:focus {
 
 /* Segmented Navigation (iOS Style) */
 .salary-nav {
-    display: inline-flex;
-    position: relative;
-    left: 50%;
-    transform: translateX(-50%);
+    display: flex;
+    width: fit-content;
+    margin: 40px auto 35px auto;
     background: rgba(118, 118, 128, 0.24);
     /* Authentic iOS Track */
     backdrop-filter: blur(25px);
     -webkit-backdrop-filter: blur(25px);
     border-radius: 12px;
-    padding: 3px;
-    margin-top: 40px;
-    margin-bottom: 35px;
-    border: 1px solid rgba(255, 255, 255, 0.03);
+    padding: 4px;
+    border: 1px solid rgba(255, 255, 255, 0.05);
     gap: 2px;
+    flex-wrap: nowrap;
 }
 
 .salary-nav-item {
@@ -655,6 +653,8 @@ textarea:focus {
     gap: 8px;
     white-space: nowrap;
     text-decoration: none;
+    flex: 0 0 auto;
+    /* Prevent Item shrinking */
 }
 
 .salary-nav-item.active {
@@ -666,20 +666,27 @@ textarea:focus {
 
 @media (max-width: 768px) {
     .salary-nav {
-        left: 0;
-        transform: none;
-        width: auto;
-        max-width: 100%;
+        margin: 20px auto 25px auto;
+        /* Less margin on mobile */
+        max-width: 95vw;
+        /* Use almost full width */
         overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        /* Smooth scroll */
         justify-content: flex-start;
-        display: flex;
-        align-self: center;
-        margin-left: auto;
-        margin-right: auto;
+        /* Start align for scroll */
+        padding: 4px;
     }
 
+    /* Hide scrollbar but allow functionality */
     .salary-nav::-webkit-scrollbar {
         display: none;
+    }
+
+    /* Ensure items are touch-friendly */
+    .salary-nav-item {
+        padding: 10px 14px;
+        font-size: 0.9rem;
     }
 }
 
