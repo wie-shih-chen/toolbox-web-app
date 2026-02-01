@@ -128,6 +128,9 @@ def export_csv():
         # Sort records by date desc
         records.sort(key=lambda x: x['date'], reverse=True)
         
+        # Calculate total amount
+        total_amount = sum(r.get('amount', 0) for r in records)
+        
         export_date = datetime.now().strftime('%Y/%m/%d %H:%M')
         
         try:
@@ -138,6 +141,7 @@ def export_csv():
                 username=current_user.username,
                 record_count=len(records),
                 export_date=export_date,
+                total_amount=f"${total_amount:,}",
                 records=records,
                 raise_error=True
             )

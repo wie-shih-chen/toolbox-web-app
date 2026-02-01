@@ -147,7 +147,7 @@
             <p class="message">Hi {{ username }},</p>
             <p class="message">這是您目前的薪資排班紀錄。</p>
 
-            <div class="stats-grid">
+            <div class="stats-grid" style="grid-template-columns: 1fr 1fr 1fr;">
                 <div class="stat-box">
                     <div class="stat-label">匯出日期</div>
                     <div class="stat-value" style="font-size: 14px;">{{ export_date }}</div>
@@ -155,6 +155,10 @@
                 <div class="stat-box">
                     <div class="stat-label">資料筆數</div>
                     <div class="stat-value">{{ record_count }}</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-label">總薪資</div>
+                    <div class="stat-value" style="color: #30D158;">{{ total_amount }}</div>
                 </div>
             </div>
 
