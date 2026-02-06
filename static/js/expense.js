@@ -140,9 +140,22 @@ const expenseApp = {
             try { this.settings.custom_categories = JSON.parse(this.settings.custom_categories || '[]'); } catch (e) { this.settings.custom_categories = []; }
             try { this.settings.recurring_expenses = JSON.parse(this.settings.recurring_expenses || '[]'); } catch (e) { this.settings.recurring_expenses = []; }
 
-            // Cleanup: If custom_categories contains defaults (from previous logic), remove them
-            const defaultNames = ['飲食', '衣著', '居住', '交通', '教育', '娛樂', '其他'];
-            this.settings.custom_categories = this.settings.custom_categories.filter(c => !defaultNames.includes(c.name));
+            // Parse JSON strings
+            try { this.settings.custom_categories = JSON.parse(this.settings.custom_categories || '[]'); } catch (e) { this.settings.custom_categories = []; }
+            try { this.settings.recurring_expenses = JSON.parse(this.settings.recurring_expenses || '[]'); } catch (e) { this.settings.recurring_expenses = []; }
+
+            // Initialize defaults if empty (First run)
+            if (this.settings.custom_categories.length === 0) {
+                this.settings.custom_categories = [
+                    { name: '飲食', emoji: '🍽️', color: 'var(--cat-food)' },
+                    { name: '衣著', emoji: '👕', color: 'var(--cat-clothing)' },
+                    { name: '居住', emoji: '🏠', color: 'var(--cat-housing)' },
+                    { name: '交通', emoji: '🚌', color: 'var(--cat-transport)' },
+                    { name: '教育', emoji: '📖', color: 'var(--cat-edu)' },
+                    { name: '娛樂', emoji: '🎮', color: 'var(--cat-play)' },
+                    { name: '其他', emoji: '📦', color: 'var(--cat-other)' }
+                ];
+            }
 
             this.populateCategorySelect();
 
@@ -153,23 +166,9 @@ const expenseApp = {
         const select = document.getElementById('expenseCategory');
         if (!select) return;
 
-        // Hardcoded defaults
-        const defaults = [
-            { v: '飲食', t: '🍽️ 飲食' }, { v: '衣著', t: '👕 衣著' },
-            { v: '居住', t: '🏠 居住' }, { v: '交通', t: '🚌 交通' },
-            { v: '教育', t: '📖 教育' }, { v: '娛樂', t: '🎮 娛樂' },
-            { v: '其他', t: '📦 其他' }
-        ];
-
         select.innerHTML = '';
-        defaults.forEach(d => {
-            const opt = document.createElement('option');
-            opt.value = d.v;
-            opt.textContent = d.t;
-            select.appendChild(opt);
-        });
 
-        // Use ONLY managed categories
+        // Use ONLY managed categories (which now include defaults)
         if (this.settings.custom_categories && Array.isArray(this.settings.custom_categories)) {
             this.settings.custom_categories.forEach(c => {
                 const opt = document.createElement('option');
@@ -754,6 +753,7 @@ expenseApp.initSettings = function () {
         document.getElementById('newCatName').value = '';
         document.getElementById('newCatEmoji').value = '';
         this.renderSettingsLists();
+        this.saveSettings();
     });
 
     // Handle Recurring Add
@@ -774,38 +774,33 @@ expenseApp.initSettings = function () {
             category: '其他' // Default, maybe ask prompt?
         });
         this.renderSettingsLists();
+        this.saveSettings();
     });
 
     // Intercept Submit
     document.getElementById('settingsForm').addEventListener('submit', (e) => {
-        document.getElementById('customCategoriesInput').value = JSON.stringify(this.settings.custom_categories);
-        document.getElementById('recurringExpensesInput').value = JSON.stringify(this.settings.recurring_expenses);
-
         e.preventDefault();
-        const fd = new FormData(e.target);
-
-        fetch('/salary/api/settings', { // Expense settings endpoint reuse Salary logic or separate?
-            // Checking salary.js, it uses salary/api/settings. Expense uses checks SalaryService.
-            // expense.js line 125 uses /expense/api/settings.
-            // We should check routes. But if I use form submit action, it reloads page.
-            // Let's use fetch to stay SPA-like-ish or let it submit.
-            // The form in html doesn't have action. So it submits to current URL (POST).
-            // Let's use the fetch logic found in update_settings in service.
-            // Wait, I should maintain standard form behavior or use JS submit.
-            // Given I preventedDefault:
-        });
-
-        // Actually, let's just use regular submit but populating hidden fields first.
-        // Remove preventDefault? No, better to use fetch to show success message.
-
-        fetch('/expense/api/settings', {
-            method: 'POST',
-            body: fd
-        }).then(res => res.json()).then(data => {
+        this.saveSettings().then(() => {
             alert('設定已儲存！');
             window.location.reload();
         });
     });
+};
+
+expenseApp.saveSettings = async function () {
+    document.getElementById('customCategoriesInput').value = JSON.stringify(this.settings.custom_categories);
+    document.getElementById('recurringExpensesInput').value = JSON.stringify(this.settings.recurring_expenses);
+
+    const form = document.getElementById('settingsForm');
+    const fd = new FormData(form);
+
+    try {
+        await fetch('/expense/api/settings', {
+            method: 'POST',
+            body: fd
+        });
+        // Optional: show toast
+    } catch (e) { console.error('Save failed', e); alert('儲存失敗'); }
 };
 
 expenseApp.renderSettingsLists = function () {
@@ -846,11 +841,13 @@ expenseApp.removeCategory = function (idx) {
     if (!confirm('確定刪除?')) return;
     this.settings.custom_categories.splice(idx, 1);
     this.renderSettingsLists();
+    this.saveSettings();
 };
 
 expenseApp.removeRecurring = function (idx) {
     if (!confirm('確定刪除?')) return;
     this.settings.recurring_expenses.splice(idx, 1);
     this.renderSettingsLists();
+    this.saveSettings();
 };
 
