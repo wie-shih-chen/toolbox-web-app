@@ -153,7 +153,13 @@ class SalaryService:
             db.session.add(settings)
             db.session.commit()
             
-        return {"hourly_rate": settings.hourly_rate}
+        return {
+            "hourly_rate": settings.hourly_rate,
+            "editable_month_range": settings.editable_month_range,
+            "default_start_time": settings.default_start_time,
+            "default_end_time": settings.default_end_time,
+            "target_income": settings.target_income
+        }
 
     def update_settings(self, settings_data):
         if not current_user.is_authenticated:
@@ -162,9 +168,27 @@ class SalaryService:
         if 'hourly_rate' in settings_data:
             try:
                 current_user.settings.hourly_rate = float(settings_data['hourly_rate'])
-                db.session.commit()
-            except:
-                pass
+            except: pass
+            
+        if 'editable_month_range' in settings_data:
+            try:
+                current_user.settings.editable_month_range = int(settings_data['editable_month_range'])
+            except: pass
+
+        if 'default_start_time' in settings_data:
+            current_user.settings.default_start_time = settings_data['default_start_time']
+            
+        if 'default_end_time' in settings_data:
+            current_user.settings.default_end_time = settings_data['default_end_time']
+            
+        if 'target_income' in settings_data:
+            try:
+                current_user.settings.target_income = int(settings_data['target_income'])
+            except: pass
+            
+        try:
+            db.session.commit()
+        except: pass
                 
         return self.get_settings()
 

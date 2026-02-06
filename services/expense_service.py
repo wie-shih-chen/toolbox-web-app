@@ -193,7 +193,11 @@ class ExpenseService:
             db.session.add(settings)
             db.session.commit()
             
-        return {"monthly_budget": settings.monthly_budget}
+        return {
+            "monthly_budget": settings.monthly_budget,
+            "editable_month_range": settings.editable_month_range,
+            "budget_alert_threshold": settings.budget_alert_threshold
+        }
 
     def update_settings(self, settings_data):
         if not current_user.is_authenticated:
@@ -202,9 +206,21 @@ class ExpenseService:
         if 'monthly_budget' in settings_data:
             try:
                 current_user.settings.monthly_budget = float(settings_data['monthly_budget'])
-                db.session.commit()
-            except:
-                pass
+            except: pass
+            
+        if 'editable_month_range' in settings_data:
+            try:
+                current_user.settings.editable_month_range = int(settings_data['editable_month_range'])
+            except: pass
+            
+        if 'budget_alert_threshold' in settings_data:
+            try:
+                current_user.settings.budget_alert_threshold = int(settings_data['budget_alert_threshold'])
+            except: pass
+            
+        try:
+            db.session.commit()
+        except: pass
         return self.get_settings()
 
     def get_monthly_periods(self):

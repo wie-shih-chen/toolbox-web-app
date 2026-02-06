@@ -72,6 +72,17 @@ class UserSettings(db.Model):
     
     # Expense settings
     monthly_budget = db.Column(db.Float, default=10000.0)
+    
+    # New Fields
+    editable_month_range = db.Column(db.Integer, default=1) # 0=Current, 1=Prev, -1=Unlimited
+    
+    # Salary
+    default_start_time = db.Column(db.String(5), default='09:00')
+    default_end_time = db.Column(db.String(5), default='18:00')
+    target_income = db.Column(db.Integer, default=0)
+    
+    # Expense
+    budget_alert_threshold = db.Column(db.Integer, default=80)
 
 class ReportLog(db.Model):
     id = db.Column(db.Integer, primary_key=True)

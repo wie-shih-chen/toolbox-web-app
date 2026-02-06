@@ -1,6 +1,7 @@
 const expenseApp = {
     currentPeriod: { start: null, end: null },
     records: [],
+    settings: {}, // Store full settings object
     monthlyBudget: 10000,
     isTodayOnly: false,
     navStack: [],
@@ -102,9 +103,11 @@ const expenseApp = {
     },
 
     getActivePeriod() {
+        const range = this.settings.editable_month_range !== undefined ? this.settings.editable_month_range : 1;
+        if (range === -1) return { start: new Date(2000, 0, 1) };
+
         const now = new Date();
-        // Allow editing from 1st of previous month
-        const start = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+        const start = new Date(now.getFullYear(), now.getMonth() - range, 1);
         return { start };
     },
 
@@ -120,8 +123,8 @@ const expenseApp = {
     async loadSettings() {
         try {
             const res = await fetch('/expense/api/settings');
-            const data = await res.json();
-            this.monthlyBudget = data.monthly_budget;
+            this.settings = await res.json();
+            this.monthlyBudget = this.settings.monthly_budget || 10000;
         } catch (error) { console.error(error); }
     },
 
@@ -290,7 +293,21 @@ const expenseApp = {
         const rel = document.getElementById('remainingBudget');
         if (rel) rel.textContent = `$${Math.round(Math.max(0, this.monthlyBudget - total)).toLocaleString()}`;
         const pf = document.getElementById('budgetProgress');
-        if (pf) pf.style.width = `${Math.min(100, (total / this.monthlyBudget) * 100)}%`;
+
+        if (pf) {
+            const percent = (total / this.monthlyBudget) * 100;
+            pf.style.width = `${Math.min(100, percent)}%`;
+
+            // Alert Threshold Logic
+            const threshold = this.settings.budget_alert_threshold || 80;
+            if (percent >= 100) {
+                pf.style.background = '#ef4444'; // Red for over budget
+            } else if (percent >= threshold) {
+                pf.style.background = '#f59e0b'; // Amber/Orange for warning
+            } else {
+                pf.style.background = 'var(--accent-color)'; // Default
+            }
+        }
     },
 
     renderList(cid) {

@@ -1,6 +1,7 @@
 const salaryApp = {
     currentWeekStart: null,
     records: [],
+    settings: {},
 
     init() {
         const dash = document.querySelector('.salary-dashboard');
@@ -9,7 +10,14 @@ const salaryApp = {
         this.currentWeekStart = new Date(startDateStr);
 
         this.bindEvents();
-        this.loadWeek();
+        this.loadSettings().then(() => this.loadWeek());
+    },
+
+    async loadSettings() {
+        try {
+            const res = await fetch('/salary/api/settings');
+            this.settings = await res.json();
+        } catch (e) { console.error('Failed to load settings', e); }
     },
 
     bindEvents() {
@@ -67,9 +75,21 @@ const salaryApp = {
     },
 
     getActivePeriod() {
-        // Standard Month: Editable from 1st of PREVIOUS month
+        // Standard Month: Editable from 1st of PREVIOUS month (default)
+        // Settings: 0=Current, 1=Prev, -1=Unlimited
+        const range = this.settings.editable_month_range !== undefined ? this.settings.editable_month_range : 1;
+
         const now = new Date();
-        const start = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+        let offset = 0;
+
+        if (range === -1) {
+            // Unlimited: Set to very old date
+            return { start: new Date(2000, 0, 1) };
+        } else {
+            offset = range;
+        }
+
+        const start = new Date(now.getFullYear(), now.getMonth() - offset, 1);
         return { start };
     },
 
@@ -166,6 +186,23 @@ const salaryApp = {
         const aEl = document.getElementById('weeklyAmount');
         if (hEl) hEl.textContent = `${hours.toFixed(1)}h`;
         if (aEl) aEl.textContent = `$${Math.round(amount)}`;
+
+        // Update Target Income Progress if applicable
+        const targetContainer = document.getElementById('targetIncomeContainer');
+        if (targetContainer && this.settings.target_income > 0) {
+            targetContainer.style.display = 'block';
+            const percent = Math.min(100, (amount / this.settings.target_income) * 100);
+
+            document.getElementById('targetIncomeBar').style.width = `${percent}%`;
+            document.getElementById('targetIncomePercent').textContent = `${percent.toFixed(1)}%`;
+
+            // Optional: change color if reached
+            const bar = document.getElementById('targetIncomeBar');
+            if (percent >= 100) bar.style.background = '#4ade80'; // Success green
+            else bar.style.background = 'var(--accent-color)';
+        } else if (targetContainer) {
+            targetContainer.style.display = 'none';
+        }
     },
 
     changeWeek(days) {
@@ -291,8 +328,8 @@ const salaryApp = {
     resetForm() {
         document.getElementById('recordForm').reset();
         document.getElementById('recordId').value = '';
-        document.getElementById('startTime').value = '09:00';
-        document.getElementById('endTime').value = '18:00';
+        document.getElementById('startTime').value = this.settings.default_start_time || '09:00';
+        document.getElementById('endTime').value = this.settings.default_end_time || '18:00';
         const rateInput = document.getElementById('shiftRate');
         if (rateInput) rateInput.value = '';
     },
