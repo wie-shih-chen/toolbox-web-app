@@ -183,6 +183,8 @@ const salaryApp = {
             amount += r.amount;
         });
 
+        const hEl = document.getElementById('weeklyHours');
+        const aEl = document.getElementById('weeklyAmount');
         if (hEl) hEl.textContent = `${hours.toFixed(1)}h`;
         if (aEl) aEl.textContent = `$${Math.round(amount)}`;
     },
