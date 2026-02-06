@@ -124,7 +124,8 @@
         <div style="display: flex; gap: 15px; align-items: flex-start;">
             <span class="material-icons" style="color: #5eead4">info</span>
             <div style="font-size: 0.9rem; color: var(--text-secondary); line-height: 1.6;">
-                記帳週期說明：系統自動以每月 <strong>10 號</strong> 為起始點，至下個月 <strong>10 號</strong> 為一個週期（不包含末日）。這與薪水計算工具的週期保持一致。
+                記帳週期說明：系統自動以每月 <strong>{{ settings.billing_cycle_start_day or 10 }} 號</strong> 為起始點，至下個月 <strong>{{
+                    settings.billing_cycle_start_day or 10 }} 號</strong> 為一個週期（不包含末日）。這與薪水計算工具的週期保持一致。
             </div>
         </div>
     </div>
