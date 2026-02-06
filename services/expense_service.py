@@ -235,9 +235,7 @@ class ExpenseService:
             
         try:
             db.session.commit()
-            print("Settings updated successfully")
         except Exception as e:
-            print(f"Error saving settings: {e}")
             db.session.rollback()
             raise e
         return self.get_settings()
