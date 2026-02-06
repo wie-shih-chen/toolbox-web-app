@@ -117,6 +117,7 @@ const salaryApp = {
             this.records = await response.json();
             this.renderGrid();
             this.updateSummary();
+            this.updateMonthlyGoalForWeek();
         } catch (error) {
             console.error('Error loading data:', error);
         }
@@ -182,12 +183,25 @@ const salaryApp = {
             amount += r.amount;
         });
 
-        const hEl = document.getElementById('weeklyHours');
-        const aEl = document.getElementById('weeklyAmount');
         if (hEl) hEl.textContent = `${hours.toFixed(1)}h`;
         if (aEl) aEl.textContent = `$${Math.round(amount)}`;
+    },
 
-        this.updateTargetProgress(amount);
+    async updateMonthlyGoalForWeek() {
+        if (!this.currentWeekStart) return;
+        // Determine the month of the current week start
+        const y = this.currentWeekStart.getFullYear();
+        const m = this.currentWeekStart.getMonth();
+        const start = this.formatDate(new Date(y, m, 1));
+        const end = this.formatDate(new Date(y, m + 1, 0)); // Last day of month
+
+        try {
+            // Fetch all records for this month to calculate total
+            const res = await fetch(`/salary/api/records?start_date=${start}&end_date=${end}`);
+            const data = await res.json();
+            const total = data.reduce((sum, r) => sum + r.amount, 0);
+            this.updateTargetProgress(total);
+        } catch (e) { console.error(e); }
     },
 
     updateTargetProgress(currentAmount) {
