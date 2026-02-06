@@ -103,7 +103,8 @@ const expenseApp = {
 
     getActivePeriod() {
         const now = new Date();
-        const start = new Date(now.getFullYear(), now.getMonth(), 1);
+        // Allow editing from 1st of previous month
+        const start = new Date(now.getFullYear(), now.getMonth() - 1, 1);
         return { start };
     },
 

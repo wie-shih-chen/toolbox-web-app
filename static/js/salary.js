@@ -67,9 +67,9 @@ const salaryApp = {
     },
 
     getActivePeriod() {
-        // Standard Month: Editable from 1st of current month
+        // Standard Month: Editable from 1st of PREVIOUS month
         const now = new Date();
-        const start = new Date(now.getFullYear(), now.getMonth(), 1);
+        const start = new Date(now.getFullYear(), now.getMonth() - 1, 1);
         return { start };
     },
 
