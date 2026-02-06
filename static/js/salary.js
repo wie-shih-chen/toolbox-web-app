@@ -671,8 +671,8 @@ const salaryApp = {
             // Period navigation
             const prevBtn = document.getElementById('prevPeriodBtn');
             const nextBtn = document.getElementById('nextPeriodBtn');
-            if (prevBtn) prevBtn.addEventListener('click', () => this.changeHistoryPeriod(1)); // Older (down in list)
-            if (nextBtn) nextBtn.addEventListener('click', () => this.changeHistoryPeriod(-1)); // Newer (up in list)
+            if (prevBtn) prevBtn.addEventListener('click', () => this.changeHistoryPeriod(-1)); // Older (up in list / lower index)
+            if (nextBtn) nextBtn.addEventListener('click', () => this.changeHistoryPeriod(1)); // Newer (down in list / higher index)
 
             this.loadSettings().then(() => this.loadHistoryPeriods());
         }
