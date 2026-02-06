@@ -182,6 +182,28 @@ const expenseApp = {
         if (totalEl) totalEl.textContent = `$${Math.round(total).toLocaleString()}`;
 
         this.renderList('expenseList');
+        this.updateMonthlyStatus();
+    },
+
+    async updateMonthlyStatus() {
+        const now = new Date();
+        const y = now.getFullYear();
+        const m = now.getMonth(); // 0-indexed
+
+        // Calculate start/end of current month
+        const start = this.formatDate(new Date(y, m, 1));
+        const end = this.formatDate(new Date(y, m + 1, 0));
+
+        try {
+            const res = await fetch(`/expense/api/records?start_date=${start}&end_date=${end}`);
+            const data = await res.json();
+            // Calculate total for the whole month
+            const total = data.records.reduce((sum, r) => sum + r.amount, 0);
+
+            // Re-use renderSummary to update remaining budget & progress bar
+            // Note: renderSummary updates #totalExpense too, but that element might not exist on today page (which is fine)
+            this.renderSummary(total);
+        } catch (e) { console.error('Error fetching monthly status:', e); }
     },
 
 
