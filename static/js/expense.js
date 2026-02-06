@@ -788,16 +788,28 @@ expenseApp.initSettings = function () {
 };
 
 expenseApp.saveSettings = async function () {
-    document.getElementById('customCategoriesInput').value = JSON.stringify(this.settings.custom_categories);
-    document.getElementById('recurringExpensesInput').value = JSON.stringify(this.settings.recurring_expenses);
-
+    // Gather simple inputs from DOM
     const form = document.getElementById('settingsForm');
     const fd = new FormData(form);
+    const payload = Object.fromEntries(fd.entries());
+
+    // Explicitly Add/Overwrite complex objects
+    payload.custom_categories = this.settings.custom_categories;
+    payload.recurring_expenses = this.settings.recurring_expenses;
+
+    // Fix numeric types for backend consistency
+    if (payload.monthly_budget) payload.monthly_budget = parseFloat(payload.monthly_budget);
+    if (payload.billing_cycle_start_day) payload.billing_cycle_start_day = parseInt(payload.billing_cycle_start_day);
+    if (payload.editable_month_range) payload.editable_month_range = parseInt(payload.editable_month_range);
+    if (payload.budget_alert_threshold) payload.budget_alert_threshold = parseInt(payload.budget_alert_threshold);
 
     try {
         await fetch('/expense/api/settings', {
             method: 'POST',
-            body: fd
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(payload)
         });
         // Optional: show toast
     } catch (e) { console.error('Save failed', e); alert('儲存失敗'); }
