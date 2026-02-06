@@ -234,7 +234,11 @@ class ExpenseService:
             
         try:
             db.session.commit()
-        except: pass
+            print("Settings updated successfully")
+        except Exception as e:
+            print(f"Error saving settings: {e}")
+            db.session.rollback()
+            raise e
         return self.get_settings()
 
     def get_monthly_periods(self):

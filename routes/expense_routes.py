@@ -106,6 +106,7 @@ def get_periods():
 def handle_settings():
     if request.method == 'POST':
         data = request.json
+        print(f"DEBUG: Received settings update: {data}")
         settings = expense_service.update_settings(data)
         return jsonify(settings)
     
