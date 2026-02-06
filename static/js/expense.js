@@ -45,8 +45,8 @@ const expenseApp = {
             yearSelect.appendChild(opt);
         }
 
-        let targetMonth = (now.getDate() < 10) ? now.getMonth() : now.getMonth() + 1;
-        if (targetMonth === 0) { targetMonth = 12; yearSelect.value = currentYear - 1; }
+        // Default to current month
+        let targetMonth = now.getMonth() + 1;
 
         monthSelect.value = String(targetMonth).padStart(2, '0');
         this.updateDaysInMonth();
@@ -103,15 +103,7 @@ const expenseApp = {
 
     getActivePeriod() {
         const now = new Date();
-        const year = now.getFullYear();
-        const month = now.getMonth();
-        let start;
-
-        if (now.getDate() >= 10) {
-            start = new Date(year, month, 10);
-        } else {
-            start = new Date(year, month - 1, 10);
-        }
+        const start = new Date(now.getFullYear(), now.getMonth(), 1);
         return { start };
     },
 
@@ -522,13 +514,13 @@ const expenseApp = {
         const y = document.getElementById('yearSelect').value;
         const m = document.getElementById('monthSelect').value;
         const d = document.getElementById('daySelect').value;
-        const s = d ? `${y}-${m}-${d}` : `${y}-${m}-10`;
+        const s = d ? `${y}-${m}-${d}` : `${y}-${m}-01`;
         let e;
         if (d) {
             e = this.formatDate(new Date(new Date(s).getTime() + 86400000));
         } else {
-            let ey = parseInt(y); let em = parseInt(m) + 1; if (em > 12) { em = 1; ey++; }
-            e = `${ey}-${String(em).padStart(2, '0')}-10`;
+            let dim = new Date(y, m, 0).getDate();
+            e = `${y}-${m}-${dim}`;
         }
         const res = await fetch(`/expense/api/records?start_date=${s}&end_date=${e}`);
         const data = await res.json();
@@ -540,10 +532,13 @@ const expenseApp = {
         const y = document.getElementById('yearSelect').value;
         const m = document.getElementById('monthSelect').value;
         const d = document.getElementById('daySelect').value;
-        const s = d ? `${y}-${m}-${d}` : `${y}-${m}-10`;
+        const s = d ? `${y}-${m}-${d}` : `${y}-${m}-01`;
         let e;
         if (d) { e = this.formatDate(new Date(new Date(s).getTime() + 86400000)); }
-        else { let ey = parseInt(y); let em = parseInt(m) + 1; if (em > 12) { em = 1; ey++; } e = `${ey}-${String(em).padStart(2, '0')}-10`; }
+        else {
+            let dim = new Date(y, m, 0).getDate();
+            e = `${y}-${m}-${dim}`;
+        }
 
         const btn = document.getElementById('exportCsvBtn');
         const originalText = btn ? btn.innerHTML : '匯出';
