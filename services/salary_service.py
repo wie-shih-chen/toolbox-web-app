@@ -86,6 +86,13 @@ class SalaryService:
             except:
                 new_record.amount = 0
                 
+            # Allow optional hours for bonus
+            if 'hours' in record_data and record_data['hours']:
+                try:
+                    new_record.hours = float(record_data['hours'])
+                except:
+                    new_record.hours = 0.0
+                
         db.session.add(new_record)
         db.session.commit()
         return self._to_dict(new_record)
@@ -125,6 +132,13 @@ class SalaryService:
             if 'amount' in record_data:
                 try:
                     record.amount = int(record_data['amount'])
+                except:
+                    pass
+
+            if 'hours' in record_data:
+                try:
+                    val = record_data['hours']
+                    record.hours = float(val) if val is not None and val != '' else 0.0
                 except:
                     pass
                     
