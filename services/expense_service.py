@@ -196,7 +196,10 @@ class ExpenseService:
         return {
             "monthly_budget": settings.monthly_budget,
             "editable_month_range": settings.editable_month_range,
-            "budget_alert_threshold": settings.budget_alert_threshold
+            "budget_alert_threshold": settings.budget_alert_threshold,
+            "billing_cycle_start_day": settings.billing_cycle_start_day,
+            "custom_categories": settings.custom_categories,
+            "recurring_expenses": settings.recurring_expenses
         }
 
     def update_settings(self, settings_data):
@@ -217,6 +220,17 @@ class ExpenseService:
             try:
                 current_user.settings.budget_alert_threshold = int(settings_data['budget_alert_threshold'])
             except: pass
+
+        if 'billing_cycle_start_day' in settings_data:
+            try:
+                current_user.settings.billing_cycle_start_day = int(settings_data['billing_cycle_start_day'])
+            except: pass
+            
+        if 'custom_categories' in settings_data:
+            current_user.settings.custom_categories = settings_data['custom_categories']
+            
+        if 'recurring_expenses' in settings_data:
+            current_user.settings.recurring_expenses = settings_data['recurring_expenses']
             
         try:
             db.session.commit()
