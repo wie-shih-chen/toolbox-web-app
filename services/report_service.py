@@ -8,44 +8,24 @@ from flask import current_app
 
 class ReportService:
     @staticmethod
+    @staticmethod
     def get_billing_period(target_date=None):
         """
-        Calculate the LAST COMPLETED billing period relative to target_date.
-        Cycle: 10th to 10th.
-        Triggers on 11th.
+        Calculate the LAST COMPLETED billing period (Standard Month).
+        Report triggers on 11th (Pay Day + 1, or generally safe date).
+        Period: 1st of previous month - Last day of previous month.
         """
         if target_date is None:
             target_date = datetime.now()
             
-        # Example 1: Today is Feb 11. 
-        # We want period ending Feb 10 (Yesterday).
-        # Trigger condition: Day >= 11.
+        # If today is Feb 11, we report on Jan (Jan 1 - Jan 31).
         
-        # Example 2: Today is Feb 15.
-        # We want period ending Feb 10.
+        # Calculate previous month year and month
+        first_of_this_month = datetime(target_date.year, target_date.month, 1)
+        last_day_prev_month = first_of_this_month - timedelta(days=1)
+        first_day_prev_month = datetime(last_day_prev_month.year, last_day_prev_month.month, 1)
         
-        # Example 3: Today is Feb 9.
-        # We want period ending Jan 10. (Because Feb 10 hasn't happened yet)
-        
-        if target_date.day >= 11:
-            # Current month's 10th is the end date
-            end_date = datetime(target_date.year, target_date.month, 10)
-        else:
-            # Previous month's 10th is the end date
-            # Handle Jan case
-            month = target_date.month - 1
-            year = target_date.year
-            if month < 1:
-                month = 12
-                year -= 1
-            end_date = datetime(year, month, 10)
-            
-        # Start date is ~1 month before end date
-        # Logic: Go back 20 days from end_date (to prev month) then set day to 10
-        prev_month_date = end_date - timedelta(days=20)
-        start_date = datetime(prev_month_date.year, prev_month_date.month, 10)
-        
-        return start_date.strftime('%Y-%m-%d'), end_date.strftime('%Y-%m-%d')
+        return first_day_prev_month.strftime('%Y-%m-%d'), last_day_prev_month.strftime('%Y-%m-%d')
 
     @staticmethod
     def check_and_send_pending_reports(user):

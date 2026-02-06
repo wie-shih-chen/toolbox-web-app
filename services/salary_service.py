@@ -283,27 +283,31 @@ class SalaryService:
             start_date = datetime.strptime(result[0], '%Y-%m-%d') - timedelta(days=30)
             end_date = datetime.strptime(result[1], '%Y-%m-%d') + timedelta(days=30)
 
-        # Normalize to 10th
-        if start_date.day < 10:
-            current = datetime(start_date.year, start_date.month, 10) - timedelta(days=32)
-            current = datetime(current.year, current.month, 10)
-        else:
-            current = datetime(start_date.year, start_date.month, 10)
+        # Normalize to 1st of month
+        current = datetime(start_date.year, start_date.month, 1)
 
         periods = []
         now = datetime.now()
         final_date = end_date if end_date > now else now
         
         while current <= final_date:
-            next_period = current + timedelta(days=32)
-            next_period = datetime(next_period.year, next_period.month, 10)
+            # Next month start
+            if current.month == 12:
+                next_month = datetime(current.year + 1, 1, 1)
+            else:
+                next_month = datetime(current.year, current.month + 1, 1)
+            
+            p_end_dt = next_month - timedelta(days=1)
+            
+            p_start = current.strftime('%Y-%m-%d')
+            p_end = p_end_dt.strftime('%Y-%m-%d')
             
             periods.append({
-                'label': f"{current.strftime('%Y-%m-%d')} ~ {next_period.strftime('%Y-%m-%d')}",
-                'start': current.strftime('%Y-%m-%d'),
-                'end': next_period.strftime('%Y-%m-%d')
+                'label': f"{p_start} ~ {p_end}",
+                'start': p_start,
+                'end': p_end
             })
-            current = next_period
+            current = next_month
             
         return periods
 

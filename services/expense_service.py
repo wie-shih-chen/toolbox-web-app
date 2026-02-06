@@ -169,15 +169,17 @@ class ExpenseService:
 
     def get_current_period(self):
         now = datetime.now()
-        year = now.year
-        month = now.month
-
-        if now.day < 10:
-            start_date = datetime(year, month - 1, 10) if month > 1 else datetime(year - 1, 12, 10)
-            end_date = datetime(year, month, 10)
+        # Start: 1st day of current month
+        start_date = datetime(now.year, now.month, 1)
+        
+        # End: Last day of current month
+        # Logic: First day of next month - 1 day
+        if now.month == 12:
+            next_month = datetime(now.year + 1, 1, 1)
         else:
-            start_date = datetime(year, month, 10)
-            end_date = datetime(year, month + 1, 10) if month < 12 else datetime(year + 1, 1, 10)
+            next_month = datetime(now.year, now.month + 1, 1)
+            
+        end_date = next_month - timedelta(days=1)
             
         return start_date.strftime('%Y-%m-%d'), end_date.strftime('%Y-%m-%d')
 
@@ -219,29 +221,37 @@ class ExpenseService:
             start, end = self.get_current_period()
             return [{"label": f"{start} ~ {end}", "start": start, "end": end}]
 
+        # Use first record date to find the first month start
         first_date = datetime.strptime(result[0][:10], '%Y-%m-%d')
-        if first_date.day < 10:
-            current = datetime(first_date.year, first_date.month, 10) - timedelta(days=32)
-            current = datetime(current.year, current.month, 10)
-        else:
-            current = datetime(first_date.year, first_date.month, 10)
+        current = datetime(first_date.year, first_date.month, 1)
 
         periods = []
         now = datetime.now()
-        final_cutoff = now + timedelta(days=1)
+        # Final cutoff is end of this month
+        if now.month == 12:
+            next_m = datetime(now.year + 1, 1, 1)
+        else:
+            next_m = datetime(now.year, now.month + 1, 1)
+        final_cutoff = next_m - timedelta(days=1)
+
 
         while current <= final_cutoff:
-            next_p = current + timedelta(days=32)
-            next_p = datetime(next_p.year, next_p.month, 10)
+            # Find end of month
+            if current.month == 12:
+                next_month_start = datetime(current.year + 1, 1, 1)
+            else:
+                next_month_start = datetime(current.year, current.month + 1, 1)
             
+            p_end_dt = next_month_start - timedelta(days=1)
             p_start = current.strftime('%Y-%m-%d')
-            p_end = next_p.strftime('%Y-%m-%d')
+            p_end = p_end_dt.strftime('%Y-%m-%d')
+            
             periods.append({
                 "label": f"{p_start} ~ {p_end}",
                 "start": p_start,
                 "end": p_end
             })
-            current = next_p
+            current = next_month_start
 
         return periods
         

@@ -67,18 +67,9 @@ const salaryApp = {
     },
 
     getActivePeriod() {
+        // Standard Month: Editable from 1st of current month
         const now = new Date();
-        const year = now.getFullYear();
-        const month = now.getMonth();
-        let start;
-
-        if (now.getDate() >= 10) {
-            // Cycle: This month 10th ~ Next month 9th
-            start = new Date(year, month, 10);
-        } else {
-            // Cycle: Last month 10th ~ This month 9th
-            start = new Date(year, month - 1, 10);
-        }
+        const start = new Date(now.getFullYear(), now.getMonth(), 1);
         return { start };
     },
 
@@ -489,33 +480,16 @@ const salaryApp = {
             this.records = await res.json();
             this.renderCalendar(gridStart);
 
-            // Cycle: This Month 10th ~ Next Month 10th (Original Logic)
-            // For Feb View (m=1), this is Feb 10 ~ Mar 10.
-            const cycleStart = new Date(y, m, 10);
-            const cycleEnd = new Date(y, m + 1, 10);
+            // Cycle: 1st ~ Last Day of Month (Standard)
+            const cycleStart = new Date(y, m, 1);
+            // End date (exclusive for calculation) is 1st of next month
+            const nextMonth = new Date(y, m + 1, 1);
+            // Last day for display (inclusive)
+            const cycleEndDisplay = new Date(nextMonth);
+            cycleEndDisplay.setDate(cycleEndDisplay.getDate() - 1);
+
 
             // Adjust label to show cycle clearly
-            const cycleLabel = document.createElement('div');
-            cycleLabel.className = 'cycle-label';
-            cycleLabel.style.fontSize = '0.8rem';
-            cycleLabel.style.color = '#888';
-            cycleLabel.style.marginTop = '4px';
-            cycleLabel.textContent = `統計區間: ${cycleStart.getMonth() + 1}/${cycleStart.getDate()} ~ ${cycleEnd.getMonth() + 1}/${cycleEnd.getDate()}`;
-
-            // Check if label already exists to avoid duplication
-            let existingLabel = label.querySelector('.cycle-label');
-            if (existingLabel) existingLabel.remove();
-
-            // Append the label to the header area or near the title
-            // Note: 'label' here is the h2#currentMonthLabel.
-            // Appending a div inside h2 usually works but might break layout slightly, 
-            // but it's the most direct place requested "beside" or "near". 
-            // To make it look like "beside", we might need CSS, but appending to the container is safer.
-            // Let's check DOM structure. #currentMonthLabel is inside .week-nav.
-            // It might be better to append to .summary-card logic or modify tooltips.
-            // But strict instruction: "Also add the calculation time next to it". 'it' likely refers to stats or title.
-            // Let's put it as a tooltip on the Labels "本月時數" / "本月薪資" AND verify visual.
-            // The previous code tried to set 'title' attribute. I will do that AND update the text below            
             const summaryCard = document.querySelector('.summary-card');
             if (summaryCard) {
                 let rangeDisplay = summaryCard.querySelector('.range-display');
@@ -524,15 +498,17 @@ const salaryApp = {
                     rangeDisplay.className = 'range-display';
                     summaryCard.appendChild(rangeDisplay);
                 }
-                // Format: 2/10 ~ 3/10
-                rangeDisplay.textContent = `${cycleStart.getMonth() + 1}/${cycleStart.getDate()} ~ ${cycleEnd.getMonth() + 1}/${cycleEnd.getDate()}`;
+                // Format: 1/1 ~ 1/31
+                rangeDisplay.textContent = `${cycleStart.getMonth() + 1}/${cycleStart.getDate()} ~ ${cycleEndDisplay.getMonth() + 1}/${cycleEndDisplay.getDate()}`;
             }
 
-            this.updateMonthlySummary(cycleStart, cycleEnd);
+            // Calculations use [start, end) logic usually, or inclusive check
+            // We pass (start, nextMonth) to be used as < nextMonth
+            this.updateMonthlySummary(cycleStart, nextMonth);
 
             // Also update tooltip
             const hLabel = document.querySelector('.summary-item:first-child .label');
-            if (hLabel) hLabel.setAttribute('title', `${this.formatDate(cycleStart)} ~ ${this.formatDate(cycleEnd)}`);
+            if (hLabel) hLabel.setAttribute('title', `${this.formatDate(cycleStart)} ~ ${this.formatDate(cycleEndDisplay)}`);
         } catch (error) { }
     },
 
