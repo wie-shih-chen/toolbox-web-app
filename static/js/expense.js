@@ -134,20 +134,23 @@ const expenseApp = {
         try {
             const res = await fetch(`/expense/api/settings?t=${new Date().getTime()}`);
             this.settings = await res.json();
+            console.log("DATA_CHECK: Server returned:", this.settings);
             this.monthlyBudget = this.settings.monthly_budget || 10000;
 
             // Parse JSON strings
-            // Parse JSON strings
+            // Parse JSON strings and FILTER NULLs
             try {
-                this.settings.custom_categories = JSON.parse(this.settings.custom_categories || '[]');
+                const rawCats = JSON.parse(this.settings.custom_categories || '[]');
+                this.settings.custom_categories = Array.isArray(rawCats) ? rawCats.filter(c => c && typeof c === 'object') : [];
             } catch (e) {
-                console.error("JSON PARSE FAIL (Categories):", e, this.settings.custom_categories);
+                console.error("JSON PARSE FAIL (Categories):", e);
                 this.settings.custom_categories = [];
             }
             try {
-                this.settings.recurring_expenses = JSON.parse(this.settings.recurring_expenses || '[]');
+                const rawRecs = JSON.parse(this.settings.recurring_expenses || '[]');
+                this.settings.recurring_expenses = Array.isArray(rawRecs) ? rawRecs.filter(r => r && typeof r === 'object') : [];
             } catch (e) {
-                console.error("JSON PARSE FAIL (Recurring):", e, this.settings.recurring_expenses);
+                console.error("JSON PARSE FAIL (Recurring):", e);
                 this.settings.recurring_expenses = [];
             }
 
@@ -814,6 +817,10 @@ expenseApp.saveSettings = async function () {
     if (payload.editable_month_range) payload.editable_month_range = parseInt(payload.editable_month_range);
     if (payload.budget_alert_threshold) payload.budget_alert_threshold = parseInt(payload.budget_alert_threshold);
 
+    // CLEAN DATA BEFORE SENDING
+    payload.custom_categories = (this.settings.custom_categories || []).filter(c => c && c.name);
+    payload.recurring_expenses = (this.settings.recurring_expenses || []).filter(r => r && r.name);
+
     try {
         await fetch('/expense/api/settings', {
             method: 'POST',
@@ -829,7 +836,8 @@ expenseApp.saveSettings = async function () {
 expenseApp.renderSettingsLists = function () {
     const catList = document.getElementById('categoryList');
     catList.innerHTML = '';
-    this.settings.custom_categories.forEach((c, idx) => {
+    (this.settings.custom_categories || []).forEach((c, idx) => {
+        if (!c || !c.name) return; // Skip invalid items
         const el = document.createElement('div');
         el.className = 'setting-item-row';
         el.style.cssText = 'display:flex; justify-content:space-between; padding:10px; background:rgba(255,255,255,0.05); margin-bottom:5px; border-radius:8px; align-items:center;';
