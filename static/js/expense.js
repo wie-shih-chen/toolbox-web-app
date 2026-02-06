@@ -137,8 +137,19 @@ const expenseApp = {
             this.monthlyBudget = this.settings.monthly_budget || 10000;
 
             // Parse JSON strings
-            try { this.settings.custom_categories = JSON.parse(this.settings.custom_categories || '[]'); } catch (e) { this.settings.custom_categories = []; }
-            try { this.settings.recurring_expenses = JSON.parse(this.settings.recurring_expenses || '[]'); } catch (e) { this.settings.recurring_expenses = []; }
+            // Parse JSON strings
+            try {
+                this.settings.custom_categories = JSON.parse(this.settings.custom_categories || '[]');
+            } catch (e) {
+                console.error("JSON PARSE FAIL (Categories):", e, this.settings.custom_categories);
+                this.settings.custom_categories = [];
+            }
+            try {
+                this.settings.recurring_expenses = JSON.parse(this.settings.recurring_expenses || '[]');
+            } catch (e) {
+                console.error("JSON PARSE FAIL (Recurring):", e, this.settings.recurring_expenses);
+                this.settings.recurring_expenses = [];
+            }
 
             // Parse JSON strings
             try { this.settings.custom_categories = JSON.parse(this.settings.custom_categories || '[]'); } catch (e) { this.settings.custom_categories = []; }

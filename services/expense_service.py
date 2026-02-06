@@ -194,6 +194,10 @@ class ExpenseService:
             db.session.add(settings)
             db.session.commit()
             
+        # Ensure fresh data
+        db.session.expire(settings)
+        db.session.refresh(settings)
+            
         return {
             "monthly_budget": settings.monthly_budget,
             "editable_month_range": settings.editable_month_range,

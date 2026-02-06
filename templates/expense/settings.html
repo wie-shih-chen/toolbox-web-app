@@ -37,7 +37,7 @@
 
         <form id="settingsForm">
             <div class="form-group">
-                <label>每月可支配預算 (10號至下月10號)</label>
+                <label for="budgetInput">每月可支配預算 (10號至下月10號)</label>
                 <div style="position: relative; display: flex; align-items: center;">
                     <span
                         style="position: absolute; left: 15px; color: var(--text-secondary); font-size: 1.2rem;">$</span>
@@ -47,9 +47,10 @@
             </div>
 
             <div class="form-group">
-                <label>預算警戒水位 (%)</label>
+                <label for="budgetAlertInput">預算警戒水位 (%)</label>
                 <div style="position: relative; display: flex; align-items: center;">
-                    <input type="number" name="budget_alert_threshold" value="{{ settings.budget_alert_threshold }}"
+                    <input type="number" name="budget_alert_threshold" id="budgetAlertInput"
+                        value="{{ settings.budget_alert_threshold }}"
                         style="font-size: 1.2rem; width: 100%; height: 50px;">
                     <span style="position: absolute; right: 15px; color: var(--text-secondary);">%</span>
                 </div>
@@ -58,7 +59,7 @@
             </div>
 
             <div class="form-group">
-                <label>資料可編輯範圍</label>
+                <label for="editableRange">資料可編輯範圍</label>
                 <select name="editable_month_range" id="editableRange"
                     style="width: 100%; height: 50px; font-size: 1.1rem;">
                     <option value="0" {% if settings.editable_month_range==0 %}selected{% endif %}>僅限當月</option>
@@ -68,7 +69,7 @@
             </div>
 
             <div class="form-group">
-                <label>帳單週期起始日 (每月)</label>
+                <label for="cycleDayInput">帳單週期起始日 (每月)</label>
                 <div style="position: relative; display: flex; align-items: center;">
                     <input type="number" name="billing_cycle_start_day" id="cycleDayInput"
                         value="{{ settings.billing_cycle_start_day or 10 }}" min="1" max="31"
