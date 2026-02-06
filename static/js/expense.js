@@ -132,7 +132,7 @@ const expenseApp = {
 
     async loadSettings() {
         try {
-            const res = await fetch('/expense/api/settings');
+            const res = await fetch(`/expense/api/settings?t=${new Date().getTime()}`);
             this.settings = await res.json();
             this.monthlyBudget = this.settings.monthly_budget || 10000;
 
