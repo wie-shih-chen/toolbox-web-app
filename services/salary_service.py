@@ -168,11 +168,14 @@ class SalaryService:
             db.session.commit()
             
         return {
-            "hourly_rate": settings.hourly_rate,
+             "hourly_rate": settings.hourly_rate,
             "editable_month_range": settings.editable_month_range,
             "default_start_time": settings.default_start_time,
             "default_end_time": settings.default_end_time,
-            "target_income": settings.target_income
+            "target_income": settings.target_income,
+            "billing_cycle_start_day": settings.billing_cycle_start_day,
+            "custom_categories": settings.custom_categories,
+            "recurring_expenses": settings.recurring_expenses
         }
 
     def update_settings(self, settings_data):
@@ -199,6 +202,17 @@ class SalaryService:
             try:
                 current_user.settings.target_income = int(settings_data['target_income'])
             except: pass
+            
+        if 'billing_cycle_start_day' in settings_data:
+            try:
+                current_user.settings.billing_cycle_start_day = int(settings_data['billing_cycle_start_day'])
+            except: pass
+            
+        if 'custom_categories' in settings_data:
+            current_user.settings.custom_categories = settings_data['custom_categories']
+            
+        if 'recurring_expenses' in settings_data:
+            current_user.settings.recurring_expenses = settings_data['recurring_expenses']
             
         try:
             db.session.commit()

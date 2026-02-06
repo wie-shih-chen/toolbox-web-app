@@ -67,6 +67,51 @@
                 </select>
             </div>
 
+            <div class="form-group">
+                <label>帳單週期起始日 (每月)</label>
+                <div style="position: relative; display: flex; align-items: center;">
+                    <input type="number" name="billing_cycle_start_day" id="cycleDayInput"
+                        value="{{ settings.billing_cycle_start_day or 10 }}" min="1" max="31"
+                        style="font-size: 1.2rem; width: 100%; height: 50px;">
+                    <span style="position: absolute; right: 15px; color: var(--text-secondary);">號</span>
+                </div>
+            </div>
+
+            <!-- Custom Categories Section -->
+            <div class="settings-section">
+                <h4 style="margin: 20px 0 10px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 10px;">
+                    <span class="material-icons" style="vertical-align: bottom; margin-right: 5px;">category</span>
+                    自訂類別
+                </h4>
+                <div id="categoryList" class="settings-list">
+                    <!-- Categories will be injected here via JS -->
+                </div>
+                <div style="display: flex; gap: 10px; margin-top: 10px;">
+                    <input type="text" id="newCatName" placeholder="類別名稱" style="flex: 1;">
+                    <input type="text" id="newCatEmoji" placeholder="Emoji" style="width: 60px; text-align: center;">
+                    <input type="color" id="newCatColor" value="#a78bfa"
+                        style="width: 50px; padding: 0; border: none; height: 42px;">
+                    <button type="button" class="btn btn-secondary" id="addCatBtn">新增</button>
+                </div>
+                <input type="hidden" name="custom_categories" id="customCategoriesInput">
+            </div>
+
+            <!-- Recurring Expenses Section -->
+            <div class="settings-section">
+                <h4 style="margin: 20px 0 10px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 10px;">
+                    <span class="material-icons" style="vertical-align: bottom; margin-right: 5px;">update</span>
+                    固定支出
+                </h4>
+                <div id="recurringList" class="settings-list">
+                    <!-- Recurring items injected here -->
+                </div>
+                <button type="button" class="btn btn-secondary btn-block" id="openAddRecurringBtn"
+                    style="margin-top: 10px;">
+                    + 新增固定支出
+                </button>
+                <input type="hidden" name="recurring_expenses" id="recurringExpensesInput">
+            </div>
+
             <button type="submit" class="btn btn-primary btn-block"
                 style="height: 55px; font-size: 1.1rem; margin-top: 10px;">
                 儲存設定

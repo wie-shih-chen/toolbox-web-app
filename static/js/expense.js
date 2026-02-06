@@ -22,7 +22,17 @@ const expenseApp = {
         }
 
         this.bindEvents();
-        this.loadSettings().then(() => this.loadData());
+        this.loadSettings().then(() => {
+            // If cycle day is set, override the period from HTML (which might be default month)
+            if (this.settings.billing_cycle_start_day && this.settings.billing_cycle_start_day !== 1) {
+                // Determine current cycle based on Today
+                const cycle = this.getCycleDates(new Date());
+                // Wait, if viewing history? Dashboard usually defaults to 'Active' cycle (Now).
+                // If user wants to see specific past month, they nav.
+                this.currentPeriod = cycle;
+            }
+            this.loadData();
+        });
     },
 
     initHistory() {
@@ -125,7 +135,45 @@ const expenseApp = {
             const res = await fetch('/expense/api/settings');
             this.settings = await res.json();
             this.monthlyBudget = this.settings.monthly_budget || 10000;
+
+            // Parse JSON strings
+            try { this.settings.custom_categories = JSON.parse(this.settings.custom_categories || '[]'); } catch (e) { this.settings.custom_categories = []; }
+            try { this.settings.recurring_expenses = JSON.parse(this.settings.recurring_expenses || '[]'); } catch (e) { this.settings.recurring_expenses = []; }
+
+            this.populateCategorySelect();
+
         } catch (error) { console.error(error); }
+    },
+
+    populateCategorySelect() {
+        const select = document.getElementById('expenseCategory');
+        if (!select) return;
+
+        // Keep default options or clear? Let's clear to avoid duplicates if re-run, but we need defaults.
+        // Hardcoded defaults for now:
+        const defaults = [
+            { v: '飲食', t: '🍽️ 飲食' }, { v: '衣著', t: '👕 衣著' },
+            { v: '居住', t: '🏠 居住' }, { v: '交通', t: '🚌 交通' },
+            { v: '教育', t: '📖 教育' }, { v: '娛樂', t: '🎮 娛樂' },
+            { v: '其他', t: '📦 其他' }
+        ];
+
+        select.innerHTML = '';
+        defaults.forEach(d => {
+            const opt = document.createElement('option');
+            opt.value = d.v;
+            opt.textContent = d.t;
+            select.appendChild(opt);
+        });
+
+        if (this.settings.custom_categories && Array.isArray(this.settings.custom_categories)) {
+            this.settings.custom_categories.forEach(c => {
+                const opt = document.createElement('option');
+                opt.value = c.name;
+                opt.textContent = `${c.emoji || '🏷️'} ${c.name}`;
+                select.appendChild(opt);
+            });
+        }
     },
 
     async loadData(preserveState = false) {
@@ -185,14 +233,38 @@ const expenseApp = {
         this.updateMonthlyStatus();
     },
 
-    async updateMonthlyStatus() {
-        const now = new Date();
-        const y = now.getFullYear();
-        const m = now.getMonth(); // 0-indexed
+    getCycleDates(refDate = new Date()) {
+        const cycleDay = this.settings.billing_cycle_start_day || 10;
+        const currentDay = refDate.getDate();
 
-        // Calculate start/end of current month
-        const start = this.formatDate(new Date(y, m, 1));
-        const end = this.formatDate(new Date(y, m + 1, 0));
+        let startYear = refDate.getFullYear();
+        let startMonth = refDate.getMonth();
+
+        // If today is before cycle day, the cycle started last month
+        if (currentDay < cycleDay) {
+            startMonth--;
+        }
+
+        const start = new Date(startYear, startMonth, cycleDay);
+        const end = new Date(startYear, startMonth + 1, cycleDay); // End date exclusive usually, or handles "day before"
+        // API expects inclusive date strings usually, but let's check backend.
+        // For date string "YYYY-MM-DD", let's use [Start, End - 1 day]
+
+        const endInclusive = new Date(startYear, startMonth + 1, cycleDay - 1);
+
+        return {
+            start: this.formatDate(start),
+            end: this.formatDate(endInclusive)
+        };
+    },
+
+    async updateMonthlyStatus() {
+        // Ensure settings are loaded
+        if (!this.settings.billing_cycle_start_day) await this.loadSettings();
+
+        const cycle = this.getCycleDates();
+        const start = cycle.start;
+        const end = cycle.end;
 
         try {
             const res = await fetch(`/expense/api/records?start_date=${start}&end_date=${end}`);
@@ -201,7 +273,6 @@ const expenseApp = {
             const total = data.records.reduce((sum, r) => sum + r.amount, 0);
 
             // Re-use renderSummary to update remaining budget & progress bar
-            // Note: renderSummary updates #totalExpense too, but that element might not exist on today page (which is fine)
             this.renderSummary(total);
         } catch (e) { console.error('Error fetching monthly status:', e); }
     },
@@ -360,6 +431,14 @@ const expenseApp = {
             '娛樂': '🎮',
             '其他': '📦'
         };
+
+        // Merge custom categories
+        if (this.settings.custom_categories) {
+            this.settings.custom_categories.forEach(c => {
+                colorMap[c.name] = c.color;
+                emojiMap[c.name] = c.emoji;
+            });
+        }
 
         this.records.forEach(r => {
             const item = document.createElement('div');
@@ -522,11 +601,23 @@ const expenseApp = {
 
 
     changePeriod(delta) {
-        const d = new Date(this.currentPeriod.start);
-        d.setMonth(d.getMonth() + delta);
-        this.currentPeriod.start = this.formatDate(d);
-        const n = new Date(d); n.setMonth(n.getMonth() + 1);
-        this.currentPeriod.end = this.formatDate(n);
+        const cycleDay = this.settings.billing_cycle_start_day || 1;
+        // Parse current start to get Y, M
+        const currentStart = new Date(this.currentPeriod.start);
+        let y = currentStart.getFullYear();
+        let m = currentStart.getMonth();
+
+        // Move month
+        m += delta;
+
+        const start = new Date(y, m, cycleDay);
+        // End is next month cycle day - 1 day (inclusive end for API)
+        const end = new Date(start.getFullYear(), start.getMonth() + 1, cycleDay - 1);
+
+        this.currentPeriod = {
+            start: this.formatDate(start),
+            end: this.formatDate(end)
+        };
         this.loadData();
     },
     formatDate(date) {
@@ -641,4 +732,121 @@ document.addEventListener('DOMContentLoaded', () => {
     else if (document.querySelector('.expense-history')) expenseApp.initHistory();
     else if (document.querySelector('.expense-settings')) expenseApp.initSettings();
 });
+
+// Add initSettings to object
+expenseApp.initSettings = function () {
+    this.loadSettings().then(() => {
+        this.renderSettingsLists();
+    });
+
+    // Handle Category Add
+    document.getElementById('addCatBtn').addEventListener('click', () => {
+        const name = document.getElementById('newCatName').value.trim();
+        const emoji = document.getElementById('newCatEmoji').value.trim();
+        const color = document.getElementById('newCatColor').value;
+        if (!name) return;
+
+        this.settings.custom_categories.push({ name, emoji, color });
+        document.getElementById('newCatName').value = '';
+        document.getElementById('newCatEmoji').value = '';
+        this.renderSettingsLists();
+    });
+
+    // Handle Recurring Add
+    document.getElementById('openAddRecurringBtn').addEventListener('click', () => {
+        // Simple prompt flow for V1
+        const name = prompt('固定支出名稱 (如: Netflix)');
+        if (!name) return;
+        const amount = prompt('金額 (如: 390)');
+        if (!amount) return;
+        const day = prompt('每月幾號扣款? (1-31)');
+        if (!day) return;
+
+        this.settings.recurring_expenses.push({
+            id: Date.now(),
+            name,
+            amount: parseInt(amount),
+            day: parseInt(day),
+            category: '其他' // Default, maybe ask prompt?
+        });
+        this.renderSettingsLists();
+    });
+
+    // Intercept Submit
+    document.getElementById('settingsForm').addEventListener('submit', (e) => {
+        document.getElementById('customCategoriesInput').value = JSON.stringify(this.settings.custom_categories);
+        document.getElementById('recurringExpensesInput').value = JSON.stringify(this.settings.recurring_expenses);
+
+        e.preventDefault();
+        const fd = new FormData(e.target);
+
+        fetch('/salary/api/settings', { // Expense settings endpoint reuse Salary logic or separate?
+            // Checking salary.js, it uses salary/api/settings. Expense uses checks SalaryService.
+            // expense.js line 125 uses /expense/api/settings.
+            // We should check routes. But if I use form submit action, it reloads page.
+            // Let's use fetch to stay SPA-like-ish or let it submit.
+            // The form in html doesn't have action. So it submits to current URL (POST).
+            // Let's use the fetch logic found in update_settings in service.
+            // Wait, I should maintain standard form behavior or use JS submit.
+            // Given I preventedDefault:
+        });
+
+        // Actually, let's just use regular submit but populating hidden fields first.
+        // Remove preventDefault? No, better to use fetch to show success message.
+
+        fetch('/expense/api/settings', {
+            method: 'POST',
+            body: fd
+        }).then(res => res.json()).then(data => {
+            alert('設定已儲存！');
+            window.location.reload();
+        });
+    });
+};
+
+expenseApp.renderSettingsLists = function () {
+    const catList = document.getElementById('categoryList');
+    catList.innerHTML = '';
+    this.settings.custom_categories.forEach((c, idx) => {
+        const el = document.createElement('div');
+        el.className = 'setting-item-row';
+        el.style.cssText = 'display:flex; justify-content:space-between; padding:10px; background:rgba(255,255,255,0.05); margin-bottom:5px; border-radius:8px; align-items:center;';
+        el.innerHTML = `
+            <div style="display:flex; align-items:center; gap:10px;">
+                <span style="color:${c.color}">${c.emoji || '🏷️'}</span>
+                <span>${c.name}</span>
+            </div>
+            <span class="material-icons" style="color:#ef4444; cursor:pointer;" onclick="expenseApp.removeCategory(${idx})">delete</span>
+        `;
+        catList.appendChild(el);
+    });
+
+    const recList = document.getElementById('recurringList');
+    recList.innerHTML = '';
+    this.settings.recurring_expenses.forEach((r, idx) => {
+        const el = document.createElement('div');
+        el.className = 'setting-item-row';
+        el.style.cssText = 'display:flex; justify-content:space-between; padding:10px; background:rgba(255,255,255,0.05); margin-bottom:5px; border-radius:8px; align-items:center;';
+        el.innerHTML = `
+            <div>
+                <div style="font-weight:bold;">${r.name}</div>
+                <div style="font-size:0.8rem; opacity:0.7;">每月 ${r.day} 號 • $${r.amount}</div>
+            </div>
+            <span class="material-icons" style="color:#ef4444; cursor:pointer;" onclick="expenseApp.removeRecurring(${idx})">delete</span>
+        `;
+        recList.appendChild(el);
+    });
+};
+
+expenseApp.removeCategory = function (idx) {
+    if (!confirm('確定刪除?')) return;
+    this.settings.custom_categories.splice(idx, 1);
+    this.renderSettingsLists();
+};
+
+expenseApp.removeRecurring = function (idx) {
+    if (!confirm('確定刪除?')) return;
+    this.settings.recurring_expenses.splice(idx, 1);
+    this.renderSettingsLists();
+};
 

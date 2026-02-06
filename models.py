@@ -83,6 +83,11 @@ class UserSettings(db.Model):
     
     # Expense
     budget_alert_threshold = db.Column(db.Integer, default=80)
+    
+    # Advanced Expense Features
+    billing_cycle_start_day = db.Column(db.Integer, default=10)
+    custom_categories = db.Column(db.Text, default='[]')      # JSON list of category objects
+    recurring_expenses = db.Column(db.Text, default='[]')     # JSON list of recurring expense objects
 
 class ReportLog(db.Model):
     id = db.Column(db.Integer, primary_key=True)
