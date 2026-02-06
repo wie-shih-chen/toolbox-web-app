@@ -154,9 +154,7 @@ const expenseApp = {
                 this.settings.recurring_expenses = [];
             }
 
-            // Parse JSON strings
-            try { this.settings.custom_categories = JSON.parse(this.settings.custom_categories || '[]'); } catch (e) { this.settings.custom_categories = []; }
-            try { this.settings.recurring_expenses = JSON.parse(this.settings.recurring_expenses || '[]'); } catch (e) { this.settings.recurring_expenses = []; }
+
 
             // Initialize defaults if empty (First run)
             if (this.settings.custom_categories.length === 0) {
