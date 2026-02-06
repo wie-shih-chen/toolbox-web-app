@@ -31,10 +31,16 @@
 <div class="salary-history">
     <!-- Period Selector -->
     <div class="history-controls card">
-        <label for="periodSelect">選擇區間：</label>
-        <select id="periodSelect" class="form-control">
-            <option value="">載入中...</option>
-        </select>
+        <label for="periodSelect" style="white-space: nowrap; margin-right: 10px;">選擇區間：</label>
+
+        <div style="display: flex; align-items: center; gap: 5px; flex-grow: 1; max-width: 400px;">
+            <button class="btn btn-secondary btn-sm" id="prevPeriodBtn" title="上一期">◀</button>
+            <select id="periodSelect" class="form-control" style="flex-grow: 1; text-align: center;">
+                <option value="">載入中...</option>
+            </select>
+            <button class="btn btn-secondary btn-sm" id="nextPeriodBtn" title="下一期">▶</button>
+        </div>
+
         <button type="button" class="btn btn-primary btn-sm" id="exportSalaryBtn" title="匯出全部紀錄"
             style="margin-left: auto;">📤 匯出全部</button>
     </div>

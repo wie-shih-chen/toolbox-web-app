@@ -667,7 +667,27 @@ const salaryApp = {
         const select = document.getElementById('periodSelect');
         if (select) {
             select.addEventListener('change', () => this.loadHistoryData());
+
+            // Period navigation
+            const prevBtn = document.getElementById('prevPeriodBtn');
+            const nextBtn = document.getElementById('nextPeriodBtn');
+            if (prevBtn) prevBtn.addEventListener('click', () => this.changeHistoryPeriod(1)); // Older (down in list)
+            if (nextBtn) nextBtn.addEventListener('click', () => this.changeHistoryPeriod(-1)); // Newer (up in list)
+
             this.loadSettings().then(() => this.loadHistoryPeriods());
+        }
+    },
+
+    changeHistoryPeriod(delta) {
+        const select = document.getElementById('periodSelect');
+        if (!select || select.options.length === 0) return;
+
+        const currentIndex = select.selectedIndex;
+        const newIndex = currentIndex + delta;
+
+        if (newIndex >= 0 && newIndex < select.options.length) {
+            select.selectedIndex = newIndex;
+            this.loadHistoryData();
         }
     },
 
