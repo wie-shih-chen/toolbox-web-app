@@ -140,6 +140,19 @@ const expenseApp = {
             try { this.settings.custom_categories = JSON.parse(this.settings.custom_categories || '[]'); } catch (e) { this.settings.custom_categories = []; }
             try { this.settings.recurring_expenses = JSON.parse(this.settings.recurring_expenses || '[]'); } catch (e) { this.settings.recurring_expenses = []; }
 
+            // Initialize with defaults if empty
+            if (this.settings.custom_categories.length === 0) {
+                this.settings.custom_categories = [
+                    { name: '飲食', emoji: '🍽️', color: 'var(--cat-food)' },
+                    { name: '衣著', emoji: '👕', color: 'var(--cat-clothing)' },
+                    { name: '居住', emoji: '🏠', color: 'var(--cat-housing)' },
+                    { name: '交通', emoji: '🚌', color: 'var(--cat-transport)' },
+                    { name: '教育', emoji: '📖', color: 'var(--cat-edu)' },
+                    { name: '娛樂', emoji: '🎮', color: 'var(--cat-play)' },
+                    { name: '其他', emoji: '📦', color: 'var(--cat-other)' }
+                ];
+            }
+
             this.populateCategorySelect();
 
         } catch (error) { console.error(error); }
@@ -149,23 +162,9 @@ const expenseApp = {
         const select = document.getElementById('expenseCategory');
         if (!select) return;
 
-        // Keep default options or clear? Let's clear to avoid duplicates if re-run, but we need defaults.
-        // Hardcoded defaults for now:
-        const defaults = [
-            { v: '飲食', t: '🍽️ 飲食' }, { v: '衣著', t: '👕 衣著' },
-            { v: '居住', t: '🏠 居住' }, { v: '交通', t: '🚌 交通' },
-            { v: '教育', t: '📖 教育' }, { v: '娛樂', t: '🎮 娛樂' },
-            { v: '其他', t: '📦 其他' }
-        ];
-
         select.innerHTML = '';
-        defaults.forEach(d => {
-            const opt = document.createElement('option');
-            opt.value = d.v;
-            opt.textContent = d.t;
-            select.appendChild(opt);
-        });
 
+        // Use ONLY managed categories
         if (this.settings.custom_categories && Array.isArray(this.settings.custom_categories)) {
             this.settings.custom_categories.forEach(c => {
                 const opt = document.createElement('option');
@@ -741,6 +740,11 @@ expenseApp.initSettings = function () {
 
     // Handle Category Add
     document.getElementById('addCatBtn').addEventListener('click', () => {
+        if (this.settings.custom_categories.length >= 5) {
+            alert('最多只能新增 5 個類別！請先刪除現有類別。');
+            return;
+        }
+
         const name = document.getElementById('newCatName').value.trim();
         const emoji = document.getElementById('newCatEmoji').value.trim();
         const color = document.getElementById('newCatColor').value;
