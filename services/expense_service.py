@@ -2,6 +2,7 @@ from models import db, ExpenseRecord, UserSettings
 from flask_login import current_user
 from datetime import datetime, timedelta
 from sqlalchemy import func
+import json
 
 class ExpenseService:
     def _ensure_file_exists(self):
@@ -227,10 +228,10 @@ class ExpenseService:
             except: pass
             
         if 'custom_categories' in settings_data:
-            current_user.settings.custom_categories = settings_data['custom_categories']
+            current_user.settings.custom_categories = json.dumps(settings_data['custom_categories'], ensure_ascii=False)
             
         if 'recurring_expenses' in settings_data:
-            current_user.settings.recurring_expenses = settings_data['recurring_expenses']
+            current_user.settings.recurring_expenses = json.dumps(settings_data['recurring_expenses'], ensure_ascii=False)
             
         try:
             db.session.commit()
