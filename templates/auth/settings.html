@@ -15,9 +15,11 @@
         background: rgba(255, 255, 255, 0.03);
         border: 1px solid rgba(255, 255, 255, 0.05);
         border-radius: 16px;
-        padding: 24px;
-        margin-bottom: 24px;
+        padding: 20px;
+        margin-bottom: 20px;
         backdrop-filter: blur(10px);
+        min-height: auto;
+        /* Ensure consistent sizing */
     }
 
     .section-header {
@@ -177,9 +179,16 @@
         transform: translateY(-1px);
     }
 
-    @media (max-width: 480px) {
+    @media (max-width: 768px) {
         .settings-wrapper {
             padding: 10px;
+            max-width: 100%;
+        }
+
+        .settings-section {
+            padding: 16px;
+            margin-bottom: 16px;
+            border-radius: 12px;
         }
 
         .section-header {
@@ -188,6 +197,15 @@
 
         .binding-code-display {
             font-size: 2rem;
+        }
+
+        .method-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .btn-glow-cyan {
+            font-size: 1rem !important;
+            padding: 12px 20px !important;
         }
     }
 </style>
@@ -398,17 +416,6 @@
     <!-- Close the main unified form -->
     </form>
 
-    <!-- Unified Save Button Section -->
-    <div style=\"margin-bottom: 24px;\">
-        <button type=\"submit\" form=\"mainSettingsForm\" class=\"btn btn-block btn-glow-cyan\" style=\"font-size:
-            1.1rem; padding: 14px 24px; box-shadow: 0 6px 20px rgba(45, 212, 191, 0.3);\">
-            💾 儲存所有設定
-        </button>
-        <p style=\"text-align: center; margin-top: 8px; font-size: 0.85rem; color: var(--text-tertiary);\">
-            <em>* Email 與通知設定會自動儲存，點擊以儲存密碼變更</em>
-        </p>
-    </div>
-
 </div>
 <!-- 4. Data Management -->
 <div class="settings-section">
@@ -447,6 +454,19 @@
         </div>
     </div>
 </div>
+
+<!-- Unified Save Button Section (at the very bottom) -->
+<div class="settings-section"
+    style="text-align: center; background: linear-gradient(135deg, rgba(45, 212, 191, 0.05) 0%, rgba(20, 184, 166, 0.05) 100%); border: 2px solid rgba(45, 212, 191, 0.2);">
+    <button type="submit" form="mainSettingsForm" class="btn btn-block btn-glow-cyan"
+        style="font-size: 1.2rem; padding: 16px 32px; box-shadow: 0 8px 24px rgba(45, 212, 191, 0.4); font-weight: 600; transition: all 0.3s ease;">
+        💾 儲存所有設定
+    </button>
+    <p style="margin-top: 12px; font-size: 0.85rem; color: var(--text-tertiary); opacity: 0.8;">
+        <em>✨ Email 與通知設定會自動儲存，密碼變更需點擊儲存</em>
+    </p>
+</div>
+
 </div>
 </div>
 
