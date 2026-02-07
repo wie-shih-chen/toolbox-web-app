@@ -91,16 +91,18 @@ const settingsAutoSave = {
         toast.textContent = message;
         toast.style.cssText = `
             position: fixed;
-            bottom: 30px;
-            right: 30px;
-            background: ${type === 'success' ? 'rgba(34, 197, 94, 0.9)' : 'rgba(239, 68, 68, 0.9)'};
+            top: 80px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: ${type === 'success' ? 'rgba(34, 197, 94, 0.95)' : 'rgba(239, 68, 68, 0.95)'};
             color: white;
-            padding: 12px 20px;
-            border-radius: 8px;
-            font-size: 0.9rem;
+            padding: 14px 24px;
+            border-radius: 10px;
+            font-size: 0.95rem;
             z-index: 10000;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
-            animation: slideIn 0.3s ease;
+            box-shadow: 0 6px 16px rgba(0,0,0,0.3);
+            animation: slideDown 0.3s ease;
+            font-weight: 500;
         `;
 
         document.body.appendChild(toast);
