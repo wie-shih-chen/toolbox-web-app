@@ -41,6 +41,15 @@ with app.app_context():
     app.register_blueprint(ntut_bp)
     app.register_blueprint(expense_bp)
     app.register_blueprint(auth_bp)
+    
+    from services.line_service import LineService
+    from routes.line_routes import line_bp, register_line_handlers
+    
+    # Initialize LINE Service
+    LineService.init_app(app)
+    register_line_handlers(LineService.get_handler())
+    
+    app.register_blueprint(line_bp)
 
 if __name__ == '__main__':
     app.run(debug=True, port=5001)

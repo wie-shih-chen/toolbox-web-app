@@ -33,6 +33,77 @@
 
                 <hr style="border: 0; border-top: 1px solid rgba(255,255,255,0.1); margin: 25px 0;">
 
+                <h3 style="font-size: 1.1rem; margin-bottom: 20px; color: var(--text-secondary);">LINE 通知設定</h3>
+
+                <!-- LINE Binding Status -->
+                <div class="glass"
+                    style="padding: 15px; margin-bottom: 20px; background: rgba(255,255,255,0.05); border-radius: 8px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            <span style="font-size: 24px;">💬</span>
+                            <div>
+                                <div style="font-weight: bold; margin-bottom: 4px;">LINE 官方帳號</div>
+                                {% if current_user.settings.line_user_id %}
+                                <span style="color: #4ade80; font-size: 0.9em;">✅ 已連結</span>
+                                {% else %}
+                                <span style="color: var(--text-tertiary); font-size: 0.9em;">未連結</span>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        {% if current_user.settings.line_user_id %}
+                        <form method="POST" action="{{ url_for('auth.settings') }}" style="margin:0;">
+                            <input type="hidden" name="action" value="unbind_line">
+                            <button type="submit" class="btn"
+                                style="background: rgba(239, 68, 68, 0.2); color: #ef4444; padding: 5px 12px; font-size: 0.9em;">解除連結</button>
+                        </form>
+                        {% else %}
+                        <form method="POST" action="{{ url_for('auth.settings') }}" style="margin:0;">
+                            <input type="hidden" name="action" value="generate_binding_code">
+                            <button type="submit" class="btn" style="background: #06c755; color: white;">產生驗證碼</button>
+                        </form>
+                        {% endif %}
+                    </div>
+
+                    {% if current_user.settings.binding_code %}
+                    <div
+                        style="margin-top: 15px; text-align: center; background: rgba(0,0,0,0.2); padding: 15px; border-radius: 8px;">
+                        <div style="color: var(--text-secondary); margin-bottom: 5px; font-size: 0.9em;">請在 5
+                            分鐘內傳送此代碼給機器人：</div>
+                        <div style="font-size: 2em; letter-spacing: 5px; font-family: monospace; color: #06c755;">
+                            {{ current_user.settings.binding_code }}
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+
+                <!-- Notification Methods -->
+                <form method="POST" action="{{ url_for('auth.settings') }}" id="notifyForm">
+                    <input type="hidden" name="action" value="update_notifications">
+                    <div class="form-group">
+                        <label style="margin-bottom: 10px; display: block;">接收通知方式 (可複選)</label>
+                        <div style="display: flex; gap: 20px; flex-wrap: wrap;">
+                            <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                                <input type="checkbox" name="notification_methods" value="email" {% if 'email' in
+                                    notification_methods %}checked{% endif %}>
+                                📧 Email 報表
+                            </label>
+                            {% set line_style_attr = 'opacity:0.5;' if not current_user.settings.line_user_id else '' %}
+                            <label
+                                style="display: flex; align-items: center; gap: 8px; cursor: pointer; {{ line_style_attr }}">
+                                <input type="checkbox" name="notification_methods" value="line" {% if 'line' in
+                                    notification_methods %}checked{% endif %} {% if not
+                                    current_user.settings.line_user_id %}disabled{% endif %}>
+                                💬 LINE 通知
+                            </label>
+                        </div>
+                        <button type="submit" class="btn"
+                            style="margin-top: 15px; width: 100%; padding: 8px 15px; font-size: 0.9em; background: rgba(255,255,255,0.1);">保存通知設定</button>
+                    </div>
+                </form>
+
+                <hr style="border: 0; border-top: 1px solid rgba(255,255,255,0.1); margin: 25px 0;">
+
                 <h3 style="font-size: 1.1rem; margin-bottom: 15px; color: var(--text-secondary);">變更密碼 (留空則不修改)</h3>
 
                 <div class="form-group">

@@ -89,6 +89,12 @@ class UserSettings(db.Model):
     custom_categories = db.Column(db.Text, default='[]')      # JSON list of category objects
     recurring_expenses = db.Column(db.Text, default='[]')     # JSON list of recurring expense objects
     quick_shortcuts = db.Column(db.Text, default='[]')        # JSON list of shortcut strings
+    
+    # LINE Bot Integration
+    line_user_id = db.Column(db.String(255), nullable=True)   # The user's unique LINE User ID
+    binding_code = db.Column(db.String(6), nullable=True)     # 6-digit random code
+    binding_expiry = db.Column(db.DateTime, nullable=True)    # Code expiration time
+    notification_methods = db.Column(db.Text, default='["email"]') # JSON list: ["email", "line"]
 
 class ReportLog(db.Model):
     id = db.Column(db.Integer, primary_key=True)

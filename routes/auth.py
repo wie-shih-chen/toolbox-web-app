@@ -151,32 +151,67 @@ def reset_password(token):
 @auth_bp.route('/settings', methods=['GET', 'POST'])
 @login_required
 def settings():
+    import random
+    from datetime import timedelta
+
     if request.method == 'POST':
-        # Update Email
-        email = request.form.get('email')
-        if email and email != current_user.email:
-            if User.query.filter_by(email=email).first():
-                flash('此 Email 已被其他帳號使用')
-            else:
-                current_user.email = email
-                db.session.commit()
-                flash('Email 更新成功')
+        action = request.form.get('action')
         
-        # Update Password
-        new_password = request.form.get('new_password')
-        confirm_password = request.form.get('confirm_password')
-        
-        if new_password:
-            if new_password != confirm_password:
-                flash('兩次密碼輸入不一致')
-            elif not re.match("^[a-zA-Z0-9]+$", new_password):
-                flash('密碼只能包含英文字母和數字')
-            else:
-                current_user.set_password(new_password)
-                db.session.commit()
-                flash('密碼更新成功')
-                
-    return render_template('auth/settings.html')
+        # --- Notification Preferences ---
+        if action == 'update_notifications':
+            methods = request.form.getlist('notification_methods') # returns list of values e.g. ['email', 'line']
+            # Store as JSON string
+            current_user.settings.notification_methods = json.dumps(methods)
+            db.session.commit()
+            flash('通知設定已更新')
+            
+        # --- LINE Binding ---
+        elif action == 'generate_binding_code':
+            # Generate 6-digit code
+            code = str(random.randint(100000, 999999))
+            current_user.settings.binding_code = code
+            current_user.settings.binding_expiry = datetime.now() + timedelta(minutes=5)
+            db.session.commit()
+            flash(f'驗證碼已產生：{code} (5分鐘內有效)')
+            
+        elif action == 'unbind_line':
+            current_user.settings.line_user_id = None
+            db.session.commit()
+            flash('已解除 LINE 綁定')
+
+        # --- Profile Updates ---
+        else:
+            # Update Email
+            email = request.form.get('email')
+            if email and email != current_user.email:
+                if User.query.filter_by(email=email).first():
+                    flash('此 Email 已被其他帳號使用')
+                else:
+                    current_user.email = email
+                    db.session.commit()
+                    flash('Email 更新成功')
+            
+            # Update Password
+            new_password = request.form.get('new_password')
+            confirm_password = request.form.get('confirm_password')
+            
+            if new_password:
+                if new_password != confirm_password:
+                    flash('兩次密碼輸入不一致')
+                elif not re.match("^[a-zA-Z0-9]+$", new_password):
+                    flash('密碼只能包含英文字母和數字')
+                else:
+                    current_user.set_password(new_password)
+                    db.session.commit()
+                    flash('密碼更新成功')
+
+    # Prepare view data
+    try:
+        current_methods = json.loads(current_user.settings.notification_methods or '["email"]')
+    except:
+        current_methods = ['email']
+
+    return render_template('auth/settings.html', notification_methods=current_methods)
 
 def migrate_legacy_data(user):
     """Migrate JSON data to SQLite for the given user"""
