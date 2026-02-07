@@ -482,3 +482,126 @@
 .modal-body {
     padding: 25px;
 }
+
+/* Fix for History Controls on Mobile */
+@media (max-width: 768px) {
+    .history-controls {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 15px;
+    }
+
+    .history-controls label {
+        margin-bottom: 5px;
+    }
+
+    .history-controls>div {
+        max-width: none !important;
+        width: 100%;
+    }
+
+    #exportSalaryBtn {
+        margin-left: 0 !important;
+        width: 100%;
+        margin-top: 10px;
+    }
+}
+
+/* Glass Theme Classes (imported from Expense) */
+.glass {
+    background: rgba(30, 30, 30, 0.6);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+    border-radius: 18px;
+}
+
+.setting-card {
+    background: transparent;
+    /* Override default card */
+    box-shadow: none;
+    padding: 0;
+}
+
+.settings-container {
+    max-width: 600px;
+    margin: 0 auto;
+    padding-bottom: 80px;
+}
+
+.settings-section-title {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 15px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.settings-form-group {
+    margin-bottom: 20px;
+}
+
+.settings-form-group label {
+    display: block;
+    margin-bottom: 8px;
+    color: var(--text-secondary);
+    font-size: 0.95rem;
+}
+
+.settings-input-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.settings-input {
+    width: 100%;
+    background: rgba(0, 0, 0, 0.2);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    padding: 12px 15px;
+    color: white;
+    font-size: 1rem;
+    transition: border-color 0.2s;
+}
+
+.settings-input:focus {
+    border-color: var(--accent-color);
+    outline: none;
+}
+
+.settings-unit {
+    position: absolute;
+    right: 15px;
+    color: var(--text-secondary);
+    pointer-events: none;
+}
+
+.settings-help-text {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    margin-top: 6px;
+    line-height: 1.4;
+}
+
+/* Switch Toggle */
+.switch-group {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 5px 0;
+}
+
+/* Select styling */
+select.settings-input {
+    appearance: none;
+    cursor: pointer;
+    background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+    background-repeat: no-repeat;
+    background-position: right 15px center;
+    background-size: 16px;
+    padding-right: 40px;
+}
