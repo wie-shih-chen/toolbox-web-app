@@ -27,8 +27,19 @@ class LineService:
     def push_message(cls, user_id, text):
         if not cls._line_bot_api:
             return False
+            
         try:
-            cls._line_bot_api.push_message(user_id, TextSendMessage(text=text))
+            # LINE Limit is 5000 chars. We split at 4000 to be safe.
+            max_length = 4000
+            
+            if len(text) <= max_length:
+                cls._line_bot_api.push_message(user_id, TextSendMessage(text=text))
+            else:
+                # Split into chunks
+                chunks = [text[i:i+max_length] for i in range(0, len(text), max_length)]
+                for chunk in chunks:
+                    cls._line_bot_api.push_message(user_id, TextSendMessage(text=chunk))
+                    
             return True
         except Exception as e:
             print(f"LINE Push Error: {e}")

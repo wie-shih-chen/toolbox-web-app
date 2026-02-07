@@ -175,7 +175,8 @@
                     </tr>
                 </thead>
                 <tbody>
-                    {% for record in records[:30] %}
+                <tbody>
+                    {% for record in records %}
                     <tr>
                         <td style="color:#aaa;">{{ record.date }}</td>
                         <td>
@@ -201,7 +202,7 @@
             </table>
 
             <p class="message" style="font-size: 14px; color: #888; margin-top: 30px;">
-                * 僅顯示最近 30 筆紀錄
+                * 顯示本週期所有紀錄
             </p>
         </div>
         <div class="footer">

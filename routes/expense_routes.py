@@ -177,17 +177,14 @@ def export_records():
             f"------------------\n"
         )
         
-        # Add details (limit to ~40 records)
+        # Add details (All records)
         records = summary_data.get('records', [])
         detail_lines = []
-        for r in records[:40]:
+        for r in records:
             cat = r.get('category', '其他').split(' ')[0] # Get emoji or just first part
             detail_lines.append(f"{r['timestamp'][5:16]} {cat} ${int(r['amount'])}")
             
         msg += "\n".join(detail_lines)
-        
-        if len(records) > 40:
-            msg += f"\n...\n(還有 {len(records)-40} 筆資料，請查看 Email 或下載檔案)"
             
         LineService.push_message(current_user.settings.line_user_id, msg)
             

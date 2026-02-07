@@ -171,18 +171,15 @@ def export_csv():
             f"------------------\n"
         )
         
-        # Add details (limit to ~40 records to avoid hitting 5000 char limit)
+        # Add details (All records)
         detail_lines = []
-        for r in records[:40]:
+        for r in records:
             line = f"{r['date'][5:]} {r['type']} ${r['amount']}"
             if r['type'] == 'shift':
                 line += f" ({r['hours']}h)"
             detail_lines.append(line)
             
         msg += "\n".join(detail_lines)
-        
-        if len(records) > 40:
-            msg += f"\n...\n(還有 {len(records)-40} 筆資料，請查看 Email 或下載檔案)"
             
         LineService.push_message(current_user.settings.line_user_id, msg)
 

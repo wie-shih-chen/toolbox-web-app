@@ -202,7 +202,8 @@
                     </tr>
                 </thead>
                 <tbody>
-                    {% for record in records[:50] %}
+                <tbody>
+                    {% for record in records %}
                     <tr>
                         <td style="color:#aaa;">{{ record.timestamp.split(' ')[0] }}</td>
                         <td><span class="category-tag">{{ record.category if record.category else '其他' }}</span></td>
@@ -210,18 +211,11 @@
                         <td class="amount-cell">${{ record.amount }}</td>
                     </tr>
                     {% endfor %}
-                    {% if records|length > 50 %}
-                    <tr>
-                        <td colspan="4" style="text-align: center; padding: 20px; color: #888;">
-                            ... 還有 {{ records|length - 50 }} 筆紀錄 ...
-                        </td>
-                    </tr>
-                    {% endif %}
                 </tbody>
             </table>
 
             <p class="message" style="font-size: 14px; color: #888; margin-top: 30px;">
-                * 僅顯示最近 50 筆紀錄
+                * 顯示本週期所有紀錄
             </p>
         </div>
         <div class="footer">
