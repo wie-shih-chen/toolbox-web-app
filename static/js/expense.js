@@ -155,17 +155,38 @@ const expenseApp = {
             }
             try {
                 const rawShorts = JSON.parse(this.settings.quick_shortcuts || '[]');
-                const parsedShorts = Array.isArray(rawShorts) ? rawShorts.filter(s => s && typeof s === 'string') : [];
+                let parsedShorts = [];
 
-                // If DB has no shortcuts, use defaults so they appear in Settings
+                if (Array.isArray(rawShorts)) {
+                    parsedShorts = rawShorts.map(s => {
+                        // Migration: Convert old string format to object
+                        if (typeof s === 'string') return { name: s, emoji: '⚡' }; // Default emoji for migrated items
+                        if (typeof s === 'object' && s.name) return s;
+                        return null;
+                    }).filter(s => s);
+                }
+
+                // If DB has no shortcuts, use defaults with Emojis
                 if (parsedShorts.length === 0) {
-                    this.settings.quick_shortcuts = ['早餐', '午餐', '晚餐', '宵夜', '飲料'];
+                    this.settings.quick_shortcuts = [
+                        { name: '早餐', emoji: '🍳' },
+                        { name: '午餐', emoji: '🍱' },
+                        { name: '晚餐', emoji: '🍜' },
+                        { name: '宵夜', emoji: '🍢' },
+                        { name: '飲料', emoji: '🥤' }
+                    ];
                 } else {
                     this.settings.quick_shortcuts = parsedShorts;
                 }
             } catch (e) {
                 console.error("JSON PARSE FAIL (Shortcuts):", e);
-                this.settings.quick_shortcuts = ['早餐', '午餐', '晚餐', '宵夜', '飲料'];
+                this.settings.quick_shortcuts = [
+                    { name: '早餐', emoji: '🍳' },
+                    { name: '午餐', emoji: '🍱' },
+                    { name: '晚餐', emoji: '🍜' },
+                    { name: '宵夜', emoji: '🍢' },
+                    { name: '飲料', emoji: '🥤' }
+                ];
             }
 
 
@@ -526,24 +547,44 @@ const expenseApp = {
         const tagsContainer = document.getElementById('mealQuickTags');
         if (tagsContainer) {
             tagsContainer.innerHTML = '';
-            const shortcuts = this.settings.quick_shortcuts && this.settings.quick_shortcuts.length > 0
-                ? this.settings.quick_shortcuts
-                : ['早餐', '午餐', '晚餐', '宵夜', '飲料']; // Defaults if empty
+            // Dynamic Shortcuts
+            const tagsContainer = document.getElementById('mealQuickTags');
+            if (tagsContainer) {
+                tagsContainer.innerHTML = '';
 
-            shortcuts.forEach(tag => {
-                const pill = document.createElement('div');
-                pill.className = 'tag-pill';
-                pill.textContent = tag;
-                pill.dataset.value = tag;
-                pill.onclick = () => {
-                    document.getElementById('expenseNote').value = tag;
-                    // specific logic for drink/food if needed, or just default
-                    if (tag.includes('飲料') || tag.includes('茶') || tag.includes('咖啡')) {
-                        document.getElementById('expenseCategory').value = '飲食';
-                    }
-                };
-                tagsContainer.appendChild(pill);
-            });
+                // Check if shortcuts exist, otherwise use defaults
+                let shortcuts = this.settings.quick_shortcuts;
+                if (!shortcuts || shortcuts.length === 0) {
+                    shortcuts = [
+                        { name: '早餐', emoji: '🍳' },
+                        { name: '午餐', emoji: '🍱' },
+                        { name: '晚餐', emoji: '🍜' },
+                        { name: '宵夜', emoji: '🍢' },
+                        { name: '飲料', emoji: '🥤' }
+                    ];
+                }
+
+                shortcuts.forEach(item => {
+                    // Ensure item is object (backward compatibility safecheck)
+                    const name = typeof item === 'string' ? item : item.name;
+                    const emoji = typeof item === 'string' ? '' : (item.emoji || '');
+
+                    const pill = document.createElement('div');
+                    pill.className = 'tag-pill';
+                    pill.textContent = `${emoji} ${name}`;
+                    pill.dataset.value = name; // Only put name in value, or maybe emoji+name? Let's use Name.
+
+                    pill.onclick = () => {
+                        document.getElementById('expenseNote').value = name;
+
+                        // specific logic for drink/food if needed
+                        if (name.includes('飲料') || name.includes('茶') || name.includes('咖啡')) {
+                            document.getElementById('expenseCategory').value = '飲食';
+                        }
+                    };
+                    tagsContainer.appendChild(pill);
+                });
+            }
         }
 
         // Enforce cycle boundary for adding records
@@ -857,8 +898,7 @@ expenseApp.saveSettings = async function () {
     // CLEAN DATA BEFORE SENDING
     payload.custom_categories = (this.settings.custom_categories || []).filter(c => c && c.name);
     payload.recurring_expenses = (this.settings.recurring_expenses || []).filter(r => r && r.name);
-    payload.quick_shortcuts = (this.settings.quick_shortcuts || []).filter(s => s);
-
+    payload.quick_shortcuts = (this.settings.quick_shortcuts || []).filter(s => s && s.name);
     try {
         await fetch('/expense/api/settings', {
             method: 'POST',
@@ -922,11 +962,17 @@ expenseApp.renderSettingsLists = function () {
     if (shortList) {
         shortList.innerHTML = '';
         (this.settings.quick_shortcuts || []).forEach((s, idx) => {
+            // Handle case where s might be string during migration in memory before save
+            const name = typeof s === 'string' ? s : s.name;
+            const emoji = typeof s === 'string' ? '⚡' : (s.emoji || '⚡');
+
             const el = document.createElement('div');
             el.className = 'setting-item-row glass';
             el.style.cssText = 'display:flex; justify-content:space-between; padding:12px; margin-bottom:8px; align-items:center;';
             el.innerHTML = `
-                <div style="font-weight:500;">${s}</div>
+                <div style="font-weight:500;">
+                    <span style="margin-right:8px;">${emoji}</span>${name}
+                </div>
                 <div style="display:flex; gap:15px;">
                     <span class="material-icons" style="color:var(--text-secondary); cursor:pointer;" onclick="expenseApp.editShortcut(${idx})">edit</span>
                     <span class="material-icons" style="color:#ef4444; cursor:pointer;" onclick="expenseApp.removeShortcut(${idx})">delete</span>
@@ -998,12 +1044,20 @@ expenseApp.editRecurring = function (idx) {
 };
 
 expenseApp.editShortcut = function (idx) {
-    const oldVal = this.settings.quick_shortcuts[idx];
-    const newVal = prompt('修改快捷摘要:', oldVal);
-    if (newVal === null) return;
-    if (!newVal) return alert('內容不能為空');
+    const item = this.settings.quick_shortcuts[idx];
+    const oldName = typeof item === 'string' ? item : item.name;
+    const oldEmoji = typeof item === 'string' ? '⚡' : item.emoji;
 
-    this.settings.quick_shortcuts[idx] = newVal;
+    const newName = prompt('修改快捷名稱:', oldName);
+    if (newName === null) return;
+    if (!newName) return alert('內容不能為空');
+
+    const newEmoji = prompt('修改 Emoji:', oldEmoji);
+
+    this.settings.quick_shortcuts[idx] = {
+        name: newName,
+        emoji: newEmoji || oldEmoji
+    };
     this.renderSettingsLists();
     this.saveSettings();
 };
@@ -1013,8 +1067,14 @@ document.addEventListener('DOMContentLoaded', () => {
     const addShortBtn = document.getElementById('addShortcutBtn');
     if (addShortBtn) {
         addShortBtn.addEventListener('click', () => {
-            const input = document.getElementById('newShortcutName');
-            const val = input.value.trim();
+            const nameInput = document.getElementById('newShortcutName');
+            const emojiInput = document.getElementById('newShortcutEmoji'); // Assuming we add this
+
+            const val = nameInput.value.trim();
+            // If we don't have emoji input yet, default to empty or specific? 
+            // We will add emoji input in HTML next.
+            const emoji = emojiInput ? emojiInput.value.trim() : '⚡';
+
             if (!val) return;
 
             if (!expenseApp.settings.quick_shortcuts) expenseApp.settings.quick_shortcuts = [];
@@ -1025,11 +1085,16 @@ document.addEventListener('DOMContentLoaded', () => {
                 return;
             }
 
-            expenseApp.settings.quick_shortcuts.push(val);
-            input.value = '';
+            expenseApp.settings.quick_shortcuts.push({
+                name: val,
+                emoji: emoji
+            });
+
+            nameInput.value = '';
+            if (emojiInput) emojiInput.value = '';
+
             expenseApp.renderSettingsLists();
             expenseApp.saveSettings();
         });
     }
 });
-
