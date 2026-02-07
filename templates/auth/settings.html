@@ -349,3 +349,27 @@
     </div>
 </div>
 {% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const bindingCodeBox = document.querySelector('.binding-code-box');
+
+        // Only run polling if the binding code box is present (meaning user is in binding mode)
+        if (bindingCodeBox) {
+            const checkStatus = setInterval(function () {
+                fetch('{{ url_for("auth.check_line_status") }}')
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.linked) {
+                            clearInterval(checkStatus);
+                            // Reload to show "Linked" status
+                            window.location.reload();
+                        }
+                    })
+                    .catch(error => console.error('Error checking status:', error));
+            }, 3000); // Check every 3 seconds
+        }
+    });
+</script>
+{% endblock %}

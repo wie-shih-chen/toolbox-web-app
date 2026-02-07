@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, redirect, url_for, flash, request, session
+from flask import Blueprint, render_template, redirect, url_for, flash, request, session, jsonify
 from flask_login import login_user, logout_user, login_required, current_user
 from models import db, User, SalaryRecord, ExpenseRecord, UserSettings
 from services.email_service import EmailService
@@ -212,6 +212,12 @@ def settings():
         current_methods = ['email']
 
     return render_template('auth/settings.html', notification_methods=current_methods)
+
+@auth_bp.route('/check_line_status')
+@login_required
+def check_line_status():
+    is_linked = current_user.settings.line_user_id is not None
+    return jsonify({'linked': is_linked})
 
 def migrate_legacy_data(user):
     """Migrate JSON data to SQLite for the given user"""
