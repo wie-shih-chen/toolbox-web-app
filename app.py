@@ -49,7 +49,7 @@ with app.app_context():
     LineService.init_app(app)
     register_line_handlers(LineService.get_handler())
     
-    app.register_blueprint(line_bp)
+    app.register_blueprint(line_bp, url_prefix='/line')
 
 if __name__ == '__main__':
     app.run(debug=True, port=5001)
