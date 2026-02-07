@@ -34,9 +34,16 @@ class ReportService:
         """
         Checks if the report for the latest period has been sent to this user.
         If not, sends it.
-        Uses threading to avoid blocking the request.
+        Now respects user.settings.monthly_report_day preference.
         """
         if not user.is_authenticated:
+            return
+            
+        today = datetime.now()
+        report_day = getattr(user.settings, 'monthly_report_day', 5) # Default 5th
+        
+        # If today is before the user's preferred report day, do nothing.
+        if today.day < report_day:
             return
             
         start_date, end_date = ReportService.get_billing_period()
@@ -99,11 +106,26 @@ class ReportService:
                     if 'line' in methods and user.settings.line_user_id:
                         msg = (
                             f"💰 [薪資報表] {start_date} ~ {end_date}\n"
-                            f"------------------\n"
                             f"總金額: ${total_salary:,}\n"
                             f"筆數: {len(records)} 筆\n"
-                            f"(詳細明細請查看 Email)"
+                            f"------------------\n"
                         )
+                        
+                        # Add details (All records)
+                        detail_lines = []
+                        for r in records:
+                            # Translate type
+                            rtype = "排班" if r['type'] == 'shift' else "獎金"
+                            if r['type'] != 'shift' and r['type'] != 'bonus':
+                                 rtype = r['type'] # Fallback
+                                 
+                            line = f"{r['date'][5:]} {rtype} ${r['amount']}"
+                            if r['type'] == 'shift':
+                                line += f" ({r['hours']}h)"
+                            detail_lines.append(line)
+                            
+                        msg += "\n".join(detail_lines)
+                        
                         LineService.push_message(user.settings.line_user_id, msg)
 
                     # Log it
@@ -141,19 +163,20 @@ class ReportService:
                      
                      # 2. Send LINE
                      if 'line' in methods and user.settings.line_user_id:
-                        top_cat_str = ""
-                        for idx, (cat, amt) in enumerate(top_categories[:3], 1):
-                            top_cat_str += f"{idx}. {cat}: ${amt:,}\n"
-                            
                         msg = (
                             f"💸 [記帳報表] {start_date} ~ {end_date}\n"
-                            f"------------------\n"
                             f"總支出: ${data.get('total_amount', 0):,}\n"
-                            f"前三大消費:\n"
-                            f"{top_cat_str}"
                             f"------------------\n"
-                            f"(詳細明細請查看 Email)"
                         )
+                        
+                        # Add details (All records)
+                        detail_lines = []
+                        for r in records:
+                            cat = r.get('category', '其他').split(' ')[0] # Get emoji or just first part
+                            detail_lines.append(f"{r['timestamp'][5:16]} {cat} ${int(r['amount'])}")
+                            
+                        msg += "\n".join(detail_lines)
+                        
                         LineService.push_message(user.settings.line_user_id, msg)
 
                      db.session.add(ReportLog(

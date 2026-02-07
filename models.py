@@ -99,6 +99,7 @@ class UserSettings(db.Model):
     binding_code = db.Column(db.String(6), nullable=True)     # 6-digit random code
     binding_expiry = db.Column(db.DateTime, nullable=True)    # Code expiration time
     notification_methods = db.Column(db.Text, default='["email"]') # JSON list: ["email", "line"]
+    monthly_report_day = db.Column(db.Integer, default=5) # 1-28
 
 class ReportLog(db.Model):
     id = db.Column(db.Integer, primary_key=True)

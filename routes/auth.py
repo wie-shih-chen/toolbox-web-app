@@ -163,6 +163,16 @@ def settings():
             methods = request.form.getlist('notification_methods') # returns list of values e.g. ['email', 'line']
             # Store as JSON string
             current_user.settings.notification_methods = json.dumps(methods)
+            current_user.settings.notification_methods = json.dumps(methods)
+            
+            # Update Monthly Report Day
+            try:
+                day = int(request.form.get('monthly_report_day', 5))
+                if 1 <= day <= 28:
+                    current_user.settings.monthly_report_day = day
+            except ValueError:
+                pass
+                
             db.session.commit()
             flash('通知設定已更新')
             
