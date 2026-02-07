@@ -173,8 +173,22 @@ def export_records():
             f"📉 [記帳匯出通知]\n"
             f"期間: {start_date} ~ {end_date}\n"
             f"總支出: ${total:,}\n"
-            f"匯出時間: {datetime.now().strftime('%Y/%m/%d %H:%M')}"
+            f"匯出時間: {datetime.now().strftime('%Y/%m/%d %H:%M')}\n"
+            f"------------------\n"
         )
+        
+        # Add details (limit to ~40 records)
+        records = summary_data.get('records', [])
+        detail_lines = []
+        for r in records[:40]:
+            cat = r.get('category', '其他').split(' ')[0] # Get emoji or just first part
+            detail_lines.append(f"{r['timestamp'][5:16]} {cat} ${int(r['amount'])}")
+            
+        msg += "\n".join(detail_lines)
+        
+        if len(records) > 40:
+            msg += f"\n...\n(還有 {len(records)-40} 筆資料，請查看 Email 或下載檔案)"
+            
         LineService.push_message(current_user.settings.line_user_id, msg)
             
     # 3. Download

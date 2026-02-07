@@ -167,8 +167,23 @@ def export_csv():
             f"📊 [薪資匯出通知]\n"
             f"筆數: {len(records)}\n"
             f"總金額: ${total_amount:,}\n"
-            f"匯出時間: {datetime.now().strftime('%Y/%m/%d %H:%M')}"
+            f"匯出時間: {datetime.now().strftime('%Y/%m/%d %H:%M')}\n"
+            f"------------------\n"
         )
+        
+        # Add details (limit to ~40 records to avoid hitting 5000 char limit)
+        detail_lines = []
+        for r in records[:40]:
+            line = f"{r['date'][5:]} {r['type']} ${r['amount']}"
+            if r['type'] == 'shift':
+                line += f" ({r['hours']}h)"
+            detail_lines.append(line)
+            
+        msg += "\n".join(detail_lines)
+        
+        if len(records) > 40:
+            msg += f"\n...\n(還有 {len(records)-40} 筆資料，請查看 Email 或下載檔案)"
+            
         LineService.push_message(current_user.settings.line_user_id, msg)
 
     # 3. Download
