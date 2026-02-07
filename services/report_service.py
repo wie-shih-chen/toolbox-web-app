@@ -1,4 +1,4 @@
-from models import db, ReportLog
+from models import db, ReportLog, User
 from services.salary_service import SalaryService
 from services.expense_service import ExpenseService
 from services.email_service import EmailService

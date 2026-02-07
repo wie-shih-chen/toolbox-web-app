@@ -547,44 +547,39 @@ const expenseApp = {
         const tagsContainer = document.getElementById('mealQuickTags');
         if (tagsContainer) {
             tagsContainer.innerHTML = '';
-            // Dynamic Shortcuts
-            const tagsContainer = document.getElementById('mealQuickTags');
-            if (tagsContainer) {
-                tagsContainer.innerHTML = '';
 
-                // Check if shortcuts exist, otherwise use defaults
-                let shortcuts = this.settings.quick_shortcuts;
-                if (!shortcuts || shortcuts.length === 0) {
-                    shortcuts = [
-                        { name: '早餐', emoji: '🍳' },
-                        { name: '午餐', emoji: '🍱' },
-                        { name: '晚餐', emoji: '🍜' },
-                        { name: '宵夜', emoji: '🍢' },
-                        { name: '飲料', emoji: '🥤' }
-                    ];
-                }
-
-                shortcuts.forEach(item => {
-                    // Ensure item is object (backward compatibility safecheck)
-                    const name = typeof item === 'string' ? item : item.name;
-                    const emoji = typeof item === 'string' ? '' : (item.emoji || '');
-
-                    const pill = document.createElement('div');
-                    pill.className = 'tag-pill';
-                    pill.textContent = `${emoji} ${name}`;
-                    pill.dataset.value = name; // Only put name in value, or maybe emoji+name? Let's use Name.
-
-                    pill.onclick = () => {
-                        document.getElementById('expenseNote').value = name;
-
-                        // specific logic for drink/food if needed
-                        if (name.includes('飲料') || name.includes('茶') || name.includes('咖啡')) {
-                            document.getElementById('expenseCategory').value = '飲食';
-                        }
-                    };
-                    tagsContainer.appendChild(pill);
-                });
+            // Check if shortcuts exist, otherwise use defaults
+            let shortcuts = this.settings.quick_shortcuts;
+            if (!shortcuts || shortcuts.length === 0) {
+                shortcuts = [
+                    { name: '早餐', emoji: '🍳' },
+                    { name: '午餐', emoji: '🍱' },
+                    { name: '晚餐', emoji: '🍜' },
+                    { name: '宵夜', emoji: '🍢' },
+                    { name: '飲料', emoji: '🥤' }
+                ];
             }
+
+            shortcuts.forEach(item => {
+                // Ensure item is object (backward compatibility safecheck)
+                const name = typeof item === 'string' ? item : item.name;
+                const emoji = typeof item === 'string' ? '' : (item.emoji || '');
+
+                const pill = document.createElement('div');
+                pill.className = 'tag-pill';
+                pill.textContent = `${emoji} ${name}`;
+                pill.dataset.value = name;
+
+                pill.onclick = () => {
+                    document.getElementById('expenseNote').value = name;
+
+                    // specific logic for drink/food if needed
+                    if (name.includes('飲料') || name.includes('茶') || name.includes('咖啡')) {
+                        document.getElementById('expenseCategory').value = '飲食';
+                    }
+                };
+                tagsContainer.appendChild(pill);
+            });
         }
 
         // Enforce cycle boundary for adding records
