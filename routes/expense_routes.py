@@ -127,8 +127,15 @@ def export_records():
     csv_data = expense_service.export_records_csv(start_date, end_date)
     filename = f"expense_export_{start_date}_{end_date}.csv"
     
-    # If user has email, send it there
-    if current_user.email:
+    # Parse Notification Methods
+    try:
+        import json
+        methods = json.loads(current_user.settings.notification_methods or '["download"]')
+    except:
+        methods = ['download']
+
+    # 1. Email
+    if 'email' in methods and current_user.email:
         # Get full data for email rendering
         summary_data = expense_service.get_summary(start_date, end_date)
         records = summary_data['records']
@@ -152,30 +159,36 @@ def export_records():
                 period=f"{start_date} ~ {end_date}",
                 total_amount=f"${summary_data.get('total_amount', 0):,}",
                 records=records,
-                top_categories=top_categories,
-                raise_error=True
+                top_categories=top_categories
             )
+        except Exception as e:
+            print(f"Email Error: {e}")
+
+    # 2. LINE
+    if 'line' in methods and current_user.settings.line_user_id:
+        from services.line_service import LineService
+        summary_data = expense_service.get_summary(start_date, end_date)
+        total = summary_data.get('total_amount', 0)
+        msg = (
+            f"📉 [記帳匯出通知]\n"
+            f"期間: {start_date} ~ {end_date}\n"
+            f"總支出: ${total:,}\n"
+            f"匯出時間: {datetime.now().strftime('%Y/%m/%d %H:%M')}"
+        )
+        LineService.push_message(current_user.settings.line_user_id, msg)
             
+    # 3. Download
+    if 'download' in methods or not methods:
+        if 'download' in methods:
+            return Response(
+                csv_data,
+                mimetype="text/csv",
+                headers={"Content-disposition": f"attachment; filename={filename}"}
+            )
+        else:
             return jsonify({
                 "success": True, 
-                "message": f"報表內容已寄送至 {current_user.email}",
-                "method": "email"
+                "message": "報表已透過已選的管道發送 (Email/LINE)"
             })
-        except Exception as e:
-            return jsonify({
-                "success": False,
-                "error": f"Email 寄送失敗: {str(e)}",
-                "method": "error"
-            })
-    
-    return Response(
-        csv_data,
-        mimetype="text/csv",
-        headers={"Content-disposition": f"attachment; filename={filename}"}
-    )
-    
-    return Response(
-        csv_data,
-        mimetype="text/csv",
-        headers={"Content-disposition": f"attachment; filename={filename}"}
-    )
+
+    return jsonify({"success": True, "message": "無選取任何管道"})

@@ -1,4 +1,5 @@
-from flask import Blueprint, render_template, redirect, url_for, flash, request, session, jsonify
+from flask import Blueprint, render_template, redirect, url_for, flash, request, session, jsonify, send_file
+from werkzeug.utils import secure_filename
 from flask_login import login_user, logout_user, login_required, current_user
 from models import db, User, SalaryRecord, ExpenseRecord, UserSettings
 from services.email_service import EmailService
@@ -235,6 +236,86 @@ def test_notification():
             return jsonify({'success': False, 'message': '發送失敗，請檢查 LINE 設定'}), 500
     except Exception as e:
         return jsonify({'success': False, 'message': str(e)}), 500
+
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+# ================= DATA MANAGEMENT =================
+@auth_bp.route('/data/export_excel', methods=['POST'])
+@login_required
+def export_excel_all():
+    from services.data_service import DataService
+    try:
+        output = DataService.export_all_data(current_user.id)
+        filename = f"toolbox_backup_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx"
+        
+        return send_file(
+            output,
+            mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            as_attachment=True,
+            download_name=filename
+        )
+    except Exception as e:
+        flash(f'匯出失敗: {str(e)}')
+        return redirect(url_for('auth.settings'))
+
+@auth_bp.route('/data/reset', methods=['POST'])
+@login_required
+def reset_data():
+    module = request.form.get('module') # 'salary', 'expense'
+    confirmation = request.form.get('confirmation')
+    
+    if confirmation != 'DELETE':
+        flash('確認碼錯誤，操作取消')
+        return redirect(url_for('auth.settings'))
+        
+    from services.data_service import DataService
+    if DataService.reset_data(current_user.id, module):
+        flash('資料重置成功')
+    else:
+        flash('資料重置失敗')
+        
+    return redirect(url_for('auth.settings'))
+
+# ================= AVATAR =================
+@auth_bp.route('/avatar/preset', methods=['POST'])
+@login_required
+def set_preset_avatar():
+    preset_name = request.json.get('preset')
+    if preset_name:
+        current_user.avatar_type = 'preset'
+        current_user.avatar_val = preset_name
+        db.session.commit()
+        return jsonify({'success': True})
+    return jsonify({'success': False}), 400
+
+@auth_bp.route('/avatar/upload', methods=['POST'])
+@login_required
+def upload_avatar():
+    if 'avatar_file' not in request.files:
+        flash('未選擇檔案')
+        return redirect(url_for('auth.settings'))
+        
+    file = request.files['avatar_file']
+    if file.filename == '':
+        flash('未選擇檔案')
+        return redirect(url_for('auth.settings'))
+        
+    if file:
+        filename = secure_filename(f"user_{current_user.id}_{int(datetime.now().timestamp())}.png")
+        save_path = os.path.join(current_app.root_path, 'static', 'uploads', 'avatars', filename)
+        
+        # Ensure directory exists
+        os.makedirs(os.path.dirname(save_path), exist_ok=True)
+        
+        file.save(save_path)
+        
+        current_user.avatar_type = 'upload'
+        current_user.avatar_val = filename
+        db.session.commit()
+        flash('頭像上傳成功')
+        
+    return redirect(url_for('auth.settings'))
 
 def migrate_legacy_data(user):
     """Migrate JSON data to SQLite for the given user"""

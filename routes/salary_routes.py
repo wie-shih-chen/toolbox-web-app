@@ -129,16 +129,19 @@ def export_csv():
     csv_content = service.generate_csv_export()
     filename = f"salary_export_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"
     
-    # If user has email, send it there
-    if current_user.email:
+    # Parse Notification Methods
+    try:
+        import json
+        methods = json.loads(current_user.settings.notification_methods or '["download"]')
+    except:
+        methods = ['download']
+
+    # 1. Email
+    if 'email' in methods and current_user.email:
         # Get stats for email
         records = service.get_all_records()
-        # Sort records by date desc
         records.sort(key=lambda x: x['date'], reverse=True)
-        
-        # Calculate total amount
         total_amount = sum(r.get('amount', 0) for r in records)
-        
         export_date = datetime.now().strftime('%Y/%m/%d %H:%M')
         
         try:
@@ -150,28 +153,45 @@ def export_csv():
                 record_count=len(records),
                 export_date=export_date,
                 total_amount=f"${total_amount:,}",
-                records=records,
-                raise_error=True
+                records=records
             )
-            
+        except Exception as e:
+            print(f"Email Error: {e}")
+
+    # 2. LINE
+    if 'line' in methods and current_user.settings.line_user_id:
+        from services.line_service import LineService
+        records = service.get_all_records()
+        total_amount = sum(r.get('amount', 0) for r in records)
+        msg = (
+            f"📊 [薪資匯出通知]\n"
+            f"筆數: {len(records)}\n"
+            f"總金額: ${total_amount:,}\n"
+            f"匯出時間: {datetime.now().strftime('%Y/%m/%d %H:%M')}"
+        )
+        LineService.push_message(current_user.settings.line_user_id, msg)
+
+    # 3. Download
+    if 'download' in methods or not methods: # Default to download if nothing selected? Or maybe just download if explicitly selected.
+        # Check if 'download' is truly in methods.
+        # Actually, if the user UNcheck download, they might expect it NOT to download.
+        # But for a web request, returning *nothing* is weird.
+        # If 'download' is NOT in methods, we return a JSON success.
+        
+        if 'download' in methods:
+            return Response(
+                csv_content,
+                mimetype="text/csv",
+                headers={"Content-disposition": f"attachment; filename={filename}"}
+            )
+        else:
             return jsonify({
                 "success": True, 
-                "message": f"報表內容已寄送至 {current_user.email}",
-                "method": "email"
-            })
-        except Exception as e:
-            return jsonify({
-                "success": False,
-                "error": f"Email 寄送失敗: {str(e)}",
-                "method": "error"
+                "message": "報表已透過已選的管道發送 (Email/LINE)"
             })
             
-    # Fallback to direct download
-    return Response(
-        csv_content,
-        mimetype="text/csv",
-        headers={"Content-disposition": f"attachment; filename={filename}"}
-    )
+    # Fallback if methods is empty but logic fell through (shouldn't happen with 'if' above)
+    return jsonify({"success": True, "message": "無選取任何管道"})
 
 @salary_bp.route('/api/history/periods', methods=['GET'])
 @login_required

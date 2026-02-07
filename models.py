@@ -11,6 +11,10 @@ class User(UserMixin, db.Model):
     email = db.Column(db.String(120), unique=True, nullable=True) # Making nullable first for migration
     password_hash = db.Column(db.String(120), nullable=False)
     
+    # Avatar
+    avatar_type = db.Column(db.String(20), default='preset') # 'preset' or 'upload'
+    avatar_val = db.Column(db.String(255), default='default') # preset name or file path
+    
     # Relationships
     salary_records = db.relationship('SalaryRecord', backref='user', lazy=True)
     expense_records = db.relationship('ExpenseRecord', backref='user', lazy=True)
