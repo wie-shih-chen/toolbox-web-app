@@ -219,6 +219,23 @@ def check_line_status():
     is_linked = current_user.settings.line_user_id is not None
     return jsonify({'linked': is_linked})
 
+@auth_bp.route('/test_notification', methods=['POST'])
+@login_required
+def test_notification():
+    from services.line_service import LineService
+    
+    if not current_user.settings.line_user_id:
+        return jsonify({'success': False, 'message': '尚未使用 LINE 綁定'}), 400
+        
+    try:
+        msg = "👋 這是來自工具箱的測試訊息！\n恭喜您，通知功能設定成功！🎉"
+        if LineService.push_message(current_user.settings.line_user_id, msg):
+            return jsonify({'success': True, 'message': '測試訊息已發送'})
+        else:
+            return jsonify({'success': False, 'message': '發送失敗，請檢查 LINE 設定'}), 500
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)}), 500
+
 def migrate_legacy_data(user):
     """Migrate JSON data to SQLite for the given user"""
     try:

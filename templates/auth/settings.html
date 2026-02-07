@@ -295,6 +295,15 @@
                 </label>
             </div>
 
+            {% if not line_disabled %}
+            <div style="margin-top: 12px; text-align: right;">
+                <button type="button" id="testLineBtn" class="btn"
+                    style="background: transparent; border: 1px solid rgba(255,255,255,0.2); color: var(--text-secondary); font-size: 0.8rem; padding: 4px 12px;">
+                    <i class="fas fa-paper-plane" style="margin-right: 4px;"></i> 發送測試訊息
+                </button>
+            </div>
+            {% endif %}
+
             <button type="submit" class="btn btn-block btn-glow-dark">
                 儲存通知設定
             </button>
@@ -369,6 +378,41 @@
                     })
                     .catch(error => console.error('Error checking status:', error));
             }, 3000); // Check every 3 seconds
+        }
+
+        // Test LINE Notification
+        const testBtn = document.getElementById('testLineBtn');
+        if (testBtn) {
+            testBtn.addEventListener('click', function () {
+                // Disable button to prevent double clicks
+                testBtn.disabled = true;
+                const originalText = testBtn.innerHTML;
+                testBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 發送中...';
+
+                fetch('{{ url_for("auth.test_notification") }}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            alert('✅ ' + data.message);
+                        } else {
+                            alert('❌ ' + data.message);
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        alert('❌ 發送失敗，請稍後再試');
+                    })
+                    .finally(() => {
+                        // Re-enable button
+                        testBtn.disabled = false;
+                        testBtn.innerHTML = originalText;
+                    });
+            });
         }
     });
 </script>

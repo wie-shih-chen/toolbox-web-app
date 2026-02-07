@@ -4,7 +4,9 @@ from services.expense_service import ExpenseService
 from services.email_service import EmailService
 from datetime import datetime, timedelta
 import threading
+import json
 from flask import current_app
+from services.line_service import LineService
 
 class ReportService:
     @staticmethod
@@ -66,6 +68,12 @@ class ReportService:
             if not user or not user.email:
                 return
             
+            # Check Notification Methods
+            try:
+                methods = json.loads(user.settings.notification_methods or '["email"]')
+            except:
+                methods = ['email']
+
             # --- Salary Report ---
             try:
                 salary_service = SalaryService()
@@ -74,19 +82,31 @@ class ReportService:
                     records.sort(key=lambda x: x['date'], reverse=True)
                     total_salary = sum(r.get('amount', 0) for r in records)
                     
-                    EmailService.send_email(
-                        to=user.email,
-                        subject=f'每月薪資報表 ({start_date} ~ {end_date})',
-                        template='email/salary_export.html',
-                        username=user.username,
-                        record_count=len(records),
-                        export_date=datetime.now().strftime('%Y/%m/%d'),
-                        total_amount=f"${total_salary:,}",
-                        records=records
-                    )
+                    # 1. Send Email
+                    if 'email' in methods:
+                        EmailService.send_email(
+                            to=user.email,
+                            subject=f'每月薪資報表 ({start_date} ~ {end_date})',
+                            template='email/salary_export.html',
+                            username=user.username,
+                            record_count=len(records),
+                            export_date=datetime.now().strftime('%Y/%m/%d'),
+                            total_amount=f"${total_salary:,}",
+                            records=records
+                        )
                     
-                    # Log it (Partial log not perfect, but we log the 'attempt' as done if at least one succeeds or both?)
-                    # Let's log 'salary' type
+                    # 2. Send LINE
+                    if 'line' in methods and user.settings.line_user_id:
+                        msg = (
+                            f"💰 [薪資報表] {start_date} ~ {end_date}\n"
+                            f"------------------\n"
+                            f"總金額: ${total_salary:,}\n"
+                            f"筆數: {len(records)} 筆\n"
+                            f"(詳細明細請查看 Email)"
+                        )
+                        LineService.push_message(user.settings.line_user_id, msg)
+
+                    # Log it
                     db.session.add(ReportLog(
                         user_id=user.id,
                         period_start=start_date,
@@ -106,17 +126,36 @@ class ReportService:
                      category_stats = data['category_split']
                      top_categories = sorted(category_stats.items(), key=lambda x: x[1], reverse=True)[:5]
                      
-                     EmailService.send_email(
-                        to=user.email,
-                        subject=f'每月記帳報表 ({start_date} ~ {end_date})',
-                        template='email/expense_export.html',
-                        username=user.username,
-                        period=f"{start_date} ~ {end_date}",
-                        total_amount=f"${data.get('total_amount', 0):,}",
-                        records=records,
-                        top_categories=top_categories
-                    )
+                     # 1. Send Email
+                     if 'email' in methods:
+                        EmailService.send_email(
+                            to=user.email,
+                            subject=f'每月記帳報表 ({start_date} ~ {end_date})',
+                            template='email/expense_export.html',
+                            username=user.username,
+                            period=f"{start_date} ~ {end_date}",
+                            total_amount=f"${data.get('total_amount', 0):,}",
+                            records=records,
+                            top_categories=top_categories
+                        )
                      
+                     # 2. Send LINE
+                     if 'line' in methods and user.settings.line_user_id:
+                        top_cat_str = ""
+                        for idx, (cat, amt) in enumerate(top_categories[:3], 1):
+                            top_cat_str += f"{idx}. {cat}: ${amt:,}\n"
+                            
+                        msg = (
+                            f"💸 [記帳報表] {start_date} ~ {end_date}\n"
+                            f"------------------\n"
+                            f"總支出: ${data.get('total_amount', 0):,}\n"
+                            f"前三大消費:\n"
+                            f"{top_cat_str}"
+                            f"------------------\n"
+                            f"(詳細明細請查看 Email)"
+                        )
+                        LineService.push_message(user.settings.line_user_id, msg)
+
                      db.session.add(ReportLog(
                         user_id=user.id,
                         period_start=start_date,
