@@ -142,6 +142,41 @@
         margin-top: 16px;
     }
 
+    /* Glowing Button Styles */
+    .btn-glow-dark {
+        background: rgba(30, 30, 30, 0.8);
+        color: rgba(255, 255, 255, 0.6);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+        transition: all 0.3s ease;
+    }
+
+    .btn-glow-dark:hover {
+        background: rgba(40, 40, 40, 0.9);
+        color: white;
+        box-shadow: 0 6px 24px rgba(0, 0, 0, 0.4);
+    }
+
+    .btn-glow-cyan {
+        background: #4ecdc4;
+        background: linear-gradient(90deg, #4ecdc4 0%, #556270 100%);
+        /* Fallback or specific gradient */
+        background: #2dd4bf;
+        /* Cyan-400 */
+        color: #0f172a;
+        border: none;
+        font-weight: 600;
+        box-shadow: 0 0 15px rgba(45, 212, 191, 0.3), 0 4px 6px rgba(0, 0, 0, 0.1);
+        transition: all 0.3s ease;
+    }
+
+    .btn-glow-cyan:hover {
+        background: #14b8a6;
+        /* Cyan-500 */
+        box-shadow: 0 0 25px rgba(45, 212, 191, 0.5), 0 6px 8px rgba(0, 0, 0, 0.2);
+        transform: translateY(-1px);
+    }
+
     @media (max-width: 480px) {
         .settings-wrapper {
             padding: 10px;
@@ -260,7 +295,7 @@
                 </label>
             </div>
 
-            <button type="submit" class="btn btn-primary btn-block" style="background: var(--bg-secondary);">
+            <button type="submit" class="btn btn-block btn-glow-dark">
                 儲存通知設定
             </button>
         </form>
@@ -307,7 +342,7 @@
                     style="width: 100%; padding: 12px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; color: var(--text-primary);">
             </div>
 
-            <button type="submit" class="btn btn-primary btn-block">
+            <button type="submit" class="btn btn-block btn-glow-cyan">
                 更新個人資料
             </button>
         </form>
