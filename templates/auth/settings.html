@@ -233,64 +233,65 @@
         <div class="section-header">
             <span>👤</span> 個人設定 (Profile)
         </div>
-        <div style="margin-bottom: 24px; text-align: center;">
+    </div>
+    <div style="margin-bottom: 16px; text-align: center;">
+        <div
+            style="width: 60px; height: 60px; border-radius: 50%; overflow: hidden; margin: 0 auto 8px; border: 2px solid rgba(255,255,255,0.2);">
+            {% if current_user.avatar_type == 'upload' %}
+            <img src="{{ url_for('static', filename='uploads/avatars/' + current_user.avatar_val) }}"
+                style="width: 100%; height: 100%; object-fit: cover;">
+            {% else %}
             <div
-                style="width: 80px; height: 80px; border-radius: 50%; overflow: hidden; margin: 0 auto 12px; border: 2px solid rgba(255,255,255,0.2);">
-                {% if current_user.avatar_type == 'upload' %}
-                <img src="{{ url_for('static', filename='uploads/avatars/' + current_user.avatar_val) }}"
-                    style="width: 100%; height: 100%; object-fit: cover;">
-                {% else %}
-                <div
-                    style="width: 100%; height: 100%; background: #2a2a2a; display: flex; align-items: center; justify-content: center; font-size: 2.5rem;">
-                    {{ current_user.avatar_val if current_user.avatar_val != 'default' and current_user.avatar_val !=
-                    'upload' else '👤' }}
-                </div>
-                {% endif %}
+                style="width: 100%; height: 100%; background: #2a2a2a; display: flex; align-items: center; justify-content: center; font-size: 2rem;">
+                {{ current_user.avatar_val if current_user.avatar_val != 'default' and current_user.avatar_val !=
+                'upload' else '👤' }}
             </div>
-
-            <div style="display: flex; gap: 10px; justify-content: center; margin-bottom: 16px;">
-                <button type="button" class="btn" onclick="openAvatarModal()"
-                    style="background: rgba(255,255,255,0.1); font-size: 0.9rem; padding: 6px 12px;">更換頭像</button>
-            </div>
+            {% endif %}
         </div>
 
-        <!-- Unified form starts here -->
-        <form id="mainSettingsForm" method="POST" action="{{ url_for('auth.settings') }}">
-            <!-- Implicit action=None for profile update -->
-            <div class="form-group">
-                <label
-                    style="display: block; margin-bottom: 8px; color: var(--text-secondary); font-size: 0.9rem;">使用者名稱</label>
-                <input type="text" value="{{ current_user.username }}" disabled
-                    style="width: 100%; padding: 12px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; color: var(--text-primary); cursor: not-allowed; opacity: 0.7;">
-            </div>
-
-            <div class="form-group" style="margin-top: 16px;">
-                <label for="email"
-                    style="display: block; margin-bottom: 8px; color: var(--text-secondary); font-size: 0.9rem;">Email</label>
-                <input type="email" id="email" name="email" value="{{ current_user.email or '' }}" required
-                    style="width: 100%; padding: 12px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; color: var(--text-primary);">
-            </div>
-
-            <hr style="border: 0; border-top: 1px solid rgba(255,255,255,0.1); margin: 24px 0;">
-
-            <div class="form-group">
-                <label for="new_password"
-                    style="display: block; margin-bottom: 8px; color: var(--text-secondary); font-size: 0.9rem;">新密碼
-                    (選填)</label>
-                <input type="password" id="new_password" name="new_password" autocomplete="new-password"
-                    pattern="[a-zA-Z0-9]+"
-                    style="width: 100%; padding: 12px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; color: var(--text-primary);">
-            </div>
-
-            <div class="form-group" style="margin-top: 16px;">
-                <label for="confirm_password"
-                    style="display: block; margin-bottom: 8px; color: var(--text-secondary); font-size: 0.9rem;">確認新密碼</label>
-                <input type="password" id="confirm_password" name="confirm_password" autocomplete="new-password"
-                    pattern="[a-zA-Z0-9]+"
-                    style="width: 100%; padding: 12px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; color: var(--text-primary);">
-            </div>
-            <!-- Password change only via explicit POST (no auto-save for security) -->
+        <div style="display: flex; gap: 8px; justify-content: center;">
+            <button type="button" class="btn" onclick="openAvatarModal()"
+                style="background: rgba(255,255,255,0.08); font-size: 0.85rem; padding: 4px 10px; border-radius: 6px;">更換頭像</button>
+        </div>
     </div>
+
+    <!-- Unified form starts here -->
+    <form id="mainSettingsForm" method="POST" action="{{ url_for('auth.settings') }}">
+        <!-- Implicit action=None for profile update -->
+        <div class="form-group">
+            <label
+                style="display: block; margin-bottom: 6px; color: var(--text-secondary); font-size: 0.9rem;">使用者名稱</label>
+            <input type="text" value="{{ current_user.username }}" disabled
+                style="width: 100%; padding: 10px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; color: var(--text-primary); cursor: not-allowed; opacity: 0.7;">
+        </div>
+
+        <div class="form-group" style="margin-top: 12px;">
+            <label for="email"
+                style="display: block; margin-bottom: 6px; color: var(--text-secondary); font-size: 0.9rem;">Email</label>
+            <input type="email" id="email" name="email" value="{{ current_user.email or '' }}" required
+                style="width: 100%; padding: 10px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; color: var(--text-primary);">
+        </div>
+
+        <hr style="border: 0; border-top: 1px solid rgba(255,255,255,0.1); margin: 16px 0;">
+
+        <div class="form-group">
+            <label for="new_password"
+                style="display: block; margin-bottom: 6px; color: var(--text-secondary); font-size: 0.9rem;">新密碼
+                (選填)</label>
+            <input type="password" id="new_password" name="new_password" autocomplete="new-password"
+                pattern="[a-zA-Z0-9]+"
+                style="width: 100%; padding: 10px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; color: var(--text-primary);">
+        </div>
+
+        <div class="form-group" style="margin-top: 12px;">
+            <label for="confirm_password"
+                style="display: block; margin-bottom: 6px; color: var(--text-secondary); font-size: 0.9rem;">確認新密碼</label>
+            <input type="password" id="confirm_password" name="confirm_password" autocomplete="new-password"
+                pattern="[a-zA-Z0-9]+"
+                style="width: 100%; padding: 10px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; color: var(--text-primary);">
+        </div>
+        <!-- Password change only via explicit POST (no auto-save for security) -->
+</div>
 </div>
 
 <!-- 2. LINE Integration Section -->
