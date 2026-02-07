@@ -174,7 +174,12 @@ def export_csv():
         # Add details (All records)
         detail_lines = []
         for r in records:
-            line = f"{r['date'][5:]} {r['type']} ${r['amount']}"
+            # Translate type
+            rtype = "排班" if r['type'] == 'shift' else "獎金"
+            if r['type'] != 'shift' and r['type'] != 'bonus':
+                 rtype = r['type'] # Fallback
+                 
+            line = f"{r['date'][5:]} {rtype} ${r['amount']}"
             if r['type'] == 'shift':
                 line += f" ({r['hours']}h)"
             detail_lines.append(line)
