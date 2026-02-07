@@ -88,6 +88,7 @@ class UserSettings(db.Model):
     billing_cycle_start_day = db.Column(db.Integer, default=10)
     custom_categories = db.Column(db.Text, default='[]')      # JSON list of category objects
     recurring_expenses = db.Column(db.Text, default='[]')     # JSON list of recurring expense objects
+    quick_shortcuts = db.Column(db.Text, default='[]')        # JSON list of shortcut strings
 
 class ReportLog(db.Model):
     id = db.Column(db.Integer, primary_key=True)

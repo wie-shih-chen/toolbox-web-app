@@ -153,6 +153,13 @@ const expenseApp = {
                 console.error("JSON PARSE FAIL (Recurring):", e);
                 this.settings.recurring_expenses = [];
             }
+            try {
+                const rawShorts = JSON.parse(this.settings.quick_shortcuts || '[]');
+                this.settings.quick_shortcuts = Array.isArray(rawShorts) ? rawShorts.filter(s => s && typeof s === 'string') : [];
+            } catch (e) {
+                console.error("JSON PARSE FAIL (Shortcuts):", e);
+                this.settings.quick_shortcuts = [];
+            }
 
 
 
@@ -508,6 +515,30 @@ const expenseApp = {
 
         this.triggerHaptic();
 
+        // Dynamic Shortcuts
+        const tagsContainer = document.getElementById('mealQuickTags');
+        if (tagsContainer) {
+            tagsContainer.innerHTML = '';
+            const shortcuts = this.settings.quick_shortcuts && this.settings.quick_shortcuts.length > 0
+                ? this.settings.quick_shortcuts
+                : ['早餐', '午餐', '晚餐', '宵夜', '飲料']; // Defaults if empty
+
+            shortcuts.forEach(tag => {
+                const pill = document.createElement('div');
+                pill.className = 'tag-pill';
+                pill.textContent = tag;
+                pill.dataset.value = tag;
+                pill.onclick = () => {
+                    document.getElementById('expenseNote').value = tag;
+                    // specific logic for drink/food if needed, or just default
+                    if (tag.includes('飲料') || tag.includes('茶') || tag.includes('咖啡')) {
+                        document.getElementById('expenseCategory').value = '飲食';
+                    }
+                };
+                tagsContainer.appendChild(pill);
+            });
+        }
+
         // Enforce cycle boundary for adding records
         const period = this.getActivePeriod();
         const dateInput = document.getElementById('expenseDate');
@@ -808,6 +839,7 @@ expenseApp.saveSettings = async function () {
     // Explicitly Add/Overwrite complex objects
     payload.custom_categories = this.settings.custom_categories;
     payload.recurring_expenses = this.settings.recurring_expenses;
+    payload.quick_shortcuts = this.settings.quick_shortcuts;
 
     // Fix numeric types for backend consistency
     if (payload.monthly_budget) payload.monthly_budget = parseFloat(payload.monthly_budget);
@@ -818,6 +850,7 @@ expenseApp.saveSettings = async function () {
     // CLEAN DATA BEFORE SENDING
     payload.custom_categories = (this.settings.custom_categories || []).filter(c => c && c.name);
     payload.recurring_expenses = (this.settings.recurring_expenses || []).filter(r => r && r.name);
+    payload.quick_shortcuts = (this.settings.quick_shortcuts || []).filter(s => s);
 
     try {
         await fetch('/expense/api/settings', {
@@ -832,38 +865,69 @@ expenseApp.saveSettings = async function () {
 };
 
 expenseApp.renderSettingsLists = function () {
+    // Categories
     const catList = document.getElementById('categoryList');
-    catList.innerHTML = '';
-    (this.settings.custom_categories || []).forEach((c, idx) => {
-        if (!c || !c.name) return; // Skip invalid items
-        const el = document.createElement('div');
-        el.className = 'setting-item-row';
-        el.style.cssText = 'display:flex; justify-content:space-between; padding:10px; background:rgba(255,255,255,0.05); margin-bottom:5px; border-radius:8px; align-items:center;';
-        el.innerHTML = `
-            <div style="display:flex; align-items:center; gap:10px;">
-                <span style="color:${c.color}">${c.emoji || '🏷️'}</span>
-                <span>${c.name}</span>
-            </div>
-            <span class="material-icons" style="color:#ef4444; cursor:pointer;" onclick="expenseApp.removeCategory(${idx})">delete</span>
-        `;
-        catList.appendChild(el);
-    });
+    if (catList) {
+        catList.innerHTML = '';
+        (this.settings.custom_categories || []).forEach((c, idx) => {
+            if (!c || !c.name) return;
+            const el = document.createElement('div');
+            el.className = 'setting-item-row glass';
+            el.style.cssText = 'display:flex; justify-content:space-between; padding:12px; margin-bottom:8px; align-items:center;';
+            el.innerHTML = `
+                <div style="display:flex; align-items:center; gap:12px;">
+                    <span style="font-size:1.2rem; filter: drop-shadow(0 0 5px ${c.color});">${c.emoji || '🏷️'}</span>
+                    <span style="font-weight:500;">${c.name}</span>
+                </div>
+                <div style="display:flex; gap:15px;">
+                    <span class="material-icons" style="color:var(--text-secondary); cursor:pointer;" onclick="expenseApp.editCategory(${idx})">edit</span>
+                    <span class="material-icons" style="color:#ef4444; cursor:pointer;" onclick="expenseApp.removeCategory(${idx})">delete</span>
+                </div>
+            `;
+            catList.appendChild(el);
+        });
+    }
 
+    // Recurring
     const recList = document.getElementById('recurringList');
-    recList.innerHTML = '';
-    this.settings.recurring_expenses.forEach((r, idx) => {
-        const el = document.createElement('div');
-        el.className = 'setting-item-row';
-        el.style.cssText = 'display:flex; justify-content:space-between; padding:10px; background:rgba(255,255,255,0.05); margin-bottom:5px; border-radius:8px; align-items:center;';
-        el.innerHTML = `
-            <div>
-                <div style="font-weight:bold;">${r.name}</div>
-                <div style="font-size:0.8rem; opacity:0.7;">每月 ${r.day} 號 • $${r.amount}</div>
-            </div>
-            <span class="material-icons" style="color:#ef4444; cursor:pointer;" onclick="expenseApp.removeRecurring(${idx})">delete</span>
-        `;
-        recList.appendChild(el);
-    });
+    if (recList) {
+        recList.innerHTML = '';
+        (this.settings.recurring_expenses || []).forEach((r, idx) => {
+            const el = document.createElement('div');
+            el.className = 'setting-item-row glass';
+            el.style.cssText = 'display:flex; justify-content:space-between; padding:12px; margin-bottom:8px; align-items:center;';
+            el.innerHTML = `
+                <div>
+                    <div style="font-weight:bold; margin-bottom:2px;">${r.name}</div>
+                    <div style="font-size:0.8rem; opacity:0.7;">每月 ${r.day} 號 • $${r.amount}</div>
+                </div>
+                <div style="display:flex; gap:15px;">
+                    <span class="material-icons" style="color:var(--text-secondary); cursor:pointer;" onclick="expenseApp.editRecurring(${idx})">edit</span>
+                    <span class="material-icons" style="color:#ef4444; cursor:pointer;" onclick="expenseApp.removeRecurring(${idx})">delete</span>
+                </div>
+            `;
+            recList.appendChild(el);
+        });
+    }
+
+    // Shortcuts
+    const shortList = document.getElementById('shortcutList');
+    if (shortList) {
+        shortList.innerHTML = '';
+        (this.settings.quick_shortcuts || []).forEach((s, idx) => {
+            const el = document.createElement('div');
+            el.className = 'setting-item-row glass';
+            el.style.cssText = 'display:flex; justify-content:space-between; padding:12px; margin-bottom:8px; align-items:center;';
+            el.innerHTML = `
+                <div style="font-weight:500;">${s}</div>
+                <div style="display:flex; gap:15px;">
+                    <span class="material-icons" style="color:var(--text-secondary); cursor:pointer;" onclick="expenseApp.editShortcut(${idx})">edit</span>
+                    <span class="material-icons" style="color:#ef4444; cursor:pointer;" onclick="expenseApp.removeShortcut(${idx})">delete</span>
+                </div>
+            `;
+            shortList.appendChild(el);
+        });
+    }
 };
 
 expenseApp.removeCategory = function (idx) {
@@ -879,4 +943,79 @@ expenseApp.removeRecurring = function (idx) {
     this.renderSettingsLists();
     this.saveSettings();
 };
+
+expenseApp.removeShortcut = function (idx) {
+    if (!confirm('確定刪除?')) return;
+    this.settings.quick_shortcuts.splice(idx, 1);
+    this.renderSettingsLists();
+    this.saveSettings();
+};
+
+expenseApp.editCategory = function (idx) {
+    const cat = this.settings.custom_categories[idx];
+    const newName = prompt('修改類別名稱:', cat.name);
+    if (newName === null) return;
+    if (!newName) return alert('名稱不能為空');
+
+    const newEmoji = prompt('修改圖示 (Emoji):', cat.emoji);
+    const newColor = prompt('修改顏色 (Hex):', cat.color);
+
+    this.settings.custom_categories[idx] = {
+        name: newName,
+        emoji: newEmoji || cat.emoji,
+        color: newColor || cat.color
+    };
+    this.renderSettingsLists();
+    this.saveSettings();
+};
+
+expenseApp.editRecurring = function (idx) {
+    const rec = this.settings.recurring_expenses[idx];
+    const newName = prompt('修改名稱:', rec.name);
+    if (newName === null) return;
+
+    const newAmount = prompt('修改金額:', rec.amount);
+    if (newAmount === null) return;
+
+    const newDay = prompt('修改扣款日 (1-31):', rec.day);
+    if (newDay === null) return;
+
+    this.settings.recurring_expenses[idx] = {
+        ...rec,
+        name: newName || rec.name,
+        amount: parseInt(newAmount) || rec.amount,
+        day: parseInt(newDay) || rec.day
+    };
+    this.renderSettingsLists();
+    this.saveSettings();
+};
+
+expenseApp.editShortcut = function (idx) {
+    const oldVal = this.settings.quick_shortcuts[idx];
+    const newVal = prompt('修改快捷摘要:', oldVal);
+    if (newVal === null) return;
+    if (!newVal) return alert('內容不能為空');
+
+    this.settings.quick_shortcuts[idx] = newVal;
+    this.renderSettingsLists();
+    this.saveSettings();
+};
+
+// Add New Shortcut Handler
+document.addEventListener('DOMContentLoaded', () => {
+    const addShortBtn = document.getElementById('addShortcutBtn');
+    if (addShortBtn) {
+        addShortBtn.addEventListener('click', () => {
+            const input = document.getElementById('newShortcutName');
+            const val = input.value.trim();
+            if (!val) return;
+
+            if (!expenseApp.settings.quick_shortcuts) expenseApp.settings.quick_shortcuts = [];
+            expenseApp.settings.quick_shortcuts.push(val);
+            input.value = '';
+            expenseApp.renderSettingsLists();
+            expenseApp.saveSettings();
+        });
+    }
+});
 

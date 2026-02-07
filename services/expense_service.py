@@ -204,7 +204,8 @@ class ExpenseService:
             "budget_alert_threshold": settings.budget_alert_threshold,
             "billing_cycle_start_day": settings.billing_cycle_start_day,
             "custom_categories": settings.custom_categories,
-            "recurring_expenses": settings.recurring_expenses
+            "recurring_expenses": settings.recurring_expenses,
+            "quick_shortcuts": settings.quick_shortcuts
         }
 
     def update_settings(self, settings_data):
@@ -236,6 +237,9 @@ class ExpenseService:
             
         if 'recurring_expenses' in settings_data:
             current_user.settings.recurring_expenses = json.dumps(settings_data['recurring_expenses'], ensure_ascii=False)
+            
+        if 'quick_shortcuts' in settings_data:
+            current_user.settings.quick_shortcuts = json.dumps(settings_data['quick_shortcuts'], ensure_ascii=False)
             
         try:
             db.session.commit()
