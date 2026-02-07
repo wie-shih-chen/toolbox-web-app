@@ -480,7 +480,7 @@
         <h3 style="margin-bottom: 20px; font-size: 1.3rem;">選擇頭像</h3>
 
         <!-- Preset Tab -->
-        <div style="font-size: 0.9rem; color: var(--text-secondary); margin-bottom: 10px;">預設圖示</div>
+        <div style="font-size: 1rem; color: var(--text-secondary); margin-bottom: 12px; font-weight: 500;">預設圖示</div>
         <div style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; margin-bottom: 24px;">
             {% for icon in ['🧑‍💻', '👩‍💻', '🐱', '🐶', '🤖', '👾', '🎃', '👻', '🦊', '🐼'] %}
             <div onclick="selectPreset('{{ icon }}')"
@@ -492,15 +492,16 @@
         </div>
 
         <!-- Upload Tab -->
-        <div style="font-size: 0.9rem; color: var(--text-secondary); margin-bottom: 10px;">或上傳圖片</div>
+        <div style="font-size: 1rem; color: var(--text-secondary); margin-bottom: 12px; font-weight: 500;">或上傳圖片</div>
         <form action="{{ url_for('auth.upload_avatar') }}" method="POST" enctype="multipart/form-data">
             <input type="file" name="avatar_file" accept="image/*"
                 style="margin-bottom: 16px; color: var(--text-secondary);">
-            <button type="submit" class="btn btn-glow-cyan" style="width: 100%;">上傳並套用</button>
+            <button type="submit" class="btn btn-glow-cyan"
+                style="width: 100%; font-size: 1.05rem; padding: 12px;">上傳並套用</button>
         </form>
 
         <button onclick="closeAvatarModal()"
-            style="margin-top: 16px; background: transparent; border: none; color: var(--text-tertiary); width: 100%; cursor: pointer;">關閉</button>
+            style="margin-top: 16px; background: transparent; border: none; color: var(--text-tertiary); width: 100%; cursor: pointer; font-size: 1rem;">關閉</button>
     </div>
 </div>
 
