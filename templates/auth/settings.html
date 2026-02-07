@@ -3,124 +3,314 @@
 {% block title %}帳號設定 - 工具箱 Web{% endblock %}
 
 {% block content %}
-<div class="container">
-    <div class="settings-container">
-        <div class="tool-card glass" style="padding: 30px;">
-            <h2 style="margin-bottom: 25px; text-align: center;">帳號設定</h2>
+<style>
+    /* Scoped styles for settings page */
+    .settings-wrapper {
+        max-width: 600px;
+        margin: 0 auto;
+        padding-bottom: 40px;
+    }
 
-            {% with messages = get_flashed_messages() %}
-            {% if messages %}
-            <div class="alert {{ 'alert-success' if '成功' in messages[0] else 'alert-error' }}">
-                {% for message in messages %}
-                <p>{{ message }}</p>
-                {% endfor %}
-            </div>
-            {% endif %}
-            {% endwith %}
+    .settings-section {
+        background: rgba(255, 255, 255, 0.03);
+        border: 1px solid rgba(255, 255, 255, 0.05);
+        border-radius: 16px;
+        padding: 24px;
+        margin-bottom: 24px;
+        backdrop-filter: blur(10px);
+    }
 
-            <form method="POST" action="{{ url_for('auth.settings') }}">
-                <div class="form-group">
-                    <label>使用者名稱 (不可修改)</label>
-                    <input type="text" value="{{ current_user.username }}" disabled
-                        style="opacity: 0.7; cursor: not-allowed;">
-                </div>
+    .section-header {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 20px;
+        color: var(--text-secondary);
+        font-size: 1.1rem;
+        font-weight: 500;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        padding-bottom: 10px;
+    }
 
-                <div class="form-group">
-                    <label for="email">Email</label>
-                    <input type="email" id="email" name="email" value="{{ current_user.email or '' }}" required
-                        placeholder="綁定 Email 以便找回密碼">
-                </div>
+    .line-status-card {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        background: rgba(6, 199, 85, 0.1);
+        border: 1px solid rgba(6, 199, 85, 0.2);
+        border-radius: 12px;
+        padding: 16px;
+        margin-bottom: 16px;
+    }
 
-                <hr style="border: 0; border-top: 1px solid rgba(255,255,255,0.1); margin: 25px 0;">
+    .line-status-info {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
 
-                <h3 style="font-size: 1.1rem; margin-bottom: 20px; color: var(--text-secondary);">LINE 通知設定</h3>
+    .line-icon {
+        width: 40px;
+        height: 40px;
+        background: #06c755;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 20px;
+        color: white;
+    }
 
-                <!-- LINE Binding Status -->
-                <div class="glass"
-                    style="padding: 15px; margin-bottom: 20px; background: rgba(255,255,255,0.05); border-radius: 8px;">
-                    <div style="display: flex; justify-content: space-between; align-items: center;">
-                        <div style="display: flex; align-items: center; gap: 10px;">
-                            <span style="font-size: 24px;">💬</span>
-                            <div>
-                                <div style="font-weight: bold; margin-bottom: 4px;">LINE 官方帳號</div>
-                                {% if current_user.settings.line_user_id %}
-                                <span style="color: #4ade80; font-size: 0.9em;">✅ 已連結</span>
-                                {% else %}
-                                <span style="color: var(--text-tertiary); font-size: 0.9em;">未連結</span>
-                                {% endif %}
-                            </div>
-                        </div>
+    .binding-code-box {
+        background: rgba(0, 0, 0, 0.3);
+        border: 1px dashed rgba(255, 255, 255, 0.2);
+        border-radius: 12px;
+        padding: 20px;
+        text-align: center;
+        margin-top: 16px;
+        position: relative;
+        overflow: hidden;
+    }
 
-                        {% if current_user.settings.line_user_id %}
-                        <form method="POST" action="{{ url_for('auth.settings') }}" style="margin:0;">
-                            <input type="hidden" name="action" value="unbind_line">
-                            <button type="submit" class="btn"
-                                style="background: rgba(239, 68, 68, 0.2); color: #ef4444; padding: 5px 12px; font-size: 0.9em;">解除連結</button>
-                        </form>
-                        {% else %}
-                        <form method="POST" action="{{ url_for('auth.settings') }}" style="margin:0;">
-                            <input type="hidden" name="action" value="generate_binding_code">
-                            <button type="submit" class="btn" style="background: #06c755; color: white;">產生驗證碼</button>
-                        </form>
-                        {% endif %}
-                    </div>
+    .binding-code-display {
+        font-family: 'SF Mono', 'Monaco', 'Consolas', monospace;
+        font-size: 2.5rem;
+        font-weight: 700;
+        color: #06c755;
+        letter-spacing: 6px;
+        margin: 10px 0;
+        text-shadow: 0 0 20px rgba(6, 199, 85, 0.3);
+    }
 
-                    {% if current_user.settings.binding_code %}
-                    <div
-                        style="margin-top: 15px; text-align: center; background: rgba(0,0,0,0.2); padding: 15px; border-radius: 8px;">
-                        <div style="color: var(--text-secondary); margin-bottom: 5px; font-size: 0.9em;">請在 5
-                            分鐘內傳送此代碼給機器人：</div>
-                        <div style="font-size: 2em; letter-spacing: 5px; font-family: monospace; color: #06c755;">
-                            {{ current_user.settings.binding_code }}
-                        </div>
-                    </div>
+    /* Checkbox Cards */
+    .method-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 12px;
+    }
+
+    .method-label {
+        position: relative;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 16px;
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 12px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        text-align: center;
+        height: 100%;
+    }
+
+    .method-label:hover {
+        background: rgba(255, 255, 255, 0.08);
+    }
+
+    /* Hide actual checkbox but keep functionality */
+    .method-label input[type="checkbox"] {
+        position: absolute;
+        opacity: 0;
+        cursor: pointer;
+    }
+
+    /* Selected State */
+    .method-label:has(input:checked) {
+        background: rgba(var(--primary-rgb), 0.15);
+        border-color: var(--primary-color);
+        box-shadow: 0 0 0 1px var(--primary-color);
+    }
+
+    .method-label.disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+        background: rgba(0, 0, 0, 0.2);
+    }
+
+    .method-icon {
+        font-size: 28px;
+        margin-bottom: 8px;
+    }
+
+    .btn-block {
+        width: 100%;
+        padding: 12px;
+        border-radius: 8px;
+        font-weight: 500;
+        margin-top: 16px;
+    }
+
+    @media (max-width: 480px) {
+        .settings-wrapper {
+            padding: 10px;
+        }
+
+        .section-header {
+            font-size: 1rem;
+        }
+
+        .binding-code-display {
+            font-size: 2rem;
+        }
+    }
+</style>
+
+<div class="settings-wrapper">
+    <!-- Messages -->
+    {% with messages = get_flashed_messages() %}
+    {% if messages %}
+    <div style="margin-bottom: 20px;">
+        {% for message in messages %}
+        <div class="alert {{ 'alert-success' if '成功' in message or '產生' in message else 'alert-error' }}"
+            style="border-radius: 12px; padding: 12px 16px; display: flex; align-items: center; gap: 10px; animation: slideIn 0.3s ease;">
+            <span>{{ '✅' if '成功' in message or '產生' in message else '⚠️' }}</span>
+            <span>{{ message }}</span>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+    {% endwith %}
+
+    <h1 style="font-size: 1.8rem; font-weight: 700; margin-bottom: 24px;">帳號設定</h1>
+
+    <!-- 1. LINE Integration Section -->
+    <div class="settings-section">
+        <div class="section-header">
+            <span>💬</span> LINE 官方帳號設定
+        </div>
+
+        <div class="line-status-card">
+            <div class="line-status-info">
+                <div class="line-icon"><i class="fab fa-line"></i></div>
+                <div>
+                    <div style="font-weight: 600;">LINE 綁定狀態</div>
+                    {% if current_user.settings.line_user_id %}
+                    <div style="color: #06c755; font-size: 0.9rem;">● 已連結</div>
+                    {% else %}
+                    <div style="color: var(--text-tertiary); font-size: 0.9rem;">○ 未連結</div>
                     {% endif %}
                 </div>
+            </div>
 
-                <!-- Notification Methods -->
-                <form method="POST" action="{{ url_for('auth.settings') }}" id="notifyForm">
-                    <input type="hidden" name="action" value="update_notifications">
-                    <div class="form-group">
-                        <label style="margin-bottom: 10px; display: block;">接收通知方式 (可複選)</label>
-                        <div style="display: flex; gap: 20px; flex-wrap: wrap;">
-                            <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
-                                <input type="checkbox" name="notification_methods" value="email" {% if 'email' in
-                                    notification_methods %}checked{% endif %}>
-                                📧 Email 報表
-                            </label>
-                            {% set line_style_attr = 'opacity:0.5;' if not current_user.settings.line_user_id else '' %}
-                            <label
-                                style="display: flex; align-items: center; gap: 8px; cursor: pointer; {{ line_style_attr }}">
-                                <input type="checkbox" name="notification_methods" value="line" {% if 'line' in
-                                    notification_methods %}checked{% endif %} {% if not
-                                    current_user.settings.line_user_id %}disabled{% endif %}>
-                                💬 LINE 通知
-                            </label>
-                        </div>
-                        <button type="submit" class="btn"
-                            style="margin-top: 15px; width: 100%; padding: 8px 15px; font-size: 0.9em; background: rgba(255,255,255,0.1);">保存通知設定</button>
-                    </div>
+            <div class="line-actions">
+                {% if current_user.settings.line_user_id %}
+                <form method="POST" action="{{ url_for('auth.settings') }}">
+                    <input type="hidden" name="action" value="unbind_line">
+                    <button type="submit" class="btn"
+                        style="background: rgba(239, 68, 68, 0.1); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.2); padding: 6px 12px; font-size: 0.85rem;">
+                        解除
+                    </button>
                 </form>
-
-                <hr style="border: 0; border-top: 1px solid rgba(255,255,255,0.1); margin: 25px 0;">
-
-                <h3 style="font-size: 1.1rem; margin-bottom: 15px; color: var(--text-secondary);">變更密碼 (留空則不修改)</h3>
-
-                <div class="form-group">
-                    <label for="new_password">新密碼</label>
-                    <input type="password" id="new_password" name="new_password" autocomplete="new-password"
-                        pattern="[a-zA-Z0-9]+" title="只能包含英文字母和數字">
-                </div>
-
-                <div class="form-group">
-                    <label for="confirm_password">確認新密碼</label>
-                    <input type="password" id="confirm_password" name="confirm_password" autocomplete="new-password"
-                        pattern="[a-zA-Z0-9]+" title="只能包含英文字母和數字">
-                </div>
-
-                <button type="submit" class="btn btn-primary btn-block">儲存變更</button>
-            </form>
+                {% else %}
+                <form method="POST" action="{{ url_for('auth.settings') }}">
+                    <input type="hidden" name="action" value="generate_binding_code">
+                    <button type="submit" class="btn"
+                        style="background: #06c755; color: white; padding: 6px 16px; font-size: 0.9rem; box-shadow: 0 4px 12px rgba(6, 199, 85, 0.3);">
+                        產生驗證碼
+                    </button>
+                </form>
+                {% endif %}
+            </div>
         </div>
+
+        {% if current_user.settings.binding_code %}
+        <div class="binding-code-box">
+            <div style="color: var(--text-tertiary); font-size: 0.9rem; margin-bottom: 8px;">
+                請在 5 分鐘內傳送此代碼給機器人
+            </div>
+            <div class="binding-code-display">{{ current_user.settings.binding_code }}</div>
+            <div style="font-size: 0.8rem; color: var(--text-secondary); opacity: 0.7;">
+                ( 機器人 ID: @MyToolbox )
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- 2. Notification Methods -->
+    <div class="settings-section">
+        <div class="section-header">
+            <span>🔔</span> 通知方式偏好
+        </div>
+
+        <form method="POST" action="{{ url_for('auth.settings') }}">
+            <input type="hidden" name="action" value="update_notifications">
+
+            <div class="method-grid">
+                <!-- Email Option -->
+                <label class="method-label">
+                    <input type="checkbox" name="notification_methods" value="email" {% if 'email' in
+                        notification_methods %}checked{% endif %}>
+                    <div class="method-icon">📧</div>
+                    <div style="font-weight: 500;">Email 報表</div>
+                    <div style="font-size: 0.8rem; color: var(--text-tertiary); margin-top: 4px;">完整數據附件</div>
+                </label>
+
+                <!-- LINE Option -->
+                {% set line_disabled = not current_user.settings.line_user_id %}
+                <label class="method-label {{ 'disabled' if line_disabled else '' }}">
+                    <input type="checkbox" name="notification_methods" value="line" {% if 'line' in notification_methods
+                        %}checked{% endif %} {% if line_disabled %}disabled{% endif %}>
+                    <div class="method-icon">💬</div>
+                    <div style="font-weight: 500;">LINE 通知</div>
+                    <div style="font-size: 0.8rem; color: var(--text-tertiary); margin-top: 4px;">
+                        {{ '請先完成綁定' if line_disabled else '即時簡訊推播' }}
+                    </div>
+                </label>
+            </div>
+
+            <button type="submit" class="btn btn-primary btn-block" style="background: var(--bg-secondary);">
+                儲存通知設定
+            </button>
+        </form>
+    </div>
+
+    <!-- 3. Profile Settings -->
+    <div class="settings-section">
+        <div class="section-header">
+            <span>👤</span> 基本資料修改
+        </div>
+
+        <form method="POST" action="{{ url_for('auth.settings') }}">
+            <!-- Implicit action=None for profile update -->
+            <div class="form-group">
+                <label
+                    style="display: block; margin-bottom: 8px; color: var(--text-secondary); font-size: 0.9rem;">使用者名稱</label>
+                <input type="text" value="{{ current_user.username }}" disabled
+                    style="width: 100%; padding: 12px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; color: var(--text-primary); cursor: not-allowed; opacity: 0.7;">
+            </div>
+
+            <div class="form-group" style="margin-top: 16px;">
+                <label for="email"
+                    style="display: block; margin-bottom: 8px; color: var(--text-secondary); font-size: 0.9rem;">Email</label>
+                <input type="email" id="email" name="email" value="{{ current_user.email or '' }}" required
+                    style="width: 100%; padding: 12px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; color: var(--text-primary);">
+            </div>
+
+            <hr style="border: 0; border-top: 1px solid rgba(255,255,255,0.1); margin: 24px 0;">
+
+            <div class="form-group">
+                <label for="new_password"
+                    style="display: block; margin-bottom: 8px; color: var(--text-secondary); font-size: 0.9rem;">新密碼
+                    (選填)</label>
+                <input type="password" id="new_password" name="new_password" autocomplete="new-password"
+                    pattern="[a-zA-Z0-9]+"
+                    style="width: 100%; padding: 12px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; color: var(--text-primary);">
+            </div>
+
+            <div class="form-group" style="margin-top: 16px;">
+                <label for="confirm_password"
+                    style="display: block; margin-bottom: 8px; color: var(--text-secondary); font-size: 0.9rem;">確認新密碼</label>
+                <input type="password" id="confirm_password" name="confirm_password" autocomplete="new-password"
+                    pattern="[a-zA-Z0-9]+"
+                    style="width: 100%; padding: 12px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; color: var(--text-primary);">
+            </div>
+
+            <button type="submit" class="btn btn-primary btn-block">
+                更新個人資料
+            </button>
+        </form>
     </div>
 </div>
 {% endblock %}
