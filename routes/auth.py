@@ -9,7 +9,12 @@ import os
 import re
 from config import Config
 
+from routes.settings_api import register_settings_api
+
 auth_bp = Blueprint('auth', __name__, url_prefix='/auth')
+
+# Register auto-save API routes
+register_settings_api(auth_bp)
 
 @auth_bp.route('/register', methods=['GET', 'POST'])
 def register():
