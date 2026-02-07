@@ -294,163 +294,166 @@
 </div>
 
 <!-- 2. LINE Integration Section -->
-<div class="settings-section">
+<div class="settings-section" style="min-height: 200px;">
     <div class="section-header">
         <span>💬</span> LINE 官方帳號設定
     </div>
 
-    <div class="line-status-card">
-        <div class="line-status-info">
-            <div class="line-icon"><i class="fab fa-line"></i></div>
-            <div>
-                <div style="font-weight: 600;">LINE 綁定狀態</div>
+    <div style="padding: 10px 0;">
+
+        <div class="line-status-card">
+            <div class="line-status-info">
+                <div class="line-icon"><i class="fab fa-line"></i></div>
+                <div>
+                    <div style="font-weight: 600;">LINE 綁定狀態</div>
+                    {% if current_user.settings.line_user_id %}
+                    <div style="color: #06c755; font-size: 0.9rem;">● 已連結</div>
+                    {% else %}
+                    <div style="color: var(--text-tertiary); font-size: 0.9rem;">○ 未連結</div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="line-actions">
                 {% if current_user.settings.line_user_id %}
-                <div style="color: #06c755; font-size: 0.9rem;">● 已連結</div>
+                <form method="POST" action="{{ url_for('auth.settings') }}">
+                    <input type="hidden" name="action" value="unbind_line">
+                    <button type="submit" class="btn"
+                        style="background: rgba(239, 68, 68, 0.1); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.2); padding: 6px 12px; font-size: 0.85rem;">
+                        解除
+                    </button>
+                </form>
                 {% else %}
-                <div style="color: var(--text-tertiary); font-size: 0.9rem;">○ 未連結</div>
+                <form method="POST" action="{{ url_for('auth.settings') }}">
+                    <input type="hidden" name="action" value="generate_binding_code">
+                    <button type="submit" class="btn"
+                        style="background: #06c755; color: white; padding: 6px 16px; font-size: 0.9rem; box-shadow: 0 4px 12px rgba(6, 199, 85, 0.3);">
+                        產生驗證碼
+                    </button>
+                </form>
                 {% endif %}
             </div>
         </div>
 
-        <div class="line-actions">
-            {% if current_user.settings.line_user_id %}
-            <form method="POST" action="{{ url_for('auth.settings') }}">
-                <input type="hidden" name="action" value="unbind_line">
-                <button type="submit" class="btn"
-                    style="background: rgba(239, 68, 68, 0.1); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.2); padding: 6px 12px; font-size: 0.85rem;">
-                    解除
-                </button>
-            </form>
-            {% else %}
-            <form method="POST" action="{{ url_for('auth.settings') }}">
-                <input type="hidden" name="action" value="generate_binding_code">
-                <button type="submit" class="btn"
-                    style="background: #06c755; color: white; padding: 6px 16px; font-size: 0.9rem; box-shadow: 0 4px 12px rgba(6, 199, 85, 0.3);">
-                    產生驗證碼
-                </button>
-            </form>
-            {% endif %}
-        </div>
-    </div>
-
-    {% if current_user.settings.binding_code %}
-    <div class="binding-code-box">
-        <div style="color: var(--text-tertiary); font-size: 0.9rem; margin-bottom: 8px;">
-            請在 5 分鐘內傳送此代碼給機器人
-        </div>
-        <div class="binding-code-display">{{ current_user.settings.binding_code }}</div>
-        <div style="font-size: 0.8rem; color: var(--text-secondary); opacity: 0.7;">
-            ( 機器人 ID: @MyToolbox )
-        </div>
-    </div>
-    {% endif %}
-</div>
-
-<!-- 3. Notification Methods -->
-<div class="settings-section">
-    <div class="section-header">
-        <span>🔔</span> 通知方式偏好
-    </div>
-
-    <!-- Remove redundant form tag -->
-    <input type="hidden" name="action" value="update_notifications">
-
-    <div class="method-grid">
-        <!-- Email Option -->
-        <label class="method-label">
-            <input type="checkbox" name="notification_methods" value="email" {% if 'email' in notification_methods
-                %}checked{% endif %}>
-            <div class="method-icon">📧</div>
-            <div style="font-weight: 500;">Email 報表</div>
-            <div style="font-size: 0.8rem; color: var(--text-tertiary); margin-top: 4px;">完整數據附件</div>
-        </label>
-
-        <!-- LINE Option -->
-        {% set line_disabled = not current_user.settings.line_user_id %}
-        <label class="method-label {{ 'disabled' if line_disabled else '' }}">
-            <input type="checkbox" name="notification_methods" value="line" {% if 'line' in notification_methods
-                %}checked{% endif %} {% if line_disabled %}disabled{% endif %}>
-            <div class="method-icon">💬</div>
-            <div style="font-weight: 500;">LINE 通知</div>
-            <div style="font-size: 0.8rem; color: var(--text-tertiary); margin-top: 4px;">
-                {{ '請先完成綁定' if line_disabled else '即時簡訊推播' }}
+        {% if current_user.settings.binding_code %}
+        <div class="binding-code-box">
+            <div style="color: var(--text-tertiary); font-size: 0.9rem; margin-bottom: 8px;">
+                請在 5 分鐘內傳送此代碼給機器人
             </div>
-        </label>
-
-        <!-- Download Option -->
-        <label class="method-label">
-            <input type="checkbox" name="notification_methods" value="download" {% if 'download' in notification_methods
-                %}checked{% endif %}>
-            <div class="method-icon">⬇️</div>
-            <div style="font-weight: 500;">檔案下載</div>
-            <div style="font-size: 0.8rem; color: var(--text-tertiary); margin-top: 4px;">直接下載報表</div>
-        </label>
-    </div>
-
-    {% if not line_disabled %}
-    <div style="margin-top: 12px; text-align: right;">
-        <button type="button" id="testLineBtn" class="btn"
-            style="background: transparent; border: 1px solid rgba(255,255,255,0.2); color: var(--text-secondary); font-size: 0.8rem; padding: 4px 12px;">
-            <i class="fas fa-paper-plane" style="margin-right: 4px;"></i> 發送測試訊息
-        </button>
-    </div>
-    {% endif %}
-
-    <!-- Monthly Report Date -->
-    <div style="margin-top: 20px; padding-top: 16px; border-top: 1px solid rgba(255,255,255,0.1);">
-        <label style="display: block; font-weight: 500; margin-bottom: 8px;">📅 每月自動報表日期</label>
-        <div style="display: flex; align-items: center; gap: 10px;">
-            <select name="monthly_report_day"
-                style="padding: 10px 12px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; color: white; flex: 1; font-size: 1rem;">
-                {% for i in range(1, 29) %}
-                <option value="{{ i }}" {% if current_user.settings.monthly_report_day==i %}selected{% endif %}>
-                    每月 {{ i }} 號</option>
-                {% endfor %}
-            </select>
-            <div style="font-size: 0.8rem; color: var(--text-tertiary); max-width: 180px;">
-                (僅限 1~28 日，避免大小月問題)
+            <div class="binding-code-display">{{ current_user.settings.binding_code }}</div>
+            <div style="font-size: 0.8rem; color: var(--text-secondary); opacity: 0.7;">
+                ( 機器人 ID: @MyToolbox )
             </div>
         </div>
+        {% endif %}
     </div>
 
-    <!-- Close the main unified form -->
-    </form>
-
-</div>
-<!-- 4. Data Management -->
-<div class="settings-section">
-    <div class="section-header">
-        <span>💾</span> 資料管理中心
-    </div>
-
-    <div style="margin-bottom: 20px;">
-        <div style="font-weight: 600; margin-bottom: 8px;">全站備份</div>
-        <div style="color: var(--text-tertiary); font-size: 0.9rem; margin-bottom: 12px;">
-            匯出所有薪資與記帳資料 (Excel 格式)
+    <!-- 3. Notification Methods -->
+    <div class="settings-section">
+        <div class="section-header">
+            <span>🔔</span> 通知方式偏好
         </div>
-        <form method="POST" action="{{ url_for('auth.export_excel_all') }}">
-            <button type="submit" class="btn" style="background: #3b82f6; width: 100%; padding: 10px;">
-                <i class="fas fa-file-excel"></i> 立即備份
+
+        <!-- Remove redundant form tag -->
+        <input type="hidden" name="action" value="update_notifications">
+
+        <div class="method-grid">
+            <!-- Email Option -->
+            <label class="method-label">
+                <input type="checkbox" name="notification_methods" value="email" {% if 'email' in notification_methods
+                    %}checked{% endif %}>
+                <div class="method-icon">📧</div>
+                <div style="font-weight: 500;">Email 報表</div>
+                <div style="font-size: 0.8rem; color: var(--text-tertiary); margin-top: 4px;">完整數據附件</div>
+            </label>
+
+            <!-- LINE Option -->
+            {% set line_disabled = not current_user.settings.line_user_id %}
+            <label class="method-label {{ 'disabled' if line_disabled else '' }}">
+                <input type="checkbox" name="notification_methods" value="line" {% if 'line' in notification_methods
+                    %}checked{% endif %} {% if line_disabled %}disabled{% endif %}>
+                <div class="method-icon">💬</div>
+                <div style="font-weight: 500;">LINE 通知</div>
+                <div style="font-size: 0.8rem; color: var(--text-tertiary); margin-top: 4px;">
+                    {{ '請先完成綁定' if line_disabled else '即時簡訊推播' }}
+                </div>
+            </label>
+
+            <!-- Download Option -->
+            <label class="method-label">
+                <input type="checkbox" name="notification_methods" value="download" {% if 'download' in
+                    notification_methods %}checked{% endif %}>
+                <div class="method-icon">⬇️</div>
+                <div style="font-weight: 500;">檔案下載</div>
+                <div style="font-size: 0.8rem; color: var(--text-tertiary); margin-top: 4px;">直接下載報表</div>
+            </label>
+        </div>
+
+        {% if not line_disabled %}
+        <div style="margin-top: 12px; text-align: right;">
+            <button type="button" id="testLineBtn" class="btn"
+                style="background: transparent; border: 1px solid rgba(255,255,255,0.2); color: var(--text-secondary); font-size: 0.8rem; padding: 4px 12px;">
+                <i class="fas fa-paper-plane" style="margin-right: 4px;"></i> 發送測試訊息
             </button>
+        </div>
+        {% endif %}
+
+        <!-- Monthly Report Date -->
+        <div style="margin-top: 20px; padding-top: 16px; border-top: 1px solid rgba(255,255,255,0.1);">
+            <label style="display: block; font-weight: 500; margin-bottom: 8px;">📅 每月自動報表日期</label>
+            <div style="display: flex; align-items: center; gap: 10px;">
+                <select name="monthly_report_day"
+                    style="padding: 10px 12px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; color: white; flex: 1; font-size: 1rem;">
+                    {% for i in range(1, 29) %}
+                    <option value="{{ i }}" {% if current_user.settings.monthly_report_day==i %}selected{% endif %}>
+                        每月 {{ i }} 號</option>
+                    {% endfor %}
+                </select>
+                <div style="font-size: 0.8rem; color: var(--text-tertiary); max-width: 180px;">
+                    (僅限 1~28 日，避免大小月問題)
+                </div>
+            </div>
+        </div>
+
+        <!-- Close the main unified form -->
         </form>
+
     </div>
-
-    <hr style="border: 0; border-top: 1px solid rgba(255,255,255,0.1); margin: 24px 0;">
-
-    <div>
-        <div style="font-weight: 600; margin-bottom: 8px; color: #ef4444;">危險區域</div>
-        <div style="color: var(--text-tertiary); font-size: 0.9rem; margin-bottom: 12px;">
-            重置特定模組的資料，此操作無法復原。
+    <!-- 4. Data Management -->
+    <div class="settings-section">
+        <div class="section-header">
+            <span>💾</span> 資料管理中心
         </div>
-        <div style="display: flex; gap: 10px;">
-            <button type="button" class="btn" onclick="openResetModal('salary')"
-                style="flex: 1; background: rgba(239, 68, 68, 0.1); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.3);">
-                重置薪資
-            </button>
-            <button type="button" class="btn" onclick="openResetModal('expense')"
-                style="flex: 1; background: rgba(239, 68, 68, 0.1); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.3);">
-                重置記帳
-            </button>
+
+        <div style="margin-bottom: 20px;">
+            <div style="font-weight: 600; margin-bottom: 8px;">全站備份</div>
+            <div style="color: var(--text-tertiary); font-size: 0.9rem; margin-bottom: 12px;">
+                匯出所有薪資與記帳資料 (Excel 格式)
+            </div>
+            <form method="POST" action="{{ url_for('auth.export_excel_all') }}">
+                <button type="submit" class="btn" style="background: #3b82f6; width: 100%; padding: 10px;">
+                    <i class="fas fa-file-excel"></i> 立即備份
+                </button>
+            </form>
+        </div>
+
+        <hr style="border: 0; border-top: 1px solid rgba(255,255,255,0.1); margin: 24px 0;">
+
+        <div>
+            <div style="font-weight: 600; margin-bottom: 8px; color: #ef4444;">危險區域</div>
+            <div style="color: var(--text-tertiary); font-size: 0.9rem; margin-bottom: 12px;">
+                重置特定模組的資料，此操作無法復原。
+            </div>
+            <div style="display: flex; gap: 10px;">
+                <button type="button" class="btn" onclick="openResetModal('salary')"
+                    style="flex: 1; background: rgba(239, 68, 68, 0.1); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.3);">
+                    重置薪資
+                </button>
+                <button type="button" class="btn" onclick="openResetModal('expense')"
+                    style="flex: 1; background: rgba(239, 68, 68, 0.1); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.3);">
+                    重置記帳
+                </button>
+            </div>
         </div>
     </div>
 </div>
