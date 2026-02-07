@@ -401,7 +401,7 @@
         <label style="display: block; font-weight: 500; margin-bottom: 8px;">📅 每月自動報表日期</label>
         <div style="display: flex; align-items: center; gap: 10px;">
             <select name="monthly_report_day"
-                style="padding: 8px 12px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; color: white; flex: 1;">
+                style="padding: 10px 12px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; color: white; flex: 1; font-size: 1rem;">
                 {% for i in range(1, 29) %}
                 <option value="{{ i }}" {% if current_user.settings.monthly_report_day==i %}selected{% endif %}>
                     每月 {{ i }} 號</option>
