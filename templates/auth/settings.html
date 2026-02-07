@@ -210,7 +210,74 @@
 
     <h1 style="font-size: 1.8rem; font-weight: 700; margin-bottom: 24px;">帳號設定</h1>
 
-    <!-- 1. LINE Integration Section -->
+    <!-- 1. Profile Settings -->
+    <div class="settings-section">
+        <div class="section-header">
+            <span>👤</span> 個人設定
+        </div>
+        <div style="margin-bottom: 24px; text-align: center;">
+            <div
+                style="width: 80px; height: 80px; border-radius: 50%; overflow: hidden; margin: 0 auto 12px; border: 2px solid rgba(255,255,255,0.2);">
+                {% if current_user.avatar_type == 'upload' %}
+                <img src="{{ url_for('static', filename='uploads/avatars/' + current_user.avatar_val) }}"
+                    style="width: 100%; height: 100%; object-fit: cover;">
+                {% else %}
+                <div
+                    style="width: 100%; height: 100%; background: #2a2a2a; display: flex; align-items: center; justify-content: center; font-size: 2.5rem;">
+                    {{ current_user.avatar_val if current_user.avatar_val != 'default' and current_user.avatar_val !=
+                    'upload' else '👤' }}
+                </div>
+                {% endif %}
+            </div>
+
+            <div style="display: flex; gap: 10px; justify-content: center; margin-bottom: 16px;">
+                <button type="button" class="btn" onclick="openAvatarModal()"
+                    style="background: rgba(255,255,255,0.1); font-size: 0.9rem; padding: 6px 12px;">更換頭像</button>
+            </div>
+        </div>
+
+        <form method="POST" action="{{ url_for('auth.settings') }}">
+            <!-- Implicit action=None for profile update -->
+            <div class="form-group">
+                <label
+                    style="display: block; margin-bottom: 8px; color: var(--text-secondary); font-size: 0.9rem;">使用者名稱</label>
+                <input type="text" value="{{ current_user.username }}" disabled
+                    style="width: 100%; padding: 12px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; color: var(--text-primary); cursor: not-allowed; opacity: 0.7;">
+            </div>
+
+            <div class="form-group" style="margin-top: 16px;">
+                <label for="email"
+                    style="display: block; margin-bottom: 8px; color: var(--text-secondary); font-size: 0.9rem;">Email</label>
+                <input type="email" id="email" name="email" value="{{ current_user.email or '' }}" required
+                    style="width: 100%; padding: 12px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; color: var(--text-primary);">
+            </div>
+
+            <hr style="border: 0; border-top: 1px solid rgba(255,255,255,0.1); margin: 24px 0;">
+
+            <div class="form-group">
+                <label for="new_password"
+                    style="display: block; margin-bottom: 8px; color: var(--text-secondary); font-size: 0.9rem;">新密碼
+                    (選填)</label>
+                <input type="password" id="new_password" name="new_password" autocomplete="new-password"
+                    pattern="[a-zA-Z0-9]+"
+                    style="width: 100%; padding: 12px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; color: var(--text-primary);">
+            </div>
+
+            <div class="form-group" style="margin-top: 16px;">
+                <label for="confirm_password"
+                    style="display: block; margin-bottom: 8px; color: var(--text-secondary); font-size: 0.9rem;">確認新密碼</label>
+                <input type="password" id="confirm_password" name="confirm_password" autocomplete="new-password"
+                    pattern="[a-zA-Z0-9]+"
+                    style="width: 100%; padding: 12px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; color: var(--text-primary);">
+            </div>
+
+            <button type="submit" class="btn btn-block btn-glow-cyan">
+                更新個人資料
+            </button>
+        </form>
+    </div>
+
+    <!-- 2. LINE Integration Section -->
     <div class="settings-section">
         <div class="section-header">
             <span>💬</span> LINE 官方帳號設定
@@ -263,7 +330,7 @@
         {% endif %}
     </div>
 
-    <!-- 2. Notification Methods -->
+    <!-- 3. Notification Methods -->
     <div class="settings-section">
         <div class="section-header">
             <span>🔔</span> 通知方式偏好
