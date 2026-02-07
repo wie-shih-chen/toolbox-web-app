@@ -155,10 +155,17 @@ const expenseApp = {
             }
             try {
                 const rawShorts = JSON.parse(this.settings.quick_shortcuts || '[]');
-                this.settings.quick_shortcuts = Array.isArray(rawShorts) ? rawShorts.filter(s => s && typeof s === 'string') : [];
+                const parsedShorts = Array.isArray(rawShorts) ? rawShorts.filter(s => s && typeof s === 'string') : [];
+
+                // If DB has no shortcuts, use defaults so they appear in Settings
+                if (parsedShorts.length === 0) {
+                    this.settings.quick_shortcuts = ['早餐', '午餐', '晚餐', '宵夜', '飲料'];
+                } else {
+                    this.settings.quick_shortcuts = parsedShorts;
+                }
             } catch (e) {
                 console.error("JSON PARSE FAIL (Shortcuts):", e);
-                this.settings.quick_shortcuts = [];
+                this.settings.quick_shortcuts = ['早餐', '午餐', '晚餐', '宵夜', '飲料'];
             }
 
 
