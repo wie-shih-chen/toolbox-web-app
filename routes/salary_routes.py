@@ -271,7 +271,7 @@ def get_income_trend():
         month_end = (next_month - timedelta(days=1)).strftime('%Y-%m-%d')
         
         # 查詢該月總收入
-        summary = service.get_period_summary(current_user, month_start, month_end)
+        summary = service.get_history_summary(month_start, month_end)
         total = summary.get('total_amount', 0)
         
         labels.append(current.strftime('%Y-%m'))
