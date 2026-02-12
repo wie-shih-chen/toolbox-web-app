@@ -19,6 +19,10 @@ const expenseApp = {
         if (dashboard) {
             this.currentPeriod.start = dashboard.dataset.startDate;
             this.currentPeriod.end = dashboard.dataset.endDate;
+            // Check if this is the today-only view
+            if (dashboard.dataset.todayOnly === 'true') {
+                this.isTodayOnly = true;
+            }
         }
 
         this.bindEvents();
