@@ -29,18 +29,6 @@
 </div>
 
 <div class="expense-history">
-    <!-- 歷史支出趨勢圖 -->
-    <div class="card" style="margin-bottom: 20px; padding: 25px;">
-        <h3 style="margin-bottom: 15px; display: flex; align-items: center; gap: 10px;">
-            <span style="font-size: 1.5rem;">📉</span>
-            歷史支出趨勢（全部資料）
-        </h3>
-        <p style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 15px;">
-            📊 此圖表顯示所有歷史週期，不受下方區間選擇器影響
-        </p>
-        <canvas id="expenseTrendChart" style="max-height: 300px;"></canvas>
-    </div>
-
     <div class="history-controls glass">
         <div class="history-filter-group">
             <span class="material-icons" style="color: var(--text-secondary)">event</span>
@@ -87,6 +75,18 @@
             <span class="label">支出筆數</span>
             <span class="value" id="historyCount">0</span>
         </div>
+    </div>
+
+    <!-- 歷史支出趨勢圖 -->
+    <div class="card" style="margin-bottom: 20px; padding: 25px;">
+        <h3 style="margin-bottom: 15px; display: flex; align-items: center; gap: 10px;">
+            <span style="font-size: 1.5rem;">📉</span>
+            歷史支出趨勢（全部資料）
+        </h3>
+        <p style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 15px;">
+            📊 此圖表顯示所有歷史週期，不受下方區間選擇器影響
+        </p>
+        <canvas id="expenseTrendChart" style="max-height: 300px;"></canvas>
     </div>
 
     <!-- Detailed List -->
