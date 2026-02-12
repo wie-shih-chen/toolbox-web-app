@@ -62,9 +62,9 @@ a {
 
 @media (max-width: 768px) {
     .container {
-        padding: 65px 15px 80px 15px;
+        padding: 65px 15px 75px 15px;
         /* Top: Mobile Navbar (~50px) + 15px */
-        /* Bottom: Mobile Bottom Nav (60px) + 20px breathing room */
+        /* Bottom: Mobile Bottom Nav (55px) + 20px breathing room */
     }
 }
 
@@ -459,8 +459,8 @@ textarea:focus {
     bottom: 0;
     left: 0;
     right: 0;
-    height: 60px;
-    background: rgba(25, 25, 25, 0.85);
+    height: 55px;
+    background: rgba(25, 25, 25, 0.9);
     /* Slightly more opaque for better contrast */
     backdrop-filter: var(--ios-blur);
     -webkit-backdrop-filter: var(--ios-blur);
@@ -468,8 +468,8 @@ textarea:focus {
     /* Subtle border boost */
     justify-content: space-around;
     align-items: center;
-    padding-top: 5px;
-    padding-bottom: 15px;
+    padding-top: 4px;
+    padding-bottom: 12px;
     /* Reduced padding for compact look */
     z-index: 5000;
 }
@@ -479,10 +479,15 @@ textarea:focus {
     flex-direction: column;
     align-items: center;
     color: var(--text-secondary);
-    font-size: 0.75rem;
-    gap: 4px;
+    font-size: 0.7rem;
+    gap: 2px;
     transition: color 0.2s;
     text-decoration: none;
+}
+
+.mobile-nav-item .material-icons {
+    font-size: 22px;
+    margin-bottom: 0;
 }
 
 .mobile-nav-item.active {
