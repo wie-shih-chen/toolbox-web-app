@@ -35,20 +35,32 @@ window.openAvatarPreview = function () {
     const previewImg = document.getElementById('avatarPreviewImage');
     const previewEmoji = document.getElementById('avatarPreviewEmoji');
 
-    // Get avatar data from nav-avatar or settings avatar  
-    const navAvatar = document.querySelector('.nav-avatar img');
+    // Get avatar data from settings avatar (priority) or nav-avatar
     const settingsAvatar = document.getElementById('settingsAvatar');
+    const navAvatar = document.querySelector('.nav-avatar img');
 
-    if (navAvatar || (settingsAvatar && settingsAvatar.tagName === 'IMG')) {
-        // Upload type avatar
-        const imgSrc = navAvatar ? navAvatar.src : settingsAvatar.src;
-        previewImg.src = imgSrc;
+    // Check if we are on settings page and have a valid avatar there
+    if (settingsAvatar) {
+        if (settingsAvatar.tagName === 'IMG') {
+            // Settings has Image Avatar
+            previewImg.src = settingsAvatar.src;
+            previewImg.style.display = 'block';
+            previewEmoji.style.display = 'none';
+        } else {
+            // Settings has Emoji/Text Avatar
+            previewEmoji.textContent = settingsAvatar.textContent.trim();
+            previewEmoji.style.display = 'flex';
+            previewImg.style.display = 'none';
+        }
+    } else if (navAvatar) {
+        // Fallback to navbar avatar image
+        previewImg.src = navAvatar.src;
         previewImg.style.display = 'block';
         previewEmoji.style.display = 'none';
     } else {
-        // Emoji type avatar
-        const emojiText = settingsAvatar ? settingsAvatar.textContent.trim() : (document.querySelector('.nav-avatar').textContent.trim() || '👤');
-        previewEmoji.textContent = emojiText;
+        // Fallback to navbar text/emoji
+        const navText = document.querySelector('.nav-avatar') ? document.querySelector('.nav-avatar').textContent.trim() : '👤';
+        previewEmoji.textContent = navText;
         previewEmoji.style.display = 'flex';
         previewImg.style.display = 'none';
     }

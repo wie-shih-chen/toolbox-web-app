@@ -673,8 +673,34 @@
 {% block extra_js %}
 <!-- Cropper.js for avatar cropping -->
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.1/cropper.min.css">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.1/cropper.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.1/cropper.min.css"></script>
 <script src="{{ url_for('static', filename='js/avatar_cropper.js') }}"></script>
+<script src="{{ url_for('static', filename='js/avatar_preview.js') }}"></script>
+
+<style>
+    /* Mobile Crop View Fixes */
+    @media (max-width: 600px) {
+        #avatarModal>div {
+            padding: 20px !important;
+            width: 95% !important;
+            max-height: 85vh !important;
+        }
+
+        #avatarCropView img {
+            max-height: 50vh !important;
+            /* Limit image height so buttons are visible */
+        }
+
+        .cropper-container {
+            max-height: 50vh !important;
+        }
+
+        #avatarSelectionView .avatar-option {
+            height: 50px !important;
+            font-size: 1.5rem !important;
+        }
+    }
+</style>
 
 <script src="{{ url_for('static', filename='js/settings_autosave.js') }}"></script>
 <script>
