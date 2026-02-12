@@ -61,17 +61,6 @@
         </div>
     </div>
 
-    <!-- 新增：收入趨勢圖 -->
-    <div class="card" style="margin-bottom: 20px; padding: 25px;">
-        <h3 style="margin-bottom: 15px; display: flex; align-items: center; gap: 10px;">
-            <span style="font-size: 1.5rem;">📈</span>
-            歷史收入趨勢（全部資料）
-        </h3>
-        <p style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 15px;">
-            📊 此圖表顯示所有歷史數據，不受下方區間選擇器影響
-        </p>
-        <canvas id="salaryTrendChart" style="max-height: 300px;"></canvas>
-    </div>
 
     <!-- Target Income Progress (Hidden by default) -->
     <div id="targetIncomeContainer" class="card"
@@ -86,6 +75,18 @@
             <div id="targetIncomeBar"
                 style="width: 0%; height: 100%; background: var(--accent-color); transition: width 0.5s;"></div>
         </div>
+    </div>
+
+    <!-- 收入趨勢圖 -->
+    <div class="card" style="margin-bottom: 20px; padding: 25px;">
+        <h3 style="margin-bottom: 15px; display: flex; align-items: center; gap: 10px;">
+            <span style="font-size: 1.5rem;">📈</span>
+            歷史收入趨勢（全部資料）
+        </h3>
+        <p style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 15px;">
+            📊 此圖表顯示所有歷史數據，不受下方區間選擇器影響
+        </p>
+        <canvas id="salaryTrendChart" style="max-height: 300px;"></canvas>
     </div>
 
     <!-- Detailed List -->
