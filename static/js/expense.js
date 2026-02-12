@@ -900,6 +900,7 @@ async function loadExpenseTrendChart() {
                         }
                     },
                     x: {
+                        display: false, // 隱藏 X 軸標籤，避免擁擠
                         ticks: { color: 'rgba(255, 255, 255, 0.7)' },
                         grid: {
                             color: 'rgba(255, 255, 255, 0.05)'
