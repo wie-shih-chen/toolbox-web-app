@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}工具箱 Web{% endblock %}</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+TC:wght@400;500;700&display=swap"
+        rel="stylesheet">
+    <!-- Main CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <style>
+        .nav-avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            overflow: hidden;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .nav-user-info {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-right: 12px;
+        }
+    </style>
+    {% block extra_css %}{% endblock %}
+</head>
+
+<body>
+    <div class="container">
+        <nav class="nav-bar glass">
+            <a href="{{ url_for('main.index') }}" class="nav-brand">
+                <span class="material-icons">home_repair_service</span>
+                工具箱 Web
+            </a>
+
+            <div class="nav-links">
+                {% if current_user.is_authenticated %}
+                <div class="nav-user-info">
+                    <div class="nav-avatar">
+                        {% if current_user.avatar_type == 'upload' %}
+                        <img src="{{ url_for('static', filename='uploads/avatars/' + current_user.avatar_val) }}"
+                            style="width: 100%; height: 100%; object-fit: cover;">
+                        {% else %}
+                        {{ current_user.avatar_val if current_user.avatar_val != 'default' else '👤' }}
+                        {% endif %}
+                    </div>
+                    <span class="user-greeting" style="font-size: 0.9rem;">{{ current_user.username }}</span>
+                </div>
+                <a href="{{ url_for('auth.settings') }}" class="nav-link" title="設定">
+                    <span class="material-icons" style="font-size: 20px;">settings</span>
+                </a>
+                <a href="{{ url_for('auth.logout') }}" class="nav-link">登出</a>
+                {% else %}
+                <a href="{{ url_for('auth.login') }}" class="nav-link">登入</a>
+                <a href="{{ url_for('auth.register') }}" class="nav-link">註冊</a>
+                {% endif %}
+            </div>
+        </nav>
+
+        <script>
+            // Initialize Bootstrap Tooltips globally
+            $(function () {
+                $('[data-toggle="tooltip"]').tooltip();
+            })
+        </script>
+
+        {% block extra_js %}{% endblock %}
+
+        <!-- Mobile Bottom Navigation -->
+        <nav class="mobile-bottom-nav">
+            <a href="{{ url_for('main.index') }}"
+                class="mobile-nav-item {% if request.endpoint == 'main.index' %}active{% endif %}">
+                <span class="material-icons">home</span>
+                <span class="nav-text">首頁</span>
+            </a>
+            <a href="{{ url_for('salary.index') }}"
+                class="mobile-nav-item {% if 'salary' in request.endpoint %}active{% endif %}">
+                <span class="material-icons">payments</span>
+                <span class="nav-text">薪資</span>
+            </a>
+            <a href="{{ url_for('ntut.calendar') }}"
+                class="mobile-nav-item {% if 'ntut' in request.endpoint %}active{% endif %}">
+                <span class="material-icons">school</span>
+                <span class="nav-text">北科</span>
+            </a>
+            <a href="{{ url_for('expense.today') }}"
+                class="mobile-nav-item {% if 'expense' in request.endpoint %}active{% endif %}">
+                <span class="material-icons">account_balance_wallet</span>
+                <span class="nav-text">記帳</span>
+            </a>
+
+        </nav>
+        <!-- Feature Introduction Modal (Custom Implementation) -->
+        <div class="modal" id="introModal" style="display: none;">
+            <div class="modal-content glass"
+                style="max-width: 450px; text-align: center; position: relative; overflow: hidden; padding: 0;">
+
+                <!-- Custom Styles for Intro -->
+                <style>
+                    .intro-slide {
+                        display: none;
+                        flex-direction: column;
+                        align-items: center;
+                        padding: 40px 30px;
+                        animation: fadeInSlide 0.4s ease;
+                    }
+
+                    .intro-slide.active {
+                        display: flex;
+                    }
+
+                    .intro-icon {
+                        font-size: 4rem;
+                        margin-bottom: 2rem;
+                        filter: drop-shadow(0 0 15px rgba(255, 255, 255, 0.2));
+                        animation: floatIcon 3s ease-in-out infinite;
+                    }
+
+                    .intro-title {
+                        font-size: 1.5rem;
+                        font-weight: 700;
+                        margin-bottom: 1rem;
+                        color: white;
+                    }
+
+                    .intro-text {
+                        color: var(--text-secondary);
+                        line-height: 1.6;
+                        font-size: 1rem;
+                        margin-bottom: 20px;
+                    }
+
+                    .intro-dots {
+                        display: flex;
+                        justify-content: center;
+                        gap: 8px;
+                        margin-bottom: 20px;
+                    }
+
+                    .intro-dot {
+                        width: 8px;
+                        height: 8px;
+                        border-radius: 50%;
+                        background: rgba(255, 255, 255, 0.2);
+                        transition: all 0.3s;
+                    }
+
+                    .intro-dot.active {
+                        background: var(--accent-color);
+                        width: 24px;
+                        border-radius: 4px;
+                    }
+
+                    .intro-actions {
+                        padding: 20px;
+                        border-top: 1px solid rgba(255, 255, 255, 0.1);
+                        display: flex;
+                        justify-content: space-between;
+                        align-items: center;
+                        background: rgba(0, 0, 0, 0.2);
+                    }
+
+                    @keyframes floatIcon {
+
+                        0%,
+                        100% {
+                            transform: translateY(0);
+                        }
+
+                        50% {
+                            transform: translateY(-10px);
+                        }
+                    }
+
+                    @keyframes fadeInSlide {
+                        from {
+                            opacity: 0;
+                            transform: translateX(10px);
+                        }
+
+                        to {
+                            opacity: 1;
+                            transform: translateX(0);
+                        }
+                    }
+                </style>
+
+                <!-- Slides -->
+                <div id="slide1" class="intro-slide active">
+                    <div class="intro-icon">👋</div>
+                    <div class="intro-title">歡迎使用工具箱 Web</div>
+                    <div class="intro-text">
+                        這裡整合了薪水計算、記帳管家與校園資訊，<br>是您日常生活與學習的最佳助手。
+                    </div>
+                </div>
+
+                <div id="slide2" class="intro-slide">
+                    <div class="intro-icon">💰</div>
+                    <div class="intro-title">排班與記帳</div>
+                    <div class="intro-text">
+                        精準掌握財務狀況。<br>輸入排班自動計算預估薪資，<br>並透過預算條控制每月花費。
+                    </div>
+                </div>
+
+                <div id="slide3" class="intro-slide">
+                    <div class="intro-icon">💬</div>
+                    <div class="intro-title">智慧通知</div>
+                    <div class="intro-text">
+                        綁定 LINE 官方帳號，<br>每日接收財務摘要，<br>每月自動寄送收支報表。
+                    </div>
+                </div>
+
+                <div id="slide4" class="intro-slide">
+                    <div class="intro-icon">💾</div>
+                    <div class="intro-title">資料自主</div>
+                    <div class="intro-text">
+                        您的資料您做主。<br>隨時匯出 Excel 備份，<br>或在設定中重置特定模組重新開始。
+                    </div>
+                </div>
+
+                <!-- Dots -->
+                <div class="intro-dots">
+                    <span class="intro-dot active" id="dot1"></span>
+                    <span class="intro-dot" id="dot2"></span>
+                    <span class="intro-dot" id="dot3"></span>
+                    <span class="intro-dot" id="dot4"></span>
+                </div>
+
+                <!-- Controls -->
+                <div class="intro-actions">
+                    <button class="btn btn-secondary" onclick="closeIntro()"
+                        style="font-size: 0.9rem; padding: 8px 16px;">跳過</button>
+                    <button class="btn btn-primary" id="nextIntroBtn" onclick="nextIntro()">下一步</button>
+                </div>
+            </div>
+        </div>
+
+        <script>
+            let currentSlide = 1;
+            const totalSlides = 4;
+
+            function updateIntroUI() {
+                // Hide all slides
+                document.querySelectorAll('.intro-slide').forEach(el => el.classList.remove('active'));
+                // Show current
+                document.getElementById('slide' + currentSlide).classList.add('active');
+
+                // Update dots
+                document.querySelectorAll('.intro-dot').forEach(el => el.classList.remove('active'));
+                document.getElementById('dot' + currentSlide).classList.add('active');
+
+                // Update Button Text
+                const btn = document.getElementById('nextIntroBtn');
+                if (currentSlide === totalSlides) {
+                    btn.innerHTML = '開始使用 🚀';
+                    btn.onclick = closeIntro;
+                } else {
+                    btn.innerHTML = '下一步';
+                    btn.onclick = nextIntro;
+                }
+            }
+
+            function nextIntro() {
+                if (currentSlide < totalSlides) {
+                    currentSlide++;
+                    updateIntroUI();
+                }
+            }
+
+            function openIntro() {
+                currentSlide = 1;
+                updateIntroUI();
+                document.getElementById('introModal').style.display = 'flex';
+            }
+
+            function closeIntro() {
+                document.getElementById('introModal').style.display = 'none';
+                localStorage.setItem('toolbox_intro_seen', 'true');
+            }
+
+            document.addEventListener('DOMContentLoaded', function () {
+                // Check if user has seen the intro
+                if (!localStorage.getItem('toolbox_intro_seen') && window.location.pathname === '/') {
+                    setTimeout(openIntro, 500);
+                    // Mark as seen immediately so it doesn't pop up again even if they refresh
+                    localStorage.setItem('toolbox_intro_seen', 'true');
+                }
+            });
+
+            // Close on click outside
+            document.getElementById('introModal').addEventListener('click', function (e) {
+                if (e.target === this) {
+                    closeIntro();
+                }
+            });
+        </script>
+
+        <!-- Chart.js for data visualization -->
+        <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+
+</body>
+
+</html>

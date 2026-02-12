@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+
+{% block title %}註冊 - 工具箱 Web{% endblock %}
+
+{% block content %}
+<div class="auth-container">
+    <div class="tool-card glass auth-card">
+        <h2>註冊帳號</h2>
+
+        {% with messages = get_flashed_messages() %}
+        {% if messages %}
+        <div class="alert alert-error">
+            {% for message in messages %}
+            <p>{{ message }}</p>
+            {% endfor %}
+        </div>
+        {% endif %}
+        {% endwith %}
+
+        <form method="POST" action="{{ url_for('auth.register') }}">
+            <div class="form-group">
+                <label for="email">Email</label>
+                <input type="email" id="email" name="email" required placeholder="example@gmail.com">
+            </div>
+
+            <div class="form-group">
+                <label for="username">使用者名稱</label>
+                <input type="text" id="username" name="username" required autocomplete="username" pattern="[a-zA-Z0-9]+"
+                    title="只能包含英文字母和數字">
+            </div>
+
+            <div class="form-group">
+                <label for="password">密碼</label>
+                <input type="password" id="password" name="password" required autocomplete="new-password"
+                    pattern="[a-zA-Z0-9]+" title="只能包含英文字母和數字">
+            </div>
+
+            <div class="form-group">
+                <label for="confirm_password">確認密碼</label>
+                <input type="password" id="confirm_password" name="confirm_password" required
+                    autocomplete="new-password">
+            </div>
+
+            <button type="submit" class="btn btn-primary btn-block">註冊</button>
+        </form>
+
+        <p class="auth-link">
+            已經有帳號？ <a href="{{ url_for('auth.login') }}">登入</a>
+        </p>
+    </div>
+</div>
+{% endblock %}

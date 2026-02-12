@@ -1,0 +1,179 @@
+{% extends "base.html" %}
+
+{% block title %}歷史排班 - 薪水計算小幫手{% endblock %}
+{% block page_title %}歷史排班{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/salary.css') }}">
+{% endblock %}
+
+{% block content %}
+<!-- Horizontal Navigation Bar -->
+<div class="salary-nav">
+    <a href="{{ url_for('salary.index') }}"
+        class="salary-nav-item {% if request.endpoint == 'salary.index' %}active{% endif %}">
+        📅 本週排班
+    </a>
+    <a href="{{ url_for('salary.monthly') }}"
+        class="salary-nav-item {% if request.endpoint == 'salary.monthly' %}active{% endif %}">
+        🗓️ 月曆檢視
+    </a>
+    <a href="{{ url_for('salary.history') }}"
+        class="salary-nav-item {% if request.endpoint == 'salary.history' %}active{% endif %}">
+        📜 歷史排班
+    </a>
+    <a href="{{ url_for('salary.settings') }}"
+        class="salary-nav-item {% if request.endpoint == 'salary.settings' %}active{% endif %}">
+        ⚙️ 設定
+    </a>
+</div>
+
+<div class="salary-history">
+    <!-- Period Selector -->
+    <div class="history-controls card">
+        <label for="periodSelect" style="white-space: nowrap; margin-right: 10px;">選擇區間：</label>
+
+        <div style="display: flex; align-items: center; gap: 5px; flex-grow: 1; max-width: 400px;">
+            <button class="btn btn-secondary btn-sm" id="prevPeriodBtn" title="上一期">◀</button>
+            <select id="periodSelect" class="form-control" style="flex-grow: 1; text-align: center;">
+                <option value="">載入中...</option>
+            </select>
+            <button class="btn btn-secondary btn-sm" id="nextPeriodBtn" title="下一期">▶</button>
+        </div>
+
+        <button type="button" class="btn btn-primary btn-sm" id="exportSalaryBtn" title="匯出全部紀錄"
+            style="margin-left: auto;">📤 匯出全部</button>
+    </div>
+
+    <!-- Summary Stats -->
+    <div class="history-summary">
+        <div class="card summary-box">
+            <h3>總時數</h3>
+            <p class="value" id="historyHours">0h</p>
+        </div>
+        <div class="card summary-box">
+            <h3>總薪資</h3>
+            <p class="value highlight" id="historyAmount">$0</p>
+        </div>
+        <div class="card summary-box">
+            <h3>紀錄筆數</h3>
+            <p class="value" id="historyCount">0</p>
+        </div>
+    </div>
+
+    <!-- 新增：收入趨勢圖 -->
+    <div class="card" style="margin-bottom: 20px; padding: 25px;">
+        <h3 style="margin-bottom: 15px; display: flex; align-items: center; gap: 10px;">
+            <span style="font-size: 1.5rem;">📈</span>
+            歷史收入趨勢（全部資料）
+        </h3>
+        <p style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 15px;">
+            📊 此圖表顯示所有歷史數據，不受下方區間選擇器影響
+        </p>
+        <canvas id="salaryTrendChart" style="max-height: 300px;"></canvas>
+    </div>
+
+    <!-- Target Income Progress (Hidden by default) -->
+    <div id="targetIncomeContainer" class="card"
+        style="display: none; width: 100%; margin-bottom: 20px; padding: 15px;">
+        <div
+            style="display: flex; justify-content: space-between; font-size: 0.9rem; color: var(--text-secondary); margin-bottom: 8px;">
+            <span>區間目標達成率 (僅供參考)</span>
+            <span id="targetIncomePercent">0%</span>
+        </div>
+        <div
+            style="width: 100%; height: 10px; background: rgba(255,255,255,0.1); border-radius: 5px; overflow: hidden;">
+            <div id="targetIncomeBar"
+                style="width: 0%; height: 100%; background: var(--accent-color); transition: width 0.5s;"></div>
+        </div>
+    </div>
+
+    <!-- Detailed List -->
+    <div class="history-list card">
+        <h3>詳細紀錄</h3>
+        <div class="table-responsive">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>日期</th>
+                        <th>類型</th>
+                        <th>時間</th>
+                        <th>時數</th>
+                        <th>金額</th>
+                        <th>備註</th>
+                    </tr>
+                </thead>
+                <tbody id="historyTableBody">
+                    <!-- Rows injected here -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Add/Edit Modal -->
+<div id="recordModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3 id="modalTitle">編輯紀錄</h3>
+            <span class="close-modal" id="closeModalBtn">&times;</span>
+        </div>
+        <div class="modal-body">
+            <div class="tabs">
+                <button class="tab-btn active" data-tab="shift">排班</button>
+                <button class="tab-btn" data-tab="bonus">獎金</button>
+            </div>
+
+            <form id="recordForm">
+                <input type="hidden" name="id" id="recordId">
+                <input type="hidden" name="date" id="recordDate">
+                <input type="hidden" name="type" id="recordType" value="shift">
+
+                <!-- Shift Fields -->
+                <div class="tab-content active" id="shift-tab">
+                    <div class="form-group">
+                        <label>開始時間</label>
+                        <input type="time" name="start_time" id="startTime" required value="09:00">
+                    </div>
+                    <div class="form-group">
+                        <label>結束時間</label>
+                        <input type="time" name="end_time" id="endTime" required value="18:00">
+                    </div>
+                    <div class="form-group">
+                        <label>時薪 (NTD/hr)</label>
+                        <input type="number" name="rate" id="shiftRate" placeholder="留空則使用預設時薪">
+                    </div>
+                </div>
+
+                <!-- Bonus Fields -->
+                <div class="tab-content" id="bonus-tab">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>金額</label>
+                            <input type="number" name="amount" id="bonusAmount" min="0" placeholder="輸入金額">
+                        </div>
+                        <div class="form-group">
+                            <label>時數 (選填)</label>
+                            <input type="number" name="hours" id="bonusHours" step="0.1" min="0" placeholder="例如：2.5">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>備註</label>
+                        <input type="text" name="note" id="bonusNote" placeholder="例如：全勤獎金">
+                    </div>
+                </div>
+
+
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-danger hidden" id="deleteBtn">刪除</button>
+                    <button type="submit" class="btn btn-primary">儲存</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/salary.js') }}"></script>
+{% endblock %}

@@ -1,0 +1,157 @@
+{% extends "base.html" %}
+
+{% block title %}薪水計算小幫手 - 工具箱 Web{% endblock %}
+{% block page_title %}薪水計算小幫手{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/salary.css') }}">
+{% endblock %}
+
+{% block content %}
+<!-- Horizontal Navigation Bar -->
+<div class="salary-nav">
+    <a href="{{ url_for('salary.index') }}"
+        class="salary-nav-item {% if request.endpoint == 'salary.index' %}active{% endif %}">
+        📅 本週排班
+    </a>
+    <a href="{{ url_for('salary.monthly') }}"
+        class="salary-nav-item {% if request.endpoint == 'salary.monthly' %}active{% endif %}">
+        🗓️ 月曆檢視
+    </a>
+    <a href="{{ url_for('salary.history') }}"
+        class="salary-nav-item {% if request.endpoint == 'salary.history' %}active{% endif %}">
+        📜 歷史排班
+    </a>
+    <a href="{{ url_for('salary.settings') }}"
+        class="salary-nav-item {% if request.endpoint == 'salary.settings' %}active{% endif %}">
+        ⚙️ 設定
+    </a>
+</div>
+
+<div class="salary-dashboard" data-start-date="{{ start_date }}">
+    <!-- Navigation & Summary -->
+    <div class="dashboard-header">
+        <div class="week-nav">
+            <button class="btn btn-nav" id="prevWeekBtn">◀ 上一週</button>
+            <h2 id="currentWeekLabel">2024/01/01 - 01/07</h2>
+            <button class="btn btn-nav" id="nextWeekBtn">下一週 ▶</button>
+            <button class="btn btn-secondary" id="todayBtn">回到本週</button>
+        </div>
+
+        <div class="summary-card">
+            <div class="summary-item">
+                <span class="label">本週時數</span>
+                <span class="value" id="weeklyHours">0h</span>
+            </div>
+            <div class="summary-item">
+                <span class="label">預估薪資</span>
+                <span class="value highlight" id="weeklyAmount">$0</span>
+            </div>
+
+            <!-- Target Income Progress (Hidden by default) -->
+            <div id="targetIncomeContainer" style="display: none; width: 100%; margin-top: 15px;">
+                <div
+                    style="display: flex; justify-content: space-between; font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 5px;">
+                    <span>月目標達成率</span>
+                    <span id="targetIncomePercent">0%</span>
+                </div>
+                <div
+                    style="width: 100%; height: 8px; background: rgba(255,255,255,0.1); border-radius: 4px; overflow: hidden;">
+                    <div id="targetIncomeBar"
+                        style="width: 0%; height: 100%; background: var(--accent-color); transition: width 0.5s;"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="actions-container">
+            <button class="btn btn-secondary btn-sm" id="copyLastWeekBtn" title="複製上週班表">📋 複製上週</button>
+            <button class="btn btn-danger btn-sm" id="clearThisWeekBtn" title="清空本週班表">🗑️ 清空本週</button>
+            <button type="button" class="btn btn-primary btn-sm" id="exportSalaryBtn" title="匯出 CSV">📤 匯出</button>
+        </div>
+    </div>
+
+    <!-- Weekly Grid -->
+    <div class="weekly-grid">
+        {% for day in ['週一', '週二', '週三', '週四', '週五', '週六', '週日'] %}
+        <div class="day-column" data-day-index="{{ loop.index0 }}">
+            <div class="day-header">
+                <span class="day-name">{{ day }}</span>
+                <span class="day-date">--/--</span>
+            </div>
+            <div class="shifts-container">
+                <!-- Shifts will be injected here -->
+            </div>
+            <button class="btn-add-shift" onclick="salaryApp.openAddModal({{ loop.index0 }})">
+                <span>+</span>
+            </button>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<!-- Add/Edit Modal -->
+<div id="recordModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3 id="modalTitle">新增紀錄</h3>
+            <span class="close-modal">&times;</span>
+        </div>
+        <div class="modal-body">
+            <div class="tabs">
+                <button class="tab-btn active" data-tab="shift">排班</button>
+                <button class="tab-btn" data-tab="bonus">獎金</button>
+            </div>
+
+            <form id="recordForm">
+                <input type="hidden" name="id" id="recordId">
+                <input type="hidden" name="date" id="recordDate">
+                <input type="hidden" name="type" id="recordType" value="shift">
+
+                <!-- Shift Fields -->
+                <div class="tab-content active" id="shift-tab">
+                    <div class="form-group">
+                        <label>開始時間</label>
+                        <input type="time" name="start_time" id="startTime" required value="09:00">
+                    </div>
+                    <div class="form-group">
+                        <label>結束時間</label>
+                        <input type="time" name="end_time" id="endTime" required value="18:00">
+                    </div>
+                    <div class="form-group">
+                        <label>時薪 (NTD/hr)</label>
+                        <input type="number" name="rate" id="shiftRate" placeholder="留空則使用預設時薪">
+                    </div>
+                </div>
+
+                <!-- Bonus Fields -->
+                <div class="tab-content" id="bonus-tab">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>金額</label>
+                            <input type="number" name="amount" id="bonusAmount" min="0" placeholder="輸入金額">
+                        </div>
+                        <div class="form-group">
+                            <label>時數 (選填)</label>
+                            <input type="number" name="hours" id="bonusHours" step="0.1" min="0" placeholder="例如：2.5">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>備註</label>
+                        <input type="text" name="note" id="bonusNote" placeholder="例如：全勤獎金">
+                    </div>
+                </div>
+
+
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-danger hidden" id="deleteBtn">刪除</button>
+                    <button type="submit" class="btn btn-primary">儲存</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/salary.js') }}"></script>
+{% endblock %}

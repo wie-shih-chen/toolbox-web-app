@@ -1,0 +1,802 @@
+{% extends "base.html" %}
+
+{% block title %}帳號設定 - 工具箱 Web{% endblock %}
+
+{% block content %}
+<style>
+    /* Scoped styles for settings page */
+    .settings-wrapper {
+        max-width: 600px;
+        margin: 0 auto;
+        padding-bottom: 40px;
+    }
+
+    .settings-section {
+        background: rgba(255, 255, 255, 0.03);
+        border: 1px solid rgba(255, 255, 255, 0.05);
+        border-radius: 16px;
+        padding: 20px;
+        margin-bottom: 20px;
+        backdrop-filter: blur(10px);
+        min-height: auto;
+        /* Ensure consistent sizing */
+    }
+
+    .section-header {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 20px;
+        color: var(--text-secondary);
+        font-size: 1.1rem;
+        font-weight: 500;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        padding-bottom: 10px;
+    }
+
+    .line-status-card {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        background: rgba(6, 199, 85, 0.1);
+        border: 1px solid rgba(6, 199, 85, 0.2);
+        border-radius: 12px;
+        padding: 16px;
+        margin-bottom: 16px;
+    }
+
+    .line-status-info {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+    .line-icon {
+        width: 40px;
+        height: 40px;
+        background: #06c755;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 20px;
+        color: white;
+    }
+
+    .binding-code-box {
+        background: rgba(0, 0, 0, 0.3);
+        border: 1px dashed rgba(255, 255, 255, 0.2);
+        border-radius: 12px;
+        padding: 20px;
+        text-align: center;
+        margin-top: 16px;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .binding-code-display {
+        font-family: 'SF Mono', 'Monaco', 'Consolas', monospace;
+        font-size: 2.5rem;
+        font-weight: 700;
+        color: #06c755;
+        letter-spacing: 6px;
+        margin: 10px 0;
+        text-shadow: 0 0 20px rgba(6, 199, 85, 0.3);
+    }
+
+    /* Checkbox Cards */
+    .method-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 12px;
+    }
+
+    .method-label {
+        position: relative;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 16px;
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 12px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        text-align: center;
+        height: 100%;
+    }
+
+    .method-label:hover {
+        background: rgba(255, 255, 255, 0.08);
+    }
+
+    /* Hide actual checkbox but keep functionality */
+    .method-label input[type="checkbox"] {
+        position: absolute;
+        opacity: 0;
+        cursor: pointer;
+    }
+
+    /* Selected State */
+    .method-label:has(input:checked) {
+        background: rgba(var(--primary-rgb), 0.15);
+        border-color: var(--primary-color);
+        box-shadow: 0 0 0 1px var(--primary-color);
+    }
+
+    .method-label.disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+        background: rgba(0, 0, 0, 0.2);
+    }
+
+    .method-icon {
+        font-size: 28px;
+        margin-bottom: 8px;
+    }
+
+    .btn-block {
+        width: 100%;
+        padding: 12px;
+        border-radius: 8px;
+        font-weight: 500;
+        margin-top: 16px;
+    }
+
+    /* Glowing Button Styles */
+    .btn-glow-dark {
+        background: rgba(30, 30, 30, 0.8);
+        color: rgba(255, 255, 255, 0.6);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+        transition: all 0.3s ease;
+    }
+
+    .btn-glow-dark:hover {
+        background: rgba(40, 40, 40, 0.9);
+        color: white;
+        box-shadow: 0 6px 24px rgba(0, 0, 0, 0.4);
+    }
+
+    .btn-glow-cyan {
+        background: #4ecdc4;
+        background: linear-gradient(90deg, #4ecdc4 0%, #556270 100%);
+        /* Fallback or specific gradient */
+        background: #2dd4bf;
+        /* Cyan-400 */
+        color: #0f172a;
+        border: none;
+        font-weight: 600;
+        box-shadow: 0 0 15px rgba(45, 212, 191, 0.3), 0 4px 6px rgba(0, 0, 0, 0.1);
+        transition: all 0.3s ease;
+    }
+
+    .btn-glow-cyan:hover {
+        background: #14b8a6;
+        /* Cyan-500 */
+        box-shadow: 0 0 25px rgba(45, 212, 191, 0.5), 0 6px 8px rgba(0, 0, 0, 0.2);
+        transform: translateY(-1px);
+    }
+
+    /* Info Icon Tooltip */
+    .custom-hint {
+        position: absolute;
+        bottom: 100%;
+        left: 0;
+        margin-bottom: 8px;
+        background: rgba(20, 20, 20, 0.98);
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        border-radius: 12px;
+        padding: 14px 18px;
+        font-size: 0.88rem;
+        line-height: 1.6;
+        box-shadow: 0 8px 30px rgba(0, 0, 0, 0.6);
+        z-index: 1000;
+        min-width: 300px;
+        max-width: 420px;
+        animation: fadeInDown 0.2s ease;
+        color: var(--text-primary);
+    }
+
+    @keyframes fadeInUp {
+        from {
+            opacity: 0;
+            transform: translateY(-10px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    .info-icon {
+        transition: all 0.2s ease;
+    }
+
+    .info-icon:hover {
+        color: var(--accent-color) !important;
+        transform: scale(1.1);
+    }
+
+    @media (max-width: 768px) {
+        .settings-wrapper {
+            padding: 10px;
+            max-width: 100%;
+        }
+
+        .settings-section {
+            padding: 16px;
+            margin-bottom: 16px;
+            border-radius: 12px;
+        }
+
+        .section-header {
+            font-size: 1rem;
+        }
+
+        .binding-code-display {
+            font-size: 2rem;
+        }
+
+        .method-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .btn-glow-cyan {
+            font-size: 1rem !important;
+            padding: 12px 20px !important;
+        }
+    }
+</style>
+
+<div class="settings-wrapper">
+    <!-- Messages -->
+    {% with messages = get_flashed_messages() %}
+    {% if messages %}
+    <div style="margin-bottom: 20px;">
+        {% for message in messages %}
+        <div class="alert {{ 'alert-success' if '成功' in message or '產生' in message else 'alert-error' }}"
+            style="border-radius: 12px; padding: 12px 16px; display: flex; align-items: center; gap: 10px; animation: slideIn 0.3s ease;">
+            <span>{{ '✅' if '成功' in message or '產生' in message else '⚠️' }}</span>
+            <span>{{ message }}</span>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+    {% endwith %}
+
+    <h1 style="font-size: 1.8rem; font-weight: 700; margin-bottom: 24px;">帳號設定</h1>
+
+    <!-- Unified form starts here -->
+    <form id="mainSettingsForm" method="POST" action="{{ url_for('auth.settings') }}">
+
+        <!-- 1. Profile Settings -->
+        <div class="settings-section">
+            <div class="section-header">
+                <span>👤</span> 個人設定 (Profile)
+            </div>
+            <div style="margin-bottom: 16px; text-align: center;">
+                <div onclick="openAvatarPreview()"
+                    style="width: 100px; height: 100px; border-radius: 50%; overflow: hidden; margin: 0 auto 8px; border: 2px solid rgba(255,255,255,0.2); cursor: pointer; transition: transform 0.2s;"
+                    onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
+                    {% if current_user.avatar_type == 'upload' %}
+                    <img id="settingsAvatar"
+                        src="{{ url_for('static', filename='uploads/avatars/' + current_user.avatar_val) }}"
+                        style="width: 100%; height: 100%; object-fit: cover;">
+                    {% else %}
+                    <div id="settingsAvatar"
+                        style="width: 100%; height: 100%; background: #2a2a2a; display: flex; align-items: center; justify-content: center; font-size: 3rem;">
+                        {{ current_user.avatar_val if current_user.avatar_val != 'default' and current_user.avatar_val
+                        !=
+                        'upload' else '👤' }}
+                    </div>
+                    {% endif %}
+                </div>
+
+                <div style="display: flex; gap: 8px; justify-content: center;">
+                    <button type="button" class="btn" onclick="openAvatarModal()"
+                        style="background: #14b8a6; color: white; font-size: 0.85rem; padding: 6px 14px; border-radius: 6px; box-shadow: 0 4px 12px rgba(20, 184, 166, 0.3); border: none;">更換頭像</button>
+                </div>
+            </div>
+
+            <!-- Inputs -->
+            <!-- Implicit action=None for profile update -->
+            <div class="form-group">
+                <label
+                    style="display: block; margin-bottom: 6px; color: var(--text-secondary); font-size: 0.9rem;">使用者名稱</label>
+                <input type="text" value="{{ current_user.username }}" disabled
+                    style="width: 100%; padding: 10px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; color: var(--text-primary); cursor: not-allowed; opacity: 0.7;">
+            </div>
+
+            <div class="form-group" style="margin-top: 12px;">
+                <label for="email"
+                    style="display: block; margin-bottom: 6px; color: var(--text-secondary); font-size: 0.9rem;">Email</label>
+                <input type="email" id="email" name="email" value="{{ current_user.email or '' }}" required
+                    style="width: 100%; padding: 10px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; color: var(--text-primary);">
+            </div>
+
+            <hr style="border: 0; border-top: 1px solid rgba(255,255,255,0.1); margin: 16px 0;">
+
+
+        </div>
+
+        <!-- 2. LINE Integration Section -->
+        <div class="settings-section" style="min-height: 380px;">
+            <div class="section-header">
+                <span>💬</span> LINE 官方帳號設定
+            </div>
+
+            <div style="padding: 10px 0;">
+
+                <!-- Conditional QR Code -->
+                {% if not current_user.settings.line_user_id %}
+                <div
+                    style="text-align: center; margin-bottom: 24px; animation: fadeIn 0.5s ease; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05); border-radius: 16px; padding: 24px;">
+                    <div style="font-size: 1rem; color: var(--text-primary); margin-bottom: 16px; font-weight: 500;">
+                        <span class="material-icons"
+                            style="font-size: 20px; vertical-align: bottom; color: #06c755; margin-right: 4px;">qr_code_2</span>
+                        掃描下方 QR Code 加入好友
+                    </div>
+                    <div
+                        style="background: white; padding: 12px; border-radius: 12px; display: inline-block; box-shadow: 0 4px 20px rgba(0,0,0,0.3);">
+                        <!-- User needs to upload this image to static/img/line_qr_code.png -->
+                        <img src="{{ url_for('static', filename='img/line_qr_code.png') }}" alt="LINE QR Code"
+                            style="width: 200px; height: 200px; display: block;">
+                    </div>
+                    <div style="margin-top: 12px; font-size: 0.9rem; color: var(--text-tertiary);">
+                        綁定後即可接收即時通知
+                    </div>
+                </div>
+                {% endif %}
+
+                <div class="line-status-card">
+                    <div class="line-status-info">
+                        <div class="line-icon"><i class="fab fa-line"></i></div>
+                        <div>
+                            <div style="font-weight: 600;">LINE 綁定狀態</div>
+                            {% if current_user.settings.line_user_id %}
+                            <div style="color: #06c755; font-size: 0.9rem;">● 已連結</div>
+                            {% else %}
+                            <div style="color: var(--text-tertiary); font-size: 0.9rem;">○ 未連結</div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div class="line-actions">
+                        {% if current_user.settings.line_user_id %}
+                        <form method="POST" action="{{ url_for('auth.settings') }}">
+                            <input type="hidden" name="action" value="unbind_line">
+                            <button type="submit" class="btn"
+                                style="background: rgba(239, 68, 68, 0.1); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.2); padding: 6px 12px; font-size: 0.85rem;">
+                                解除
+                            </button>
+                        </form>
+                        {% else %}
+                        <form method="POST" action="{{ url_for('auth.settings') }}">
+                            <input type="hidden" name="action" value="generate_binding_code">
+                            <button type="submit" class="btn"
+                                style="background: #06c755; color: white; padding: 6px 16px; font-size: 0.9rem; box-shadow: 0 4px 12px rgba(6, 199, 85, 0.3);">
+                                產生驗證碼
+                            </button>
+                        </form>
+                        {% endif %}
+                    </div>
+                </div>
+
+                {% if current_user.settings.binding_code %}
+                <div class="binding-code-box">
+                    <div style="color: var(--text-tertiary); font-size: 0.9rem; margin-bottom: 8px;">
+                        請在 5 分鐘內傳送此代碼給機器人
+                    </div>
+                    <div class="binding-code-display">{{ current_user.settings.binding_code }}</div>
+                    <div style="font-size: 0.8rem; color: var(--text-secondary); opacity: 0.7;">
+                        ( 機器人 ID: @MyToolbox )
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- 3. Notification Methods -->
+            <div class="settings-section">
+                <div class="section-header">
+                    <span>🔔</span> 通知方式偏好
+                </div>
+
+                <!-- Remove redundant form tag -->
+                <input type="hidden" name="action" value="update_notifications">
+
+                <div class="method-grid">
+                    <!-- Email Option -->
+                    <label class="method-label">
+                        <input type="checkbox" name="notification_methods" value="email" {% if 'email' in
+                            notification_methods %}checked{% endif %}>
+                        <div class="method-icon">📧</div>
+                        <div style="font-weight: 500;">Email 報表</div>
+                        <div style="font-size: 0.8rem; color: var(--text-tertiary); margin-top: 4px;">完整數據附件</div>
+                    </label>
+
+                    <!-- LINE Option -->
+                    {% set line_disabled = not current_user.settings.line_user_id %}
+                    <label class="method-label {{ 'disabled' if line_disabled else '' }}">
+                        <input type="checkbox" name="notification_methods" value="line" {% if 'line' in
+                            notification_methods %}checked{% endif %} {% if line_disabled %}disabled{% endif %}>
+                        <div class="method-icon">💬</div>
+                        <div style="font-weight: 500;">LINE 通知</div>
+                        <div style="font-size: 0.8rem; color: var(--text-tertiary); margin-top: 4px;">
+                            {{ '請先完成綁定' if line_disabled else '即時簡訊推播' }}
+                        </div>
+                    </label>
+
+                    <!-- Download Option -->
+                    <label class="method-label">
+                        <input type="checkbox" name="notification_methods" value="download" {% if 'download' in
+                            notification_methods %}checked{% endif %}>
+                        <div class="method-icon">⬇️</div>
+                        <div style="font-weight: 500;">檔案下載</div>
+                        <div style="font-size: 0.8rem; color: var(--text-tertiary); margin-top: 4px;">直接下載報表</div>
+                    </label>
+                </div>
+
+                {% if not line_disabled %}
+                <div style="margin-top: 12px; text-align: right;">
+                    <button type="button" id="testLineBtn" class="btn"
+                        style="background: transparent; border: 1px solid rgba(255,255,255,0.2); color: var(--text-secondary); font-size: 0.8rem; padding: 4px 12px;">
+                        <i class="fas fa-paper-plane" style="margin-right: 4px;"></i> 發送所選通知測試
+                    </button>
+                </div>
+                {% endif %}
+
+                <!-- Monthly Report Date -->
+                <div style="margin-top: 20px; padding-top: 16px; border-top: 1px solid rgba(255,255,255,0.1);">
+                    <label style="display: block; font-weight: 500; margin-bottom: 8px; position: relative;">
+                        📅 每月自動報表日期
+                        <i class="material-icons info-icon"
+                            style="font-size: 18px; vertical-align: middle; color: var(--text-tertiary); margin-left: 5px; cursor: pointer;"
+                            onclick="toggleReportHint(event)">info</i>
+
+                        <!-- Custom Hint Popover -->
+                        <div id="reportHint" class="custom-hint" style="display: none;">
+                            <strong>📅 自動報表機制</strong><br>
+                            <div style="margin-top: 8px; line-height: 1.8;">
+                                • 報表將在您設定的日期（或之後）<strong>訪問薪資頁面時</strong>自動發送<br>
+                                • 日期限制 1-28 日，確保每月都能穩定發送（含二月）<br>
+                                • 避免大小月問題，建議設為發薪日後一天
+                            </div>
+                        </div>
+                    </label>
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <select name="monthly_report_day"
+                            style="padding: 10px 12px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; color: white; flex: 1; font-size: 1rem;">
+                            {% for i in range(1, 29) %}
+                            <option value="{{ i }}" {% if current_user.settings.monthly_report_day==i %}selected{% endif
+                                %}>
+                                每月 {{ i }} 號</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Close the main unified form -->
+    </form>
+
+</div>
+<!-- 4. Data Management -->
+<div class="settings-section">
+    <div class="section-header">
+        <span>💾</span> 資料管理中心
+    </div>
+
+    <div style="margin-bottom: 24px;">
+        <div style="font-weight: 600; margin-bottom: 8px;">安全性</div>
+        <button type="button" class="btn btn-secondary btn-block" onclick="openPasswordModal()"
+            style="display: flex; align-items: center; justify-content: center; gap: 8px; margin-top: 0; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.3); color: white; font-weight: 500; transition: all 0.2s;">
+            <span class="material-icons" style="font-size: 18px;">lock</span>
+            修改密碼
+        </button>
+    </div>
+
+    <div style="margin-bottom: 20px;">
+        <div style="font-weight: 600; margin-bottom: 8px;">全站備份</div>
+        <div style="color: var(--text-tertiary); font-size: 0.9rem; margin-bottom: 12px;">
+            匯出所有薪資與記帳資料 (Excel 格式)
+        </div>
+        <form method="POST" action="{{ url_for('auth.export_excel_all') }}">
+            <button type="submit" class="btn" style="background: #3b82f6; width: 100%; padding: 10px;">
+                <i class="fas fa-file-excel"></i> 立即備份
+            </button>
+        </form>
+    </div>
+
+    <hr style="border: 0; border-top: 1px solid rgba(255,255,255,0.1); margin: 24px 0;">
+
+    <div>
+        <div style="font-weight: 600; margin-bottom: 8px; color: #ef4444;">危險區域</div>
+        <div style="color: var(--text-tertiary); font-size: 0.9rem; margin-bottom: 12px;">
+            重置特定模組的資料，此操作無法復原。
+        </div>
+        <div style="display: flex; gap: 10px;">
+            <button type="button" class="btn" onclick="openResetModal('salary')"
+                style="flex: 1; background: rgba(239, 68, 68, 0.1); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.3);">
+                重置薪資
+            </button>
+            <button type="button" class="btn" onclick="openResetModal('expense')"
+                style="flex: 1; background: rgba(239, 68, 68, 0.1); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.3);">
+                重置記帳
+            </button>
+        </div>
+    </div>
+</div>
+</div>
+
+<!-- 5. About & Manual -->
+<div class="settings-section">
+    <div class="section-header">
+        <span>ℹ️</span> 關於與說明
+    </div>
+    <div style="padding: 10px 0;">
+        <button type="button" class="btn btn-secondary btn-block" onclick="openIntro()"
+            style="display: flex; align-items: center; justify-content: center; gap: 8px;">
+            <span class="material-icons">menu_book</span>
+            功能說明書 (新手導覽)
+        </button>
+        <div style="text-align: center; margin-top: 15px; color: var(--text-tertiary); font-size: 0.85rem;">
+            版本 v2.5.0 • <a href="https://github.com/wie-shih-chen/toolbox-web-app" target="_blank"
+                style="text-decoration: underline;">GitHub</a>
+        </div>
+    </div>
+</div>
+
+</div>
+</div>
+
+<!-- Avatar Modal -->
+<div id="avatarModal"
+    style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 1000; align-items: center; justify-content: center;">
+    <div
+        style="background: #1a1a1a; padding: 30px; border-radius: 16px; width: 90%; max-width: 550px; max-height: 90vh; overflow-y: auto;">
+        <h3 style="margin-top: 0; margin-bottom: 20px; font-size: 1.3rem;">選擇頭像</h3>
+
+        <!-- SELECTION VIEW -->
+        <div id="avatarSelectionView">
+            <!-- Preset Tab -->
+            <div style="font-size: 1rem; color: var(--text-secondary); margin-bottom: 12px; font-weight: 500;">預設圖示
+            </div>
+            <div style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; margin-bottom: 24px;">
+                {% for icon in ['🧑‍💻', '👩‍💻', '🐱', '🐶', '🤖', '👾', '🎃', '👻', '🦊', '🐼'] %}
+                <div onclick="selectPreset('{{ icon }}')"
+                    style="background: rgba(255,255,255,0.05); border-radius: 10px; height: 65px; display: flex; align-items: center; justify-content: center; font-size: 2rem; cursor: pointer; border: 1px solid transparent;"
+                    class="avatar-option">
+                    {{ icon }}
+                </div>
+                {% endfor %}
+            </div>
+
+            <!-- Upload Tab -->
+            <div style="font-size: 1rem; color: var(--text-secondary); margin-bottom: 12px; font-weight: 500;">或上傳圖片
+            </div>
+
+            <!-- File input -->
+            <input type="file" id="avatarFileInput" accept="image/*" style="display: none;"
+                onchange="handleAvatarFileSelect(event)">
+            <button type="button" onclick="document.getElementById('avatarFileInput').click()" class="btn btn-glow-cyan"
+                style="width: 100%; font-size: 1.05rem; padding: 12px; margin-bottom: 16px;">
+                📂 選擇檔案
+            </button>
+
+            <button onclick="closeAvatarModal()"
+                style="margin-top: 0; background: transparent; border: none; color: var(--text-tertiary); width: 100%; cursor: pointer; font-size: 1rem;">關閉</button>
+        </div>
+
+        <!-- CROP VIEW -->
+        <div id="avatarCropView" style="display: none;">
+            <div
+                style="margin-bottom: 16px; color: var(--text-secondary); font-size: 1rem; text-align: center; font-weight: 500;">
+                調整照片位置</div>
+            <div style="position: relative; width: 100%; max-width: 450px; margin: 0 auto 16px;">
+                <img id="cropImage" src="" style="max-width: 100%; display: block;">
+            </div>
+            <div style="display: flex; gap: 8px; margin-top: 16px; justify-content: center;">
+                <button type="button" onclick="cancelCrop()" class="btn"
+                    style="flex: 1; background: rgba(239, 68, 68, 0.15); border: 1px solid rgba(239, 68, 68, 0.3); color: #fca5a5; padding: 12px; font-size: 1rem; font-weight: 500; transition: all 0.2s;">取消</button>
+                <button type="button" onclick="confirmCrop()" class="btn btn-glow-cyan"
+                    style="flex: 1; padding: 12px; font-size: 1rem;">確認上傳</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Password Modal -->
+<div id="passwordModal"
+    style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 1000; align-items: center; justify-content: center;">
+    <div
+        style="background: #1a1a1a; padding: 24px; border-radius: 16px; width: 90%; max-width: 400px; border: 1px solid rgba(255,255,255,0.1);">
+        <h3 style="margin-bottom: 20px; font-size: 1.3rem;">修改密碼</h3>
+
+        <form action="{{ url_for('auth.settings') }}" method="POST">
+            <div class="form-group">
+                <label for="modal_new_password"
+                    style="display: block; margin-bottom: 6px; color: var(--text-secondary); font-size: 0.9rem;">新密碼</label>
+                <input type="password" id="modal_new_password" name="new_password" autocomplete="new-password"
+                    pattern="[a-zA-Z0-9]+" required
+                    style="width: 100%; padding: 10px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; color: var(--text-primary);">
+            </div>
+
+            <div class="form-group" style="margin-top: 16px;">
+                <label for="modal_confirm_password"
+                    style="display: block; margin-bottom: 6px; color: var(--text-secondary); font-size: 0.9rem;">確認新密碼</label>
+                <input type="password" id="modal_confirm_password" name="confirm_password" autocomplete="new-password"
+                    pattern="[a-zA-Z0-9]+" required
+                    style="width: 100%; padding: 10px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; color: var(--text-primary);">
+            </div>
+
+            <div style="display: flex; gap: 10px; margin-top: 24px;">
+                <button type="button" onclick="closePasswordModal()" class="btn"
+                    style="flex: 1; background: #333; color: white; border: 1px solid #555;">取消</button>
+                <button type="submit" class="btn btn-glow-cyan"
+                    style="flex: 1; color: #000; font-weight: bold;">確認修改</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Reset Modal -->
+<div id="resetModal"
+    style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 1000; align-items: center; justify-content: center;">
+    <div
+        style="background: #1a1a1a; padding: 24px; border-radius: 16px; width: 90%; max-width: 400px; border: 1px solid #ef4444;">
+        <h3 style="margin-bottom: 12px; color: #ef4444;">⚠️ 危險操作</h3>
+        <p style="color: var(--text-secondary); margin-bottom: 20px;">
+            您確定要刪除所有 <span id="resetModuleName" style="font-weight: bold; color: white;"></span> 資料嗎？<br>
+            此操作由系統直接執行，無法復原。
+        </p>
+
+        <form action="{{ url_for('auth.reset_data') }}" method="POST">
+            <input type="hidden" name="module" id="resetModuleInput">
+            <label style="display: block; font-size: 0.9rem; margin-bottom: 8px;">請輸入 "DELETE" 以確認：</label>
+            <input type="text" name="confirmation" required
+                style="width: 100%; padding: 10px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.2); border-radius: 6px; color: white; margin-bottom: 20px;">
+
+            <div style="display: flex; gap: 10px;">
+                <button type="button" onclick="closeResetModal()" class="btn"
+                    style="flex: 1; background: transparent; border: 1px solid rgba(255,255,255,0.2);">取消</button>
+                <button type="submit" class="btn" style="flex: 1; background: #ef4444; color: white;">確認刪除</button>
+            </div>
+        </form>
+    </div>
+
+
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<!-- Cropper.js for avatar cropping -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.1/cropper.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.1/cropper.min.js"></script>
+<script src="{{ url_for('static', filename='js/avatar_cropper.js') }}"></script>
+
+<script src="{{ url_for('static', filename='js/settings_autosave.js') }}"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const bindingCodeBox = document.querySelector('.binding-code-box');
+
+        // Only run polling if the binding code box is present (meaning user is in binding mode)
+        if (bindingCodeBox) {
+            const checkStatus = setInterval(function () {
+                fetch('{{ url_for("auth.check_line_status") }}')
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.linked) {
+                            clearInterval(checkStatus);
+                            // Reload to show "Linked" status
+                            window.location.reload();
+                        }
+                    })
+                    .catch(error => console.error('Error checking status:', error));
+            }, 3000); // Check every 3 seconds
+        }
+
+        // Test Notification
+        const testBtn = document.getElementById('testLineBtn');
+        if (testBtn) {
+            testBtn.addEventListener('click', function () {
+                // Get selected methods
+                const selectedMethods = Array.from(document.querySelectorAll('input[name="notification_methods"]:checked'))
+                    .map(cb => cb.value);
+
+                if (selectedMethods.length === 0) {
+                    alert('⚠️ 請至少選擇一種通知方式');
+                    return;
+                }
+
+                // Disable button to prevent double clicks
+                testBtn.disabled = true;
+                const originalText = testBtn.innerHTML;
+                testBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 發送中...';
+
+                fetch('{{ url_for("auth.test_notification") }}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ methods: selectedMethods })
+                })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            alert('✅ ' + data.message);
+                        } else {
+                            alert('❌ ' + data.message);
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        alert('❌ 發送失敗，請稍後再試');
+                    })
+                    .finally(() => {
+                        // Re-enable button
+                        testBtn.disabled = false;
+                        testBtn.innerHTML = originalText;
+                    });
+            });
+        }
+    });
+
+    // Avatar Logic
+    function openAvatarModal() {
+        document.getElementById('avatarModal').style.display = 'flex';
+    }
+
+    function closeAvatarModal() {
+        document.getElementById('avatarModal').style.display = 'none';
+    }
+
+    function selectPreset(icon) {
+        fetch('{{ url_for("auth.set_preset_avatar") }}', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ preset: icon })
+        }).then(res => {
+            if (res.ok) window.location.reload();
+        });
+    }
+
+    // Reset Logic
+    function openResetModal(module) {
+        const nameMap = { 'salary': '薪資', 'expense': '記帳' };
+        document.getElementById('resetModuleName').innerText = nameMap[module];
+        document.getElementById('resetModuleInput').value = module;
+        document.getElementById('resetModal').style.display = 'flex';
+    }
+
+    function closeResetModal() {
+        document.getElementById('resetModal').style.display = 'none';
+    }
+
+    // Password Modal Logic
+    function openPasswordModal() {
+        document.getElementById('passwordModal').style.display = 'flex';
+    }
+
+    function closePasswordModal() {
+        document.getElementById('passwordModal').style.display = 'none';
+    }
+
+    // Info Icon Tooltip Toggle
+    function toggleReportHint(event) {
+        event.stopPropagation();
+        const hint = document.getElementById('reportHint');
+        const isVisible = hint.style.display === 'block';
+        hint.style.display = isVisible ? 'none' : 'block';
+    }
+
+    // Close hint when clicking outside
+    document.addEventListener('click', function (event) {
+        const hint = document.getElementById('reportHint');
+        if (hint && !event.target.classList.contains('info-icon')) {
+            hint.style.display = 'none';
+        }
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+
+{% block title %}首頁 - 工具箱 Web{% endblock %}
+{% block page_title %}歡迎回來{% endblock %}
+
+{% block content %}
+<div class="dashboard-grid ios-widgets">
+    <!-- Salary Widget -->
+    <a href="{{ url_for('salary.index') }}" class="tool-card glass widget-large">
+        <div class="widget-icon" style="background: linear-gradient(135deg, #FFD60A 0%, #FF9F0A 100%);">
+            <span class="material-icons">payments</span>
+        </div>
+        <div class="widget-content">
+            <h3>薪水小幫手</h3>
+            <p>管理排班與預估薪資</p>
+        </div>
+        <div class="widget-chevron">
+            <span class="material-icons">chevron_right</span>
+        </div>
+    </a>
+
+    <!-- Expense Widget -->
+    <a href="{{ url_for('expense.today') }}" class="tool-card glass widget-large">
+        <div class="widget-icon" style="background: linear-gradient(135deg, #30D158 0%, #248A3D 100%);">
+            <span class="material-icons">account_balance_wallet</span>
+        </div>
+        <div class="widget-content">
+            <h3>記帳管家</h3>
+            <p>掌握收支與預算進度</p>
+        </div>
+        <div class="widget-chevron">
+            <span class="material-icons">chevron_right</span>
+        </div>
+    </a>
+
+    <!-- Downloader Widget -->
+    <!-- Downloader Widget -->
+    <a href="https://yt1s.ltd/zh-tw214nb/youtube-to-mp4" target="_blank" rel="noopener noreferrer"
+        class="tool-card glass widget-medium hide-on-mobile">
+        <div class="widget-icon" style="background: linear-gradient(135deg, #0A84FF 0%, #0040DD 100%);">
+            <span class="material-icons">cloud_download</span>
+        </div>
+        <div class="widget-content">
+            <h3>影音下載器</h3>
+            <p>快速下載網路影音檔案</p>
+        </div>
+    </a>
+
+    <!-- NTUT Widget -->
+    <a href="{{ url_for('ntut.calendar') }}" class="tool-card glass widget-medium">
+        <div class="widget-icon" style="background: linear-gradient(135deg, #BF5AF2 0%, #8E24AA 100%);">
+            <span class="material-icons">school</span>
+        </div>
+        <div class="widget-content">
+            <h3>北科生活</h3>
+            <p>行事曆與學校資訊</p>
+        </div>
+    </a>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+{% endblock %}

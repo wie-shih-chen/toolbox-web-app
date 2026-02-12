@@ -1,0 +1,156 @@
+{% extends "base.html" %}
+
+{% block title %}設定 - 記帳管家{% endblock %}
+{% block page_title %}⚙️ 記帳設定{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/expense.css') }}">
+{% endblock %}
+
+{% block content %}
+<!-- Horizontal Navigation Bar -->
+<div class="salary-nav">
+    <a href="{{ url_for('expense.today') }}"
+        class="salary-nav-item {% if request.endpoint == 'expense.today' %}active{% endif %}">
+        📅 本日記帳
+    </a>
+    <a href="{{ url_for('expense.index') }}"
+        class="salary-nav-item {% if request.endpoint == 'expense.index' %}active{% endif %}">
+        📊 本週期
+    </a>
+    <a href="{{ url_for('expense.history') }}"
+        class="salary-nav-item {% if request.endpoint == 'expense.history' %}active{% endif %}">
+        📜 歷史
+    </a>
+    <a href="{{ url_for('expense.settings') }}"
+        class="salary-nav-item {% if request.endpoint == 'expense.settings' %}active{% endif %}">
+        ⚙️ 設定
+    </a>
+</div>
+
+<div class="expense-settings" style="max-width: 600px; margin: 0 auto;">
+    <div class="glass settings-glass-card">
+        <h3 class="settings-header-icon">
+            <span class="material-icons" style="color: var(--accent-color)">toll</span>
+            每期預算上限
+        </h3>
+
+        <form id="settingsForm">
+            <div class="form-group">
+                <label for="budgetInput">每月可支配預算 (10號至下月10號)</label>
+                <div class="settings-currency-wrapper">
+                    <span class="settings-currency-symbol">$</span>
+                    <input type="number" name="monthly_budget" id="budgetInput" value="{{ settings.monthly_budget }}"
+                        class="settings-large-input">
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="budgetAlertInput">預算警戒水位 (%)</label>
+                <div class="settings-percent-wrapper">
+                    <input type="number" name="budget_alert_threshold" id="budgetAlertInput"
+                        value="{{ settings.budget_alert_threshold }}" class="settings-medium-input">
+                    <span class="settings-suffix">%</span>
+                </div>
+                <p style="margin-top: 5px; font-size: 0.85rem; color: var(--text-secondary)">當花費超過預算的此百分比時，進度條將變為警告色。
+                </p>
+            </div>
+
+            <div class="form-group">
+                <label for="editableRange">資料可編輯範圍</label>
+                <select name="editable_month_range" id="editableRange" class="settings-medium-input"
+                    style="font-size: 1.1rem; appearance: auto;">
+                    <option value="0" {% if settings.editable_month_range==0 %}selected{% endif %}>僅限當月</option>
+                    <option value="1" {% if settings.editable_month_range==1 %}selected{% endif %}>包含上個月 (預設)</option>
+                    <option value="-1" {% if settings.editable_month_range==-1 %}selected{% endif %}>無限制</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="cycleDayInput">帳單週期起始日 (每月)</label>
+                <div class="settings-percent-wrapper">
+                    <input type="number" name="billing_cycle_start_day" id="cycleDayInput"
+                        value="{{ settings.billing_cycle_start_day or 10 }}" min="1" max="31"
+                        class="settings-medium-input">
+                    <span class="settings-suffix">號</span>
+                </div>
+            </div>
+
+            <!-- Custom Categories Section -->
+            <div class="settings-section">
+                <h4 class="settings-section-divider">
+                    <span class="material-icons settings-subsection-title">category</span>
+                    自訂類別
+                </h4>
+                <div id="categoryList" class="settings-list">
+                    <!-- Categories will be injected here via JS -->
+                </div>
+                <div style="display: flex; gap: 10px; margin-top: 10px;">
+                    <input type="text" id="newCatName" placeholder="類別名稱" style="flex: 1;">
+                    <input type="text" id="newCatEmoji" placeholder="Emoji" style="width: 60px; text-align: center;">
+                    <input type="color" id="newCatColor" value="#a78bfa"
+                        style="width: 50px; padding: 0; border: none; height: 42px;">
+                    <button type="button" class="btn btn-secondary" id="addCatBtn">新增</button>
+                </div>
+                <input type="hidden" name="custom_categories" id="customCategoriesInput">
+            </div>
+
+            <!-- Recurring Expenses Section -->
+            <div class="settings-section">
+                <h4 class="settings-section-divider">
+                    <span class="material-icons settings-subsection-title">update</span>
+                    固定支出
+                </h4>
+                <div id="recurringList" class="settings-list">
+                    <!-- Recurring items injected here -->
+                </div>
+                <button type="button" class="btn btn-secondary btn-block" id="openAddRecurringBtn"
+                    style="margin-top: 10px;">
+                    + 新增固定支出
+                </button>
+                <input type="hidden" name="recurring_expenses" id="recurringExpensesInput">
+            </div>
+
+            <!-- Quick Shortcuts Section -->
+            <div class="settings-section">
+                <h4 class="settings-section-divider">
+                    <span class="material-icons settings-subsection-title">flash_on</span>
+                    快捷摘要
+                </h4>
+                <div id="shortcutList" class="settings-list">
+                    <!-- Shortcuts injected here -->
+                </div>
+                <div style="display: flex; gap: 10px; margin-top: 10px;">
+                    <input type="text" id="newShortcutEmoji" placeholder="Emoji"
+                        style="width: 70px; text-align: center; border-radius: 12px; border: 1px solid rgba(255, 255, 255, 0.1); background: rgba(255, 255, 255, 0.05); color: white;"
+                        class="settings-medium-input">
+                    <input type="text" id="newShortcutName" placeholder="例如：早餐、午餐..." style="flex: 1;"
+                        class="settings-medium-input">
+                    <button type="button" class="btn btn-secondary" id="addShortcutBtn"
+                        style="white-space: nowrap;">新增</button>
+                </div>
+                <input type="hidden" name="quick_shortcuts" id="quickShortcutsInput">
+            </div>
+
+            <button type="submit" class="btn btn-primary btn-block settings-btn-save">
+                儲存設定
+            </button>
+        </form>
+    </div>
+
+    <!-- Info Card -->
+    <div class="glass settings-info-card">
+        <div style="display: flex; gap: 15px; align-items: flex-start;">
+            <span class="material-icons" style="color: #5eead4">info</span>
+            <div style="font-size: 0.9rem; color: var(--text-secondary); line-height: 1.6;">
+                記帳週期說明：系統自動以每月 <strong>{{ settings.billing_cycle_start_day or 10 }} 號</strong> 為起始點，至下個月 <strong>{{
+                    settings.billing_cycle_start_day or 10 }} 號</strong> 為一個週期（不包含末日）。這與薪水計算工具的週期保持一致。
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/expense.js') }}?v=2.1"></script>
+{% endblock %}

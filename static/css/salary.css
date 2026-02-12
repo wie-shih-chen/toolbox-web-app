@@ -1,0 +1,610 @@
+/* Navigation Styles moved to global */
+
+.salary-dashboard {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+.dashboard-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+    gap: 15px;
+}
+
+.week-nav {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    background-color: var(--card-bg);
+    padding: 10px 20px;
+    border-radius: 50px;
+}
+
+#currentWeekLabel {
+    font-size: 1.1rem;
+    font-weight: 700;
+    min-width: 200px;
+    text-align: center;
+}
+
+.btn-nav {
+    background: transparent;
+    border: 1px solid var(--border-color);
+    color: var(--text-primary);
+    padding: 5px 10px;
+}
+
+.btn-nav:hover {
+    background-color: #404040;
+}
+
+.summary-card {
+    position: relative;
+    /* Validation for absolute children */
+    display: flex;
+    gap: 30px;
+    background-color: var(--card-bg);
+    padding: 10px 25px;
+    padding-bottom: 20px;
+    /* Space for date range */
+    border-radius: 12px;
+}
+
+.range-display {
+    position: absolute;
+    bottom: 4px;
+    right: 12px;
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    opacity: 0.7;
+    font-weight: 500;
+    letter-spacing: 0.5px;
+}
+
+.summary-item {
+    display: flex;
+    flex-direction: column;
+}
+
+.summary-item .label {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    white-space: nowrap;
+    /* Prevent wrapping */
+}
+
+.summary-item .value {
+    font-size: 1.5rem;
+    font-weight: 700;
+}
+
+.summary-item .value.highlight {
+    color: var(--accent-color);
+}
+
+/* Weekly Grid */
+.weekly-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 10px;
+    height: auto;
+    max-height: 650px;
+    margin-bottom: 20px;
+}
+
+.day-column {
+    background-color: var(--card-bg);
+    border-radius: 8px;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    min-height: 300px;
+}
+
+.day-header {
+    background-color: #333;
+    padding: 10px;
+    text-align: center;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.day-name {
+    display: block;
+    font-weight: 700;
+    margin-bottom: 4px;
+}
+
+.day-date {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+}
+
+.day-column.today .day-header {
+    background-color: rgba(78, 205, 196, 0.2);
+    color: var(--accent-color);
+}
+
+.shifts-container {
+    flex: 1;
+    padding: 10px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.shift-card {
+    background-color: #404040;
+    padding: 10px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+    border-left: 3px solid var(--accent-color);
+}
+
+.shift-card:hover {
+    background-color: #505050;
+}
+
+.shift-card.bonus {
+    border-left-color: #ffd700;
+}
+
+.shift-time {
+    font-weight: 600;
+    font-size: 0.95rem;
+    margin-bottom: 4px;
+}
+
+.shift-info {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    display: flex;
+    justify-content: space-between;
+}
+
+.btn-add-shift {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: transparent;
+    border: none;
+    border-top: 1px solid var(--border-color);
+    padding: 12px;
+    color: var(--text-secondary);
+    font-size: 1.5rem;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.btn-add-shift span {
+    line-height: 1;
+}
+
+.btn-add-shift:hover {
+    background-color: rgba(255, 255, 255, 0.05);
+    color: var(--accent-color);
+}
+
+
+/* Hidden Helper */
+.hidden {
+    display: none !important;
+}
+
+/* History Page */
+.salary-history {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.history-controls {
+    padding: 20px;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.history-summary {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 20px;
+}
+
+.summary-box {
+    padding: 20px;
+    text-align: center;
+}
+
+.summary-box h3 {
+    font-size: 1rem;
+    color: var(--text-secondary);
+    margin-bottom: 10px;
+}
+
+.summary-box .value {
+    font-size: 2rem;
+    font-weight: 700;
+}
+
+.summary-box .value.highlight {
+    color: var(--accent-color);
+}
+
+.history-list {
+    padding: 20px;
+    overflow-x: auto;
+}
+
+.table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 15px;
+}
+
+.table th,
+.table td {
+    padding: 12px 15px;
+    text-align: left;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.table th {
+    color: var(--text-secondary);
+    font-weight: 600;
+}
+
+.table tr:hover {
+    background-color: #383838;
+}
+
+/* Monthly Calendar */
+.calendar-grid {
+    background-color: var(--card-bg);
+    border-radius: 12px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+
+.calendar-header {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    background-color: #333;
+    text-align: center;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--border-color);
+    font-weight: 700;
+}
+
+.calendar-body {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    /* grid-auto-rows: minmax(100px, 1fr); */
+    flex: 1;
+    overflow-y: auto;
+}
+
+.calendar-day {
+    border-right: 1px solid var(--border-color);
+    border-bottom: 1px solid var(--border-color);
+    min-height: 100px;
+    padding: 5px;
+    cursor: pointer;
+    transition: background 0.2s;
+    display: flex;
+    flex-direction: column;
+}
+
+.calendar-day:hover {
+    background-color: #404040;
+}
+
+.calendar-day.other-month {
+    opacity: 0.3;
+    background-color: #222;
+}
+
+.calendar-day.today {
+    background-color: rgba(78, 205, 196, 0.1);
+}
+
+.cal-day-header {
+    text-align: right;
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    margin-bottom: 5px;
+}
+
+.cal-day-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.cal-item {
+    font-size: 0.75rem;
+    background-color: #505050;
+    padding: 2px 4px;
+    border-radius: 3px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* Salary Tool Mobile Responsiveness */
+@media (max-width: 768px) {
+
+
+    .dashboard-header {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 15px;
+    }
+
+    .week-nav {
+        justify-content: space-between;
+        padding: 8px 15px;
+    }
+
+    #currentWeekLabel {
+        min-width: unset;
+        font-size: 0.95rem;
+    }
+
+    .summary-card {
+        justify-content: space-around;
+        padding: 15px;
+    }
+
+    .weekly-grid {
+        grid-template-columns: 1fr;
+        max-height: none;
+        gap: 15px;
+    }
+
+    .day-column {
+        min-height: unset;
+        border: 1px solid var(--border-color);
+    }
+
+    .day-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 12px 15px;
+        background: rgba(255, 255, 255, 0.03);
+    }
+
+    .day-name {
+        margin-bottom: 0;
+    }
+
+    .btn-add-shift {
+        padding: 18px;
+        font-size: 1.8rem;
+    }
+
+
+    .actions-container {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+    }
+
+    .actions-container a.btn {
+        grid-column: span 2;
+    }
+
+    .modal-content {
+        max-width: 100%;
+        max-height: 85vh;
+        margin: 0;
+        border-radius: 24px 24px 0 0;
+        overflow-y: auto;
+        padding-bottom: calc(85px + env(safe-area-inset-bottom));
+    }
+
+}
+
+/* Tab & Segmented Control System */
+.tabs {
+    display: flex;
+    background: rgba(0, 0, 0, 0.2);
+    padding: 3px;
+    border-radius: 10px;
+    margin-bottom: 25px;
+    gap: 2px;
+}
+
+.tab-btn {
+    flex: 1;
+    padding: 10px;
+    border: none;
+    background: transparent;
+    color: var(--text-secondary);
+    font-weight: 600;
+    font-size: 0.9rem;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.tab-btn.active {
+    background: #636366;
+    color: white;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.tab-content {
+    display: none;
+    animation: fade-in 0.3s ease-out;
+}
+
+.tab-content.active {
+    display: block;
+}
+
+@keyframes fade-in {
+    from {
+        opacity: 0;
+        transform: translateY(5px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Glass Premium Modal */
+.modal-content {
+    background: rgba(25, 25, 25, 0.6);
+    backdrop-filter: blur(30px);
+    -webkit-backdrop-filter: blur(30px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+    border-radius: 24px;
+}
+
+.modal-header {
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.modal-body {
+    padding: 25px;
+}
+
+/* Fix for History Controls on Mobile */
+@media (max-width: 768px) {
+    .history-controls {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 15px;
+    }
+
+    .history-controls label {
+        margin-bottom: 5px;
+    }
+
+    .history-controls>div {
+        max-width: none !important;
+        width: 100%;
+    }
+
+    #exportSalaryBtn {
+        margin-left: 0 !important;
+        width: auto !important;
+        align-self: flex-start;
+        margin-top: 10px;
+        padding: 8px 16px;
+        /* Ensure good touch target but compact */
+    }
+}
+
+/* Glass Theme Classes (imported from Expense) */
+.glass {
+    background: rgba(30, 30, 30, 0.6);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+    border-radius: 18px;
+}
+
+.setting-card {
+    background: transparent;
+    /* Override default card */
+    box-shadow: none;
+    padding: 0;
+}
+
+.settings-container {
+    max-width: 600px;
+    margin: 0 auto;
+    padding-bottom: 80px;
+}
+
+.settings-section-title {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 15px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.settings-form-group {
+    margin-bottom: 20px;
+}
+
+.settings-form-group label {
+    display: block;
+    margin-bottom: 8px;
+    color: var(--text-secondary);
+    font-size: 0.95rem;
+}
+
+.settings-input-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.settings-input {
+    width: 100%;
+    background: rgba(0, 0, 0, 0.2);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    padding: 12px 15px;
+    color: white;
+    font-size: 1rem;
+    transition: border-color 0.2s;
+}
+
+.settings-input:focus {
+    border-color: var(--accent-color);
+    outline: none;
+}
+
+.settings-unit {
+    position: absolute;
+    right: 15px;
+    color: var(--text-secondary);
+    pointer-events: none;
+}
+
+.settings-help-text {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    margin-top: 6px;
+    line-height: 1.4;
+}
+
+/* Switch Toggle */
+.switch-group {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 5px 0;
+}
+
+/* Select styling */
+select.settings-input {
+    appearance: none;
+    cursor: pointer;
+    background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+    background-repeat: no-repeat;
+    background-position: right 15px center;
+    background-size: 16px;
+    padding-right: 40px;
+}

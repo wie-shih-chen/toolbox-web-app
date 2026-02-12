@@ -1,0 +1,184 @@
+{% extends "base.html" %}
+
+{% block title %}記帳管家 - 工具箱 Web{% endblock %}
+{% block page_title %}💳 記帳控制台{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/expense.css') }}">
+{% endblock %}
+
+{% block content %}
+<!-- Horizontal Navigation Bar -->
+<div class="salary-nav">
+    <a href="{{ url_for('expense.today') }}"
+        class="salary-nav-item {% if request.endpoint == 'expense.today' %}active{% endif %}">
+        📅 本日記帳
+    </a>
+    <a href="{{ url_for('expense.index') }}"
+        class="salary-nav-item {% if request.endpoint == 'expense.index' %}active{% endif %}">
+        📊 本週期
+    </a>
+    <a href="{{ url_for('expense.history') }}"
+        class="salary-nav-item {% if request.endpoint == 'expense.history' %}active{% endif %}">
+        📜 歷史
+    </a>
+    <a href="{{ url_for('expense.settings') }}"
+        class="salary-nav-item {% if request.endpoint == 'expense.settings' %}active{% endif %}">
+        ⚙️ 設定
+    </a>
+</div>
+
+<div class="expense-dashboard" data-start-date="{{ start_date }}" data-end-date="{{ end_date }}">
+
+    <!-- Summary Highlighting -->
+    <div class="expense-summary-grid">
+        <div class="expense-summary-card glass">
+            <span class="label">本期總支出 (10號起)</span>
+            <span class="value highlight" id="totalExpense">$0</span>
+        </div>
+        <div class="expense-summary-card glass">
+            <span class="label">本月預算剩餘</span>
+            <div class="budget-progress-container">
+                <div class="progress-bar">
+                    <div class="progress-fill" id="budgetProgress" style="width: 0%"></div>
+                </div>
+                <span class="value" id="remainingBudget">$10,000</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Period View Control -->
+    <div class="period-header" style="flex-direction: column; align-items: flex-start; gap: 10px; padding: 15px 20px;">
+        <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
+            <span class="period-label">
+                帳務週期：<span id="periodDisplayTitle" style="color: var(--accent-color); font-weight: 700;">{{ start_date
+                    }} ~ {{ end_date }}</span>
+            </span>
+            <div class="nav-controls">
+                <button class="btn btn-secondary btn-sm" id="prevPeriodBtn">◀</button>
+                <button class="btn btn-secondary btn-sm" id="nextPeriodBtn">▶</button>
+            </div>
+        </div>
+        <div id="weekRangeBar"
+            style="font-size: 0.85rem; color: var(--text-secondary); background: rgba(255,255,255,0.05); padding: 5px 12px; border-radius: 20px;">
+            本週區間：<span id="weekDisplayRange" style="color: white; font-weight: 500;">載入中...</span>
+        </div>
+    </div>
+
+    <!-- 新增：支出趨勢圖 -->
+    <div class="card" style="margin-bottom: 20px; padding: 25px;">
+        <h3 style="margin-bottom: 15px; display: flex; align-items: center; gap: 10px;">
+            <span style="font-size: 1.5rem;">📉</span>
+            歷史支出趨勢（全部資料）
+        </h3>
+        <p style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 15px;">
+            📊 此圖表顯示所有歷史週期，不受下方區間選擇器影響
+        </p>
+        <canvas id="expenseTrendChart" style="max-height: 300px;"></canvas>
+    </div>
+
+    <!-- Local Navigation Bar (Contextual) -->
+    <div id="localNav" class="local-drilldown-nav hidden"
+        style="margin-bottom: 20px; display: flex; align-items: center; justify-content: space-between;">
+        <div id="navBackButton" class="back-button">
+            <span class="material-icons">arrow_back_ios</span>
+            <span id="backButtonText">返回</span>
+        </div>
+        <div id="levelTitle" style="font-weight: 600; font-size: 1.1rem; color: var(--accent-color);"></div>
+        <div style="width: 60px;"></div> <!-- Spacer for centering -->
+    </div>
+
+    <!-- Hierarchical Transition Viewport -->
+    <div class="drill-down-viewport">
+        <div id="levelContainer" class="level-container level-weeks">
+            <!-- Level 1: Weekly Overview -->
+            <div id="weeklyLevel" class="list-level">
+                <h3 class="section-title">週期概覽 (週一至週日)</h3>
+                <div id="weeklyList" class="weekly-grid-summary">
+                    <div class="loading-placeholder">數據分析中...</div>
+                </div>
+            </div>
+
+            <!-- Level 2: Daily Breakdown -->
+            <div id="dailyLevel" class="list-level">
+                <h3 class="section-title">每日支出統計</h3>
+                <div id="dailyList" class="daily-grid-summary"></div>
+            </div>
+
+            <!-- Level 3: Record Detail -->
+            <div id="recordLevel" class="list-level">
+                <h3 class="section-title">詳細消費清單</h3>
+                <div id="expenseList" class="expense-list"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add/Edit Expense Modal -->
+<div id="expenseModal" class="modal">
+    <div class="modal-content glass">
+        <div class="modal-header">
+            <h3 id="modalTitle">新增支出</h3>
+            <span class="close-modal" id="closeExpenseModalBtn">&times;</span>
+        </div>
+        <div class="modal-body">
+            <form id="expenseForm">
+                <input type="hidden" name="id" id="expenseId">
+
+                <div class="form-group">
+                    <label>項目名稱</label>
+                    <input type="text" name="note" id="expenseNote" placeholder="例如：午餐、捷運..." required>
+                    <div class="quick-tags" id="mealQuickTags">
+                        <div class="tag-pill" data-value="早餐">🍳 早餐</div>
+                        <div class="tag-pill" data-value="午餐">🍱 午餐</div>
+                        <div class="tag-pill" data-value="晚餐">🍜 晚餐</div>
+                        <div class="tag-pill" data-value="宵夜">🍢 宵夜</div>
+                        <div class="tag-pill" data-value="飲料">☕ 飲料</div>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>金額 (NTD)</label>
+                        <input type="number" name="amount" id="expenseAmount" placeholder="輸入金額" min="0" required>
+                    </div>
+                    <div class="form-group">
+                        <label>類別</label>
+                        <select name="category" id="expenseCategory">
+                            <option value="飲食" selected>🍽️ 飲食</option>
+                            <option value="衣著">👕 衣著</option>
+                            <option value="居住">🏠 居住</option>
+                            <option value="交通">🚌 交通</option>
+                            <option value="教育">📖 教育</option>
+                            <option value="娛樂">🎮 娛樂</option>
+                            <option value="其他">📦 其他</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <div class="date-time-row">
+                        <div class="date-icon-box">
+                            <span class="material-icons">calendar_today</span>
+                        </div>
+                        <span class="date-label">Date</span>
+                        <div class="pills-container">
+                            <input type="date" id="expenseDate" class="input-pill" required>
+                            <input type="time" id="expenseTime" class="input-pill" required>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-danger hidden" id="deleteExpenseBtn">刪除</button>
+                    <button type="submit" class="btn btn-primary">儲存紀錄</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/expense.js') }}"></script>
+{% endblock %}

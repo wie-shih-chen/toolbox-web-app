@@ -1,0 +1,109 @@
+{% extends "base.html" %}
+
+{% block title %}設定 - 薪水計算小幫手{% endblock %}
+{% block page_title %}設定{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/salary.css') }}">
+{% endblock %}
+
+{% block content %}
+<!-- Horizontal Navigation Bar -->
+<div class="salary-nav">
+    <a href="{{ url_for('salary.index') }}"
+        class="salary-nav-item {% if request.endpoint == 'salary.index' %}active{% endif %}">
+        📅 本週排班
+    </a>
+    <a href="{{ url_for('salary.monthly') }}"
+        class="salary-nav-item {% if request.endpoint == 'salary.monthly' %}active{% endif %}">
+        🗓️ 月曆檢視
+    </a>
+    <a href="{{ url_for('salary.history') }}"
+        class="salary-nav-item {% if request.endpoint == 'salary.history' %}active{% endif %}">
+        📜 歷史排班
+    </a>
+    <a href="{{ url_for('salary.settings') }}"
+        class="salary-nav-item {% if request.endpoint == 'salary.settings' %}active{% endif %}">
+        ⚙️ 設定
+    </a>
+</div>
+
+<div class="settings-container">
+    <div class="glass" style="padding: 30px;">
+        <h3 class="settings-section-title">
+            <span class="material-icons" style="color: var(--accent-color)">tune</span>
+            基本設定
+        </h3>
+
+        <form id="settingsForm">
+            <div class="settings-form-group">
+                <label>時薪設定</label>
+                <div class="settings-input-wrapper">
+                    <input type="number" name="hourly_rate" id="hourlyRate" class="settings-input"
+                        value="{{ settings.hourly_rate }}" required>
+                    <span class="settings-unit">NTD/hr</span>
+                </div>
+            </div>
+
+            <div class="settings-form-group">
+                <label>預設班表時間</label>
+                <div style="display: flex; gap: 10px; align-items: center;">
+                    <input type="time" name="default_start_time" class="settings-input"
+                        value="{{ settings.default_start_time }}">
+                    <span style="color: var(--text-secondary);">至</span>
+                    <input type="time" name="default_end_time" class="settings-input"
+                        value="{{ settings.default_end_time }}">
+                </div>
+                <p class="settings-help-text">新增排班時會自動帶入此時間。</p>
+            </div>
+
+            <div class="settings-form-group">
+                <label>月收入目標</label>
+                <div class="settings-input-wrapper">
+                    <input type="number" name="target_income" class="settings-input"
+                        value="{{ settings.target_income }}">
+                    <span class="settings-unit">元</span>
+                </div>
+                <p class="settings-help-text">設定目標後，儀表板將顯示達成率進度條。</p>
+            </div>
+
+            <div class="settings-form-group">
+                <label style="position: relative;">
+                    資料可編輯範圍
+                    <i class="material-icons info-icon"
+                        style="font-size: 18px; vertical-align: middle; color: var(--text-tertiary); margin-left: 5px; cursor: pointer;"
+                        onclick="toggleEditRangeHint(event)">info</i>
+
+                    <!-- Custom Hint Popover -->
+                    <div id="editRangeHint" class="custom-hint" style="display: none;">
+                        <strong>📅 可修改月份範圍</strong><br>
+                        <div style="margin-top: 8px; line-height: 1.8;">
+                            • 限制可修改的歷史月份，避免誤觸舊資料<br>
+                            • 預設為包含上個月（可查看 + 修改當月與上月）
+                        </div>
+                    </div>
+                </label>
+                <div class="settings-input-wrapper">
+                    <select name="editable_month_range" class="settings-input">
+                        <option value="0" {% if settings.editable_month_range==0 %}selected{% endif %}>僅限當月</option>
+                        <option value="1" {% if settings.editable_month_range==1 %}selected{% endif %}>包含上個月 (預設)
+                        </option>
+                        <option value="-1" {% if settings.editable_month_range==-1 %}selected{% endif %}>無限制 (不建議)
+                        </option>
+                    </select>
+                </div>
+                <p class="settings-help-text">防止誤觸更早之前的歷史紀錄。</p>
+            </div>
+
+            <button type="submit" class="btn btn-primary btn-block"
+                style="height: 50px; font-size: 1.1rem; margin-top: 25px; width: 100%;">
+                儲存設定
+            </button>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/salary.js') }}"></script>
+{% endblock %}

@@ -1,0 +1,128 @@
+{% extends "base.html" %}
+
+{% block title %}本日記帳 - 記帳管家{% endblock %}
+{% block page_title %}📅 本日精確記帳{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/expense.css') }}">
+{% endblock %}
+
+{% block content %}
+<!-- Horizontal Navigation Bar -->
+<div class="salary-nav">
+    <a href="{{ url_for('expense.today') }}"
+        class="salary-nav-item {% if request.endpoint == 'expense.today' %}active{% endif %}">
+        📅 本日記帳
+    </a>
+    <a href="{{ url_for('expense.index') }}"
+        class="salary-nav-item {% if request.endpoint == 'expense.index' %}active{% endif %}">
+        📊 本週期
+    </a>
+    <a href="{{ url_for('expense.history') }}"
+        class="salary-nav-item {% if request.endpoint == 'expense.history' %}active{% endif %}">
+        📜 歷史
+    </a>
+    <a href="{{ url_for('expense.settings') }}"
+        class="salary-nav-item {% if request.endpoint == 'expense.settings' %}active{% endif %}">
+        ⚙️ 設定
+    </a>
+</div>
+
+<div class="expense-dashboard today-view">
+    <!-- Today's Total Summary -->
+    <div class="today-summary-header" style="margin-bottom: 25px;">
+        <div class="card expense-summary-card glass-premium"
+            style="text-align: center; padding: 25px; margin-bottom: 15px;">
+            <span class="label"
+                style="font-size: 0.9rem; opacity: 0.7; display: block; margin-bottom: 5px;">今日累計支出</span>
+            <span class="value" id="todayTotalAmount"
+                style="font-size: 2.2rem; font-weight: 800; color: var(--accent-color);">$0</span>
+        </div>
+
+        <!-- Monthly Budget Status -->
+        <div class="card expense-summary-card glass-premium" style="padding: 15px 20px;">
+            <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 5px;">
+                <span style="font-size: 0.9rem; opacity: 0.7;">本月預算剩餘</span>
+                <span id="remainingBudget" style="font-size: 1.2rem; font-weight: 700;">$0</span>
+            </div>
+            <div class="progress-bar-container"
+                style="height: 8px; background: rgba(255,255,255,0.1); border-radius: 4px; overflow: hidden;">
+                <div id="budgetProgress"
+                    style="width: 0%; height: 100%; background: var(--accent-color); transition: width 0.5s;"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Add Bar -->
+
+    <div class="quick-add-container" style="margin-bottom: 30px;">
+        <button class="btn btn-primary btn-block" id="openAddExpenseBtn"
+            style="height: 60px; font-size: 1.1rem; border-radius: 16px;">
+            <span class="material-icons">add_circle_outline</span> 新增今日紀錄
+        </button>
+    </div>
+
+    <!-- Today's List -->
+    <div class="expense-list-container">
+        <h3 class="section-title">今日活動</h3>
+        <div id="expenseList" class="expense-list">
+            <!-- Records injected here -->
+            <div class="loading-placeholder">載入中...</div>
+        </div>
+    </div>
+</div>
+
+<!-- Add/Edit Expense Modal -->
+<div id="expenseModal" class="modal">
+    <div class="modal-content glass">
+        <div class="modal-header">
+            <h3 id="modalTitle">新增支出</h3>
+            <span class="close-modal" id="closeExpenseModalBtn">&times;</span>
+        </div>
+        <div class="modal-body">
+            <form id="expenseForm">
+                <input type="hidden" name="id" id="expenseId">
+                <div class="form-group">
+                    <label>項目名稱</label>
+                    <input type="text" name="note" id="expenseNote" placeholder="例如：午餐..." required>
+                    <div class="quick-tags" id="mealQuickTags">
+                        <!-- Dynamic tags injected here -->
+                    </div>
+
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>金額 (NTD)</label>
+                        <input type="number" name="amount" id="expenseAmount" min="0" required>
+                    </div>
+                    <div class="form-group">
+                        <label>類別</label>
+                        <select name="category" id="expenseCategory">
+                            <option value="飲食" selected>🍽️ 飲食</option>
+                            <option value="衣著">👕 衣著</option>
+                            <option value="交通">🚌 交通</option>
+                            <option value="其他">📦 其他</option>
+                        </select>
+
+
+                    </div>
+                </div>
+                <div class="form-group">
+                    <div class="date-time-row">
+                        <input type="date" id="expenseDate" class="input-pill" required>
+                        <input type="time" id="expenseTime" class="input-pill" required>
+                    </div>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-danger hidden" id="deleteExpenseBtn">刪除</button>
+                    <button type="submit" class="btn btn-primary">儲存</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/expense.js') }}"></script>
+{% endblock %}

@@ -1,0 +1,156 @@
+{% extends "base.html" %}
+
+{% block title %}歷史帳務 - 記帳管家{% endblock %}
+{% block page_title %}📜 歷史期數帳務{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/expense.css') }}">
+{% endblock %}
+
+{% block content %}
+<!-- Horizontal Navigation Bar -->
+<div class="salary-nav">
+    <a href="{{ url_for('expense.today') }}"
+        class="salary-nav-item {% if request.endpoint == 'expense.today' %}active{% endif %}">
+        📅 本日記帳
+    </a>
+    <a href="{{ url_for('expense.index') }}"
+        class="salary-nav-item {% if request.endpoint == 'expense.index' %}active{% endif %}">
+        📊 本週期
+    </a>
+    <a href="{{ url_for('expense.history') }}"
+        class="salary-nav-item {% if request.endpoint == 'expense.history' %}active{% endif %}">
+        📜 歷史
+    </a>
+    <a href="{{ url_for('expense.settings') }}"
+        class="salary-nav-item {% if request.endpoint == 'expense.settings' %}active{% endif %}">
+        ⚙️ 設定
+    </a>
+</div>
+
+<div class="expense-history">
+    <div class="history-controls glass">
+        <div class="history-filter-group">
+            <span class="material-icons" style="color: var(--text-secondary)">event</span>
+            <label>查詢年份：</label>
+            <select id="yearSelect" class="form-control">
+                <!-- Auto-populated -->
+            </select>
+        </div>
+        <div class="history-filter-group">
+            <label>查詢月份：</label>
+            <select id="monthSelect" class="form-control">
+                <option value="01">01 月 (10號起)</option>
+                <option value="02">02 月 (10號起)</option>
+                <option value="03">03 月 (10號起)</option>
+                <option value="04">04 月 (10號起)</option>
+                <option value="05">05 月 (10號起)</option>
+                <option value="06">06 月 (10號起)</option>
+                <option value="07">07 月 (10號起)</option>
+                <option value="08">08 月 (10號起)</option>
+                <option value="09">09 月 (10號起)</option>
+                <option value="10">10 月 (10號起)</option>
+                <option value="11">11 月 (10號起)</option>
+                <option value="12">12 月 (10號起)</option>
+            </select>
+        </div>
+        <div class="history-filter-group">
+            <label>查詢日期：</label>
+            <select id="daySelect" class="form-control">
+                <option value="">全月份</option>
+            </select>
+        </div>
+        <button id="exportCsvBtn" class="btn btn-secondary" style="padding: 10px 15px; min-width: 100px;">
+            <span class="material-icons" style="font-size: 1.2rem;">save_alt</span> 匯出
+        </button>
+    </div>
+
+    <!-- Summary Stats -->
+    <div class="expense-summary-grid">
+        <div class="expense-summary-card glass">
+            <span class="label">該期總支出</span>
+            <span class="value highlight" id="historyTotal">$0</span>
+        </div>
+        <div class="expense-summary-card glass">
+            <span class="label">支出筆數</span>
+            <span class="value" id="historyCount">0</span>
+        </div>
+    </div>
+
+    <!-- Detailed List -->
+    <div class="expense-list-container">
+        <h3 class="section-title">該期消費明細</h3>
+        <div id="historyExpenseList" class="expense-list">
+            <!-- Records injected here -->
+        </div>
+    </div>
+</div>
+
+<!-- Modal reuse via standard JS -->
+<div id="expenseModal" class="modal">
+    <div class="modal-content glass">
+        <div class="modal-header">
+            <h3 id="modalTitle">編輯紀錄</h3>
+            <span class="close-modal" id="closeExpenseModalBtn">&times;</span>
+        </div>
+        <div class="modal-body">
+            <form id="expenseForm">
+                <input type="hidden" name="id" id="expenseId">
+
+                <div class="form-group">
+                    <label>項目名稱</label>
+                    <input type="text" name="note" id="expenseNote" required>
+                    <div class="quick-tags" id="mealQuickTags">
+                        <div class="tag-pill" data-value="早餐">🍳 早餐</div>
+                        <div class="tag-pill" data-value="午餐">🍱 午餐</div>
+                        <div class="tag-pill" data-value="晚餐">🍜 晚餐</div>
+                        <div class="tag-pill" data-value="宵夜">🍢 宵夜</div>
+                        <div class="tag-pill" data-value="飲料">☕ 飲料</div>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>金額 (NTD)</label>
+                        <input type="number" name="amount" id="expenseAmount" min="0" required>
+                    </div>
+                    <div class="form-group">
+                        <label>類別</label>
+                        <select name="category" id="expenseCategory">
+                            <option value="飲食">🍽️ 飲食</option>
+                            <option value="衣著">👕 衣著</option>
+                            <option value="居住">🏠 居住</option>
+                            <option value="交通">🚌 交通</option>
+                            <option value="教育">📖 教育</option>
+                            <option value="娛樂">🎮 娛樂</option>
+                            <option value="其他">📦 其他</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <div class="date-time-row">
+                        <div class="date-icon-box">
+                            <span class="material-icons">calendar_today</span>
+                        </div>
+                        <span class="date-label">Date</span>
+                        <div class="pills-container">
+                            <input type="date" id="expenseDate" class="input-pill" required>
+                            <input type="time" id="expenseTime" class="input-pill" required>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-danger" id="deleteExpenseBtn">刪除</button>
+                    <button type="submit" class="btn btn-primary">儲存修改</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/expense.js') }}"></script>
+{% endblock %}
