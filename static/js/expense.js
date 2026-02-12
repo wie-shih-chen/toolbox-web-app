@@ -813,13 +813,14 @@ const expenseApp = {
 
 document.addEventListener('DOMContentLoaded', () => {
     // Auto Init: Detect which page we're on
-    if (document.querySelector('.expense-dashboard')) {
+    // Check .today-view FIRST before .expense-dashboard since today page has both classes
+    if (document.querySelector('.today-view')) {
+        expenseApp.init(); // Use init() since initToday() doesn't exist
+    } else if (document.querySelector('.expense-dashboard')) {
         expenseApp.init();
         loadExpenseTrendChart(); // Load chart on dashboard page
     } else if (document.querySelector('.expense-history')) {
         expenseApp.initHistory();
-    } else if (document.querySelector('.today-view')) {
-        expenseApp.initToday();
     } else if (document.querySelector('.expense-settings-wrapper')) {
         expenseApp.initSettings();
     }
