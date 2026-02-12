@@ -56,8 +56,16 @@ a {
     /* Limit max width for large screens */
     margin: 0 auto;
     /* Center the container */
-    padding-top: 70px;
-    /* Add space for fixed navbar */
+    padding: 85px 20px 20px 20px;
+    /* Top: Navbar + space, Side: breathing room */
+}
+
+@media (max-width: 768px) {
+    .container {
+        padding: 65px 15px 100px 15px;
+        /* Top: Mobile Navbar (~50px) + 15px */
+        /* Bottom: Mobile Bottom Nav (75px) + 25px */
+    }
 }
 
 .settings-container {
@@ -622,6 +630,13 @@ textarea:focus {
 
     .dashboard-grid {
         grid-template-columns: 1fr;
+        gap: 15px;
+        margin-top: 20px;
+    }
+
+    .ios-widgets .tool-card {
+        min-height: 160px;
+        padding: 20px;
     }
 
     .modal {
@@ -934,6 +949,7 @@ textarea:focus {
         padding: 25px;
     }
 }
+
 /* 
    Final Mobile Overrides
    Placed at the end to ensure they override all previous styles 
@@ -941,12 +957,13 @@ textarea:focus {
 @media (max-width: 768px) {
     .content-area {
         /* Force enough space for fixed header and prevent bottom cutoff */
-        padding: 120px 15px 150px 15px !important; 
+        padding: 120px 15px 150px 15px !important;
         width: 100%;
         overflow-x: hidden;
     }
 
     .nav-bar {
-        padding: 15px 20px; /* Ensure header doesn't get too tall due to padding */
+        padding: 15px 20px;
+        /* Ensure header doesn't get too tall due to padding */
     }
 }
