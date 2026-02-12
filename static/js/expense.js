@@ -822,9 +822,9 @@ document.addEventListener('DOMContentLoaded', () => {
         expenseApp.init(); // Use init() since initToday() doesn't exist
     } else if (document.querySelector('.expense-dashboard')) {
         expenseApp.init();
-        loadExpenseTrendChart(); // Load chart on dashboard page
     } else if (document.querySelector('.expense-history')) {
         expenseApp.initHistory();
+        loadExpenseTrendChart(); // Load chart on history page
     } else if (document.querySelector('.expense-settings-wrapper')) {
         expenseApp.initSettings();
     }
