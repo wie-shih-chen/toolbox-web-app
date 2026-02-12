@@ -608,3 +608,23 @@ select.settings-input {
     background-size: 16px;
     padding-right: 40px;
 }
+
+@media (max-width: 768px) {
+    .salary-nav {
+        gap: 6px;
+        padding-bottom: 5px;
+        margin-bottom: 10px;
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        padding-left: 2px;
+        padding-right: 2px;
+    }
+
+    .salary-nav-item {
+        padding: 5px 12px;
+        font-size: 0.8rem;
+        flex: 0 0 auto;
+        white-space: nowrap;
+    }
+}
