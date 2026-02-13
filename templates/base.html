@@ -69,13 +69,48 @@
                 <a href="{{ url_for('auth.settings') }}" class="nav-link" title="設定">
                     <span class="material-icons" style="font-size: 20px;">settings</span>
                 </a>
-                <a href="{{ url_for('auth.logout') }}" class="nav-link">登出</a>
+                <a href="{{ url_for('auth.logout') }}" class="nav-link logout-link">
+                    <span class="material-icons" style="font-size: 1.2rem; vertical-align: middle;">logout</span>
+                    <span class="desktop-only text-sm" style="margin-left: 4px;">登出</span>
+                </a>
                 {% else %}
                 <a href="{{ url_for('auth.login') }}" class="nav-link">登入</a>
                 <a href="{{ url_for('auth.register') }}" class="nav-link">註冊</a>
                 {% endif %}
             </div>
         </nav>
+
+        <style>
+            /* Quick mobile nav tweak inline for immediate effect */
+            @media (max-width: 768px) {
+                .desktop-only {
+                    display: none;
+                }
+
+                .logout-link {
+                    padding: 8px !important;
+                    /* Circular touch target */
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                }
+
+                .nav-user-info {
+                    margin-right: 5px;
+                    /* Reduce gap */
+                }
+
+                .nav-links {
+                    gap: 5px;
+                    /* Tighter gap */
+                }
+
+                /* Hide Create Account on mobile to save space */
+                a[href*="register"].nav-link {
+                    display: none;
+                }
+            }
+        </style>
 
         <script>
             // Initialize Bootstrap Tooltips globally
@@ -320,6 +355,7 @@
         <!-- Chart.js for data visualization -->
         <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 
+        <script src="{{ url_for('static', filename='js/avatar_preview.js') }}"></script>
 </body>
 
 </html>
