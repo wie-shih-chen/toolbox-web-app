@@ -73,7 +73,7 @@ const settingsAutoSave = {
             });
 
             if (res.ok) {
-                this.showToast('✅ 通知設定已自動儲存', 'success');
+                this.showToast('✅ 通知設定已儲存', 'success');
             } else {
                 this.showToast('❌ 儲存失敗', 'error');
             }
