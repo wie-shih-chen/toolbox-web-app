@@ -55,19 +55,27 @@ with app.app_context():
     app.register_blueprint(reminder_bp, url_prefix='/reminders')
 
     # Initialize Scheduler
-    from flask_apscheduler import APScheduler
-    from services.reminder_service import ReminderService
-    
-    scheduler = APScheduler()
-    app.config['SCHEDULER_API_ENABLED'] = True
-    scheduler.init_app(app)
-    
-    @scheduler.task('interval', id='check_reminders', seconds=60)
-    def check_reminders_task():
-        # Wrap in app context inside the task
-        ReminderService.check_and_send_reminders(app)
+    try:
+        from flask_apscheduler import APScheduler
+        from services.reminder_service import ReminderService
         
-    scheduler.start()
+        scheduler = APScheduler()
+        app.config['SCHEDULER_API_ENABLED'] = True
+        scheduler.init_app(app)
+        
+        @scheduler.task('interval', id='check_reminders', seconds=60)
+        def check_reminders_task():
+            # Wrap in app context inside the task
+            with app.app_context():
+                ReminderService.check_and_send_reminders(app)
+            
+        scheduler.start()
+        print("Scheduler started successfully.")
+    except ImportError as e:
+        print(f"Scheduler could not start: {e}")
+        print("Reminders will not be sent automatically.")
+    except Exception as e:
+        print(f"Scheduler error: {e}")
 
 
 if __name__ == '__main__':
