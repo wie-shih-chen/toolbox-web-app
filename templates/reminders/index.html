@@ -494,7 +494,7 @@
     // Let's implement a simple client-side data store from the rendered list.
     const remindersData = {
         {% for r in reminders %}
-    { { r.id } }: {
+    {{ r.id }}: {
         title: "{{ r.title }}",
             description: `{{ r.description or '' }}`,
                 time: "{{ r.remind_time }}",
