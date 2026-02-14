@@ -429,6 +429,32 @@
         filter: brightness(1.1);
         box-shadow: 0 6px 20px rgba(var(--accent-rgb), 0.6);
     }
+
+    /* Toastr Custom Style */
+    #toast-container>.toast {
+        background-color: rgba(30, 30, 30, 0.95) !important;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        backdrop-filter: blur(10px);
+        color: #fff !important;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+        opacity: 1 !important;
+    }
+
+    #toast-container>.toast-success {
+        border-left: 5px solid #00B900;
+        background-image: none !important;
+        /* Remove default icon if needed, or keep */
+    }
+
+    #toast-container>.toast-error {
+        border-left: 5px solid #EA4335;
+        background-image: none !important;
+    }
+
+    #toast-container>.toast-message {
+        color: #fff !important;
+        font-weight: 500;
+    }
 </style>
 <link href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css" rel="stylesheet" />
 {% endblock %}
