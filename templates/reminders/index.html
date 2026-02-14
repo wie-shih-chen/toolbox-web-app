@@ -460,6 +460,11 @@
 {% block extra_js %}
 <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
 <script>
+    // Move modal to body to ensure it is positioned relative to the viewport, not a parent container
+    $(document).ready(function () {
+        $('#reminderModal').appendTo("body");
+    });
+
     // Initialize current date for date picker
     document.getElementById('remindDate').valueAsDate = new Date();
 
