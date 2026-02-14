@@ -107,4 +107,28 @@ class ReportLog(db.Model):
     period_start = db.Column(db.String(10), nullable=False) # YYYY-MM-DD
     period_end = db.Column(db.String(10), nullable=False)   # YYYY-MM-DD
     report_type = db.Column(db.String(20), nullable=False)  # 'salary' or 'expense'
+
     sent_at = db.Column(db.String(20), nullable=False)      # Timestamp
+
+class Reminder(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    title = db.Column(db.String(100), nullable=False)
+    description = db.Column(db.Text)
+    
+    # Frequency: 'once', 'daily', 'weekly', 'monthly'
+    frequency = db.Column(db.String(20), default='once')
+    
+    # Time settings
+    remind_time = db.Column(db.String(5), nullable=False) # HH:MM
+    remind_date = db.Column(db.String(10), nullable=True) # YYYY-MM-DD (for 'once')
+    
+    # Status
+    is_active = db.Column(db.Boolean, default=True)
+    last_sent_at = db.Column(db.DateTime, nullable=True)
+    
+    # Notification Method JSON list: ["line", "email"]
+    notify_method = db.Column(db.Text, default='["line"]') 
+    
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+

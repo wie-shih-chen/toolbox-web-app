@@ -50,6 +50,25 @@ with app.app_context():
     register_line_handlers(LineService.get_handler())
     
     app.register_blueprint(line_bp, url_prefix='/line')
+    
+    from routes.reminder_routes import reminder_bp
+    app.register_blueprint(reminder_bp, url_prefix='/reminders')
+
+    # Initialize Scheduler
+    from flask_apscheduler import APScheduler
+    from services.reminder_service import ReminderService
+    
+    scheduler = APScheduler()
+    app.config['SCHEDULER_API_ENABLED'] = True
+    scheduler.init_app(app)
+    
+    @scheduler.task('interval', id='check_reminders', seconds=60)
+    def check_reminders_task():
+        # Wrap in app context inside the task
+        ReminderService.check_and_send_reminders(app)
+        
+    scheduler.start()
+
 
 if __name__ == '__main__':
     app.run(debug=True, port=5001)

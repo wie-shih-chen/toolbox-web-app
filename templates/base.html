@@ -66,6 +66,9 @@
                     </div>
                     <span class="user-greeting" style="font-size: 0.9rem;">{{ current_user.username }}</span>
                 </div>
+                <a href="{{ url_for('reminder.index') }}" class="nav-link" title="提醒">
+                    <span class="material-icons" style="font-size: 20px;">notifications</span>
+                </a>
                 <a href="{{ url_for('auth.settings') }}" class="nav-link" title="設定">
                     <span class="material-icons" style="font-size: 20px;">settings</span>
                 </a>
