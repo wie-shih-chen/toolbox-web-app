@@ -1,6 +1,7 @@
 from models import db, Reminder, UserSettings
 from extensions import mail
 from flask_mail import Message
+from flask import current_app
 from services.line_service import LineService
 from datetime import datetime, timedelta
 import json
@@ -199,8 +200,11 @@ class ReminderService:
                 user = reminder.user 
                 if user and user.email:
                     # Ensure Sender is set
-                    sender = current_app.config.get('MAIL_USERNAME') or 'noreply@toolbox.com'
-                    
+                    sender = current_app.config.get('MAIL_USERNAME')
+                    if not sender:
+                        print(f"[Scheduler] Cannot send email: MAIL_USERNAME not set in config.")
+                        return
+
                     msg = Message(
                         subject=f"🔔 提醒: {reminder.title}",
                         recipients=[user.email],
