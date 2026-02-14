@@ -201,6 +201,10 @@
     .modal-header {
         border-bottom: 1px solid rgba(255, 255, 255, 0.05);
         padding: 24px 24px 16px;
+        display: flex;
+        justify-content: center;
+        /* Center the title */
+        position: relative;
     }
 
     .modal-title {
@@ -209,6 +213,17 @@
         background: linear-gradient(135deg, #fff 0%, #aaa 100%);
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
+        width: 100%;
+        text-align: center;
+    }
+
+    .close {
+        position: absolute;
+        right: 24px;
+        top: 24px;
+        z-index: 10;
+        padding: 0;
+        margin: 0;
     }
 
     .modal-body {
