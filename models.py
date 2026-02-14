@@ -19,6 +19,7 @@ class User(UserMixin, db.Model):
     salary_records = db.relationship('SalaryRecord', backref='user', lazy=True)
     expense_records = db.relationship('ExpenseRecord', backref='user', lazy=True)
     settings = db.relationship('UserSettings', backref='user', uselist=False, lazy=True)
+    reminders = db.relationship('Reminder', backref='user', lazy=True)
 
     def set_password(self, password):
         self.password_hash = generate_password_hash(password)

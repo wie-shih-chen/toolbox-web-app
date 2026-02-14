@@ -122,8 +122,6 @@ class ReminderService:
                 if r.frequency == 'once':
                     if r.remind_date == current_date:
                         should_send = True
-                        # Optional: Deactivate after sending?
-                        # r.is_active = False 
                 
                 elif r.frequency == 'daily':
                     should_send = True
@@ -132,35 +130,40 @@ class ReminderService:
                     # Check if 'weekdays' is set (JSON list of ints)
                     if r.weekdays:
                         try:
-                            target_days = json.loads(r.weekdays) # e.g. [0, 2, 4]
+                            # Handle both list and string representation of list
+                            if isinstance(r.weekdays, str):
+                                target_days = json.loads(r.weekdays)
+                            else:
+                                target_days = r.weekdays # Should be list if handled by SQLAlchemy JSON (but it's String)
+                                
                             if current_weekday in target_days:
                                 should_send = True
                         except Exception as e:
-                            print(f"Error parsing weekdays for reminder {r.id}: {e}")
+                            print(f"[Scheduler] Error parsing weekdays for reminder {r.id}: {e}")
                     else:
-                        # Fallback for old reminders: check against created_at or remind_date
+                        # Fallback for old reminders
                         ref_date_str = r.remind_date
-                        if not ref_date_str:
-                            ref_date = r.created_at
-                        else:
-                            ref_date = datetime.strptime(ref_date_str, "%Y-%m-%d")
-                            
-                        if ref_date.weekday() == current_weekday:
-                            should_send = True 
-                    
+                        if ref_date_str:
+                            try:
+                                ref_date = datetime.strptime(ref_date_str, "%Y-%m-%d")
+                                if ref_date.weekday() == current_weekday:
+                                    should_send = True
+                            except:
+                                pass
                 
-                # Check duplication (e.g. if scheduler runs twice in same minute)
-                # We check last_sent_at. If sent within last 60 seconds, skip.
+                # Check duplication (last_sent_at)
                 if should_send:
                      if r.last_sent_at:
                          time_diff = now - r.last_sent_at
+                         # Prevent double sending within 60 seconds
                          if time_diff.total_seconds() < 60:
                              should_send = False
                 
                 if should_send:
+                    print(f"[Scheduler] Sending reminder: {r.title} to User {r.user_id}")
                     ReminderService.send_notification(r)
                     r.last_sent_at = now
-                    # If once, mark inactive
+                    
                     if r.frequency == 'once':
                         r.is_active = False
                     
@@ -183,11 +186,22 @@ class ReminderService:
             
         # 2. Email Notify
         if 'email' in methods:
-            user_email = reminder.user.email
-            if user_email:
-                try:
-                    msg = Message(f"提醒: {reminder.title}", recipients=[user_email])
-                    msg.body = msg_text
+            try:
+                # user property now exists via backref in models.py
+                user = reminder.user 
+                if user and user.email:
+                    # Ensure Sender is set
+                    sender = current_app.config.get('MAIL_USERNAME') or 'noreply@toolbox.com'
+                    
+                    msg = Message(
+                        subject=f"🔔 提醒: {reminder.title}",
+                        recipients=[user.email],
+                        body=msg_text,
+                        sender=sender
+                    )
                     mail.send(msg)
-                except Exception as e:
-                    print(f"Failed to send email reminder: {e}")
+                    print(f"[Scheduler] Email sent to {user.email}")
+                else:
+                    print(f"[Scheduler] Cannot send email: User {reminder.user_id} has no email address.")
+            except Exception as e:
+                print(f"[Scheduler] Failed to send email reminder: {e}")
