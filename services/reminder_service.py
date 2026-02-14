@@ -20,6 +20,19 @@ class ReminderService:
         if not title or not remind_time:
             return None, "Title and time are required"
 
+        # Use Global Settings for notification methods if not provided
+        # (User requested to rely on global settings)
+        methods = data.get('notify_method')
+        if not methods:
+            user_settings = UserSettings.query.filter_by(user_id=user_id).first()
+            if user_settings and user_settings.notification_methods:
+                try:
+                    methods = json.loads(user_settings.notification_methods)
+                except:
+                    methods = ['line'] # Fallback
+            else:
+                methods = ['line'] # Default fallback
+
         reminder = Reminder(
             user_id=user_id,
             title=title,
@@ -27,7 +40,7 @@ class ReminderService:
             frequency=data.get('frequency', 'once'),
             remind_time=remind_time,
             remind_date=data.get('remind_date'), # Only for 'once'
-            notify_method=json.dumps(data.get('notify_method', ['line'])),
+            notify_method=json.dumps(methods),
             is_active=True
         )
         
