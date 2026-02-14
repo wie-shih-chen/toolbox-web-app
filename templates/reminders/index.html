@@ -137,6 +137,46 @@
         transform: translateX(20px);
     }
 
+    input:checked+.slider:before {
+        transform: translateX(20px);
+    }
+
+    /* Weekday Selector */
+    .weekday-selector {
+        display: none;
+        gap: 8px;
+        margin-top: 10px;
+        justify-content: space-between;
+    }
+
+    .weekday-btn {
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        background: rgba(255, 255, 255, 0.05);
+        color: var(--text-secondary);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: all 0.2s;
+        font-size: 0.85rem;
+        font-weight: 600;
+        user-select: none;
+    }
+
+    .weekday-btn:hover {
+        background: rgba(255, 255, 255, 0.15);
+    }
+
+    .weekday-btn.active {
+        background: var(--accent-color);
+        color: #000;
+        border-color: var(--accent-color);
+        box-shadow: 0 0 10px rgba(var(--accent-rgb), 0.3);
+    }
+
     .action-btn {
         background: none;
         border: none;
@@ -457,6 +497,19 @@
                         </div>
                     </div>
 
+                    <div class="form-group" id="weekdayGroup" style="display: none;">
+                        <label>重複日 (可多選)</label>
+                        <div class="weekday-selector" id="weekdaySelector" style="display: flex;">
+                            <div class="weekday-btn" data-day="0">一</div>
+                            <div class="weekday-btn" data-day="1">二</div>
+                            <div class="weekday-btn" data-day="2">三</div>
+                            <div class="weekday-btn" data-day="3">四</div>
+                            <div class="weekday-btn" data-day="4">五</div>
+                            <div class="weekday-btn" data-day="5">六</div>
+                            <div class="weekday-btn" data-day="6">日</div>
+                        </div>
+                    </div>
+
                     <div class="form-group" id="dateGroup">
                         <label>日期 (單次)</label>
                         <input type="date" class="form-control" id="remindDate">
@@ -488,13 +541,25 @@
     // Initialize current date for date picker
     document.getElementById('remindDate').valueAsDate = new Date();
 
+    // Weekday Button Click Logic
+    $(document).on('click', '.weekday-btn', function () {
+        $(this).toggleClass('active');
+    });
+
     function toggleDateInput() {
         const freq = document.getElementById('frequency').value;
         const dateGroup = document.getElementById('dateGroup');
+        const weekdayGroup = document.getElementById('weekdayGroup');
+
+        // Reset states
+        dateGroup.style.display = 'none';
+        weekdayGroup.style.display = 'none';
+
         if (freq === 'once') {
             dateGroup.style.display = 'block';
+        } else if (freq === 'weekly') {
+            weekdayGroup.style.display = 'block';
         } else {
-            dateGroup.style.display = 'none';
             document.getElementById('remindDate').value = '';
         }
     }
@@ -505,6 +570,7 @@
         document.getElementById('reminderId').value = '';
         document.getElementById('frequency').value = 'once';
         document.getElementById('remindDate').valueAsDate = new Date();
+        $('.weekday-btn').removeClass('active'); // Reset weekdays
         toggleDateInput();
         $('#reminderModal').modal('show');
     }
@@ -519,7 +585,8 @@
             description: `{{ r.description or '' }}`,
                 time: "{{ r.remind_time }}",
                     date: "{{ r.remind_date or '' }}",
-                        freq: "{{ r.frequency }}"
+                        freq: "{{ r.frequency }}",
+                            weekdays: { { r.weekdays or '[]' } }
     },
     {% endfor %}
     };
@@ -539,6 +606,14 @@
             document.getElementById('remindDate').value = data.date;
         }
 
+        // Reset and Set Weekdays
+        $('.weekday-btn').removeClass('active');
+        if (data.weekdays && Array.isArray(data.weekdays)) {
+            data.weekdays.forEach(day => {
+                $(`.weekday-btn[data-day="${day}"]`).addClass('active');
+            });
+        }
+
         toggleDateInput();
 
         $('#reminderModal').modal('show');
@@ -547,9 +622,23 @@
     async function saveReminder() {
         const id = document.getElementById('reminderId').value;
         const title = document.getElementById('title').value;
+        const frequency = document.getElementById('frequency').value;
+
         if (!title) {
             toastr.warning('請輸入標題');
             return;
+        }
+
+        // Collect Weekdays
+        let weekdays = [];
+        if (frequency === 'weekly') {
+            $('.weekday-btn.active').each(function () {
+                weekdays.push(parseInt($(this).data('day')));
+            });
+            if (weekdays.length === 0) {
+                toastr.warning('請至少選擇一天');
+                return;
+            }
         }
 
         const payload = {
@@ -557,7 +646,8 @@
             description: document.getElementById('description').value,
             remind_time: document.getElementById('remindTime').value,
             remind_date: document.getElementById('remindDate').value,
-            frequency: document.getElementById('frequency').value
+            frequency: frequency,
+            weekdays: weekdays
             // notify_method: removed, will use backend fallback based on UserSettings
         };
 
