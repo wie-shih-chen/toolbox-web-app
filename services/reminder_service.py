@@ -97,7 +97,7 @@ class ReminderService:
         Called by Scheduler every minute.
         Checks all active reminders and sends notifications if due.
         """
-        """
+
         with app.app_context():
             # Force Taiwan Time (UTC+8) to match user input
             now = datetime.utcnow() + timedelta(hours=8)
