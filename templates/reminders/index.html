@@ -269,6 +269,27 @@
         max-height: 100%;
     }
 
+    /* Mobile Fullscreen Modal */
+    @media (max-width: 576px) {
+        .modal-dialog {
+            max-width: 100%;
+            margin: 0;
+            height: 100%;
+            max-height: 100%;
+            border-radius: 0;
+        }
+
+        .modal-content {
+            border-radius: 0;
+            height: 100%;
+            border: none;
+        }
+
+        .modal.show {
+            padding: 0 !important;
+        }
+    }
+
     .modal-header {
         border-bottom: 1px solid rgba(255, 255, 255, 0.05);
         padding: 24px 24px 16px;
