@@ -431,20 +431,6 @@
                         <label>備註 (選填)</label>
                         <textarea class="form-control" id="description" rows="2"></textarea>
                     </div>
-
-                    <div class="form-group">
-                        <label>通知方式</label>
-                        <div>
-                            <div class="custom-control custom-checkbox custom-control-inline">
-                                <input type="checkbox" class="custom-control-input" id="notifyLine" checked>
-                                <label class="custom-control-label" for="notifyLine">Line Notify</label>
-                            </div>
-                            <div class="custom-control custom-checkbox custom-control-inline">
-                                <input type="checkbox" class="custom-control-input" id="notifyEmail">
-                                <label class="custom-control-label" for="notifyEmail">Email</label>
-                            </div>
-                        </div>
-                    </div>
                 </form>
             </div>
             <div class="modal-footer border-0">
@@ -493,8 +479,7 @@
             description: `{{ r.description or '' }}`,
                 time: "{{ r.remind_time }}",
                     date: "{{ r.remind_date or '' }}",
-                        freq: "{{ r.frequency }}",
-                            methods: { { r.notify_method | safe } }
+                        freq: "{{ r.frequency }}"
     },
     {% endfor %}
     };
@@ -516,10 +501,6 @@
 
         toggleDateInput();
 
-        // Checkboxes
-        document.getElementById('notifyLine').checked = data.methods.includes('line');
-        document.getElementById('notifyEmail').checked = data.methods.includes('email');
-
         $('#reminderModal').modal('show');
     }
 
@@ -531,17 +512,13 @@
             return;
         }
 
-        const methods = [];
-        if (document.getElementById('notifyLine').checked) methods.push('line');
-        if (document.getElementById('notifyEmail').checked) methods.push('email');
-
         const payload = {
             title: title,
             description: document.getElementById('description').value,
             remind_time: document.getElementById('remindTime').value,
             remind_date: document.getElementById('remindDate').value,
-            frequency: document.getElementById('frequency').value,
-            notify_method: methods
+            frequency: document.getElementById('frequency').value
+            // notify_method: removed, will use backend fallback based on UserSettings
         };
 
         const url = id ? `/reminders/${id}/edit` : '/reminders/add';
