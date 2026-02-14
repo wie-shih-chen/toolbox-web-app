@@ -40,6 +40,7 @@ class ReminderService:
             frequency=data.get('frequency', 'once'),
             remind_time=remind_time,
             remind_date=data.get('remind_date'), # Only for 'once'
+            weekdays=json.dumps(data.get('weekdays')) if data.get('weekdays') else None,
             notify_method=json.dumps(methods),
             is_active=True
         )
@@ -60,6 +61,10 @@ class ReminderService:
         reminder.remind_time = data.get('remind_time', reminder.remind_time)
         reminder.remind_date = data.get('remind_date', reminder.remind_date)
         
+        if 'weekdays' in data:
+            weekdays = data.get('weekdays')
+            reminder.weekdays = json.dumps(weekdays) if weekdays else None
+
         if 'notify_method' in data:
             reminder.notify_method = json.dumps(data.get('notify_method'))
             
@@ -120,29 +125,24 @@ class ReminderService:
                     should_send = True
                     
                 elif r.frequency == 'weekly':
-                    # Check if today matches the day of the week created? 
-                    # OR we can store specific days. For simplicity, let's assume 'weekly' means 'same day of week as remind_date'
-                    # If remind_date is not set for weekly, we fallback to created_at day
-                    ref_date_str = r.remind_date
-                    if not ref_date_str:
-                        ref_date = r.created_at
+                    # Check if 'weekdays' is set (JSON list of ints)
+                    if r.weekdays:
+                        try:
+                            target_days = json.loads(r.weekdays) # e.g. [0, 2, 4]
+                            if current_weekday in target_days:
+                                should_send = True
+                        except Exception as e:
+                            print(f"Error parsing weekdays for reminder {r.id}: {e}")
                     else:
-                        ref_date = datetime.strptime(ref_date_str, "%Y-%m-%d")
-                        
-                    if ref_date.weekday() == current_weekday:
-                        should_send = True
-                
-                elif r.frequency == 'monthly':
-                    # Check if today matches the day of month
-                    ref_date_str = r.remind_date
-                    if not ref_date_str:
-                         ref_date = r.created_at
-                    else:
-                         ref_date = datetime.strptime(ref_date_str, "%Y-%m-%d")
-                    
-                    if ref_date.day == now.day:
-                        should_send = True
-                    # Edge case: End of month (31st vs 30th) - Simple implementation might skip. 
+                        # Fallback for old reminders: check against created_at or remind_date
+                        ref_date_str = r.remind_date
+                        if not ref_date_str:
+                            ref_date = r.created_at
+                        else:
+                            ref_date = datetime.strptime(ref_date_str, "%Y-%m-%d")
+                            
+                        if ref_date.weekday() == current_weekday:
+                            should_send = True 
                     
                 
                 # Check duplication (e.g. if scheduler runs twice in same minute)
