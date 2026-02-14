@@ -123,6 +123,11 @@ class Reminder(db.Model):
     remind_time = db.Column(db.String(5), nullable=False) # HH:MM
     remind_date = db.Column(db.String(10), nullable=True) # YYYY-MM-DD (for 'once')
     
+    # Custom Weekdays (for 'weekly' frequency)
+    # JSON list of integers: 0=Mon, 1=Tue, ..., 6=Sun
+    # Example: "[0, 2, 4]" for Mon, Wed, Fri
+    weekdays = db.Column(db.String(50), nullable=True)
+
     # Status
     is_active = db.Column(db.Boolean, default=True)
     last_sent_at = db.Column(db.DateTime, nullable=True)
