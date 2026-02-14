@@ -97,9 +97,13 @@ class ReminderService:
         Called by Scheduler every minute.
         Checks all active reminders and sends notifications if due.
         """
+        """
         with app.app_context():
-            now = datetime.now()
+            # Force Taiwan Time (UTC+8) to match user input
+            now = datetime.utcnow() + timedelta(hours=8)
             current_time = now.strftime("%H:%M")
+            print(f"[Scheduler] Checking reminders for time: {current_time} (Date: {now.strftime('%Y-%m-%d')})")
+
             current_date = now.strftime("%Y-%m-%d")
             weekday_map = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
             current_weekday = now.weekday() # 0=Mon, 6=Sun
