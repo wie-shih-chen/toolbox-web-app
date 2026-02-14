@@ -161,7 +161,12 @@ class ReminderService:
                 
                 if should_send:
                     print(f"[Scheduler] Sending reminder: {r.title} to User {r.user_id}")
-                    ReminderService.send_notification(r)
+                    
+                    try:
+                        ReminderService.send_notification(r)
+                    except Exception as e:
+                        print(f"[Scheduler] Unexpected error sending notification for {r.id}: {e}")
+
                     r.last_sent_at = now
                     
                     if r.frequency == 'once':
@@ -182,7 +187,10 @@ class ReminderService:
         
         # 1. LINE Notify
         if 'line' in methods and user_settings and user_settings.line_user_id:
-            LineService.push_message(user_settings.line_user_id, msg_text)
+            try:
+                LineService.push_message(user_settings.line_user_id, msg_text)
+            except Exception as e:
+                print(f"[Scheduler] Failed to send LINE reminder: {e}")
             
         # 2. Email Notify
         if 'email' in methods:
