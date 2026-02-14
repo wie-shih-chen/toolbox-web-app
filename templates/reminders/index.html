@@ -91,6 +91,12 @@
         background: rgba(66, 133, 244, 0.15);
     }
 
+    .badge-disabled {
+        color: rgba(255, 255, 255, 0.3);
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
     /* Switch Component */
     .switch {
         position: relative;
@@ -508,15 +514,16 @@
                         {% endif %}
                     </span>
 
-                    {% set methods = r.notify_method | tojson %} <!-- Safe parse string JSON -->
-                    {% if 'line' in r.notify_method %}
-                    <span class="badge badge-line"><span class="material-icons" style="font-size: 14px;">chat</span>
-                        Line</span>
-                    {% endif %}
-                    {% if 'email' in r.notify_method %}
-                    <span class="badge badge-email"><span class="material-icons" style="font-size: 14px;">email</span>
-                        Mail</span>
-                    {% endif %}
+                    <!-- LINE Badge -->
+                    <span class="badge {% if 'line' in r.notify_method %}badge-line{% else %}badge-disabled{% endif %}">
+                        <span class="material-icons" style="font-size: 14px;">chat</span> Line
+                    </span>
+
+                    <!-- Email Badge -->
+                    <span
+                        class="badge {% if 'email' in r.notify_method %}badge-email{% else %}badge-disabled{% endif %}">
+                        <span class="material-icons" style="font-size: 14px;">email</span> Mail
+                    </span>
                 </div>
             </div>
         </div>
@@ -647,13 +654,13 @@
     // Let's implement a simple client-side data store from the rendered list.
     const remindersData = {
         {% for r in reminders %}
-    {{ r.id }}: {
+    { { r.id } }: {
         title: "{{ r.title }}",
             description: `{{ r.description or '' }}`,
                 time: "{{ r.remind_time }}",
                     date: "{{ r.remind_date or '' }}",
                         freq: "{{ r.frequency }}",
-                            weekdays: {{ r.weekdays or '[]' }}
+                            weekdays: { { r.weekdays or '[]' } }
     },
     {% endfor %}
     };
