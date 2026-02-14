@@ -188,6 +188,27 @@
     }
 
     /* Premium Modal Styles */
+    .modal {
+        /* Override Bootstrap defaults to use Flexbox centering */
+        padding: 0 !important;
+        /* Avoid padding shifting content */
+    }
+
+    .modal.show {
+        display: flex !important;
+        /* Critical: Override Bootstrap JS inline 'display: block' */
+        align-items: center;
+        justify-content: center;
+    }
+
+    .modal-dialog {
+        width: 100%;
+        max-width: 450px;
+        /* Constrain width */
+        margin: auto;
+        /* Center in flex container */
+    }
+
     .modal-content {
         background: rgba(30, 30, 30, 0.95);
         backdrop-filter: blur(20px);
@@ -196,6 +217,7 @@
         border: 1px solid rgba(255, 255, 255, 0.1);
         box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
         border-radius: 24px;
+        margin: auto;
     }
 
     .modal-header {
@@ -494,7 +516,7 @@
     // Let's implement a simple client-side data store from the rendered list.
     const remindersData = {
         {% for r in reminders %}
-    {{ r.id }}: {
+    { { r.id } }: {
         title: "{{ r.title }}",
             description: `{{ r.description or '' }}`,
                 time: "{{ r.remind_time }}",
