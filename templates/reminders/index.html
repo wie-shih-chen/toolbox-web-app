@@ -1,0 +1,504 @@
+{% extends "base.html" %}
+
+{% block title %}提醒事項 | 工具箱 Web{% endblock %}
+
+{% block extra_css %}
+<style>
+    .reminder-dashboard {
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .reminder-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+        gap: 20px;
+        margin-top: 20px;
+        padding-bottom: 80px;
+    }
+
+    .reminder-card {
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 16px;
+        padding: 20px;
+        position: relative;
+        transition: transform 0.2s, background 0.2s;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        min-height: 160px;
+    }
+
+    .reminder-card:hover {
+        transform: translateY(-2px);
+        background: rgba(255, 255, 255, 0.08);
+    }
+
+    .reminder-card.inactive {
+        opacity: 0.6;
+        filter: grayscale(0.8);
+    }
+
+    .card-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: start;
+        margin-bottom: 15px;
+    }
+
+    .reminder-title {
+        font-size: 1.2rem;
+        font-weight: 600;
+        color: var(--text-primary);
+        margin: 0;
+    }
+
+    .reminder-time {
+        font-size: 2rem;
+        font-weight: 700;
+        color: var(--accent-color);
+        margin: 10px 0;
+        font-family: 'SF Mono', 'Roboto Mono', monospace;
+    }
+
+    .reminder-meta {
+        font-size: 0.9rem;
+        color: var(--text-secondary);
+        display: flex;
+        gap: 10px;
+        align-items: center;
+    }
+
+    .badge {
+        padding: 4px 8px;
+        border-radius: 6px;
+        font-size: 0.8rem;
+        background: rgba(255, 255, 255, 0.1);
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+    }
+
+    .badge-line {
+        color: #00B900;
+        background: rgba(0, 185, 0, 0.15);
+    }
+
+    .badge-email {
+        color: #EA4335;
+        background: rgba(234, 67, 53, 0.15);
+    }
+
+    /* Switch Component */
+    .switch {
+        position: relative;
+        display: inline-block;
+        width: 44px;
+        height: 24px;
+    }
+
+    .switch input {
+        opacity: 0;
+        width: 0;
+        height: 0;
+    }
+
+    .slider {
+        position: absolute;
+        cursor: pointer;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: rgba(255, 255, 255, 0.2);
+        transition: .4s;
+        border-radius: 34px;
+    }
+
+    .slider:before {
+        position: absolute;
+        content: "";
+        height: 18px;
+        width: 18px;
+        left: 3px;
+        bottom: 3px;
+        background-color: white;
+        transition: .4s;
+        border-radius: 50%;
+    }
+
+    input:checked+.slider {
+        background-color: var(--accent-color);
+    }
+
+    input:checked+.slider:before {
+        transform: translateX(20px);
+    }
+
+    .action-btn {
+        background: none;
+        border: none;
+        color: var(--text-secondary);
+        cursor: pointer;
+        padding: 5px;
+        border-radius: 50%;
+        transition: 0.2s;
+    }
+
+    .action-btn:hover {
+        background: rgba(255, 255, 255, 0.1);
+        color: white;
+    }
+
+    .delete-btn:hover {
+        color: #ff4d4d;
+        background: rgba(255, 77, 77, 0.1);
+    }
+
+    .card-actions {
+        display: flex;
+        gap: 5px;
+        margin-top: auto;
+        justify-content: flex-end;
+    }
+
+    .add-fab {
+        position: fixed;
+        bottom: 90px;
+        /* Above bottom nav */
+        right: 20px;
+        width: 56px;
+        height: 56px;
+        border-radius: 28px;
+        background: var(--accent-color);
+        color: #000;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 4px 12px rgba(0, 255, 255, 0.3);
+        cursor: pointer;
+        z-index: 100;
+        transition: transform 0.2s;
+    }
+
+    .add-fab:hover {
+        transform: scale(1.05);
+    }
+
+    /* Modal Styles (Reuse existing if possible, but defining here for safety) */
+    .modal-content {
+        background: #1a1a1a;
+        color: #fff;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .form-control,
+    .form-select {
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        color: white;
+    }
+
+    .form-control:focus {
+        background: rgba(255, 255, 255, 0.1);
+        color: white;
+        box-shadow: none;
+        border-color: var(--accent-color);
+    }
+</style>
+<link href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css" rel="stylesheet" />
+{% endblock %}
+
+{% block content %}
+<div class="reminder-dashboard">
+    <div class="dashboard-header"
+        style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+        <h2 style="margin: 0; display: flex; align-items: center; gap: 10px;">
+            <span class="material-icons" style="color: var(--accent-color);">notifications_active</span>
+            提醒事項
+        </h2>
+    </div>
+
+    {% if not reminders %}
+    <div style="text-align: center; margin-top: 100px; color: var(--text-secondary);">
+        <span class="material-icons"
+            style="font-size: 4rem; opacity: 0.5; margin-bottom: 20px;">notifications_off</span>
+        <p>目前沒有任何提醒</p>
+        <button class="btn btn-primary" onclick="openAddModal()">立即新增</button>
+    </div>
+    {% else %}
+    <div class="reminder-grid">
+        {% for r in reminders %}
+        <div class="reminder-card {% if not r.is_active %}inactive{% endif %}" id="card-{{ r.id }}">
+            <div class="card-header">
+                <label class="switch">
+                    <input type="checkbox" onchange="toggleReminder({{ r.id }})" {% if r.is_active %}checked{% endif %}>
+                    <span class="slider"></span>
+                </label>
+                <div class="card-actions">
+                    <button class="action-btn" onclick="openEditModal({{ r.id }})">
+                        <span class="material-icons">edit</span>
+                    </button>
+                    <button class="action-btn delete-btn" onclick="deleteReminder({{ r.id }})">
+                        <span class="material-icons">delete</span>
+                    </button>
+                </div>
+            </div>
+
+            <div>
+                <h3 class="reminder-title">{{ r.title }}</h3>
+                <div class="reminder-time">{{ r.remind_time }}</div>
+
+                <div class="reminder-meta">
+                    <span class="badge">
+                        <span class="material-icons" style="font-size: 14px;">repeat</span>
+                        {% if r.frequency == 'once' %}單次
+                        {% elif r.frequency == 'daily' %}每天
+                        {% elif r.frequency == 'weekly' %}每週
+                        {% elif r.frequency == 'monthly' %}每月
+                        {% endif %}
+                    </span>
+
+                    {% set methods = r.notify_method | tojson %} <!-- Safe parse string JSON -->
+                    {% if 'line' in r.notify_method %}
+                    <span class="badge badge-line"><span class="material-icons" style="font-size: 14px;">chat</span>
+                        Line</span>
+                    {% endif %}
+                    {% if 'email' in r.notify_method %}
+                    <span class="badge badge-email"><span class="material-icons" style="font-size: 14px;">email</span>
+                        Mail</span>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <div class="add-fab" onclick="openAddModal()">
+        <span class="material-icons">add</span>
+    </div>
+</div>
+
+<!-- Add/Edit Modal -->
+<div class="modal fade" id="reminderModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header border-0">
+                <h5 class="modal-title" id="modalTitle">新增提醒</h5>
+                <button type="button" class="close text-white" data-dismiss="modal">
+                    <span>&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form id="reminderForm">
+                    <input type="hidden" id="reminderId">
+                    <div class="form-group">
+                        <label>標題</label>
+                        <input type="text" class="form-control" id="title" required placeholder="例如：吃藥、繳費">
+                    </div>
+
+                    <div class="row">
+                        <div class="col-6">
+                            <div class="form-group">
+                                <label>時間</label>
+                                <input type="time" class="form-control" id="remindTime" required>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="form-group">
+                                <label>頻率</label>
+                                <select class="form-control form-select" id="frequency" onchange="toggleDateInput()">
+                                    <option value="once">單次</option>
+                                    <option value="daily">每天</option>
+                                    <option value="weekly">每週</option>
+                                    <option value="monthly">每月</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-group" id="dateGroup">
+                        <label>日期 (單次)</label>
+                        <input type="date" class="form-control" id="remindDate">
+                    </div>
+
+                    <div class="form-group">
+                        <label>備註 (選填)</label>
+                        <textarea class="form-control" id="description" rows="2"></textarea>
+                    </div>
+
+                    <div class="form-group">
+                        <label>通知方式</label>
+                        <div>
+                            <div class="custom-control custom-checkbox custom-control-inline">
+                                <input type="checkbox" class="custom-control-input" id="notifyLine" checked>
+                                <label class="custom-control-label" for="notifyLine">Line Notify</label>
+                            </div>
+                            <div class="custom-control custom-checkbox custom-control-inline">
+                                <input type="checkbox" class="custom-control-input" id="notifyEmail">
+                                <label class="custom-control-label" for="notifyEmail">Email</label>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer border-0">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">取消</button>
+                <button type="button" class="btn btn-primary" onclick="saveReminder()">儲存</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
+<script>
+    // Initialize current date for date picker
+    document.getElementById('remindDate').valueAsDate = new Date();
+
+    function toggleDateInput() {
+        const freq = document.getElementById('frequency').value;
+        const dateGroup = document.getElementById('dateGroup');
+        if (freq === 'once') {
+            dateGroup.style.display = 'block';
+        } else {
+            dateGroup.style.display = 'none';
+            document.getElementById('remindDate').value = '';
+        }
+    }
+
+    function openAddModal() {
+        document.getElementById('modalTitle').innerText = '新增提醒';
+        document.getElementById('reminderForm').reset();
+        document.getElementById('reminderId').value = '';
+        document.getElementById('frequency').value = 'once';
+        document.getElementById('remindDate').valueAsDate = new Date();
+        toggleDateInput();
+        $('#reminderModal').modal('show');
+    }
+
+    // Load data into modal for editing is tricky without passing full JSON object to template.
+    // For simplicity, we can fetch detailed data or just use data attributes if available.
+    // Let's implement a simple client-side data store from the rendered list.
+    const remindersData = {
+        {% for r in reminders %}
+    { { r.id } }: {
+        title: "{{ r.title }}",
+            description: `{{ r.description or '' }}`,
+                time: "{{ r.remind_time }}",
+                    date: "{{ r.remind_date or '' }}",
+                        freq: "{{ r.frequency }}",
+                            methods: { { r.notify_method | safe } }
+    },
+    {% endfor %}
+    };
+
+    function openEditModal(id) {
+        const data = remindersData[id];
+        if (!data) return;
+
+        document.getElementById('modalTitle').innerText = '編輯提醒';
+        document.getElementById('reminderId').value = id;
+        document.getElementById('title').value = data.title;
+        document.getElementById('description').value = data.description;
+        document.getElementById('remindTime').value = data.time;
+        document.getElementById('frequency').value = data.freq;
+
+        if (data.date && data.date !== 'None') {
+            document.getElementById('remindDate').value = data.date;
+        }
+
+        toggleDateInput();
+
+        // Checkboxes
+        document.getElementById('notifyLine').checked = data.methods.includes('line');
+        document.getElementById('notifyEmail').checked = data.methods.includes('email');
+
+        $('#reminderModal').modal('show');
+    }
+
+    async function saveReminder() {
+        const id = document.getElementById('reminderId').value;
+        const title = document.getElementById('title').value;
+        if (!title) {
+            toastr.warning('請輸入標題');
+            return;
+        }
+
+        const methods = [];
+        if (document.getElementById('notifyLine').checked) methods.push('line');
+        if (document.getElementById('notifyEmail').checked) methods.push('email');
+
+        const payload = {
+            title: title,
+            description: document.getElementById('description').value,
+            remind_time: document.getElementById('remindTime').value,
+            remind_date: document.getElementById('remindDate').value,
+            frequency: document.getElementById('frequency').value,
+            notify_method: methods
+        };
+
+        const url = id ? `/reminders/${id}/edit` : '/reminders/add';
+
+        try {
+            const res = await fetch(url, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+            const result = await res.json();
+
+            if (result.success) {
+                toastr.success(result.message);
+                $('#reminderModal').modal('hide');
+                setTimeout(() => location.reload(), 500);
+            } else {
+                toastr.error(result.error);
+            }
+        } catch (e) {
+            console.error(e);
+            toastr.error('發生錯誤');
+        }
+    }
+
+    async function deleteReminder(id) {
+        if (!confirm('確定要刪除此提醒嗎？')) return;
+
+        try {
+            const res = await fetch(`/reminders/${id}/delete`, { method: 'POST' });
+            if (res.ok) {
+                toastr.success('已刪除');
+                document.getElementById(`card-${id}`).remove();
+            } else {
+                toastr.error('刪除失敗');
+            }
+        } catch (e) {
+            toastr.error('發生錯誤');
+        }
+    }
+
+    async function toggleReminder(id) {
+        try {
+            const res = await fetch(`/reminders/${id}/toggle`, { method: 'POST' });
+            const data = await res.json();
+            if (data.success) {
+                const card = document.getElementById(`card-${id}`);
+                if (data.is_active) {
+                    card.classList.remove('inactive');
+                    toastr.success('提醒已開啟');
+                } else {
+                    card.classList.add('inactive');
+                    toastr.info('提醒已關閉');
+                }
+            }
+        } catch (e) {
+            console.error(e);
+            toastr.error('操作失敗');
+        }
+    }
+</script>
+{% endblock %}
