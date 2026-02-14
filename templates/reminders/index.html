@@ -779,11 +779,15 @@
             const data = await res.json();
             if (data.success) {
                 const card = document.getElementById(`card-${id}`);
+                const checkbox = card.querySelector('input[type="checkbox"]'); // Get local checkbox
+
                 if (data.is_active) {
                     card.classList.remove('inactive');
+                    if (checkbox) checkbox.checked = true;
                     toastr.success('提醒已開啟');
                 } else {
                     card.classList.add('inactive');
+                    if (checkbox) checkbox.checked = false;
                     toastr.info('提醒已關閉');
                 }
             }
@@ -792,5 +796,39 @@
             toastr.error('操作失敗');
         }
     }
+
+    // Auto Refresh Status (Every 5 seconds)
+    function startAutoRefresh() {
+        setInterval(async () => {
+            try {
+                const res = await fetch('/reminders/api/list');
+                const data = await res.json();
+                if (data.success) {
+                    data.reminders.forEach(r => {
+                        const card = document.getElementById(`card-${r.id}`);
+                        if (card) {
+                            // Update Card Style based on backend status
+                            if (r.is_active) {
+                                card.classList.remove('inactive');
+                            } else {
+                                card.classList.add('inactive');
+                            }
+
+                            // Update Switch State without triggering onchange
+                            const checkbox = card.querySelector('input[type="checkbox"]');
+                            if (checkbox && checkbox.checked !== r.is_active) {
+                                checkbox.checked = r.is_active;
+                            }
+                        }
+                    });
+                }
+            } catch (e) {
+                console.error("Auto refresh failed", e);
+            }
+        }, 5000); // 5 seconds interval
+    }
+
+    // Start polling
+    startAutoRefresh();
 </script>
 {% endblock %}

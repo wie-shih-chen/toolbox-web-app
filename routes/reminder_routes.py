@@ -45,3 +45,16 @@ def toggle_reminder(id):
     if is_active is not None:
         return jsonify({'success': True, 'is_active': is_active})
     return jsonify({'success': False, 'error': '找不到提醒'}), 400
+
+@reminder_bp.route('/api/list')
+@login_required
+def list_reminders():
+    """API to get current state of reminders for polling."""
+    reminders = ReminderService.get_user_reminders(current_user.id)
+    data = []
+    for r in reminders:
+        data.append({
+            'id': r.id,
+            'is_active': r.is_active
+        })
+    return jsonify({'success': True, 'reminders': data})
