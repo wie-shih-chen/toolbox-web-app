@@ -643,7 +643,16 @@
         document.getElementById('reminderForm').reset();
         document.getElementById('reminderId').value = '';
         document.getElementById('frequency').value = 'once';
+
+        // Set Date to Today
         document.getElementById('remindDate').valueAsDate = new Date();
+
+        // Set Time to Now (HH:MM)
+        const now = new Date();
+        const hours = String(now.getHours()).padStart(2, '0');
+        const minutes = String(now.getMinutes()).padStart(2, '0');
+        document.getElementById('remindTime').value = `${hours}:${minutes}`;
+
         $('.weekday-btn').removeClass('active'); // Reset weekdays
         toggleDateInput();
         $('#reminderModal').modal('show');
