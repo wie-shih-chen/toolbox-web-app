@@ -7,3 +7,8 @@ main_bp = Blueprint('main', __name__)
 @login_required
 def index():
     return render_template('index.html')
+
+@main_bp.route('/manual')
+@login_required
+def manual():
+    return render_template('manual.html')

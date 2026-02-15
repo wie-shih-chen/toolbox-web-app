@@ -536,11 +536,11 @@
         <span>ℹ️</span> 關於與說明
     </div>
     <div style="padding: 10px 0;">
-        <button type="button" class="btn btn-secondary btn-block" onclick="openIntro()"
-            style="display: flex; align-items: center; justify-content: center; gap: 8px;">
+        <a href="{{ url_for('main.manual') }}" class="btn btn-secondary btn-block"
+            style="display: flex; align-items: center; justify-content: center; gap: 8px; text-decoration: none;">
             <span class="material-icons">menu_book</span>
             功能說明書 (新手導覽)
-        </button>
+        </a>
         <div style="text-align: center; margin-top: 15px; color: var(--text-tertiary); font-size: 0.85rem;">
             版本 v2.5.0 • <a href="https://github.com/wie-shih-chen/toolbox-web-app" target="_blank"
                 style="text-decoration: underline;">GitHub</a>

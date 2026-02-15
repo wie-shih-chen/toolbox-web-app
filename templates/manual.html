@@ -1,0 +1,274 @@
+{% extends "base.html" %}
+
+{% block title %}操作手冊 | 工具箱 Web{% endblock %}
+
+{% block content %}
+<style>
+    /* Manual Specific Styles */
+    .manual-container {
+        max-width: 900px;
+        margin: 0 auto;
+        padding-bottom: 60px;
+    }
+
+    .hero-section {
+        background: linear-gradient(135deg, rgba(66, 133, 244, 0.2) 0%, rgba(20, 184, 166, 0.2) 100%);
+        border-radius: 24px;
+        padding: 40px 30px;
+        text-align: center;
+        margin-bottom: 40px;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        position: relative;
+        overflow: hidden;
+    }
+
+    .hero-title {
+        font-size: 2.5rem;
+        font-weight: 800;
+        margin-bottom: 12px;
+        background: linear-gradient(90deg, #fff, #a5f3fc);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+    }
+
+    .hero-subtitle {
+        color: rgba(255, 255, 255, 0.8);
+        font-size: 1.1rem;
+        max-width: 600px;
+        margin: 0 auto;
+    }
+
+    /* Cards */
+    .manual-card {
+        background: rgba(30, 30, 30, 0.6);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 16px;
+        padding: 30px;
+        margin-bottom: 30px;
+        transition: transform 0.3s ease, border-color 0.3s ease;
+    }
+
+    .manual-card:hover {
+        transform: translateY(-5px);
+        border-color: rgba(255, 255, 255, 0.2);
+        background: rgba(35, 35, 35, 0.8);
+    }
+
+    .card-header {
+        display: flex;
+        align-items: center;
+        margin-bottom: 20px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        padding-bottom: 15px;
+    }
+
+    .card-icon {
+        width: 48px;
+        height: 48px;
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 24px;
+        margin-right: 15px;
+    }
+
+    .card-title {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: var(--text-primary);
+    }
+
+    /* Steps */
+    .step-list {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+    }
+
+    .step-item {
+        display: flex;
+        gap: 15px;
+        margin-bottom: 15px;
+    }
+
+    .step-number {
+        min-width: 28px;
+        height: 28px;
+        background: var(--primary-color);
+        color: #000;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 700;
+        font-size: 0.9rem;
+        margin-top: 2px;
+    }
+
+    .step-content strong {
+        color: var(--text-primary);
+        font-weight: 600;
+    }
+
+    .step-content {
+        color: var(--text-secondary);
+        line-height: 1.6;
+    }
+
+    /* Tip Box */
+    .tip-box {
+        background: rgba(255, 193, 7, 0.1);
+        border-left: 4px solid #ffc107;
+        padding: 15px;
+        border-radius: 0 8px 8px 0;
+        margin-top: 15px;
+        font-size: 0.9rem;
+        color: rgba(255, 255, 255, 0.9);
+    }
+
+    @media (max-width: 768px) {
+        .hero-title {
+            font-size: 1.8rem;
+        }
+
+        .manual-card {
+            padding: 20px;
+        }
+
+        .card-title {
+            font-size: 1.3rem;
+        }
+    }
+</style>
+
+<div class="manual-container">
+
+    <!-- Hero Header -->
+    <div class="hero-section">
+        <h1 class="hero-title">使用者操作手冊</h1>
+        <p class="hero-subtitle">歡迎使用您的個人全能工具箱！這裡收集了所有功能的詳細操作指南，助您輕鬆管理生活與工作。</p>
+    </div>
+
+    <!-- 1. Settings & LINE -->
+    <div class="manual-card">
+        <div class="card-header">
+            <div class="card-icon" style="background: rgba(6, 199, 85, 0.2); color: #06c755;">💬</div>
+            <h2 class="card-title">設定與 LINE 綁定</h2>
+        </div>
+        <div class="step-list">
+            <div class="step-item">
+                <div class="step-number">1</div>
+                <div class="step-content">
+                    <strong>更換個人頭像 (Avatar)</strong><br>
+                    進入「設定」頁面，點擊大頭貼即可更換。您可以選擇內建的可愛 Emoji，或是上傳自己的照片 (系統會協助裁切成圓形)。
+                </div>
+            </div>
+            <div class="step-item">
+                <div class="step-number">2</div>
+                <div class="step-content">
+                    <strong>掃描 QR Code</strong><br>
+                    在設定頁面找到 LINE 區塊，掃描 QR Code 加入機器人好友。
+                </div>
+            </div>
+            <div class="step-item">
+                <div class="step-number">3</div>
+                <div class="step-content">
+                    <strong>輸入驗證碼</strong><br>
+                    點擊網頁上的綠色按鈕產生 6 位數代碼，將代碼傳送給 LINE 機器人，即可完成綁定！
+                </div>
+            </div>
+        </div>
+        <div class="tip-box">
+            <i class="fas fa-lightbulb" style="margin-right: 5px;"></i>
+            <strong>小撇步：</strong>綁定後，提醒事項、薪資入帳通知都會直接推播到手機喔！
+        </div>
+    </div>
+
+    <!-- 2. Reminders -->
+    <div class="manual-card">
+        <div class="card-header">
+            <div class="card-icon" style="background: rgba(239, 68, 68, 0.2); color: #ef4444;">🔔</div>
+            <h2 class="card-title">智慧提醒</h2>
+        </div>
+        <div class="step-list">
+            <div class="step-item">
+                <div class="step-number">1</div>
+                <div class="step-content">
+                    <strong>新增提醒</strong><br>
+                    點擊導航列的「提醒」，再按右下角的「+」按鈕。
+                </div>
+            </div>
+            <div class="step-item">
+                <div class="step-number">2</div>
+                <div class="step-content">
+                    <strong>設定頻率</strong><br>
+                    支援「單次」(選日期) 或「每週」(複選星期，例如週一、三、五)。
+                </div>
+            </div>
+            <div class="step-item">
+                <div class="step-number">3</div>
+                <div class="step-content">
+                    <strong>自動狀態更新</strong><br>
+                    單次提醒發送後會自動關閉 (變灰色)，網頁無需手動重新整理也會即時更新狀態。
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 3. Accounting -->
+    <div class="manual-card">
+        <div class="card-header">
+            <div class="card-icon" style="background: rgba(245, 158, 11, 0.2); color: #f59e0b;">💰</div>
+            <h2 class="card-title">記帳管理</h2>
+        </div>
+        <div class="step-list">
+            <div class="step-item">
+                <div class="step-number">1</div>
+                <div class="step-content">
+                    <strong>快速記帳</strong><br>
+                    在記帳頁面點擊「+」，輸入金額、選擇類別即可完成紀錄。
+                </div>
+            </div>
+            <div class="step-item">
+                <div class="step-number">2</div>
+                <div class="step-content">
+                    <strong>預算監控</strong><br>
+                    設定每月預算上限，若花費超過 80%，進度條會變紅色提醒您注意開銷。
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 4. Salary -->
+    <div class="manual-card">
+        <div class="card-header">
+            <div class="card-icon" style="background: rgba(59, 130, 246, 0.2); color: #3b82f6;">💼</div>
+            <h2 class="card-title">薪資試算</h2>
+        </div>
+        <div class="step-list">
+            <div class="step-item">
+                <div class="step-number">1</div>
+                <div class="step-content">
+                    <strong>設定時薪</strong><br>
+                    在薪資頁面右上角設定您的時薪與月目標收入。
+                </div>
+            </div>
+            <div class="step-item">
+                <div class="step-number">2</div>
+                <div class="step-content">
+                    <strong>排班紀錄</strong><br>
+                    點擊行事曆上的日期，輸入上下班時間，系統自動計算當日薪資與累計月收入。
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer Info -->
+    <div style="text-align: center; color: var(--text-tertiary); margin-top: 40px; font-size: 0.9rem;">
+        <p>System Version 2.5.0 •Built with Flask & Love ❤️</p>
+    </div>
+
+</div>
+{% endblock %}
