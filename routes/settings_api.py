@@ -45,3 +45,30 @@ def register_settings_api(auth_bp):
         db.session.commit()
         
         return jsonify({'success': True})
+
+    @auth_bp.route('/api/update_custom_categories', methods=['POST'])
+    @login_required
+    def update_custom_categories():
+        data = request.json
+        categories = data.get('categories', [])
+        current_user.settings.custom_categories = json.dumps(categories)
+        db.session.commit()
+        return jsonify({'success': True})
+
+    @auth_bp.route('/api/update_recurring_expenses', methods=['POST'])
+    @login_required
+    def update_recurring_expenses():
+        data = request.json
+        expenses = data.get('expenses', [])
+        current_user.settings.recurring_expenses = json.dumps(expenses)
+        db.session.commit()
+        return jsonify({'success': True})
+
+    @auth_bp.route('/api/update_quick_shortcuts', methods=['POST'])
+    @login_required
+    def update_quick_shortcuts():
+        data = request.json
+        shortcuts = data.get('shortcuts', [])
+        current_user.settings.quick_shortcuts = json.dumps(shortcuts)
+        db.session.commit()
+        return jsonify({'success': True})

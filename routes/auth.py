@@ -222,12 +222,32 @@ def settings():
                     flash('密碼更新成功')
 
     # Prepare view data
+    # Prepare view data
     try:
         current_methods = json.loads(current_user.settings.notification_methods or '["email"]')
     except:
         current_methods = ['email']
 
-    return render_template('auth/settings.html', notification_methods=current_methods)
+    try:
+        custom_categories = json.loads(current_user.settings.custom_categories or '[]')
+    except:
+        custom_categories = []
+
+    try:
+        recurring_expenses = json.loads(current_user.settings.recurring_expenses or '[]')
+    except:
+        recurring_expenses = []
+
+    try:
+        quick_shortcuts = json.loads(current_user.settings.quick_shortcuts or '[]')
+    except:
+        quick_shortcuts = []
+
+    return render_template('auth/settings.html', 
+                         notification_methods=current_methods,
+                         custom_categories=custom_categories,
+                         recurring_expenses=recurring_expenses,
+                         quick_shortcuts=quick_shortcuts)
 
 @auth_bp.route('/check_line_status')
 @login_required

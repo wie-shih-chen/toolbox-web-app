@@ -478,11 +478,65 @@
                     </div>
                 </div>
 
-                <!-- Close the main unified form -->
+            </div>
+
+            <!-- Close the main unified form -->
     </form>
 
 </div>
-<!-- 4. Data Management -->
+
+<!-- 4. Accounting Settings (New Section) -->
+<div class="settings-section">
+    <div class="section-header">
+        <span>💰</span> 記帳設定 (Accounting)
+    </div>
+
+    <!-- Custom Categories -->
+    <div style="margin-bottom: 24px;">
+        <label style="display: block; font-weight: 600; margin-bottom: 12px;">🏷️ 自訂類別</label>
+        <div id="categoriesList" style="display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px;">
+            <!-- Rendered by JS -->
+        </div>
+        <div style="display: flex; gap: 8px;">
+            <input type="text" id="newCategoryInput" placeholder="類別名稱"
+                style="flex: 1; padding: 10px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; color: white;">
+            <button type="button" class="btn" onclick="addCategory()"
+                style="background: #3b82f6; color: white; padding: 0 16px;">新增</button>
+        </div>
+    </div>
+
+    <hr style="border: 0; border-top: 1px solid rgba(255,255,255,0.1); margin: 24px 0;">
+
+    <!-- Fixed Expenses -->
+    <div style="margin-bottom: 24px;">
+        <label style="display: block; font-weight: 600; margin-bottom: 12px;">📅 固定支出 (每月自動扣款)</label>
+        <div id="fixedExpensesList" style="display: flex; flex-direction: column; gap: 8px; margin-bottom: 12px;">
+            <!-- Rendered by JS -->
+        </div>
+        <button type="button" class="btn btn-secondary btn-block" onclick="openFixedExpenseModal()"
+            style="display: flex; align-items: center; justify-content: center; gap: 8px; background: rgba(255,255,255,0.1); border: 1px dashed rgba(255,255,255,0.3); color: var(--text-secondary);">
+            <i class="fas fa-plus"></i> 新增固定支出
+        </button>
+    </div>
+
+    <hr style="border: 0; border-top: 1px solid rgba(255,255,255,0.1); margin: 24px 0;">
+
+    <!-- Quick Shortcuts -->
+    <div>
+        <label style="display: block; font-weight: 600; margin-bottom: 12px;">⚡ 快捷摘要 (常用備註)</label>
+        <div id="shortcutsList" style="display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px;">
+            <!-- Rendered by JS -->
+        </div>
+        <div style="display: flex; gap: 8px;">
+            <input type="text" id="newShortcutInput" placeholder="例如：早餐、午餐..."
+                style="flex: 1; padding: 10px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; color: white;">
+            <button type="button" class="btn" onclick="addShortcut()"
+                style="background: #3b82f6; color: white; padding: 0 16px;">新增</button>
+        </div>
+    </div>
+</div>
+
+<!-- 5. Data Management -->
 <div class="settings-section">
     <div class="section-header">
         <span>💾</span> 資料管理中心
@@ -668,6 +722,53 @@
 
 
 </div>
+<!-- Fixed Expense Modal -->
+<div id="fixedExpenseModal"
+    style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 1000; align-items: center; justify-content: center;">
+    <div
+        style="background: #1a1a1a; padding: 24px; border-radius: 16px; width: 90%; max-width: 450px; border: 1px solid rgba(255,255,255,0.1);">
+        <h3 style="margin-bottom: 20px; font-size: 1.3rem;">新增固定支出</h3>
+
+        <div class="form-group">
+            <label
+                style="display: block; margin-bottom: 6px; color: var(--text-secondary); font-size: 0.9rem;">項目名稱</label>
+            <input type="text" id="fe_name" placeholder="例如：Netflix"
+                style="width: 100%; padding: 10px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; color: white;">
+        </div>
+
+        <div class="form-group" style="margin-top: 16px;">
+            <label
+                style="display: block; margin-bottom: 6px; color: var(--text-secondary); font-size: 0.9rem;">金額</label>
+            <input type="number" id="fe_amount" placeholder="270"
+                style="width: 100%; padding: 10px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; color: white;">
+        </div>
+
+        <div class="form-group" style="margin-top: 16px;">
+            <label
+                style="display: block; margin-bottom: 6px; color: var(--text-secondary); font-size: 0.9rem;">每月扣款日</label>
+            <select id="fe_day"
+                style="width: 100%; padding: 10px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; color: white;">
+                {% for i in range(1, 32) %}
+                <option value="{{ i }}">{{ i }} 號</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div class="form-group" style="margin-top: 16px;">
+            <label style="display: block; margin-bottom: 6px; color: var(--text-secondary); font-size: 0.9rem;">類別
+                (選填)</label>
+            <input type="text" id="fe_category" placeholder="娛樂"
+                style="width: 100%; padding: 10px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; color: white;">
+        </div>
+
+        <div style="display: flex; gap: 10px; margin-top: 24px;">
+            <button type="button" onclick="closeFixedExpenseModal()" class="btn"
+                style="flex: 1; background: #333; color: white; border: 1px solid #555;">取消</button>
+            <button type="button" onclick="saveFixedExpense()" class="btn btn-glow-cyan"
+                style="flex: 1; color: #000; font-weight: bold;">儲存</button>
+        </div>
+    </div>
+</div>
 {% endblock %}
 
 {% block extra_js %}
@@ -823,6 +924,198 @@
         if (hint && !event.target.classList.contains('info-icon')) {
             hint.style.display = 'none';
         }
+    });
+</script>
+
+<script>
+    // --- Data Initialization ---
+    // Safe initialization with default empty arrays if None
+    let customCategories = {{ custom_categories| tojson | safe }} || [];
+    let fixedExpenses = {{ recurring_expenses| tojson | safe }} || [];
+    let quickShortcuts = {{ quick_shortcuts| tojson | safe }} || [];
+
+    // --- Custom Categories Logic ---
+    function renderCategories() {
+        const container = document.getElementById('categoriesList');
+        if (!container) return;
+        container.innerHTML = '';
+        customCategories.forEach((cat, index) => {
+            const tag = document.createElement('div');
+            // Check if cat is string or object
+            const name = typeof cat === 'string' ? cat : cat.name;
+            const emoji = (typeof cat === 'object' && cat.emoji) ? cat.emoji : '🏷️';
+
+            tag.className = 'category-tag';
+            tag.style.cssText = 'background: rgba(59, 130, 246, 0.2); color: #60a5fa; padding: 6px 12px; border-radius: 20px; font-size: 0.9rem; display: flex; align-items: center; gap: 6px; border: 1px solid rgba(59, 130, 246, 0.3);';
+            tag.innerHTML = `
+                <span>${emoji} ${name}</span>
+                <span onclick="removeCategory(${index})" style="cursor: pointer; opacity: 0.6; margin-left: 4px;">&times;</span>
+            `;
+            container.appendChild(tag);
+        });
+    }
+
+    function addCategory() {
+        const input = document.getElementById('newCategoryInput');
+        const name = input.value.trim();
+        if (!name) return;
+
+        customCategories.push({ name: name, emoji: '🏷️' });
+        input.value = '';
+        renderCategories();
+        saveCategories();
+    }
+
+    function removeCategory(index) {
+        if (confirm('確定要刪除此類別嗎？')) {
+            customCategories.splice(index, 1);
+            renderCategories();
+            saveCategories();
+        }
+    }
+
+    function saveCategories() {
+        fetch('{{ url_for("auth.update_custom_categories") }}', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ categories: customCategories })
+        }).then(res => res.json()).then(data => {
+            if (data.success) showToast('類別已更新 ✅');
+        });
+    }
+
+    // --- Fixed Expenses Logic ---
+    function renderFixedExpenses() {
+        const container = document.getElementById('fixedExpensesList');
+        if (!container) return;
+        container.innerHTML = '';
+        fixedExpenses.forEach((fe, index) => {
+            const item = document.createElement('div');
+            item.style.cssText = 'display: flex; justify-content: space-between; align-items: center; background: rgba(255,255,255,0.05); padding: 12px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.05);';
+            item.innerHTML = `
+                <div>
+                    <div style="font-weight: 500; color: white;">${fe.name}</div>
+                    <div style="font-size: 0.85rem; color: var(--text-tertiary);">每月 ${fe.day} 號 • $${fe.amount}</div>
+                </div>
+                <button onclick="removeFixedExpense(${index})" style="background: transparent; border: none; color: #ef4444; opacity: 0.7; cursor: pointer;">
+                    <i class="fas fa-trash"></i>
+                </button>
+            `;
+            container.appendChild(item);
+        });
+    }
+
+    function openFixedExpenseModal() {
+        document.getElementById('fixedExpenseModal').style.display = 'flex';
+    }
+
+    function closeFixedExpenseModal() {
+        document.getElementById('fixedExpenseModal').style.display = 'none';
+        // Clear inputs
+        document.getElementById('fe_name').value = '';
+        document.getElementById('fe_amount').value = '';
+        document.getElementById('fe_category').value = '';
+    }
+
+    function saveFixedExpense() {
+        const name = document.getElementById('fe_name').value.trim();
+        const amount = document.getElementById('fe_amount').value;
+        const day = document.getElementById('fe_day').value;
+        const category = document.getElementById('fe_category').value.trim();
+
+        if (!name || !amount) {
+            alert('請填寫名稱與金額');
+            return;
+        }
+
+        fixedExpenses.push({
+            name: name,
+            amount: parseInt(amount),
+            day: parseInt(day),
+            category: category
+        });
+
+        closeFixedExpenseModal();
+        renderFixedExpenses();
+        saveFixedExpensesAPI();
+    }
+
+    function removeFixedExpense(index) {
+        if (confirm('確定要刪除此固定支出嗎？')) {
+            fixedExpenses.splice(index, 1);
+            renderFixedExpenses();
+            saveFixedExpensesAPI();
+        }
+    }
+
+    function saveFixedExpensesAPI() {
+        fetch('{{ url_for("auth.update_recurring_expenses") }}', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ expenses: fixedExpenses })
+        }).then(res => res.json()).then(data => {
+            if (data.success) showToast('固定支出已更新 ✅');
+        });
+    }
+
+    // --- Quick Shortcuts Logic ---
+    function renderShortcuts() {
+        const container = document.getElementById('shortcutsList');
+        if (!container) return;
+        container.innerHTML = '';
+        quickShortcuts.forEach((sc, index) => {
+            const tag = document.createElement('div');
+            tag.style.cssText = 'background: rgba(16, 185, 129, 0.2); color: #34d399; padding: 6px 12px; border-radius: 20px; font-size: 0.9rem; display: flex; align-items: center; gap: 6px; border: 1px solid rgba(16, 185, 129, 0.3);';
+            tag.innerHTML = `
+                <span>${sc}</span>
+                <span onclick="removeShortcut(${index})" style="cursor: pointer; opacity: 0.6; margin-left: 4px;">&times;</span>
+            `;
+            container.appendChild(tag);
+        });
+    }
+
+    function addShortcut() {
+        const input = document.getElementById('newShortcutInput');
+        const val = input.value.trim();
+        if (!val) return;
+
+        quickShortcuts.push(val);
+        input.value = '';
+        renderShortcuts();
+        saveShortcuts();
+    }
+
+    function removeShortcut(index) {
+        quickShortcuts.splice(index, 1);
+        renderShortcuts();
+        saveShortcuts();
+    }
+
+    function saveShortcuts() {
+        fetch('{{ url_for("auth.update_quick_shortcuts") }}', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ shortcuts: quickShortcuts })
+        }).then(res => res.json()).then(data => {
+            if (data.success) showToast('快捷摘要已更新 ✅');
+        });
+    }
+
+    // Helper Toast
+    function showToast(msg) {
+        // Reuse settingsAutoSave toast if available, or create simple one
+        if (typeof settingsAutoSave !== 'undefined' && settingsAutoSave.showToast) {
+            settingsAutoSave.showToast(msg, 'success');
+        } else {
+            alert(msg);
+        }
+    }
+
+    // Init
+    document.addEventListener('DOMContentLoaded', () => {
+        renderCategories();
+        renderFixedExpenses();
+        renderShortcuts();
     });
 </script>
 {% endblock %}
