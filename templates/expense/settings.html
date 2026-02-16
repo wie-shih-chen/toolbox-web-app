@@ -154,14 +154,28 @@
 {% block extra_js %}
 <script src="{{ url_for('static', filename='js/expense.js') }}?v=2.2"></script>
 <script>
-    document.addEventListener('DOMContentLoaded', () => {
-        // Wait for expenseApp to be ready
-        const checkApp = setInterval(() => {
-            if (typeof expenseApp !== 'undefined' && expenseApp.settings) {
-                clearInterval(checkApp);
-                initExpenseSettings();
-            }
-        }, 100);
+    document.addEventListener('DOMContentLoaded', async () => {
+        console.log('[INIT] Settings page loading...');
+
+        // Wait for expenseApp to be defined
+        if (typeof expenseApp === 'undefined') {
+            console.error('[ERROR] expenseApp not found!');
+            alert('⚠️ 系統初始化失敗，請重新整理頁面');
+            return;
+        }
+
+        try {
+            // Load settings from server API
+            console.log('[INIT] Calling loadSettings()...');
+            await expenseApp.loadSettings();
+            console.log('[INIT] Settings loaded successfully:', expenseApp.settings);
+
+            // Initialize UI with loaded settings
+            initExpenseSettings();
+        } catch (error) {
+            console.error('[ERROR] Failed to load settings:', error);
+            alert('⚠️ 無法載入設定，請重新整理頁面');
+        }
     });
 
     function initExpenseSettings() {
@@ -263,7 +277,7 @@
             saveSettings('quick_shortcuts', expenseApp.settings.quick_shortcuts);
         };
 
-        // --- Add Logic (Simplified for brevity) ---
+        // --- Add Logic ---
         document.getElementById('addCatBtn').onclick = () => {
             const name = document.getElementById('newCatName').value;
             const emoji = document.getElementById('newCatEmoji').value || '🏷️';
@@ -273,7 +287,35 @@
                 renderCategoriesList();
                 saveSettings('custom_categories', expenseApp.settings.custom_categories);
                 document.getElementById('newCatName').value = '';
+                document.getElementById('newCatEmoji').value = '';
+            } else {
+                alert('請輸入類別名稱');
             }
+        };
+
+        // Recurring Expenses - use modal approach
+        document.getElementById('openAddRecurringBtn').onclick = () => {
+            const name = prompt('固定支出名稱 (例如：電話費)：');
+            if (!name) return;
+
+            const amount = parseFloat(prompt('每月金額：'));
+            if (isNaN(amount)) {
+                alert('請輸入有效金額');
+                return;
+            }
+
+            const day = parseInt(prompt('每月幾號扣款 (1-31)：'));
+            if (isNaN(day) || day < 1 || day > 31) {
+                alert('請輸入1-31之間的數字');
+                return;
+            }
+
+            // Get first category as default
+            const category = expenseApp.settings.custom_categories[0]?.name || '其他';
+
+            expenseApp.settings.recurring_expenses.push({ name, amount, day, category });
+            renderRecurringList();
+            saveSettings('recurring_expenses', expenseApp.settings.recurring_expenses);
         };
 
         document.getElementById('addShortcutBtn').onclick = () => {
@@ -284,6 +326,9 @@
                 renderShortcutList();
                 saveSettings('quick_shortcuts', expenseApp.settings.quick_shortcuts);
                 document.getElementById('newShortcutName').value = '';
+                document.getElementById('newShortcutEmoji').value = '';
+            } else {
+                alert('請輸入快捷名稱');
             }
         };
 
