@@ -1175,9 +1175,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
             if (!expenseApp.settings.quick_shortcuts) expenseApp.settings.quick_shortcuts = [];
 
-            // Limit to 5
-            if (expenseApp.settings.quick_shortcuts.length >= 5) {
-                alert('最多只能設定 5 個快捷摘要，請先刪除舊的再新增。');
+            // Limit to 4
+            if (expenseApp.settings.quick_shortcuts.length >= 4) {
+                alert('最多只能設定 4 個快捷摘要，請先刪除舊的再新增。');
                 return;
             }
 

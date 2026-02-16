@@ -442,16 +442,24 @@
         document.getElementById('addShortcutBtn').onclick = () => {
             const name = document.getElementById('newShortcutName').value;
             const emoji = document.getElementById('newShortcutEmoji').value || '⚡';
-            if (name) {
-                expenseApp.settings.quick_shortcuts.push({ name, emoji });
-                renderShortcutList();
-                initSortable();
-                saveSettings('quick_shortcuts', expenseApp.settings.quick_shortcuts);
-                document.getElementById('newShortcutName').value = '';
-                document.getElementById('newShortcutEmoji').value = '';
-            } else {
+
+            if (!name) {
                 alert('請輸入快捷名稱');
+                return;
             }
+
+            // Limit to 4 shortcuts
+            if (expenseApp.settings.quick_shortcuts.length >= 4) {
+                alert('最多只能設定 4 個快捷摘要，請先刪除舊的再新增。');
+                return;
+            }
+
+            expenseApp.settings.quick_shortcuts.push({ name, emoji });
+            renderShortcutList();
+            initSortable();
+            saveSettings('quick_shortcuts', expenseApp.settings.quick_shortcuts);
+            document.getElementById('newShortcutName').value = '';
+            document.getElementById('newShortcutEmoji').value = '';
         };
 
         // --- Initialize SortableJS ---
