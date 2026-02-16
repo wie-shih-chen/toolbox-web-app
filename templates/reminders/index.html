@@ -663,6 +663,7 @@
     // Load data into modal for editing is tricky without passing full JSON object to template.
     // For simplicity, we can fetch detailed data or just use data attributes if available.
     // Let's implement a simple client-side data store from the rendered list.
+    // (Force Update)
     const remindersData = {
         {% for r in reminders %}
     "{{ r.id }}": {
