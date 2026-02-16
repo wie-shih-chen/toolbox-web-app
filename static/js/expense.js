@@ -1158,39 +1158,3 @@ expenseApp.editShortcut = function (idx) {
     this.saveSettings();
 };
 
-// Add New Shortcut Handler
-document.addEventListener('DOMContentLoaded', () => {
-    const addShortBtn = document.getElementById('addShortcutBtn');
-    if (addShortBtn) {
-        addShortBtn.addEventListener('click', () => {
-            const nameInput = document.getElementById('newShortcutName');
-            const emojiInput = document.getElementById('newShortcutEmoji'); // Assuming we add this
-
-            const val = nameInput.value.trim();
-            // If we don't have emoji input yet, default to empty or specific? 
-            // We will add emoji input in HTML next.
-            const emoji = emojiInput ? emojiInput.value.trim() : '⚡';
-
-            if (!val) return;
-
-            if (!expenseApp.settings.quick_shortcuts) expenseApp.settings.quick_shortcuts = [];
-
-            // Limit to 4
-            if (expenseApp.settings.quick_shortcuts.length >= 4) {
-                alert('最多只能設定 4 個快捷摘要，請先刪除舊的再新增。');
-                return;
-            }
-
-            expenseApp.settings.quick_shortcuts.push({
-                name: val,
-                emoji: emoji
-            });
-
-            nameInput.value = '';
-            if (emojiInput) emojiInput.value = '';
-
-            expenseApp.renderSettingsLists();
-            expenseApp.saveSettings();
-        });
-    }
-});
