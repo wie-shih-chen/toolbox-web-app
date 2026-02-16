@@ -489,14 +489,15 @@
         <div class="reminder-card {% if not r.is_active %}inactive{% endif %}" id="card-{{ r.id }}">
             <div class="card-header">
                 <label class="switch">
-                    <input type="checkbox" onchange="toggleReminder({{ r.id }})" {% if r.is_active %}checked{% endif %}>
+                    <input type="checkbox" onchange="toggleReminder('{{ r.id }}')" {% if r.is_active %}checked{% endif
+                        %}>
                     <span class="slider"></span>
                 </label>
                 <div class="card-actions">
-                    <button class="action-btn" onclick="openEditModal({{ r.id }})">
+                    <button class="action-btn" onclick="openEditModal('{{ r.id }}')">
                         <span class="material-icons">edit</span>
                     </button>
-                    <button class="action-btn delete-btn" onclick="deleteReminder({{ r.id }})">
+                    <button class="action-btn delete-btn" onclick="deleteReminder('{{ r.id }}')">
                         <span class="material-icons">delete</span>
                     </button>
                 </div>
