@@ -310,6 +310,7 @@
         font-weight: 700;
         font-size: 1.5rem;
         background: linear-gradient(135deg, #fff 0%, #aaa 100%);
+        background-clip: text;
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
         width: 100%;
@@ -663,13 +664,13 @@
     // Let's implement a simple client-side data store from the rendered list.
     const remindersData = {
         {% for r in reminders %}
-    {{ r.id }}: {
-        title: "{{ r.title }}",
-            description: `{{ r.description or '' }}`,
-                time: "{{ r.remind_time }}",
-                    date: "{{ r.remind_date or '' }}",
-                        freq: "{{ r.frequency }}",
-                            weekdays: {{ r.weekdays or '[]' }}
+    "{{ r.id }}": {
+        title: { { r.title | tojson } },
+        description: { { r.description | tojson if r.description else '""' } },
+        time: { { r.remind_time | tojson } },
+        date: { { r.remind_date | tojson if r.remind_date else '""' } },
+        freq: { { r.frequency | tojson } },
+        weekdays: { { r.weekdays | tojson if r.weekdays else '[]' } }
     },
     {% endfor %}
     };

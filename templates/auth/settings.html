@@ -483,56 +483,54 @@
             <!-- Close the main unified form -->
     </form>
 
-</div>
+    <!-- 4. Accounting Settings (Moved content removed by user request) -->
 
-<!-- 4. Accounting Settings (Moved content removed by user request) -->
-
-<!-- 5. Data Management -->
-<div class="settings-section">
-    <div class="section-header">
-        <span>💾</span> 資料管理中心
-    </div>
-
-    <div style="margin-bottom: 24px;">
-        <div style="font-weight: 600; margin-bottom: 8px;">安全性</div>
-        <button type="button" class="btn btn-secondary btn-block" onclick="openPasswordModal()"
-            style="display: flex; align-items: center; justify-content: center; gap: 8px; margin-top: 0; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.3); color: white; font-weight: 500; transition: all 0.2s;">
-            <span class="material-icons" style="font-size: 18px;">lock</span>
-            修改密碼
-        </button>
-    </div>
-
-    <div style="margin-bottom: 20px;">
-        <div style="font-weight: 600; margin-bottom: 8px;">全站備份</div>
-        <div style="color: var(--text-tertiary); font-size: 0.9rem; margin-bottom: 12px;">
-            匯出所有薪資與記帳資料 (Excel 格式)
+    <!-- 5. Data Management -->
+    <div class="settings-section">
+        <div class="section-header">
+            <span>💾</span> 資料管理中心
         </div>
-        <form method="POST" action="{{ url_for('auth.export_excel_all') }}">
-            <button type="submit" class="btn" style="background: #3b82f6; width: 100%; padding: 10px;">
-                <i class="fas fa-file-excel"></i> 立即備份
-            </button>
-        </form>
-    </div>
 
-    <hr style="border: 0; border-top: 1px solid rgba(255,255,255,0.1); margin: 24px 0;">
-
-    <div>
-        <div style="font-weight: 600; margin-bottom: 8px; color: #ef4444;">危險區域</div>
-        <div style="color: var(--text-tertiary); font-size: 0.9rem; margin-bottom: 12px;">
-            重置特定模組的資料，此操作無法復原。
-        </div>
-        <div style="display: flex; gap: 10px;">
-            <button type="button" class="btn" onclick="openResetModal('salary')"
-                style="flex: 1; background: rgba(239, 68, 68, 0.1); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.3);">
-                重置薪資
-            </button>
-            <button type="button" class="btn" onclick="openResetModal('expense')"
-                style="flex: 1; background: rgba(239, 68, 68, 0.1); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.3);">
-                重置記帳
+        <div style="margin-bottom: 24px;">
+            <div style="font-weight: 600; margin-bottom: 8px;">安全性</div>
+            <button type="button" class="btn btn-secondary btn-block" onclick="openPasswordModal()"
+                style="display: flex; align-items: center; justify-content: center; gap: 8px; margin-top: 0; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.3); color: white; font-weight: 500; transition: all 0.2s;">
+                <span class="material-icons" style="font-size: 18px;">lock</span>
+                修改密碼
             </button>
         </div>
+
+        <div style="margin-bottom: 20px;">
+            <div style="font-weight: 600; margin-bottom: 8px;">全站備份</div>
+            <div style="color: var(--text-tertiary); font-size: 0.9rem; margin-bottom: 12px;">
+                匯出所有薪資與記帳資料 (Excel 格式)
+            </div>
+            <form method="POST" action="{{ url_for('auth.export_excel_all') }}">
+                <button type="submit" class="btn" style="background: #3b82f6; width: 100%; padding: 10px;">
+                    <i class="fas fa-file-excel"></i> 立即備份
+                </button>
+            </form>
+        </div>
+
+        <hr style="border: 0; border-top: 1px solid rgba(255,255,255,0.1); margin: 24px 0;">
+
+        <div>
+            <div style="font-weight: 600; margin-bottom: 8px; color: #ef4444;">危險區域</div>
+            <div style="color: var(--text-tertiary); font-size: 0.9rem; margin-bottom: 12px;">
+                重置特定模組的資料，此操作無法復原。
+            </div>
+            <div style="display: flex; gap: 10px;">
+                <button type="button" class="btn" onclick="openResetModal('salary')"
+                    style="flex: 1; background: rgba(239, 68, 68, 0.1); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.3);">
+                    重置薪資
+                </button>
+                <button type="button" class="btn" onclick="openResetModal('expense')"
+                    style="flex: 1; background: rgba(239, 68, 68, 0.1); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.3);">
+                    重置記帳
+                </button>
+            </div>
+        </div>
     </div>
-</div>
 </div>
 
 <!-- 5. About & Manual -->
@@ -879,185 +877,6 @@
 </script>
 
 <script>
-    // --- Data Initialization ---
-    // Safe initialization with default empty arrays if None
-    let customCategories = {{ custom_categories| tojson | safe }} || [];
-    let fixedExpenses = {{ recurring_expenses| tojson | safe }} || [];
-    let quickShortcuts = {{ quick_shortcuts| tojson | safe }} || [];
-
-    // --- Custom Categories Logic ---
-    function renderCategories() {
-        const container = document.getElementById('categoriesList');
-        if (!container) return;
-        container.innerHTML = '';
-        customCategories.forEach((cat, index) => {
-            const tag = document.createElement('div');
-            // Clean Slate: Strict Object
-            const name = cat.name;
-            const emoji = cat.emoji || '🏷️';
-
-            tag.className = 'category-tag';
-            tag.style.cssText = 'background: rgba(59, 130, 246, 0.2); color: #60a5fa; padding: 6px 12px; border-radius: 20px; font-size: 0.9rem; display: flex; align-items: center; gap: 6px; border: 1px solid rgba(59, 130, 246, 0.3);';
-            tag.innerHTML = `
-                <span>${emoji} ${name}</span>
-                <span onclick="removeCategory(${index})" style="cursor: pointer; opacity: 0.6; margin-left: 4px;">&times;</span>
-            `;
-            container.appendChild(tag);
-        });
-    }
-
-    function addCategory() {
-        const input = document.getElementById('newCategoryInput');
-        const name = input.value.trim();
-        if (!name) return;
-
-        customCategories.push({ name: name, emoji: '🏷️' });
-        input.value = '';
-        renderCategories();
-        saveCategories();
-    }
-
-    function removeCategory(index) {
-        if (confirm('確定要刪除此類別嗎？')) {
-            customCategories.splice(index, 1);
-            renderCategories();
-            saveCategories();
-        }
-    }
-
-    function saveCategories() {
-        fetch('{{ url_for("auth.update_custom_categories") }}', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ categories: customCategories })
-        }).then(res => res.json()).then(data => {
-            if (data.success) showToast('類別已更新 ✅');
-        });
-    }
-
-    // --- Fixed Expenses Logic ---
-    function renderFixedExpenses() {
-        const container = document.getElementById('fixedExpensesList');
-        if (!container) return;
-        container.innerHTML = '';
-        fixedExpenses.forEach((fe, index) => {
-            const item = document.createElement('div');
-            item.style.cssText = 'display: flex; justify-content: space-between; align-items: center; background: rgba(255,255,255,0.05); padding: 12px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.05);';
-            item.innerHTML = `
-                <div>
-                    <div style="font-weight: 500; color: white;">${fe.name}</div>
-                    <div style="font-size: 0.85rem; color: var(--text-tertiary);">每月 ${fe.day} 號 • $${fe.amount}</div>
-                </div>
-                <button onclick="removeFixedExpense(${index})" style="background: transparent; border: none; color: #ef4444; opacity: 0.7; cursor: pointer;">
-                    <i class="fas fa-trash"></i>
-                </button>
-            `;
-            container.appendChild(item);
-        });
-    }
-
-    function openFixedExpenseModal() {
-        document.getElementById('fixedExpenseModal').style.display = 'flex';
-    }
-
-    function closeFixedExpenseModal() {
-        document.getElementById('fixedExpenseModal').style.display = 'none';
-        // Clear inputs
-        document.getElementById('fe_name').value = '';
-        document.getElementById('fe_amount').value = '';
-        document.getElementById('fe_category').value = '';
-    }
-
-    function saveFixedExpense() {
-        const name = document.getElementById('fe_name').value.trim();
-        const amount = document.getElementById('fe_amount').value;
-        const day = document.getElementById('fe_day').value;
-        const category = document.getElementById('fe_category').value.trim();
-
-        if (!name || !amount) {
-            alert('請填寫名稱與金額');
-            return;
-        }
-
-        fixedExpenses.push({
-            name: name,
-            amount: parseInt(amount),
-            day: parseInt(day),
-            category: category
-        });
-
-        closeFixedExpenseModal();
-        renderFixedExpenses();
-        saveFixedExpensesAPI();
-    }
-
-    function removeFixedExpense(index) {
-        if (confirm('確定要刪除此固定支出嗎？')) {
-            fixedExpenses.splice(index, 1);
-            renderFixedExpenses();
-            saveFixedExpensesAPI();
-        }
-    }
-
-    function saveFixedExpensesAPI() {
-        fetch('{{ url_for("auth.update_recurring_expenses") }}', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ expenses: fixedExpenses })
-        }).then(res => res.json()).then(data => {
-            if (data.success) showToast('固定支出已更新 ✅');
-        });
-    }
-
-    // --- Quick Shortcuts Logic ---
-    function renderShortcuts() {
-        const container = document.getElementById('shortcutsList');
-        if (!container) return;
-        container.innerHTML = '';
-        quickShortcuts.forEach((sc, index) => {
-            const tag = document.createElement('div');
-            // Clean Slate: Strict Object
-            const name = sc.name;
-            const emoji = sc.emoji || '⚡';
-
-            tag.style.cssText = 'background: rgba(16, 185, 129, 0.2); color: #34d399; padding: 6px 12px; border-radius: 20px; font-size: 0.9rem; display: flex; align-items: center; gap: 6px; border: 1px solid rgba(16, 185, 129, 0.3);';
-            tag.innerHTML = `
-                <span>${emoji} ${name}</span>
-                <span onclick="removeShortcut(${index})" style="cursor: pointer; opacity: 0.6; margin-left: 4px;">&times;</span>
-            `;
-            container.appendChild(tag);
-        });
-    }
-
-    function addShortcut() {
-        const input = document.getElementById('newShortcutInput');
-        const val = input.value.trim();
-        if (!val) return;
-
-        // Push Object instead of String
-        quickShortcuts.push({ name: val, emoji: '⚡' });
-        input.value = '';
-        renderShortcuts();
-        saveShortcuts();
-    }
-
-    function removeShortcut(index) {
-        quickShortcuts.splice(index, 1);
-        renderShortcuts();
-        saveShortcuts();
-    }
-
-    function saveShortcuts() {
-        // console.log("Saving Shortcuts:", quickShortcuts);
-        fetch('{{ url_for("auth.update_quick_shortcuts") }}', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ shortcuts: quickShortcuts })
-        }).then(res => res.json()).then(data => {
-            if (data.success) showToast('快捷摘要已更新 ✅');
-        });
-    }
-
     // Helper Toast
     function showToast(msg) {
         // Reuse settingsAutoSave toast if available, or create simple one
@@ -1070,9 +889,7 @@
 
     // Init
     document.addEventListener('DOMContentLoaded', () => {
-        renderCategories();
-        renderFixedExpenses();
-        renderShortcuts();
+        // No legacy init required
     });
 </script>
 {% endblock %}
