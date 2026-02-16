@@ -152,5 +152,164 @@
 {% endblock %}
 
 {% block extra_js %}
-<script src="{{ url_for('static', filename='js/expense.js') }}?v=2.1"></script>
+<script src="{{ url_for('static', filename='js/expense.js') }}?v=2.2"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        // Wait for expenseApp to be ready
+        const checkApp = setInterval(() => {
+            if (typeof expenseApp !== 'undefined' && expenseApp.settings) {
+                clearInterval(checkApp);
+                initExpenseSettings();
+            }
+        }, 100);
+    });
+
+    function initExpenseSettings() {
+        renderCategoriesList();
+        renderRecurringList();
+        renderShortcutList();
+
+        // --- Category Logic ---
+        function renderCategoriesList() {
+            const container = document.getElementById('categoryList');
+            if (!container) return;
+            container.innerHTML = '';
+
+            // Clean Slate: Strict Object Access
+            const cats = expenseApp.settings.custom_categories || [];
+
+            cats.forEach((cat, idx) => {
+                const el = document.createElement('div');
+                el.className = 'settings-list-item';
+                // Strict Object Access
+                el.innerHTML = `
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <span style="font-size: 1.2rem;">${cat.emoji || '🏷️'}</span>
+                        <span style="font-weight: 500;">${cat.name}</span>
+                        <span style="width: 12px; height: 12px; border-radius: 50%; background: ${cat.color || '#a78bfa'}; display: inline-block;"></span>
+                    </div>
+                   <button type="button" class="btn-icon delete-cat-btn" onclick="removeCategory(${idx})">
+                        <span class="material-icons">delete</span>
+                    </button>
+                `;
+                container.appendChild(el);
+            });
+        }
+
+        // Expose remove function globally if needed or attach here
+        window.removeCategory = function (index) {
+            if (confirm('確定刪除？')) {
+                expenseApp.settings.custom_categories.splice(index, 1);
+                renderCategoriesList();
+                // Call API via expense.js or direct fetch
+                saveSettings('custom_categories', expenseApp.settings.custom_categories);
+            }
+        };
+
+        // --- Recurring Logic ---
+        function renderRecurringList() {
+            const container = document.getElementById('recurringList');
+            if (!container) return;
+            container.innerHTML = '';
+            const recs = expenseApp.settings.recurring_expenses || [];
+
+            recs.forEach((item, idx) => {
+                const el = document.createElement('div');
+                el.className = 'settings-list-item';
+                el.innerHTML = `
+                    <div>
+                        <div style="font-weight: 500;">${item.name}</div>
+                        <div style="font-size: 0.85rem; color: var(--text-tertiary);">每月 ${item.day} 號 • $${item.amount}</div>
+                    </div>
+                    <button type="button" class="btn-icon" onclick="removeRecurring(${idx})">
+                        <span class="material-icons">delete</span>
+                    </button>
+                `;
+                container.appendChild(el);
+            });
+        }
+
+        window.removeRecurring = function (index) {
+            if (confirm('確定刪除？')) {
+                expenseApp.settings.recurring_expenses.splice(index, 1);
+                renderRecurringList();
+                saveSettings('recurring_expenses', expenseApp.settings.recurring_expenses);
+            }
+        };
+
+        // --- Shortcut Logic ---
+        function renderShortcutList() {
+            const container = document.getElementById('shortcutList');
+            if (!container) return;
+            container.innerHTML = '';
+            const shorts = expenseApp.settings.quick_shortcuts || [];
+
+            shorts.forEach((item, idx) => {
+                const el = document.createElement('div');
+                el.style.cssText = 'display: inline-flex; align-items: center; background: rgba(255,255,255,0.05); padding: 6px 12px; border-radius: 20px; margin: 4px;';
+                // Strict Object Access
+                el.innerHTML = `
+                    <span style="margin-right: 6px;">${item.emoji || '⚡'}</span>
+                    <span>${item.name}</span>
+                    <span onclick="removeShortcut(${idx})" style="cursor: pointer; opacity: 0.6; margin-left: 8px;">&times;</span>
+                 `;
+                container.appendChild(el);
+            });
+        }
+
+        window.removeShortcut = function (index) {
+            expenseApp.settings.quick_shortcuts.splice(index, 1);
+            renderShortcutList();
+            saveSettings('quick_shortcuts', expenseApp.settings.quick_shortcuts);
+        };
+
+        // --- Add Logic (Simplified for brevity) ---
+        document.getElementById('addCatBtn').onclick = () => {
+            const name = document.getElementById('newCatName').value;
+            const emoji = document.getElementById('newCatEmoji').value || '🏷️';
+            const color = document.getElementById('newCatColor').value;
+            if (name) {
+                expenseApp.settings.custom_categories.push({ name, emoji, color });
+                renderCategoriesList();
+                saveSettings('custom_categories', expenseApp.settings.custom_categories);
+                document.getElementById('newCatName').value = '';
+            }
+        };
+
+        document.getElementById('addShortcutBtn').onclick = () => {
+            const name = document.getElementById('newShortcutName').value;
+            const emoji = document.getElementById('newShortcutEmoji').value || '⚡';
+            if (name) {
+                expenseApp.settings.quick_shortcuts.push({ name, emoji });
+                renderShortcutList();
+                saveSettings('quick_shortcuts', expenseApp.settings.quick_shortcuts);
+                document.getElementById('newShortcutName').value = '';
+            }
+        };
+
+        function saveSettings(key, data) {
+            // Map key to API endpoint
+            let url = '';
+            let body = {};
+            if (key === 'custom_categories') {
+                url = '/auth/api/update_custom_categories';
+                body = { categories: data };
+            } else if (key === 'recurring_expenses') {
+                url = '/auth/api/update_recurring_expenses';
+                body = { expenses: data };
+            } else if (key === 'quick_shortcuts') {
+                url = '/auth/api/update_quick_shortcuts';
+                body = { shortcuts: data };
+            }
+
+            fetch(url, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(body)
+            }).then(res => res.json()).then(d => {
+                if (d.success) alert('儲存成功');
+            });
+        }
+    }
+</script>
 {% endblock %}
