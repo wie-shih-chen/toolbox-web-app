@@ -485,54 +485,20 @@
 
 </div>
 
-<!-- 4. Accounting Settings (New Section) -->
+<!-- 4. Accounting Settings (Moved) -->
 <div class="settings-section">
     <div class="section-header">
         <span>💰</span> 記帳設定 (Accounting)
     </div>
-
-    <!-- Custom Categories -->
-    <div style="margin-bottom: 24px;">
-        <label style="display: block; font-weight: 600; margin-bottom: 12px;">🏷️ 自訂類別</label>
-        <div id="categoriesList" style="display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px;">
-            <!-- Rendered by JS -->
-        </div>
-        <div style="display: flex; gap: 8px;">
-            <input type="text" id="newCategoryInput" placeholder="類別名稱"
-                style="flex: 1; padding: 10px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; color: white;">
-            <button type="button" class="btn" onclick="addCategory()"
-                style="background: #3b82f6; color: white; padding: 0 16px;">新增</button>
-        </div>
-    </div>
-
-    <hr style="border: 0; border-top: 1px solid rgba(255,255,255,0.1); margin: 24px 0;">
-
-    <!-- Fixed Expenses -->
-    <div style="margin-bottom: 24px;">
-        <label style="display: block; font-weight: 600; margin-bottom: 12px;">📅 固定支出 (每月自動扣款)</label>
-        <div id="fixedExpensesList" style="display: flex; flex-direction: column; gap: 8px; margin-bottom: 12px;">
-            <!-- Rendered by JS -->
-        </div>
-        <button type="button" class="btn btn-secondary btn-block" onclick="openFixedExpenseModal()"
-            style="display: flex; align-items: center; justify-content: center; gap: 8px; background: rgba(255,255,255,0.1); border: 1px dashed rgba(255,255,255,0.3); color: var(--text-secondary);">
-            <i class="fas fa-plus"></i> 新增固定支出
-        </button>
-    </div>
-
-    <hr style="border: 0; border-top: 1px solid rgba(255,255,255,0.1); margin: 24px 0;">
-
-    <!-- Quick Shortcuts -->
-    <div>
-        <label style="display: block; font-weight: 600; margin-bottom: 12px;">⚡ 快捷摘要 (常用備註)</label>
-        <div id="shortcutsList" style="display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px;">
-            <!-- Rendered by JS -->
-        </div>
-        <div style="display: flex; gap: 8px;">
-            <input type="text" id="newShortcutInput" placeholder="例如：早餐、午餐..."
-                style="flex: 1; padding: 10px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; color: white;">
-            <button type="button" class="btn" onclick="addShortcut()"
-                style="background: #3b82f6; color: white; padding: 0 16px;">新增</button>
-        </div>
+    <div style="text-align: center; padding: 20px 0;">
+        <p style="color: var(--text-secondary); margin-bottom: 16px;">
+            類別、固定支出與快捷摘要設定已移動至「記帳」頁面中的「設定」。
+        </p>
+        <a href="{{ url_for('expense.settings') }}" class="btn btn-secondary"
+            style="display: inline-flex; align-items: center; gap: 8px; padding: 10px 20px;">
+            <span class="material-icons">open_in_new</span>
+            前往記帳設定
+        </a>
     </div>
 </div>
 
