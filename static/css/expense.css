@@ -715,14 +715,208 @@ input[type="time"].input-pill::-webkit-calendar-picker-indicator {
         height: 55px;
     }
 }
-/* Drag and Drop Sortable Styles */
-.sortable-ghost {
-    opacity: 0.4;
+
+/* ========== Settings Card Grid Layouts ========== */
+
+/* Category Cards - 3 columns on desktop, responsive */
+.category-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 12px;
+    margin-top: 10px;
+}
+
+.category-card {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    padding: 14px;
+    transition: all 0.2s;
+    cursor: move;
+}
+
+.category-card:hover {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(255, 255, 255, 0.2);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.category-card-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 10px;
+}
+
+.category-emoji {
+    font-size: 1.5rem;
+    line-height: 1;
+}
+
+.category-name {
+    font-weight: 500;
+    font-size: 0.95rem;
+    flex: 1;
+    color: var(--text-primary);
+}
+
+.category-card-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.category-color {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    border: 2px solid rgba(255, 255, 255, 0.2);
+}
+
+.category-actions {
+    display: flex;
+    gap: 4px;
+}
+
+/* Recurring Expense Cards - Stack vertically with full width */
+.recurring-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-top: 10px;
+}
+
+.recurring-card {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    padding: 14px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    transition: all 0.2s;
+    cursor: move;
+}
+
+.recurring-card:hover {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(255, 255, 255, 0.2);
+    transform: translateX(4px);
+}
+
+.recurring-content {
+    flex: 1;
+}
+
+.recurring-name {
+    font-weight: 500;
+    font-size: 0.95rem;
+    margin-bottom: 4px;
+}
+
+.recurring-meta {
+    font-size: 0.85rem;
+    color: var(--text-tertiary);
+}
+
+.recurring-actions {
+    display: flex;
+    gap: 4px;
+}
+
+/* Shortcut Cards - Flexible grid wrap */
+.shortcut-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 10px;
+}
+
+.shortcut-card {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(255, 255, 255, 0.08);
+    padding: 10px 14px;
+    border-radius: 20px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    transition: all 0.2s;
+    cursor: move;
+}
+
+.shortcut-card:hover {
+    background: rgba(255, 255, 255, 0.12);
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.shortcut-emoji {
+    font-size: 1.2rem;
+    line-height: 1;
+}
+
+.shortcut-name {
+    font-weight: 500;
+    font-size: 0.9rem;
+}
+
+.shortcut-actions {
+    display: flex;
+    gap: 2px;
+    margin-left: 6px;
+}
+
+/* Small Icon Buttons */
+.btn-icon-small {
+    background: none;
+    border: none;
+    color: var(--text-tertiary);
+    cursor: pointer;
+    padding: 4px;
+    border-radius: 6px;
+    transition: all 0.2s;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.btn-icon-small:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--text-primary);
+}
+
+.btn-icon-small .material-icons {
+    font-size: 16px;
+}
+
+.btn-icon-mini {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 2px 6px;
+    border-radius: 4px;
+    opacity: 0.6;
+    transition: all 0.15s;
+    font-size: 1rem;
+}
+
+.btn-icon-mini:hover {
+    opacity: 1;
     background: rgba(255, 255, 255, 0.1);
 }
 
+/* Drag and Drop Sortable Styles */
+.sortable-ghost {
+    opacity: 0.4;
+    background: rgba(255, 255, 255, 0.15);
+}
+
 .drag-handle {
+    cursor: move;
+    opacity: 0.3;
     transition: opacity 0.2s;
+    font-size: 18px !important;
 }
 
 .drag-handle:hover {
@@ -730,8 +924,25 @@ input[type="time"].input-pill::-webkit-calendar-picker-indicator {
     color: var(--accent-color);
 }
 
-.shortcut-item:hover {
-    background: rgba(255, 255, 255, 0.12) !important;
-    transform: translateY(-1px);
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .category-grid {
+        grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+        gap: 10px;
+    }
+
+    .category-card,
+    .recurring-card {
+        padding: 12px;
+    }
+
+    .shortcut-card {
+        padding: 8px 12px;
+    }
+}
+
+@media (max-width: 480px) {
+    .category-grid {
+        grid-template-columns: 1fr 1fr;
+    }
 }

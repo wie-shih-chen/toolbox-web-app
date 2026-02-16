@@ -82,16 +82,18 @@
                     <span class="material-icons settings-subsection-title">category</span>
                     自訂類別
                 </h4>
-                <div id="categoryList" class="settings-list">
-                    <!-- Categories will be injected here via JS -->
-                </div>
-                <div style="display: flex; gap: 10px; margin-top: 10px;">
+
+                <!-- Add new category input (above list) -->
+                <div style="display: flex; gap: 10px; margin-bottom: 15px;">
                     <input type="text" id="newCatName" placeholder="類別名稱" style="flex: 1;">
-                    <input type="text" id="newCatEmoji" placeholder="Emoji" style="width: 60px; text-align: center;">
+                    <input type="text" id="newCatEmoji" placeholder="Emoji" style="width: 70px; text-align: center;">
                     <input type="color" id="newCatColor" value="#a78bfa"
-                        style="width: 50px; padding: 0; border: none; height: 42px;">
-                    <button type="button" class="btn btn-secondary" id="addCatBtn">新增</button>
+                        style="width: 50px; padding: 0; border: none; height: 42px; border-radius: 8px;">
+                    <button type="button" class="btn btn-primary" id="addCatBtn">新增</button>
                 </div>
+
+                <!-- Category grid (below input) -->
+                <div id="categoryList" class="category-grid"></div>
                 <input type="hidden" name="custom_categories" id="customCategoriesInput">
             </div>
 
@@ -101,13 +103,16 @@
                     <span class="material-icons settings-subsection-title">update</span>
                     固定支出
                 </h4>
-                <div id="recurringList" class="settings-list">
-                    <!-- Recurring items injected here -->
-                </div>
-                <button type="button" class="btn btn-secondary btn-block" id="openAddRecurringBtn"
-                    style="margin-top: 10px;">
-                    + 新增固定支出
+
+                <!-- Add button above list -->
+                <button type="button" class="btn btn-primary btn-block" id="openAddRecurringBtn"
+                    style="margin-bottom: 15px;">
+                    <span class="material-icons" style="vertical-align: middle; margin-right: 5px;">add</span>
+                    新增固定支出
                 </button>
+
+                <!-- Recurring list (below button) -->
+                <div id="recurringList" class="recurring-list"></div>
                 <input type="hidden" name="recurring_expenses" id="recurringExpensesInput">
             </div>
 
@@ -117,18 +122,20 @@
                     <span class="material-icons settings-subsection-title">flash_on</span>
                     快捷摘要
                 </h4>
-                <div id="shortcutList" class="settings-list">
-                    <!-- Shortcuts injected here -->
-                </div>
-                <div style="display: flex; gap: 10px; margin-top: 10px;">
+
+                <!-- Add shortcut input (above list) -->
+                <div style="display: flex; gap: 10px; margin-bottom: 15px;">
                     <input type="text" id="newShortcutEmoji" placeholder="Emoji"
                         style="width: 70px; text-align: center; border-radius: 12px; border: 1px solid rgba(255, 255, 255, 0.1); background: rgba(255, 255, 255, 0.05); color: white;"
                         class="settings-medium-input">
                     <input type="text" id="newShortcutName" placeholder="例如：早餐、午餐..." style="flex: 1;"
                         class="settings-medium-input">
-                    <button type="button" class="btn btn-secondary" id="addShortcutBtn"
+                    <button type="button" class="btn btn-primary" id="addShortcutBtn"
                         style="white-space: nowrap;">新增</button>
                 </div>
+
+                <!-- Shortcut list (below input) -->
+                <div id="shortcutList" class="shortcut-grid"></div>
                 <input type="hidden" name="quick_shortcuts" id="quickShortcutsInput">
             </div>
 
@@ -195,9 +202,9 @@
 
             if (cats.length === 0) {
                 container.innerHTML = `
-                    <div style="text-align: center; padding: 40px 20px; color: var(--text-tertiary); opacity: 0.6;">
-                        <span class="material-icons" style="font-size: 48px; display: block; margin-bottom: 10px;">category</span>
-                        <p>尚未新增任何自訂類別</p>
+                    <div style="text-align: center; padding: 60px 20px; color: var(--text-tertiary); opacity: 0.5; grid-column: 1 / -1;">
+                        <span class="material-icons" style="font-size: 56px; display: block; margin-bottom: 12px; opacity: 0.3;">category</span>
+                        <p style="font-size: 0.95rem;">使用上方輸入框新增類別</p>
                     </div>
                 `;
                 return;
@@ -205,21 +212,25 @@
 
             cats.forEach((cat, idx) => {
                 const el = document.createElement('div');
-                el.className = 'settings-list-item';
+                el.className = 'category-card';
                 el.dataset.index = idx;
                 el.innerHTML = `
-                    <span class="drag-handle material-icons" style="cursor: move; opacity: 0.3; margin-right: 10px;">drag_indicator</span>
-                    <div style="display: flex; align-items: center; gap: 10px; flex: 1;">
-                        <span style="font-size: 1.3rem;">${cat.emoji || '🏷️'}</span>
-                        <span style="font-weight: 500; flex: 1;">${cat.name}</span>
-                        <span style="width: 16px; height: 16px; border-radius: 50%; background: ${cat.color || '#a78bfa'}; display: inline-block; border: 2px solid rgba(255,255,255,0.3);"></span>
+                    <div class="category-card-header">
+                        <span class="drag-handle material-icons">drag_indicator</span>
+                        <span class="category-emoji">${cat.emoji || '🏷️'}</span>
+                        <span class="category-name">${cat.name}</span>
                     </div>
-                    <button type="button" class="btn-icon" onclick="editCategory(${idx})" title="編輯">
-                        <span class="material-icons" style="font-size: 18px;">edit</span>
-                    </button>
-                    <button type="button" class="btn-icon" onclick="removeCategory(${idx})" title="刪除">
-                        <span class="material-icons" style="font-size: 18px;">delete</span>
-                    </button>
+                    <div class="category-card-footer">
+                        <span class="category-color" style="background: ${cat.color || '#a78bfa'};"></span>
+                        <div class="category-actions">
+                            <button type="button" class="btn-icon-small" onclick="editCategory(${idx})" title="編輯">
+                                <span class="material-icons">edit</span>
+                            </button>
+                            <button type="button" class="btn-icon-small" onclick="removeCategory(${idx})" title="刪除">
+                                <span class="material-icons">delete</span>
+                            </button>
+                        </div>
+                    </div>
                 `;
                 container.appendChild(el);
             });
@@ -262,9 +273,9 @@
 
             if (recs.length === 0) {
                 container.innerHTML = `
-                    <div style="text-align: center; padding: 40px 20px; color: var(--text-tertiary); opacity: 0.6;">
-                        <span class="material-icons" style="font-size: 48px; display: block; margin-bottom: 10px;">update</span>
-                        <p>尚未新增任何固定支出</p>
+                    <div style="text-align: center; padding: 60px 20px; color: var(--text-tertiary); opacity: 0.5;">
+                        <span class="material-icons" style="font-size: 56px; display: block; margin-bottom: 12px; opacity: 0.3;">update</span>
+                        <p style="font-size: 0.95rem;">點擊上方按鈕新增固定支出</p>
                     </div>
                 `;
                 return;
@@ -272,20 +283,22 @@
 
             recs.forEach((item, idx) => {
                 const el = document.createElement('div');
-                el.className = 'settings-list-item';
+                el.className = 'recurring-card';
                 el.dataset.index = idx;
                 el.innerHTML = `
-                    <span class="drag-handle material-icons" style="cursor: move; opacity: 0.3; margin-right: 10px;">drag_indicator</span>
-                    <div style="flex: 1;">
-                        <div style="font-weight: 500;">${item.name}</div>
-                        <div style="font-size: 0.85rem; color: var(--text-tertiary);">每月 ${item.day} 號 • $${item.amount}</div>
+                    <span class="drag-handle material-icons">drag_indicator</span>
+                    <div class="recurring-content">
+                        <div class="recurring-name">${item.name}</div>
+                        <div class="recurring-meta">每月 ${item.day} 號 • <strong>$${item.amount}</strong></div>
                     </div>
-                    <button type="button" class="btn-icon" onclick="editRecurring(${idx})" title="編輯">
-                        <span class="material-icons" style="font-size: 18px;">edit</span>
-                    </button>
-                    <button type="button" class="btn-icon" onclick="removeRecurring(${idx})" title="刪除">
-                        <span class="material-icons" style="font-size: 18px;">delete</span>
-                    </button>
+                    <div class="recurring-actions">
+                        <button type="button" class="btn-icon-small" onclick="editRecurring(${idx})" title="編輯">
+                            <span class="material-icons">edit</span>
+                        </button>
+                        <button type="button" class="btn-icon-small" onclick="removeRecurring(${idx})" title="刪除">
+                            <span class="material-icons">delete</span>
+                        </button>
+                    </div>
                 `;
                 container.appendChild(el);
             });
@@ -330,9 +343,9 @@
 
             if (shorts.length === 0) {
                 container.innerHTML = `
-                    <div style="text-align: center; padding: 40px 20px; color: var(--text-tertiary); opacity: 0.6;">
-                        <span class="material-icons" style="font-size: 48px; display: block; margin-bottom: 10px;">flash_on</span>
-                        <p>尚未新增任何快捷摘要</p>
+                    <div style="text-align: center; padding: 60px 20px; color: var(--text-tertiary); opacity: 0.5; grid-column: 1 / -1;">
+                        <span class="material-icons" style="font-size: 56px; display: block; margin-bottom: 12px; opacity: 0.3;">flash_on</span>
+                        <p style="font-size: 0.95rem;">使用上方輸入框新增快捷</p>
                     </div>
                 `;
                 return;
@@ -341,13 +354,14 @@
             shorts.forEach((item, idx) => {
                 const el = document.createElement('div');
                 el.dataset.index = idx;
-                el.className = 'shortcut-item';
-                el.style.cssText = 'display: inline-flex; align-items: center; background: rgba(255,255,255,0.08); padding: 8px 12px; border-radius: 20px; margin: 4px; cursor: move; transition: all 0.2s;';
+                el.className = 'shortcut-card';
                 el.innerHTML = `
-                    <span style="margin-right: 6px; font-size: 1.1rem;">${item.emoji || '⚡'}</span>
-                    <span style="font-weight: 500;">${item.name}</span>
-                    <span onclick="editShortcut(${idx})" style="cursor: pointer; opacity: 0.6; margin-left: 8px; font-size: 1rem;" title="編輯">✏️</span>
-                    <span onclick="removeShortcut(${idx})" style="cursor: pointer; opacity: 0.6; margin-left: 4px; font-size: 1.2rem;" title="刪除">&times;</span>
+                    <span class="shortcut-emoji">${item.emoji || '⚡'}</span>
+                    <span class="shortcut-name">${item.name}</span>
+                    <div class="shortcut-actions">
+                        <button onclick="editShortcut(${idx})" class="btn-icon-mini" title="編輯">📝</button>
+                        <button onclick="removeShortcut(${idx})" class="btn-icon-mini" title="刪除">×</button>
+                    </div>
                  `;
                 container.appendChild(el);
             });
@@ -439,14 +453,14 @@
             const recurringList = document.getElementById('recurringList');
             const shortcutList = document.getElementById('shortcutList');
 
-            if (categoryList && categoryList.querySelector('.settings-list-item')) {
+            if (categoryList && categoryList.querySelector('.category-card')) {
                 Sortable.create(categoryList, {
                     animation: 150,
                     handle: '.drag-handle',
                     ghostClass: 'sortable-ghost',
                     onEnd: function () {
                         const newOrder = [];
-                        categoryList.querySelectorAll('.settings-list-item').forEach(el => {
+                        categoryList.querySelectorAll('.category-card').forEach(el => {
                             const idx = parseInt(el.dataset.index);
                             newOrder.push(expenseApp.settings.custom_categories[idx]);
                         });
@@ -458,14 +472,14 @@
                 });
             }
 
-            if (recurringList && recurringList.querySelector('.settings-list-item')) {
+            if (recurringList && recurringList.querySelector('.recurring-card')) {
                 Sortable.create(recurringList, {
                     animation: 150,
                     handle: '.drag-handle',
                     ghostClass: 'sortable-ghost',
                     onEnd: function () {
                         const newOrder = [];
-                        recurringList.querySelectorAll('.settings-list-item').forEach(el => {
+                        recurringList.querySelectorAll('.recurring-card').forEach(el => {
                             const idx = parseInt(el.dataset.index);
                             newOrder.push(expenseApp.settings.recurring_expenses[idx]);
                         });
@@ -477,13 +491,13 @@
                 });
             }
 
-            if (shortcutList && shortcutList.querySelector('.shortcut-item')) {
+            if (shortcutList && shortcutList.querySelector('.shortcut-card')) {
                 Sortable.create(shortcutList, {
                     animation: 150,
                     ghostClass: 'sortable-ghost',
                     onEnd: function () {
                         const newOrder = [];
-                        shortcutList.querySelectorAll('.shortcut-item').forEach(el => {
+                        shortcutList.querySelectorAll('.shortcut-card').forEach(el => {
                             const idx = parseInt(el.dataset.index);
                             newOrder.push(expenseApp.settings.quick_shortcuts[idx]);
                         });
