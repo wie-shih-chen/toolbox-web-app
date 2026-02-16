@@ -979,39 +979,38 @@ input[type="time"].input-pill::-webkit-calendar-picker-indicator {
 
 @media (max-width: 600px) {
 
-    /* Keep horizontal layout but make it compact and elegant */
+    /* Keep horizontal layout but make it compact to fit screen */
     .settings-section>div[style*="display: flex"] {
-        gap: 6px !important;
+        gap: 4px !important;
         margin-bottom: 12px !important;
     }
 
     /* Compact input styling */
     .settings-section input[type="text"],
     .settings-section input[type="color"] {
-        padding: 10px 12px !important;
+        padding: 9px 10px !important;
         font-size: 0.9rem !important;
         border-radius: 10px !important;
     }
 
-    /* Make emoji input smaller */
+    /* Make emoji input smaller to fit */
     .settings-section input[id*="Emoji"] {
-        width: 55px !important;
-        padding: 10px 8px !important;
+        width: 48px !important;
+        padding: 9px 6px !important;
         font-size: 1.1rem !important;
     }
 
     /* Color picker smaller */
     .settings-section input[type="color"] {
-        width: 50px !important;
-        padding: 6px !important;
+        width: 45px !important;
+        padding: 5px !important;
     }
 
-    /* Compact elegant buttons */
+    /* Compact buttons - auto-size to fit */
     .settings-section button.btn {
-        padding: 10px 16px !important;
-        font-size: 0.9rem !important;
+        padding: 9px 12px !important;
+        font-size: 0.88rem !important;
         border-radius: 10px !important;
-        min-width: 60px !important;
         white-space: nowrap !important;
     }
 
