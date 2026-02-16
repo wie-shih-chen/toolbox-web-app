@@ -149,7 +149,16 @@ const expenseApp = {
                 if (typeof rawCats === 'string') {
                     try { rawCats = JSON.parse(rawCats || '[]'); } catch (e) { console.error(e); rawCats = []; }
                 }
-                this.settings.custom_categories = Array.isArray(rawCats) ? rawCats.filter(c => c && (typeof c === 'object' || typeof c === 'string')) : [];
+                // Migration: Convert old string format to object
+                if (Array.isArray(rawCats)) {
+                    this.settings.custom_categories = rawCats.map(c => {
+                        if (typeof c === 'string') return { name: c, emoji: '🏷️' };
+                        if (typeof c === 'object' && c.name) return c;
+                        return null;
+                    }).filter(c => c);
+                } else {
+                    this.settings.custom_categories = [];
+                }
             } catch (e) {
                 console.error("PARSE FAIL (Categories):", e);
                 this.settings.custom_categories = [];
