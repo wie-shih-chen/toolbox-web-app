@@ -356,11 +356,18 @@
                 el.dataset.index = idx;
                 el.className = 'shortcut-card';
                 el.innerHTML = `
-                    <span class="shortcut-emoji">${item.emoji || '⚡'}</span>
-                    <span class="shortcut-name">${item.name}</span>
-                    <div class="shortcut-actions">
-                        <button onclick="editShortcut(${idx})" class="btn-icon-mini" title="編輯">📝</button>
-                        <button onclick="removeShortcut(${idx})" class="btn-icon-mini" title="刪除">×</button>
+                    <div class="shortcut-card-header">
+                        <span class="drag-handle material-icons">drag_indicator</span>
+                        <span class="shortcut-emoji">${item.emoji || '⚡'}</span>
+                        <span class="shortcut-name">${item.name}</span>
+                    </div>
+                    <div class="shortcut-card-actions">
+                        <button type="button" class="btn-icon-small" onclick="editShortcut(${idx})" title="編輯">
+                            <span class="material-icons">edit</span>
+                        </button>
+                        <button type="button" class="btn-icon-small" onclick="removeShortcut(${idx})" title="刪除">
+                            <span class="material-icons">delete</span>
+                        </button>
                     </div>
                  `;
                 container.appendChild(el);

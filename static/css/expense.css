@@ -825,46 +825,71 @@ input[type="time"].input-pill::-webkit-calendar-picker-indicator {
     gap: 4px;
 }
 
-/* Shortcut Cards - Flexible grid wrap */
+/* Shortcut Cards - Grid layout matching categories */
 .shortcut-grid {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 12px;
     margin-top: 10px;
 }
 
 .shortcut-card {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    background: rgba(255, 255, 255, 0.08);
-    padding: 10px 14px;
-    border-radius: 20px;
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: linear-gradient(135deg, rgba(94, 234, 212, 0.1), rgba(139, 92, 246, 0.1));
+    border: 1px solid rgba(94, 234, 212, 0.2);
+    border-radius: 12px;
+    padding: 14px;
     transition: all 0.2s;
     cursor: move;
+    position: relative;
+    overflow: hidden;
+}
+
+.shortcut-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, #5eead4, #8b5cf6);
+    opacity: 0;
+    transition: opacity 0.2s;
+}
+
+.shortcut-card:hover::before {
+    opacity: 1;
 }
 
 .shortcut-card:hover {
-    background: rgba(255, 255, 255, 0.12);
-    transform: translateY(-1px);
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+    background: linear-gradient(135deg, rgba(94, 234, 212, 0.15), rgba(139, 92, 246, 0.15));
+    border-color: rgba(94, 234, 212, 0.3);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(94, 234, 212, 0.2);
+}
+
+.shortcut-card-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 10px;
 }
 
 .shortcut-emoji {
-    font-size: 1.2rem;
+    font-size: 1.5rem;
     line-height: 1;
 }
 
 .shortcut-name {
     font-weight: 500;
-    font-size: 0.9rem;
+    font-size: 0.95rem;
+    flex: 1;
+    color: var(--text-primary);
 }
 
-.shortcut-actions {
+.shortcut-card-actions {
     display: flex;
-    gap: 2px;
-    margin-left: 6px;
+    gap: 4px;
+    justify-content: flex-end;
 }
 
 /* Small Icon Buttons */
