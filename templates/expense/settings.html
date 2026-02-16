@@ -152,6 +152,8 @@
 {% endblock %}
 
 {% block extra_js %}
+<!-- SortableJS for drag-and-drop sorting -->
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
 <script src="{{ url_for('static', filename='js/expense.js') }}?v=2.2"></script>
 <script>
     document.addEventListener('DOMContentLoaded', async () => {
@@ -189,26 +191,57 @@
             if (!container) return;
             container.innerHTML = '';
 
-            // Clean Slate: Strict Object Access
             const cats = expenseApp.settings.custom_categories || [];
+
+            if (cats.length === 0) {
+                container.innerHTML = `
+                    <div style="text-align: center; padding: 40px 20px; color: var(--text-tertiary); opacity: 0.6;">
+                        <span class="material-icons" style="font-size: 48px; display: block; margin-bottom: 10px;">category</span>
+                        <p>尚未新增任何自訂類別</p>
+                    </div>
+                `;
+                return;
+            }
 
             cats.forEach((cat, idx) => {
                 const el = document.createElement('div');
                 el.className = 'settings-list-item';
-                // Strict Object Access
+                el.dataset.index = idx;
                 el.innerHTML = `
-                    <div style="display: flex; align-items: center; gap: 10px;">
-                        <span style="font-size: 1.2rem;">${cat.emoji || '🏷️'}</span>
-                        <span style="font-weight: 500;">${cat.name}</span>
-                        <span style="width: 12px; height: 12px; border-radius: 50%; background: ${cat.color || '#a78bfa'}; display: inline-block;"></span>
+                    <span class="drag-handle material-icons" style="cursor: move; opacity: 0.3; margin-right: 10px;">drag_indicator</span>
+                    <div style="display: flex; align-items: center; gap: 10px; flex: 1;">
+                        <span style="font-size: 1.3rem;">${cat.emoji || '🏷️'}</span>
+                        <span style="font-weight: 500; flex: 1;">${cat.name}</span>
+                        <span style="width: 16px; height: 16px; border-radius: 50%; background: ${cat.color || '#a78bfa'}; display: inline-block; border: 2px solid rgba(255,255,255,0.3);"></span>
                     </div>
-                   <button type="button" class="btn-icon delete-cat-btn" onclick="removeCategory(${idx})">
-                        <span class="material-icons">delete</span>
+                    <button type="button" class="btn-icon" onclick="editCategory(${idx})" title="編輯">
+                        <span class="material-icons" style="font-size: 18px;">edit</span>
+                    </button>
+                    <button type="button" class="btn-icon" onclick="removeCategory(${idx})" title="刪除">
+                        <span class="material-icons" style="font-size: 18px;">delete</span>
                     </button>
                 `;
                 container.appendChild(el);
             });
         }
+
+        window.editCategory = function (index) {
+            const cat = expenseApp.settings.custom_categories[index];
+            const name = prompt('類別名稱：', cat.name);
+            if (!name) return;
+
+            const emoji = prompt('Emoji：', cat.emoji);
+            const color = prompt('顏色 (HEX)：', cat.color);
+
+            expenseApp.settings.custom_categories[index] = {
+                name: name || cat.name,
+                emoji: emoji || cat.emoji,
+                color: color || cat.color
+            };
+            renderCategoriesList();
+            initSortable();
+            saveSettings('custom_categories', expenseApp.settings.custom_categories);
+        };
 
         // Expose remove function globally if needed or attach here
         window.removeCategory = function (index) {
@@ -227,21 +260,58 @@
             container.innerHTML = '';
             const recs = expenseApp.settings.recurring_expenses || [];
 
+            if (recs.length === 0) {
+                container.innerHTML = `
+                    <div style="text-align: center; padding: 40px 20px; color: var(--text-tertiary); opacity: 0.6;">
+                        <span class="material-icons" style="font-size: 48px; display: block; margin-bottom: 10px;">update</span>
+                        <p>尚未新增任何固定支出</p>
+                    </div>
+                `;
+                return;
+            }
+
             recs.forEach((item, idx) => {
                 const el = document.createElement('div');
                 el.className = 'settings-list-item';
+                el.dataset.index = idx;
                 el.innerHTML = `
-                    <div>
+                    <span class="drag-handle material-icons" style="cursor: move; opacity: 0.3; margin-right: 10px;">drag_indicator</span>
+                    <div style="flex: 1;">
                         <div style="font-weight: 500;">${item.name}</div>
                         <div style="font-size: 0.85rem; color: var(--text-tertiary);">每月 ${item.day} 號 • $${item.amount}</div>
                     </div>
-                    <button type="button" class="btn-icon" onclick="removeRecurring(${idx})">
-                        <span class="material-icons">delete</span>
+                    <button type="button" class="btn-icon" onclick="editRecurring(${idx})" title="編輯">
+                        <span class="material-icons" style="font-size: 18px;">edit</span>
+                    </button>
+                    <button type="button" class="btn-icon" onclick="removeRecurring(${idx})" title="刪除">
+                        <span class="material-icons" style="font-size: 18px;">delete</span>
                     </button>
                 `;
                 container.appendChild(el);
             });
         }
+
+        window.editRecurring = function (index) {
+            const rec = expenseApp.settings.recurring_expenses[index];
+            const name = prompt('固定支出名稱：', rec.name);
+            if (!name) return;
+
+            const amount = parseFloat(prompt('每月金額：', rec.amount));
+            if (isNaN(amount)) return;
+
+            const day = parseInt(prompt('每月幾號扣款 (1-31)：', rec.day));
+            if (isNaN(day) || day < 1 || day > 31) return;
+
+            expenseApp.settings.recurring_expenses[index] = {
+                name,
+                amount,
+                day,
+                category: rec.category
+            };
+            renderRecurringList();
+            initSortable();
+            saveSettings('recurring_expenses', expenseApp.settings.recurring_expenses);
+        };
 
         window.removeRecurring = function (index) {
             if (confirm('確定刪除？')) {
@@ -258,18 +328,46 @@
             container.innerHTML = '';
             const shorts = expenseApp.settings.quick_shortcuts || [];
 
+            if (shorts.length === 0) {
+                container.innerHTML = `
+                    <div style="text-align: center; padding: 40px 20px; color: var(--text-tertiary); opacity: 0.6;">
+                        <span class="material-icons" style="font-size: 48px; display: block; margin-bottom: 10px;">flash_on</span>
+                        <p>尚未新增任何快捷摘要</p>
+                    </div>
+                `;
+                return;
+            }
+
             shorts.forEach((item, idx) => {
                 const el = document.createElement('div');
-                el.style.cssText = 'display: inline-flex; align-items: center; background: rgba(255,255,255,0.05); padding: 6px 12px; border-radius: 20px; margin: 4px;';
-                // Strict Object Access
+                el.dataset.index = idx;
+                el.className = 'shortcut-item';
+                el.style.cssText = 'display: inline-flex; align-items: center; background: rgba(255,255,255,0.08); padding: 8px 12px; border-radius: 20px; margin: 4px; cursor: move; transition: all 0.2s;';
                 el.innerHTML = `
-                    <span style="margin-right: 6px;">${item.emoji || '⚡'}</span>
-                    <span>${item.name}</span>
-                    <span onclick="removeShortcut(${idx})" style="cursor: pointer; opacity: 0.6; margin-left: 8px;">&times;</span>
+                    <span style="margin-right: 6px; font-size: 1.1rem;">${item.emoji || '⚡'}</span>
+                    <span style="font-weight: 500;">${item.name}</span>
+                    <span onclick="editShortcut(${idx})" style="cursor: pointer; opacity: 0.6; margin-left: 8px; font-size: 1rem;" title="編輯">✏️</span>
+                    <span onclick="removeShortcut(${idx})" style="cursor: pointer; opacity: 0.6; margin-left: 4px; font-size: 1.2rem;" title="刪除">&times;</span>
                  `;
                 container.appendChild(el);
             });
         }
+
+        window.editShortcut = function (index) {
+            const shortcut = expenseApp.settings.quick_shortcuts[index];
+            const name = prompt('快捷摘要名稱：', shortcut.name);
+            if (!name) return;
+
+            const emoji = prompt('Emoji：', shortcut.emoji);
+
+            expenseApp.settings.quick_shortcuts[index] = {
+                name,
+                emoji: emoji || shortcut.emoji
+            };
+            renderShortcutList();
+            initSortable();
+            saveSettings('quick_shortcuts', expenseApp.settings.quick_shortcuts);
+        };
 
         window.removeShortcut = function (index) {
             expenseApp.settings.quick_shortcuts.splice(index, 1);
@@ -285,6 +383,7 @@
             if (name) {
                 expenseApp.settings.custom_categories.push({ name, emoji, color });
                 renderCategoriesList();
+                initSortable();
                 saveSettings('custom_categories', expenseApp.settings.custom_categories);
                 document.getElementById('newCatName').value = '';
                 document.getElementById('newCatEmoji').value = '';
@@ -315,6 +414,7 @@
 
             expenseApp.settings.recurring_expenses.push({ name, amount, day, category });
             renderRecurringList();
+            initSortable();
             saveSettings('recurring_expenses', expenseApp.settings.recurring_expenses);
         };
 
@@ -324,6 +424,7 @@
             if (name) {
                 expenseApp.settings.quick_shortcuts.push({ name, emoji });
                 renderShortcutList();
+                initSortable();
                 saveSettings('quick_shortcuts', expenseApp.settings.quick_shortcuts);
                 document.getElementById('newShortcutName').value = '';
                 document.getElementById('newShortcutEmoji').value = '';
@@ -331,6 +432,72 @@
                 alert('請輸入快捷名稱');
             }
         };
+
+        // --- Initialize SortableJS ---
+        function initSortable() {
+            const categoryList = document.getElementById('categoryList');
+            const recurringList = document.getElementById('recurringList');
+            const shortcutList = document.getElementById('shortcutList');
+
+            if (categoryList && categoryList.querySelector('.settings-list-item')) {
+                Sortable.create(categoryList, {
+                    animation: 150,
+                    handle: '.drag-handle',
+                    ghostClass: 'sortable-ghost',
+                    onEnd: function () {
+                        const newOrder = [];
+                        categoryList.querySelectorAll('.settings-list-item').forEach(el => {
+                            const idx = parseInt(el.dataset.index);
+                            newOrder.push(expenseApp.settings.custom_categories[idx]);
+                        });
+                        expenseApp.settings.custom_categories = newOrder;
+                        renderCategoriesList();
+                        initSortable();
+                        saveSettings('custom_categories', expenseApp.settings.custom_categories);
+                    }
+                });
+            }
+
+            if (recurringList && recurringList.querySelector('.settings-list-item')) {
+                Sortable.create(recurringList, {
+                    animation: 150,
+                    handle: '.drag-handle',
+                    ghostClass: 'sortable-ghost',
+                    onEnd: function () {
+                        const newOrder = [];
+                        recurringList.querySelectorAll('.settings-list-item').forEach(el => {
+                            const idx = parseInt(el.dataset.index);
+                            newOrder.push(expenseApp.settings.recurring_expenses[idx]);
+                        });
+                        expenseApp.settings.recurring_expenses = newOrder;
+                        renderRecurringList();
+                        initSortable();
+                        saveSettings('recurring_expenses', expenseApp.settings.recurring_expenses);
+                    }
+                });
+            }
+
+            if (shortcutList && shortcutList.querySelector('.shortcut-item')) {
+                Sortable.create(shortcutList, {
+                    animation: 150,
+                    ghostClass: 'sortable-ghost',
+                    onEnd: function () {
+                        const newOrder = [];
+                        shortcutList.querySelectorAll('.shortcut-item').forEach(el => {
+                            const idx = parseInt(el.dataset.index);
+                            newOrder.push(expenseApp.settings.quick_shortcuts[idx]);
+                        });
+                        expenseApp.settings.quick_shortcuts = newOrder;
+                        renderShortcutList();
+                        initSortable();
+                        saveSettings('quick_shortcuts', expenseApp.settings.quick_shortcuts);
+                    }
+                });
+            }
+        }
+
+        // Initialize sortable on page load
+        initSortable();
 
         function saveSettings(key, data) {
             // Map key to API endpoint
