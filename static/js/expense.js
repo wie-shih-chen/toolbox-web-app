@@ -149,16 +149,8 @@ const expenseApp = {
                 if (typeof rawCats === 'string') {
                     try { rawCats = JSON.parse(rawCats || '[]'); } catch (e) { console.error(e); rawCats = []; }
                 }
-                // Migration: Convert old string format to object
-                if (Array.isArray(rawCats)) {
-                    this.settings.custom_categories = rawCats.map(c => {
-                        if (typeof c === 'string') return { name: c, emoji: '🏷️' };
-                        if (typeof c === 'object' && c.name) return c;
-                        return null;
-                    }).filter(c => c);
-                } else {
-                    this.settings.custom_categories = [];
-                }
+                // Clean Slate: Strict Object Array
+                this.settings.custom_categories = Array.isArray(rawCats) ? rawCats.filter(c => c && typeof c === 'object' && c.name) : [];
             } catch (e) {
                 console.error("PARSE FAIL (Categories):", e);
                 this.settings.custom_categories = [];
@@ -181,18 +173,15 @@ const expenseApp = {
                     try { rawShorts = JSON.parse(rawShorts || '[]'); } catch (e) { rawShorts = []; }
                 }
 
-                let parsedShorts = [];
                 if (Array.isArray(rawShorts)) {
-                    parsedShorts = rawShorts.map(s => {
-                        // Migration: Convert old string format to object
-                        if (typeof s === 'string') return { name: s, emoji: '⚡' };
-                        if (typeof s === 'object' && s.name) return s;
-                        return null;
-                    }).filter(s => s);
+                    // Strict Object Filter
+                    this.settings.quick_shortcuts = rawShorts.filter(s => s && typeof s === 'object' && s.name);
+                } else {
+                    this.settings.quick_shortcuts = [];
                 }
 
-                // If DB has no shortcuts, use defaults with Emojis
-                if (parsedShorts.length === 0) {
+                // Defaults if empty
+                if (this.settings.quick_shortcuts.length === 0) {
                     this.settings.quick_shortcuts = [
                         { name: '早餐', emoji: '🍳' },
                         { name: '午餐', emoji: '🍱' },
@@ -200,8 +189,6 @@ const expenseApp = {
                         { name: '宵夜', emoji: '🍢' },
                         { name: '飲料', emoji: '🥤' }
                     ];
-                } else {
-                    this.settings.quick_shortcuts = parsedShorts;
                 }
             } catch (e) {
                 console.error("PARSE FAIL (Shortcuts):", e);

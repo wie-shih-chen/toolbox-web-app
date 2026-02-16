@@ -233,13 +233,23 @@ class ExpenseService:
             except: pass
             
         if 'custom_categories' in settings_data:
-            current_user.settings.custom_categories = json.dumps(settings_data['custom_categories'], ensure_ascii=False)
+            cats = settings_data['custom_categories']
+            # Strict validation: Must be list of dicts with 'name'
+            if isinstance(cats, list):
+                valid_cats = [c for c in cats if isinstance(c, dict) and 'name' in c]
+                current_user.settings.custom_categories = json.dumps(valid_cats, ensure_ascii=False)
             
         if 'recurring_expenses' in settings_data:
-            current_user.settings.recurring_expenses = json.dumps(settings_data['recurring_expenses'], ensure_ascii=False)
+            recs = settings_data['recurring_expenses']
+            if isinstance(recs, list):
+                valid_recs = [r for r in recs if isinstance(r, dict) and 'name' in r]
+                current_user.settings.recurring_expenses = json.dumps(valid_recs, ensure_ascii=False)
             
         if 'quick_shortcuts' in settings_data:
-            current_user.settings.quick_shortcuts = json.dumps(settings_data['quick_shortcuts'], ensure_ascii=False)
+            shorts = settings_data['quick_shortcuts']
+            if isinstance(shorts, list):
+                valid_shorts = [s for s in shorts if isinstance(s, dict) and 'name' in s]
+                current_user.settings.quick_shortcuts = json.dumps(valid_shorts, ensure_ascii=False)
             
         try:
             db.session.commit()

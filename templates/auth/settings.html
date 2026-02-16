@@ -941,9 +941,9 @@
         container.innerHTML = '';
         customCategories.forEach((cat, index) => {
             const tag = document.createElement('div');
-            // Check if cat is string or object
-            const name = typeof cat === 'string' ? cat : cat.name;
-            const emoji = (typeof cat === 'object' && cat.emoji) ? cat.emoji : '🏷️';
+            // Clean Slate: Strict Object
+            const name = cat.name;
+            const emoji = cat.emoji || '🏷️';
 
             tag.className = 'category-tag';
             tag.style.cssText = 'background: rgba(59, 130, 246, 0.2); color: #60a5fa; padding: 6px 12px; border-radius: 20px; font-size: 0.9rem; display: flex; align-items: center; gap: 6px; border: 1px solid rgba(59, 130, 246, 0.3);';
@@ -1059,16 +1059,15 @@
     }
 
     // --- Quick Shortcuts Logic ---
-    // --- Quick Shortcuts Logic ---
     function renderShortcuts() {
         const container = document.getElementById('shortcutsList');
         if (!container) return;
         container.innerHTML = '';
         quickShortcuts.forEach((sc, index) => {
             const tag = document.createElement('div');
-            // Check if sc is string or object
-            const name = typeof sc === 'string' ? sc : sc.name;
-            const emoji = (typeof sc === 'object' && sc.emoji) ? sc.emoji : '⚡';
+            // Clean Slate: Strict Object
+            const name = sc.name;
+            const emoji = sc.emoji || '⚡';
 
             tag.style.cssText = 'background: rgba(16, 185, 129, 0.2); color: #34d399; padding: 6px 12px; border-radius: 20px; font-size: 0.9rem; display: flex; align-items: center; gap: 6px; border: 1px solid rgba(16, 185, 129, 0.3);';
             tag.innerHTML = `
