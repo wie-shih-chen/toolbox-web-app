@@ -979,26 +979,50 @@ input[type="time"].input-pill::-webkit-calendar-picker-indicator {
 
 @media (max-width: 600px) {
 
-    /* Input groups stack vertically on small screens */
+    /* Keep horizontal layout but make it compact and elegant */
     .settings-section>div[style*="display: flex"] {
-        flex-direction: column !important;
-        gap: 8px !important;
+        gap: 6px !important;
+        margin-bottom: 12px !important;
     }
 
+    /* Compact input styling */
     .settings-section input[type="text"],
     .settings-section input[type="color"] {
-        width: 100% !important;
-        max-width: none !important;
+        padding: 10px 12px !important;
+        font-size: 0.9rem !important;
+        border-radius: 10px !important;
     }
 
-    .settings-section button {
-        width: 100% !important;
+    /* Make emoji input smaller */
+    .settings-section input[id*="Emoji"] {
+        width: 55px !important;
+        padding: 10px 8px !important;
+        font-size: 1.1rem !important;
     }
 
-    /* Grid adjustments */
-    .category-grid,
+    /* Color picker smaller */
+    .settings-section input[type="color"] {
+        width: 50px !important;
+        padding: 6px !important;
+    }
+
+    /* Compact elegant buttons */
+    .settings-section button.btn {
+        padding: 10px 16px !important;
+        font-size: 0.9rem !important;
+        border-radius: 10px !important;
+        min-width: 60px !important;
+        white-space: nowrap !important;
+    }
+
+    /* Grid adjustments - 2 columns for visual balance */
+    .category-grid {
+        grid-template-columns: 1fr 1fr;
+        gap: 8px;
+    }
+
     .shortcut-grid {
-        grid-template-columns: 1fr;
+        grid-template-columns: 1fr 1fr;
         gap: 8px;
     }
 
@@ -1006,24 +1030,33 @@ input[type="time"].input-pill::-webkit-calendar-picker-indicator {
         gap: 8px;
     }
 
-    /* Card adjustments */
+    /* Compact card styling */
     .category-card,
     .recurring-card,
     .shortcut-card {
         padding: 10px;
+        border-radius: 10px;
     }
 
     .category-card-header,
     .shortcut-card-header {
         gap: 6px;
+        margin-bottom: 8px;
     }
 
     .drag-handle {
         font-size: 16px !important;
+        margin-right: -2px !important;
     }
 
     .btn-icon-small .material-icons {
         font-size: 14px;
+    }
+
+    /* Settings section titles */
+    .settings-section-divider {
+        font-size: 1rem !important;
+        margin-bottom: 12px !important;
     }
 }
 
