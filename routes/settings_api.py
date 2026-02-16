@@ -49,36 +49,112 @@ def register_settings_api(auth_bp):
     @auth_bp.route('/api/update_custom_categories', methods=['POST'])
     @login_required
     def update_custom_categories():
-        data = request.json
-        categories = data.get('categories', [])
-        # Strict Validation: List of Dicts with 'name'
-        if isinstance(categories, list):
+        try:
+            data = request.json
+            categories = data.get('categories', [])
+            
+            print(f"[DEBUG] update_custom_categories - Received: {categories}")
+            print(f"[DEBUG] Type check: {type(categories)}")
+            
+            # Strict Validation: List of Dicts with 'name'
+            if not isinstance(categories, list):
+                print(f"[ERROR] Invalid type: expected list, got {type(categories)}")
+                return jsonify({'error': 'Invalid format: expected array'}), 400
+            
             valid_cats = [c for c in categories if isinstance(c, dict) and 'name' in c]
-            current_user.settings.custom_categories = json.dumps(valid_cats, ensure_ascii=False)
+            print(f"[DEBUG] Valid categories after filter: {valid_cats}")
+            
+            # Save to database
+            json_str = json.dumps(valid_cats, ensure_ascii=False)
+            print(f"[DEBUG] JSON string to save: {json_str}")
+            
+            current_user.settings.custom_categories = json_str
             db.session.commit()
-            return jsonify({'success': True})
-        return jsonify({'error': 'Invalid format'}), 400
+            
+            # Verify the data was actually saved
+            db.session.refresh(current_user.settings)
+            saved_data = current_user.settings.custom_categories
+            print(f"[VERIFY] Data after commit: {saved_data}")
+            
+            return jsonify({
+                'success': True,
+                'saved_count': len(valid_cats),
+                'data': valid_cats
+            })
+            
+        except Exception as e:
+            print(f"[ERROR] Exception in update_custom_categories: {str(e)}")
+            db.session.rollback()
+            return jsonify({'error': f'Server error: {str(e)}'}), 500
 
     @auth_bp.route('/api/update_recurring_expenses', methods=['POST'])
     @login_required
     def update_recurring_expenses():
-        data = request.json
-        expenses = data.get('expenses', [])
-        if isinstance(expenses, list):
+        try:
+            data = request.json
+            expenses = data.get('expenses', [])
+            
+            print(f"[DEBUG] update_recurring_expenses - Received: {expenses}")
+            
+            if not isinstance(expenses, list):
+                print(f"[ERROR] Invalid type: expected list, got {type(expenses)}")
+                return jsonify({'error': 'Invalid format: expected array'}), 400
+            
             valid_recs = [e for e in expenses if isinstance(e, dict) and 'name' in e]
-            current_user.settings.recurring_expenses = json.dumps(valid_recs, ensure_ascii=False)
+            print(f"[DEBUG] Valid expenses after filter: {valid_recs}")
+            
+            json_str = json.dumps(valid_recs, ensure_ascii=False)
+            current_user.settings.recurring_expenses = json_str
             db.session.commit()
-            return jsonify({'success': True})
-        return jsonify({'error': 'Invalid format'}), 400
+            
+            # Verify
+            db.session.refresh(current_user.settings)
+            saved_data = current_user.settings.recurring_expenses
+            print(f"[VERIFY] Data after commit: {saved_data}")
+            
+            return jsonify({
+                'success': True,
+                'saved_count': len(valid_recs),
+                'data': valid_recs
+            })
+            
+        except Exception as e:
+            print(f"[ERROR] Exception in update_recurring_expenses: {str(e)}")
+            db.session.rollback()
+            return jsonify({'error': f'Server error: {str(e)}'}), 500
 
     @auth_bp.route('/api/update_quick_shortcuts', methods=['POST'])
     @login_required
     def update_quick_shortcuts():
-        data = request.json
-        shortcuts = data.get('shortcuts', [])
-        if isinstance(shortcuts, list):
+        try:
+            data = request.json
+            shortcuts = data.get('shortcuts', [])
+            
+            print(f"[DEBUG] update_quick_shortcuts - Received: {shortcuts}")
+            
+            if not isinstance(shortcuts, list):
+                print(f"[ERROR] Invalid type: expected list, got {type(shortcuts)}")
+                return jsonify({'error': 'Invalid format: expected array'}), 400
+            
             valid_shorts = [s for s in shortcuts if isinstance(s, dict) and 'name' in s]
-            current_user.settings.quick_shortcuts = json.dumps(valid_shorts, ensure_ascii=False)
+            print(f"[DEBUG] Valid shortcuts after filter: {valid_shorts}")
+            
+            json_str = json.dumps(valid_shorts, ensure_ascii=False)
+            current_user.settings.quick_shortcuts = json_str
             db.session.commit()
-            return jsonify({'success': True})
-        return jsonify({'error': 'Invalid format'}), 400
+            
+            # Verify
+            db.session.refresh(current_user.settings)
+            saved_data = current_user.settings.quick_shortcuts
+            print(f"[VERIFY] Data after commit: {saved_data}")
+            
+            return jsonify({
+                'success': True,
+                'saved_count': len(valid_shorts),
+                'data': valid_shorts
+            })
+            
+        except Exception as e:
+            print(f"[ERROR] Exception in update_quick_shortcuts: {str(e)}")
+            db.session.rollback()
+            return jsonify({'error': f'Server error: {str(e)}'}), 500

@@ -302,14 +302,40 @@
                 body = { shortcuts: data };
             }
 
+            console.log('[SAVE] Key:', key);
+            console.log('[SAVE] Data:', data);
+            console.log('[SAVE] URL:', url);
+            console.log('[SAVE] Body:', JSON.stringify(body));
+
             fetch(url, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(body)
-            }).then(res => res.json()).then(d => {
-                if (d.success) alert('儲存成功');
-            });
+            })
+                .then(res => {
+                    console.log('[SAVE] Response status:', res.status);
+                    return res.json();
+                })
+                .then(d => {
+                    console.log('[SAVE] Response data:', d);
+                    if (d.success) {
+                        alert(`✅ 儲存成功！(${d.saved_count || 0} 筆)\n頁面即將重新整理以確保資料同步...`);
+                        // Auto-reload after 800ms to ensure data sync
+                        setTimeout(() => {
+                            console.log('[RELOAD] Page reloading...');
+                            location.reload();
+                        }, 800);
+                    } else {
+                        alert('❌ 儲存失敗：' + (d.error || '未知錯誤'));
+                        console.error('[SAVE] Error response:', d);
+                    }
+                })
+                .catch(err => {
+                    console.error('[SAVE] Network error:', err);
+                    alert('❌ 儲存失敗：網路錯誤\n請檢查連線狀態並重試');
+                });
         }
     }
+
 </script>
 {% endblock %}
