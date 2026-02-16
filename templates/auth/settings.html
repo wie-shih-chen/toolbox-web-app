@@ -1059,15 +1059,20 @@
     }
 
     // --- Quick Shortcuts Logic ---
+    // --- Quick Shortcuts Logic ---
     function renderShortcuts() {
         const container = document.getElementById('shortcutsList');
         if (!container) return;
         container.innerHTML = '';
         quickShortcuts.forEach((sc, index) => {
             const tag = document.createElement('div');
+            // Check if sc is string or object
+            const name = typeof sc === 'string' ? sc : sc.name;
+            const emoji = (typeof sc === 'object' && sc.emoji) ? sc.emoji : '⚡';
+
             tag.style.cssText = 'background: rgba(16, 185, 129, 0.2); color: #34d399; padding: 6px 12px; border-radius: 20px; font-size: 0.9rem; display: flex; align-items: center; gap: 6px; border: 1px solid rgba(16, 185, 129, 0.3);';
             tag.innerHTML = `
-                <span>${sc}</span>
+                <span>${emoji} ${name}</span>
                 <span onclick="removeShortcut(${index})" style="cursor: pointer; opacity: 0.6; margin-left: 4px;">&times;</span>
             `;
             container.appendChild(tag);
@@ -1079,7 +1084,8 @@
         const val = input.value.trim();
         if (!val) return;
 
-        quickShortcuts.push(val);
+        // Push Object instead of String
+        quickShortcuts.push({ name: val, emoji: '⚡' });
         input.value = '';
         renderShortcuts();
         saveShortcuts();
@@ -1092,6 +1098,7 @@
     }
 
     function saveShortcuts() {
+        // console.log("Saving Shortcuts:", quickShortcuts);
         fetch('{{ url_for("auth.update_quick_shortcuts") }}', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
