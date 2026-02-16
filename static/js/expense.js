@@ -143,28 +143,40 @@ const expenseApp = {
 
             // Parse JSON strings
             // Parse JSON strings and FILTER NULLs
+            // Robust parsing: Handle string or object
             try {
-                const rawCats = JSON.parse(this.settings.custom_categories || '[]');
-                this.settings.custom_categories = Array.isArray(rawCats) ? rawCats.filter(c => c && typeof c === 'object') : [];
+                let rawCats = this.settings.custom_categories;
+                if (typeof rawCats === 'string') {
+                    try { rawCats = JSON.parse(rawCats || '[]'); } catch (e) { console.error(e); rawCats = []; }
+                }
+                this.settings.custom_categories = Array.isArray(rawCats) ? rawCats.filter(c => c && (typeof c === 'object' || typeof c === 'string')) : [];
             } catch (e) {
-                console.error("JSON PARSE FAIL (Categories):", e);
+                console.error("PARSE FAIL (Categories):", e);
                 this.settings.custom_categories = [];
             }
+
             try {
-                const rawRecs = JSON.parse(this.settings.recurring_expenses || '[]');
+                let rawRecs = this.settings.recurring_expenses;
+                if (typeof rawRecs === 'string') {
+                    try { rawRecs = JSON.parse(rawRecs || '[]'); } catch (e) { rawRecs = []; }
+                }
                 this.settings.recurring_expenses = Array.isArray(rawRecs) ? rawRecs.filter(r => r && typeof r === 'object') : [];
             } catch (e) {
-                console.error("JSON PARSE FAIL (Recurring):", e);
+                console.error("PARSE FAIL (Recurring):", e);
                 this.settings.recurring_expenses = [];
             }
-            try {
-                const rawShorts = JSON.parse(this.settings.quick_shortcuts || '[]');
-                let parsedShorts = [];
 
+            try {
+                let rawShorts = this.settings.quick_shortcuts;
+                if (typeof rawShorts === 'string') {
+                    try { rawShorts = JSON.parse(rawShorts || '[]'); } catch (e) { rawShorts = []; }
+                }
+
+                let parsedShorts = [];
                 if (Array.isArray(rawShorts)) {
                     parsedShorts = rawShorts.map(s => {
                         // Migration: Convert old string format to object
-                        if (typeof s === 'string') return { name: s, emoji: '⚡' }; // Default emoji for migrated items
+                        if (typeof s === 'string') return { name: s, emoji: '⚡' };
                         if (typeof s === 'object' && s.name) return s;
                         return null;
                     }).filter(s => s);
@@ -183,7 +195,7 @@ const expenseApp = {
                     this.settings.quick_shortcuts = parsedShorts;
                 }
             } catch (e) {
-                console.error("JSON PARSE FAIL (Shortcuts):", e);
+                console.error("PARSE FAIL (Shortcuts):", e);
                 this.settings.quick_shortcuts = [
                     { name: '早餐', emoji: '🍳' },
                     { name: '午餐', emoji: '🍱' },

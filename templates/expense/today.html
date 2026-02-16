@@ -125,4 +125,34 @@
 
 {% block extra_js %}
 <script src="{{ url_for('static', filename='js/expense.js') }}"></script>
+<script>
+    // Inject server-side data to ensure immediate availability
+    // Run AFTER expense.js has defined expenseApp
+    if (typeof expenseApp !== 'undefined') {
+        expenseApp.settings = expenseApp.settings || {};
+
+        try {
+            const injectedCats = {{ custom_categories| tojson | safe
+        }};
+    const injectedShorts = {{ quick_shortcuts| tojson | safe }};
+
+    if (injectedCats && Array.isArray(injectedCats)) {
+        expenseApp.settings.custom_categories = injectedCats;
+    }
+    if (injectedShorts && Array.isArray(injectedShorts)) {
+        expenseApp.settings.quick_shortcuts = injectedShorts;
+    }
+
+    // Immediately populate UI if methods exist
+    if (typeof expenseApp.populateCategorySelect === 'function') {
+        expenseApp.populateCategorySelect();
+    }
+    // shortcuts are populated when modal opens, so no need to call anything now
+
+    console.log("Settings Injected & UI Updated:", expenseApp.settings);
+        } catch (e) {
+        console.error("Injection Error:", e);
+    }
+    }
+</script>
 {% endblock %}

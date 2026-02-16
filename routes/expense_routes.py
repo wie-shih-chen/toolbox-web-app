@@ -18,7 +18,23 @@ def index():
 @login_required
 def today():
     """本日記帳"""
-    return render_template('expense/today.html')
+    settings = expense_service.get_settings()
+    
+    # Pre-process JSON fields for the template
+    try:
+        import json
+        custom_categories = json.loads(settings.get('custom_categories') or '[]')
+    except:
+        custom_categories = []
+        
+    try:
+        quick_shortcuts = json.loads(settings.get('quick_shortcuts') or '[]')
+    except:
+        quick_shortcuts = []
+        
+    return render_template('expense/today.html', 
+                         custom_categories=custom_categories,
+                         quick_shortcuts=quick_shortcuts)
 
 
 @expense_bp.route('/history')
