@@ -952,22 +952,106 @@ input[type="time"].input-pill::-webkit-calendar-picker-indicator {
 /* Responsive adjustments */
 @media (max-width: 768px) {
     .category-grid {
-        grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+        grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
         gap: 10px;
     }
 
+    .shortcut-grid {
+        grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    }
+
     .category-card,
-    .recurring-card {
+    .recurring-card,
+    .shortcut-card {
         padding: 12px;
     }
 
+    .category-emoji,
+    .shortcut-emoji {
+        font-size: 1.3rem;
+    }
+
+    .category-name,
+    .shortcut-name {
+        font-size: 0.9rem;
+    }
+}
+
+@media (max-width: 600px) {
+
+    /* Input groups stack vertically on small screens */
+    .settings-section>div[style*="display: flex"] {
+        flex-direction: column !important;
+        gap: 8px !important;
+    }
+
+    .settings-section input[type="text"],
+    .settings-section input[type="color"] {
+        width: 100% !important;
+        max-width: none !important;
+    }
+
+    .settings-section button {
+        width: 100% !important;
+    }
+
+    /* Grid adjustments */
+    .category-grid,
+    .shortcut-grid {
+        grid-template-columns: 1fr;
+        gap: 8px;
+    }
+
+    .recurring-list {
+        gap: 8px;
+    }
+
+    /* Card adjustments */
+    .category-card,
+    .recurring-card,
     .shortcut-card {
-        padding: 8px 12px;
+        padding: 10px;
+    }
+
+    .category-card-header,
+    .shortcut-card-header {
+        gap: 6px;
+    }
+
+    .drag-handle {
+        font-size: 16px !important;
+    }
+
+    .btn-icon-small .material-icons {
+        font-size: 14px;
     }
 }
 
 @media (max-width: 480px) {
-    .category-grid {
-        grid-template-columns: 1fr 1fr;
+
+    /* Further reduction for very small screens */
+    .category-emoji,
+    .shortcut-emoji {
+        font-size: 1.2rem;
+    }
+
+    .category-name,
+    .shortcut-name,
+    .recurring-name {
+        font-size: 0.85rem;
+    }
+
+    .recurring-meta {
+        font-size: 0.8rem;
+    }
+
+    /* Ensure cards don't get too small */
+    .category-card,
+    .shortcut-card {
+        min-height: 70px;
+    }
+
+    .recurring-card {
+        min-height: 60px;
     }
 }
