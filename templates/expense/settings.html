@@ -509,6 +509,7 @@
             if (shortcutList && shortcutList.querySelector('.shortcut-card')) {
                 Sortable.create(shortcutList, {
                     animation: 150,
+                    handle: '.drag-handle',
                     ghostClass: 'sortable-ghost',
                     onEnd: function () {
                         const newOrder = [];
