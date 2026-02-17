@@ -168,16 +168,15 @@
 /* Mobile responsive */
 @media (max-width: 600px) {
     .expense-modal {
-        padding: 0;
-        align-items: flex-start;
+        padding: 16px;
+        align-items: center;
     }
 
     .expense-modal-content {
         max-width: 100%;
         width: 100%;
-        max-height: 100vh;
-        height: 100vh;
-        border-radius: 0;
+        max-height: 85vh;
+        border-radius: 16px;
         display: flex;
         flex-direction: column;
         overflow: hidden;
@@ -202,8 +201,6 @@
     .expense-modal-footer {
         padding: 16px 20px;
         flex-shrink: 0;
-        position: sticky;
-        bottom: 0;
         background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
         border-top: 1px solid rgba(255, 255, 255, 0.1);
     }
