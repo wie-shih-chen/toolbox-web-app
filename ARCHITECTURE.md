@@ -550,32 +550,6 @@ button {
 }
 ```
 
-**JavaScript 滾動鎖定**：
-```javascript
-// 開啟模態框
-function openModal() {
-    // 鎖定背景滾動
-    document.body.style.overflow = 'hidden';
-    document.body.style.position = 'fixed';
-    document.body.style.width = '100%';
-    
-    // 滾動到頂部（確保模態框在視窗內）
-    window.scrollTo(0, 0);
-    
-    modal.style.display = 'flex';
-}
-
-// 關閉模態框
-function closeModal() {
-    modal.style.display = 'none';
-    
-    // 解鎖滾動
-    document.body.style.overflow = '';
-    document.body.style.position = '';
-    document.body.style.width = '';
-}
-```
-
 **關鍵要求**：
 
 **桌面版**：
@@ -590,10 +564,27 @@ function closeModal() {
 - ✅ 僅頂部圓角 `border-radius: 24px 24px 0 0`
 - ✅ iOS 安全區域支援（`env(safe-area-inset-bottom)`）
 
+**JavaScript 操作**：
+```javascript
+// 開啟模態框 - 簡單切換 display
+function openModal() {
+    modal.style.display = 'flex';
+}
+
+// 關閉模態框
+function closeModal() {
+    modal.style.display = 'none';
+}
+```
+
+> [!WARNING]
+> **不要**使用 `document.body.style.position = 'fixed'` 來鎖定滾動！
+> 這會導致頁面無法滾動。其他模態框都只是簡單地切換 display 屬性。
+
 **通用要求**：
-- ✅ 開啟時鎖定 body 滾動
-- ✅ 自動滾動到頂部（確保可見）
 - ✅ Flex 佈局固定頭尾，可滾動主體
+- ✅ 點擊遮罩關閉
+- ✅ ESC 鍵關閉（可選）
 
 ---
 
