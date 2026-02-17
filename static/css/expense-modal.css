@@ -165,21 +165,26 @@
     }
 }
 
-/* Mobile responsive */
+/* Mobile responsive - Bottom Sheet Style */
 @media (max-width: 600px) {
     .expense-modal {
-        padding: 16px;
-        align-items: center;
+        padding: 0;
+        align-items: flex-end;
+        /* 底部對齊 */
     }
 
     .expense-modal-content {
         max-width: 100%;
         width: 100%;
-        max-height: 85vh;
-        border-radius: 16px;
+        max-height: 90vh;
+        border-radius: 24px 24px 0 0;
+        /* 僅頂部圓角 */
         display: flex;
         flex-direction: column;
         overflow: hidden;
+        margin-bottom: 0;
+        padding-bottom: calc(20px + env(safe-area-inset-bottom));
+        /* iOS 安全區域 */
     }
 
     .expense-modal-header {

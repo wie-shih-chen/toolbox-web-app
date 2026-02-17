@@ -486,38 +486,49 @@ button {
 
 ### 5.5 模態框設計 (Modal Dialog Design)
 
-#### 桌面版
+模態框必須在桌面和手機上都提供良好的體驗。
+
+#### 桌面版（標準模態框）
 ```css
 .expense-modal {
     position: fixed;
     z-index: 9999;
-    align-items: center;
-    justify-content: center;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    display: none; /* 或 flex 當顯示時 */
+    align-items: center;       /* 垂直居中 */
+    justify-content: center;   /* 水平居中 */
     padding: 20px;
 }
 
 .expense-modal-content {
-    max-width: 500px;
-    max-height: 90vh;
+    max-width: 480px;          /* 限制最大寬度 */
+    width: 100%;
+    max-height: 90vh;          /* 最高 90% 視窗高度 */
     border-radius: 16px;
 }
 ```
 
-#### 手機版
+#### 手機版（底部彈出式 Bottom Sheet）
 ```css
 @media (max-width: 600px) {
     .expense-modal {
-        padding: 16px;              /* 上下左右留空 */
-        align-items: center;        /* 垂直居中 */
+        padding: 0;
+        align-items: flex-end;    /* 底部對齊（底部彈出效果）*/
     }
 
     .expense-modal-content {
+        max-width: 100%;
         width: 100%;
-        max-height: 85vh;           /* 不佔滿螢幕 */
-        border-radius: 16px;        /* 保留圓角 */
+        max-height: 90vh;           /* 最高 90% 視窗高度 */
+        border-radius: 24px 24px 0 0;  /* 僅頂部圓角（底部彈出式）*/
         display: flex;
         flex-direction: column;
         overflow: hidden;
+        margin-bottom: 0;           /* 貼底部 */
+        padding-bottom: calc(20px + env(safe-area-inset-bottom)); /* iOS 安全區域 */
     }
 
     /* 固定頭部 */
@@ -566,11 +577,23 @@ function closeModal() {
 ```
 
 **關鍵要求**：
-- ✅ `max-height: 85vh`（不佔滿螢幕）
-- ✅ 四周留 16px padding
+
+**桌面版**：
+- ✅ 居中顯示（`align-items: center`, `justify-content: center`）
+- ✅ `max-width: 480px`（標準模態框寬度）
+- ✅ `max-height: 90vh`（不超過視窗高度）
+- ✅ 四周圓角 `border-radius: 16px`
+
+**手機版（底部彈出式）**：
+- ✅ 底部對齊（`align-items: flex-end`）
+- ✅ `max-height: 90vh`（不佔滿螢幕）
+- ✅ 僅頂部圓角 `border-radius: 24px 24px 0 0`
+- ✅ iOS 安全區域支援（`env(safe-area-inset-bottom)`）
+
+**通用要求**：
 - ✅ 開啟時鎖定 body 滾動
-- ✅ 自動滾動到頂部
-- ✅ Flex 佈局固定頭尾
+- ✅ 自動滾動到頂部（確保可見）
+- ✅ Flex 佈局固定頭尾，可滾動主體
 
 ---
 
