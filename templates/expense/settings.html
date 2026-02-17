@@ -474,14 +474,26 @@
 
         // Recurring Expenses - use modal approach
         document.getElementById('openAddRecurringBtn').onclick = () => {
-            // Open modal instead of prompts
+            // Lock body scroll and scroll to top
+            document.body.style.overflow = 'hidden';
+            document.body.style.position = 'fixed';
+            document.body.style.width = '100%';
+            window.scrollTo(0, 0);
+            
+            // Open modal
             document.getElementById('recurringModal').style.display = 'flex';
             document.getElementById('recurringName').focus();
         };
 
         // Close modal function
-        window.closeRecurringModal = function () {
+        window.closeRecurringModal = function() {
             document.getElementById('recurringModal').style.display = 'none';
+            
+            // Unlock body scroll
+            document.body.style.overflow = '';
+            document.body.style.position = '';
+            document.body.style.width = '';
+            
             // Clear inputs
             document.getElementById('recurringName').value = '';
             document.getElementById('recurringAmount').value = '';
