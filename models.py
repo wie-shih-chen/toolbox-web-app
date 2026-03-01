@@ -138,3 +138,13 @@ class Reminder(db.Model):
     
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
+
+class UserCalendar(db.Model):
+    """Stores user-added ICS calendar sources (URL or uploaded file)."""
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    name = db.Column(db.String(100), nullable=False)
+    source_type = db.Column(db.String(10), nullable=False)  # 'url' or 'file'
+    source = db.Column(db.String(500), nullable=False)       # URL or absolute file path
+    color = db.Column(db.String(10), default='#4285F4')
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)

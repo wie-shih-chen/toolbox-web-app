@@ -1,49 +1,695 @@
 {% extends "base.html" %}
 
-{% block title %}北科生活 - 行事曆{% endblock %}
-{% block page_title %}🎓 北科生活 - 行事曆{% endblock %}
+{% block title %}行事曆{% endblock %}
+{% block page_title %}🗓 行事曆{% endblock %}
 
 {% block extra_css %}
 <style>
-    .calendar-container {
-        width: 100%;
-        height: min(80vh, 800px);
-        background: rgba(255, 255, 255, 0.05);
-        backdrop-filter: blur(10px);
-        border-radius: 20px;
-        border: 1px solid rgba(255, 255, 255, 0.1);
-        padding: 15px;
-        box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
-        overflow: hidden;
+    /* ── Layout ─────────────────────────────────── */
+    .cal-layout {
+        display: flex;
+        gap: 16px;
+        height: calc(100vh - 160px);
+        min-height: 500px;
+    }
+
+    /* ── Sidebar ─────────────────────────────────── */
+    .cal-sidebar {
+        width: 220px;
+        flex-shrink: 0;
         display: flex;
         flex-direction: column;
+        gap: 8px;
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 18px;
+        padding: 16px;
+        backdrop-filter: blur(10px);
+        overflow-y: auto;
     }
 
-    .calendar-iframe {
+    .sidebar-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 4px;
+    }
+
+    .sidebar-header h4 {
+        font-size: 0.9rem;
+        font-weight: 600;
+        color: var(--text-secondary);
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        margin: 0;
+    }
+
+    .btn-add-cal {
+        background: rgba(255, 255, 255, 0.1);
+        border: none;
+        color: var(--text-primary);
+        width: 30px;
+        height: 30px;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: background .2s;
+    }
+
+    .btn-add-cal:hover {
+        background: rgba(255, 255, 255, 0.2);
+    }
+
+    .btn-add-cal .material-icons {
+        font-size: 18px;
+    }
+
+    .cal-item {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 10px;
+        border-radius: 10px;
+        background: rgba(255, 255, 255, 0.04);
+        border: 1px solid rgba(255, 255, 255, 0.06);
+        transition: background .2s;
+    }
+
+    .cal-item:hover {
+        background: rgba(255, 255, 255, 0.09);
+    }
+
+    .cal-dot {
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        flex-shrink: 0;
+    }
+
+    .cal-item-name {
+        flex: 1;
+        font-size: 0.88rem;
+        color: var(--text-primary);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .btn-del-cal {
+        background: none;
+        border: none;
+        color: var(--text-tertiary);
+        cursor: pointer;
+        padding: 2px;
+        border-radius: 4px;
+        display: flex;
+        align-items: center;
+        opacity: 0;
+        transition: opacity .2s, color .2s;
+    }
+
+    .cal-item:hover .btn-del-cal {
+        opacity: 1;
+    }
+
+    .btn-del-cal:hover {
+        color: #f87171;
+    }
+
+    .btn-del-cal .material-icons {
+        font-size: 15px;
+    }
+
+    .cal-empty {
+        font-size: 0.8rem;
+        color: var(--text-tertiary);
+        text-align: center;
+        padding: 20px 0;
+    }
+
+    /* ── Main Calendar ────────────────────────────── */
+    .cal-main {
+        flex: 1;
+        background: rgba(255, 255, 255, 0.03);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 18px;
+        padding: 16px;
+        overflow: hidden;
+    }
+
+    #calendar {
+        height: 100%;
+    }
+
+    /* FullCalendar dark theme overrides */
+    .fc {
+        color: var(--text-primary);
+    }
+
+    .fc-theme-standard td,
+    .fc-theme-standard th,
+    .fc-theme-standard .fc-scrollgrid {
+        border-color: rgba(255, 255, 255, 0.08);
+    }
+
+    .fc-col-header-cell {
+        background: rgba(255, 255, 255, 0.04);
+    }
+
+    .fc-daygrid-day:hover {
+        background: rgba(255, 255, 255, 0.04) !important;
+    }
+
+    .fc-day-today {
+        background: rgba(99, 102, 241, 0.08) !important;
+    }
+
+    .fc-button {
+        background: rgba(255, 255, 255, 0.1) !important;
+        border: none !important;
+        color: var(--text-primary) !important;
+    }
+
+    .fc-button:hover {
+        background: rgba(255, 255, 255, 0.2) !important;
+    }
+
+    .fc-button-primary:not(:disabled).fc-button-active {
+        background: rgba(99, 102, 241, 0.5) !important;
+    }
+
+    .fc-toolbar-title {
+        font-size: 1.1rem !important;
+    }
+
+    .fc-event {
+        border: none !important;
+        font-size: 0.78rem;
+    }
+
+    /* ── Modal ────────────────────────────────────── */
+    .modal-overlay {
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.6);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 1000;
+        backdrop-filter: blur(4px);
+        animation: fadeIn .2s ease;
+    }
+
+    @keyframes fadeIn {
+        from {
+            opacity: 0;
+        }
+
+        to {
+            opacity: 1;
+        }
+    }
+
+    .modal-box {
         width: 100%;
-        flex-grow: 1;
+        max-width: 440px;
+        margin: 16px;
+        background: rgba(30, 30, 50, 0.95);
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        border-radius: 20px;
+        padding: 24px;
+        animation: slideUp .25s ease;
+    }
+
+    @keyframes slideUp {
+        from {
+            transform: translateY(20px);
+            opacity: 0;
+        }
+
+        to {
+            transform: none;
+            opacity: 1;
+        }
+    }
+
+    .modal-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+    }
+
+    .modal-header h3 {
+        margin: 0;
+        font-size: 1.1rem;
+    }
+
+    .btn-close-modal {
+        background: rgba(255, 255, 255, 0.08);
+        border: none;
+        color: var(--text-secondary);
+        width: 32px;
+        height: 32px;
+        border-radius: 8px;
+        cursor: pointer;
+        font-size: 1.1rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .btn-close-modal:hover {
+        background: rgba(255, 255, 255, 0.15);
+        color: var(--text-primary);
+    }
+
+    .modal-tabs {
+        display: flex;
+        gap: 4px;
+        background: rgba(0, 0, 0, 0.2);
+        border-radius: 10px;
+        padding: 4px;
+        margin-bottom: 18px;
+    }
+
+    .tab-btn {
+        flex: 1;
+        background: none;
+        border: none;
+        color: var(--text-secondary);
+        padding: 8px;
+        border-radius: 7px;
+        cursor: pointer;
+        font-size: 0.88rem;
+        transition: background .2s, color .2s;
+    }
+
+    .tab-btn.active {
+        background: rgba(255, 255, 255, 0.1);
+        color: var(--text-primary);
+        font-weight: 600;
+    }
+
+    .tab-body {
+        display: none;
+    }
+
+    .tab-body.active {
+        display: block;
+    }
+
+    .modal-input {
+        width: 100%;
+        background: rgba(255, 255, 255, 0.06);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 10px;
+        color: var(--text-primary);
+        padding: 10px 14px;
+        font-size: 0.9rem;
+        margin-bottom: 12px;
+        box-sizing: border-box;
+        transition: border-color .2s;
+    }
+
+    .modal-input:focus {
+        outline: none;
+        border-color: rgba(99, 102, 241, 0.6);
+    }
+
+    .modal-input::placeholder {
+        color: var(--text-tertiary);
+    }
+
+    .color-row {
+        display: flex;
+        gap: 8px;
+        margin-bottom: 16px;
+        flex-wrap: wrap;
+    }
+
+    .color-swatch {
+        width: 28px;
+        height: 28px;
+        border-radius: 50%;
+        cursor: pointer;
+        border: 3px solid transparent;
+        transition: transform .15s, border-color .15s;
+    }
+
+    .color-swatch:hover {
+        transform: scale(1.15);
+    }
+
+    .color-swatch.selected {
+        border-color: white;
+    }
+
+    .btn-submit {
+        width: 100%;
+        padding: 12px;
+        background: linear-gradient(135deg, #6366f1, #818cf8);
         border: none;
         border-radius: 12px;
-        filter: invert(0.9) hue-rotate(180deg);
-        /* Dark mode hack for Google Calendar if needed, can adjust */
+        color: white;
+        font-size: 1rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: opacity .2s;
+        margin-top: 4px;
     }
 
-    @media (max-width: 768px) {
-        .calendar-container {
-            height: calc(100vh - 200px);
-            /* Account for Top Nav (50) + Bottom Nav (75) + Container Padding */
-            padding: 10px;
-            border-radius: 12px;
+    .btn-submit:hover {
+        opacity: 0.85;
+    }
+
+    .btn-submit:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
+
+    .modal-error {
+        color: #f87171;
+        font-size: 0.85rem;
+        margin-bottom: 10px;
+        display: none;
+    }
+
+    /* ── File input styling ───────────────────────── */
+    .file-label {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 8px;
+        padding: 24px;
+        border: 2px dashed rgba(255, 255, 255, 0.15);
+        border-radius: 12px;
+        cursor: pointer;
+        color: var(--text-secondary);
+        font-size: 0.88rem;
+        transition: border-color .2s, background .2s;
+        margin-bottom: 12px;
+    }
+
+    .file-label:hover {
+        border-color: rgba(99, 102, 241, 0.5);
+        background: rgba(99, 102, 241, 0.05);
+    }
+
+    .file-label .material-icons {
+        font-size: 2rem;
+        opacity: 0.5;
+    }
+
+    #file-name-display {
+        font-size: 0.8rem;
+        color: var(--text-tertiary);
+    }
+
+    /* ── Responsive ───────────────────────────────── */
+    @media (max-width: 640px) {
+        .cal-layout {
+            flex-direction: column;
+            height: auto;
+        }
+
+        .cal-sidebar {
+            width: auto;
+            flex-direction: row;
+            flex-wrap: wrap;
+            gap: 6px;
+        }
+
+        .sidebar-header {
+            width: 100%;
+        }
+
+        .cal-main {
+            height: 500px;
         }
     }
 </style>
 {% endblock %}
 
 {% block content %}
-<div class="calendar-container">
-    <iframe
-        src="https://calendar.google.com/calendar/embed?src=docfuhim9b22fqvp2tk842ak3c%40group.calendar.google.com&ctz=Asia%2FTaipei&showTitle=0&showNav=1&showDate=1&showPrint=0&showTabs=1&showCalendars=0"
-        class="calendar-iframe" frameborder="0" scrolling="no">
-    </iframe>
+<div class="cal-layout">
+
+    <!-- ── Sidebar ── -->
+    <aside class="cal-sidebar" id="cal-sidebar">
+        <div class="sidebar-header">
+            <h4>我的日曆</h4>
+            <button class="btn-add-cal" onclick="openAddModal()" title="新增日曆">
+                <span class="material-icons">add</span>
+            </button>
+        </div>
+        <div id="cal-list">
+            <p class="cal-empty" id="cal-empty-hint">還沒有日曆<br>點 + 新增</p>
+        </div>
+    </aside>
+
+    <!-- ── Main Calendar ── -->
+    <div class="cal-main">
+        <div id="calendar"></div>
+    </div>
+
 </div>
+
+<!-- ── Add Calendar Modal ── -->
+<div id="addModal" class="modal-overlay" style="display:none" onclick="handleOverlayClick(event)">
+    <div class="modal-box">
+        <div class="modal-header">
+            <h3>新增日曆</h3>
+            <button class="btn-close-modal" onclick="closeAddModal()">✕</button>
+        </div>
+
+        <!-- Tabs -->
+        <div class="modal-tabs">
+            <button class="tab-btn active" id="tab-btn-url" onclick="switchTab('url')">🔗 訂閱 URL</button>
+            <button class="tab-btn" id="tab-btn-file" onclick="switchTab('file')">📁 上傳檔案</button>
+        </div>
+
+        <!-- URL tab -->
+        <div class="tab-body active" id="tab-url">
+            <input type="url" id="cal-url" class="modal-input"
+                placeholder="https://...  .ics 連結（或 Google Calendar ICS URL）">
+        </div>
+
+        <!-- File tab -->
+        <div class="tab-body" id="tab-file">
+            <label class="file-label" for="cal-file">
+                <span class="material-icons">upload_file</span>
+                <span>點此選擇 .ics 檔案</span>
+                <span id="file-name-display">尚未選擇檔案</span>
+            </label>
+            <input type="file" id="cal-file" accept=".ics" style="display:none"
+                onchange="document.getElementById('file-name-display').textContent = this.files[0]?.name || '尚未選擇檔案'">
+        </div>
+
+        <!-- Common -->
+        <input type="text" id="cal-name" class="modal-input" placeholder="日曆名稱（例：台科大校曆）" maxlength="50">
+
+        <div class="color-row" id="color-row"></div>
+
+        <p class="modal-error" id="modal-error"></p>
+
+        <button class="btn-submit" id="btn-submit" onclick="submitAddCalendar()">新增日曆</button>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<!-- FullCalendar -->
+<script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@fullcalendar/core@6.1.15/locales-all.global.min.js"></script>
+<script>
+    /* ─────────────────────────────────────────────
+       State
+    ───────────────────────────────────────────── */
+    const COLORS = ['#6366f1', '#4285F4', '#34A853', '#FBBC05', '#EA4335', '#FF6D00', '#8E24AA', '#00897B'];
+    let selectedColor = COLORS[0];
+    let currentTab = 'url';
+    let fcCalendar = null;  // FullCalendar instance
+
+    /* ─────────────────────────────────────────────
+       FullCalendar Init
+    ───────────────────────────────────────────── */
+    document.addEventListener('DOMContentLoaded', async () => {
+        buildColorSwatches();
+
+        const el = document.getElementById('calendar');
+        fcCalendar = new FullCalendar.Calendar(el, {
+            locale: 'zh-tw',
+            initialView: window.innerWidth < 640 ? 'listMonth' : 'dayGridMonth',
+            headerToolbar: {
+                left: 'prev,next today',
+                center: 'title',
+                right: 'dayGridMonth,listMonth'
+            },
+            buttonText: { today: '今天', month: '月', list: '列表' },
+            height: '100%',
+            eventSources: [],
+            noEventsContent: '沒有活動',
+        });
+        fcCalendar.render();
+
+        await loadCalendars();
+    });
+
+    /* ─────────────────────────────────────────────
+       Calendar List
+    ───────────────────────────────────────────── */
+    async function loadCalendars() {
+        const res = await fetch('/ntut/calendars');
+        const list = await res.json();
+        renderSidebar(list);
+        fcCalendar.removeAllEventSources();
+        list.forEach(addEventSource);
+    }
+
+    function renderSidebar(list) {
+        const container = document.getElementById('cal-list');
+        const hint = document.getElementById('cal-empty-hint');
+        container.querySelectorAll('.cal-item').forEach(el => el.remove());
+        hint.style.display = list.length ? 'none' : 'block';
+        list.forEach(c => container.appendChild(buildCalItem(c)));
+    }
+
+    function buildCalItem(c) {
+        const div = document.createElement('div');
+        div.className = 'cal-item';
+        div.id = `cal-item-${c.id}`;
+        div.innerHTML = `
+        <span class="cal-dot" style="background:${c.color}"></span>
+        <span class="cal-item-name" title="${c.name}">${c.name}</span>
+        <button class="btn-del-cal" onclick="deleteCalendar(${c.id})" title="刪除">
+            <span class="material-icons">delete_outline</span>
+        </button>`;
+        return div;
+    }
+
+    function addEventSource(c) {
+        fcCalendar.addEventSource({
+            id: String(c.id),
+            url: `/ntut/calendars/${c.id}/events`,
+            color: c.color,
+            failure: () => console.warn(`日曆 ${c.name} 事件載入失敗`),
+        });
+    }
+
+    async function deleteCalendar(id) {
+        if (!confirm('確定要刪除這個日曆嗎？')) return;
+        const res = await fetch(`/ntut/calendars/${id}`, { method: 'DELETE' });
+        if (res.ok) {
+            document.getElementById(`cal-item-${id}`)?.remove();
+            const src = fcCalendar.getEventSourceById(String(id));
+            if (src) src.remove();
+            // show empty hint if none left
+            if (!document.querySelector('.cal-item')) {
+                document.getElementById('cal-empty-hint').style.display = 'block';
+            }
+        }
+    }
+
+    /* ─────────────────────────────────────────────
+       Modal
+    ───────────────────────────────────────────── */
+    function openAddModal() {
+        document.getElementById('addModal').style.display = 'flex';
+        document.getElementById('cal-url').value = '';
+        document.getElementById('cal-name').value = '';
+        document.getElementById('cal-file').value = '';
+        document.getElementById('file-name-display').textContent = '尚未選擇檔案';
+        document.getElementById('modal-error').style.display = 'none';
+        switchTab('url');
+    }
+
+    function closeAddModal() {
+        document.getElementById('addModal').style.display = 'none';
+    }
+
+    function handleOverlayClick(e) {
+        if (e.target === document.getElementById('addModal')) closeAddModal();
+    }
+
+    function switchTab(tab) {
+        currentTab = tab;
+        ['url', 'file'].forEach(t => {
+            document.getElementById(`tab-body-${t}`)?.classList.toggle('active', t === tab)
+                || document.getElementById(`tab-${t}`)?.classList.toggle('active', t === tab);
+            document.getElementById(`tab-btn-${t}`)?.classList.toggle('active', t === tab);
+        });
+    }
+
+    function buildColorSwatches() {
+        const row = document.getElementById('color-row');
+        COLORS.forEach((c, i) => {
+            const s = document.createElement('div');
+            s.className = 'color-swatch' + (i === 0 ? ' selected' : '');
+            s.style.background = c;
+            s.title = c;
+            s.onclick = () => {
+                document.querySelectorAll('.color-swatch').forEach(el => el.classList.remove('selected'));
+                s.classList.add('selected');
+                selectedColor = c;
+            };
+            row.appendChild(s);
+        });
+    }
+
+    async function submitAddCalendar() {
+        const btn = document.getElementById('btn-submit');
+        const errEl = document.getElementById('modal-error');
+        errEl.style.display = 'none';
+        btn.disabled = true;
+        btn.textContent = '新增中…';
+
+        const name = document.getElementById('cal-name').value.trim() || '未命名日曆';
+
+        try {
+            let res;
+            if (currentTab === 'url') {
+                const url = document.getElementById('cal-url').value.trim();
+                if (!url) { showModalError('請輸入 ICS URL'); return; }
+                res = await fetch('/ntut/calendars', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ type: 'url', url, name, color: selectedColor })
+                });
+            } else {
+                const file = document.getElementById('cal-file').files[0];
+                if (!file) { showModalError('請選擇 .ics 檔案'); return; }
+                const fd = new FormData();
+                fd.append('file', file);
+                fd.append('name', name);
+                fd.append('color', selectedColor);
+                res = await fetch('/ntut/calendars', { method: 'POST', body: fd });
+            }
+
+            const data = await res.json();
+            if (!res.ok) { showModalError(data.error || '新增失敗'); return; }
+
+            // Add to sidebar + FullCalendar without page reload
+            const container = document.getElementById('cal-list');
+            container.appendChild(buildCalItem(data));
+            document.getElementById('cal-empty-hint').style.display = 'none';
+            addEventSource(data);
+            closeAddModal();
+        } catch (e) {
+            showModalError('網路錯誤，請重試');
+        } finally {
+            btn.disabled = false;
+            btn.textContent = '新增日曆';
+        }
+    }
+
+    function showModalError(msg) {
+        const el = document.getElementById('modal-error');
+        el.textContent = msg;
+        el.style.display = 'block';
+        document.getElementById('btn-submit').disabled = false;
+        document.getElementById('btn-submit').textContent = '新增日曆';
+    }
+</script>
 {% endblock %}
