@@ -422,22 +422,78 @@
     @media (max-width: 640px) {
         .cal-layout {
             flex-direction: column;
-            height: auto;
+            height: calc(100vh - 120px);
+            gap: 10px;
         }
 
         .cal-sidebar {
-            width: auto;
+            width: 100%;
             flex-direction: row;
-            flex-wrap: wrap;
+            flex-wrap: nowrap;
+            overflow-x: auto;
             gap: 6px;
+            padding: 10px;
         }
 
         .sidebar-header {
             width: 100%;
+            min-width: 100%;
+            margin-bottom: 2px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        #cal-list {
+            display: flex;
+            gap: 8px;
+            flex-wrap: nowrap;
+        }
+
+        .cal-item {
+            padding: 6px 10px;
+            white-space: nowrap;
+        }
+
+        .cal-empty {
+            white-space: nowrap;
+            padding: 10px;
+        }
+
+        .btn-edit-cal,
+        .btn-del-cal {
+            opacity: 1;
+            /* Always visible on touch screens */
         }
 
         .cal-main {
-            height: 500px;
+            height: auto;
+            flex: 1;
+            padding: 8px;
+            overflow-y: auto;
+        }
+
+        #calendar {
+            min-height: 400px;
+        }
+
+        /* Fullcalendar toolbar tweaks for mobile */
+        .fc-header-toolbar {
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-bottom: 8px !important;
+        }
+
+        .fc-toolbar-title {
+            font-size: 1.05rem !important;
+            width: 100%;
+            /* Force title to its own line if wrapped */
+            text-align: center;
+        }
+
+        .fc-button {
+            padding: 4px 8px !important;
+            font-size: 0.85rem !important;
         }
     }
 </style>
@@ -550,16 +606,19 @@
         buildColorSwatches('edit-color-row', c => { editSelectedColor = c; }, false);
 
         const el = document.getElementById('calendar');
+        const isMobile = window.innerWidth <= 640;
+
         fcCalendar = new FullCalendar.Calendar(el, {
             locale: 'zh-tw',
-            initialView: window.innerWidth < 640 ? 'listMonth' : 'dayGridMonth',
+            initialView: isMobile ? 'listMonth' : 'dayGridMonth',
             headerToolbar: {
-                left: 'prev,next today',
+                left: isMobile ? 'prev,next' : 'prev,next today',
                 center: 'title',
-                right: 'dayGridMonth,listMonth'
+                right: isMobile ? 'today dayGridMonth,listMonth' : 'dayGridMonth,listMonth'
             },
             buttonText: { today: '今天', month: '月', list: '列表' },
             height: '100%',
+            contentHeight: isMobile ? 'auto' : undefined, /* Better scrolling on mobile list view */
             eventSources: [],
             noEventsContent: '沒有活動',
         });
