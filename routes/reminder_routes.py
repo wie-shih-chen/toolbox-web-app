@@ -3,6 +3,7 @@ from flask_login import login_required, current_user
 from services.reminder_service import ReminderService
 from models import Reminder
 from datetime import datetime
+import json
 
 reminder_bp = Blueprint('reminder', __name__)
 
@@ -10,7 +11,18 @@ reminder_bp = Blueprint('reminder', __name__)
 @login_required
 def index():
     reminders = ReminderService.get_user_reminders(current_user.id)
-    return render_template('reminders/index.html', reminders=reminders)
+    # Pre-serialize reminder data for JS (avoids Jinja2/JS encoding issues)
+    reminders_dict = {}
+    for r in reminders:
+        reminders_dict[str(r.id)] = {
+            'title': r.title,
+            'description': r.description or '',
+            'time': r.remind_time,
+            'date': r.remind_date or '',
+            'freq': r.frequency,
+            'weekdays': json.loads(r.weekdays) if r.weekdays else []
+        }
+    return render_template('reminders/index.html', reminders=reminders, reminders_dict=reminders_dict)
 
 @reminder_bp.route('/add', methods=['POST'])
 @login_required

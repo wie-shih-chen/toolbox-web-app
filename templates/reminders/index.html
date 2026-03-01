@@ -607,6 +607,7 @@
 {% endblock %}
 
 {% block extra_js %}
+<script type="application/json" id="reminders-json-data">{{ reminders_dict | tojson }}</script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
 <script>
     $(document).ready(function () {
@@ -660,22 +661,10 @@
         $('#reminderModal').modal('show');
     }
 
-    // Load data into modal for editing is tricky without passing full JSON object to template.
-    // For simplicity, we can fetch detailed data or just use data attributes if available.
-    // Let's implement a simple client-side data store from the rendered list.
-    // (Force Update)
-    const remindersData = {
-        {% for r in reminders %}
-    "{{ r.id }}": {
-        title: {{ r.title | tojson }},
-        description: {{ r.description | tojson if r.description else '""' }},
-        time: {{ r.remind_time | tojson }},
-        date: {{ r.remind_date | tojson if r.remind_date else '""' }},
-        freq: {{ r.frequency | tojson }},
-        weekdays: {{ r.weekdays if r.weekdays else '[]' }}
-    },
-    {% endfor %}
-    };
+    const remindersData = JSON.parse(
+        document.getElementById('reminders-json-data').textContent
+    );
+
 
     function openEditModal(id) {
         const data = remindersData[id];
