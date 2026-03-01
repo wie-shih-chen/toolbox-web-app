@@ -126,7 +126,33 @@ def delete_calendar(cal_id):
         os.remove(cal.source)
     db.session.delete(cal)
     db.session.commit()
+    db.session.commit()
     return jsonify({'success': True})
+
+
+@ntut_bp.route('/calendars/<int:cal_id>', methods=['PUT'])
+@login_required
+def update_calendar(cal_id):
+    cal = UserCalendar.query.filter_by(id=cal_id, user_id=current_user.id).first()
+    if not cal:
+        return jsonify({'error': '找不到日曆'}), 404
+        
+    data = request.json or {}
+    name = data.get('name', '').strip()
+    color = data.get('color', '').strip()
+    
+    if name:
+        cal.name = name
+    if color:
+        cal.color = color
+        
+    db.session.commit()
+    return jsonify({
+        'id': cal.id,
+        'name': cal.name,
+        'color': cal.color,
+        'source_type': cal.source_type
+    })
 
 
 @ntut_bp.route('/calendars/<int:cal_id>/events', methods=['GET'])

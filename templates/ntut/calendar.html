@@ -97,6 +97,17 @@
         text-overflow: ellipsis;
     }
 
+    .cal-item-actions {
+        display: flex;
+        opacity: 0;
+        transition: opacity .2s;
+    }
+
+    .cal-item:hover .cal-item-actions {
+        opacity: 1;
+    }
+
+    .btn-edit-cal,
     .btn-del-cal {
         background: none;
         border: none;
@@ -106,12 +117,11 @@
         border-radius: 4px;
         display: flex;
         align-items: center;
-        opacity: 0;
-        transition: opacity .2s, color .2s;
+        transition: color .2s;
     }
 
-    .cal-item:hover .btn-del-cal {
-        opacity: 1;
+    .btn-edit-cal:hover {
+        color: var(--text-primary);
     }
 
     .btn-del-cal:hover {
@@ -497,6 +507,25 @@
         <button class="btn-submit" id="btn-submit" onclick="submitAddCalendar()">新增日曆</button>
     </div>
 </div>
+
+<!-- ── Edit Calendar Modal ── -->
+<div id="editModal" class="modal-overlay" style="display:none" onclick="handleEditOverlayClick(event)">
+    <div class="modal-box">
+        <div class="modal-header">
+            <h3>編輯日曆</h3>
+            <button class="btn-close-modal" onclick="closeEditModal()">✕</button>
+        </div>
+
+        <input type="hidden" id="edit-cal-id">
+        <input type="text" id="edit-cal-name" class="modal-input" placeholder="日曆名稱" maxlength="50">
+
+        <div class="color-row" id="edit-color-row"></div>
+
+        <p class="modal-error" id="edit-modal-error"></p>
+
+        <button class="btn-submit" id="btn-edit-submit" onclick="submitEditCalendar()">儲存變更</button>
+    </div>
+</div>
 {% endblock %}
 
 {% block extra_js %}
@@ -510,13 +539,15 @@
     const COLORS = ['#6366f1', '#4285F4', '#34A853', '#FBBC05', '#EA4335', '#FF6D00', '#8E24AA', '#00897B'];
     let selectedColor = COLORS[0];
     let currentTab = 'url';
+    let editSelectedColor = COLORS[0];
     let fcCalendar = null;  // FullCalendar instance
 
     /* ─────────────────────────────────────────────
        FullCalendar Init
     ───────────────────────────────────────────── */
     document.addEventListener('DOMContentLoaded', async () => {
-        buildColorSwatches();
+        buildColorSwatches('color-row', c => { selectedColor = c; }, true);
+        buildColorSwatches('edit-color-row', c => { editSelectedColor = c; }, false);
 
         const el = document.getElementById('calendar');
         fcCalendar = new FullCalendar.Calendar(el, {
@@ -563,9 +594,14 @@
         div.innerHTML = `
         <span class="cal-dot" style="background:${c.color}"></span>
         <span class="cal-item-name" title="${c.name}">${c.name}</span>
-        <button class="btn-del-cal" onclick="deleteCalendar(${c.id})" title="刪除">
-            <span class="material-icons">delete_outline</span>
-        </button>`;
+        <div class="cal-item-actions">
+            <button class="btn-edit-cal" onclick="openEditModal(${c.id}, '${c.name}', '${c.color}')" title="編輯">
+                <span class="material-icons">edit</span>
+            </button>
+            <button class="btn-del-cal" onclick="deleteCalendar(${c.id})" title="刪除">
+                <span class="material-icons">delete_outline</span>
+            </button>
+        </div>`;
         return div;
     }
 
@@ -605,12 +641,33 @@
         switchTab('url');
     }
 
+    function openEditModal(id, name, color) {
+        document.getElementById('editModal').style.display = 'flex';
+        document.getElementById('edit-cal-id').value = id;
+        document.getElementById('edit-cal-name').value = name;
+        document.getElementById('edit-modal-error').style.display = 'none';
+        editSelectedColor = color;
+
+        // Select the color swatch in edit modal
+        document.querySelectorAll('#edit-color-row .color-swatch').forEach(el => {
+            el.classList.toggle('selected', el.title === color);
+        });
+    }
+
     function closeAddModal() {
         document.getElementById('addModal').style.display = 'none';
     }
 
+    function closeEditModal() {
+        document.getElementById('editModal').style.display = 'none';
+    }
+
     function handleOverlayClick(e) {
         if (e.target === document.getElementById('addModal')) closeAddModal();
+    }
+
+    function handleEditOverlayClick(e) {
+        if (e.target === document.getElementById('editModal')) closeEditModal();
     }
 
     function switchTab(tab) {
@@ -622,17 +679,17 @@
         });
     }
 
-    function buildColorSwatches() {
-        const row = document.getElementById('color-row');
+    function buildColorSwatches(containerId, onSelect, isInitSelected = true) {
+        const row = document.getElementById(containerId);
         COLORS.forEach((c, i) => {
             const s = document.createElement('div');
-            s.className = 'color-swatch' + (i === 0 ? ' selected' : '');
+            s.className = 'color-swatch' + ((isInitSelected && i === 0) ? ' selected' : '');
             s.style.background = c;
             s.title = c;
             s.onclick = () => {
-                document.querySelectorAll('.color-swatch').forEach(el => el.classList.remove('selected'));
+                document.querySelectorAll(`#${containerId} .color-swatch`).forEach(el => el.classList.remove('selected'));
                 s.classList.add('selected');
-                selectedColor = c;
+                onSelect(c);
             };
             row.appendChild(s);
         });
@@ -690,6 +747,47 @@
         el.style.display = 'block';
         document.getElementById('btn-submit').disabled = false;
         document.getElementById('btn-submit').textContent = '新增日曆';
+    }
+
+    async function submitEditCalendar() {
+        const btn = document.getElementById('btn-edit-submit');
+        const errEl = document.getElementById('edit-modal-error');
+        errEl.style.display = 'none';
+        btn.disabled = true;
+        btn.textContent = '儲存中…';
+
+        const id = document.getElementById('edit-cal-id').value;
+        const name = document.getElementById('edit-cal-name').value.trim() || '未命名日曆';
+
+        try {
+            const res = await fetch(`/ntut/calendars/${id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name, color: editSelectedColor })
+            });
+            const data = await res.json();
+
+            if (!res.ok) {
+                errEl.textContent = data.error || '編輯失敗';
+                errEl.style.display = 'block';
+                return;
+            }
+
+            // Update sidebar and fullcalendar
+            document.getElementById(`cal-item-${id}`).outerHTML = buildCalItem(data).outerHTML;
+            const src = fcCalendar.getEventSourceById(String(id));
+            if (src) {
+                src.remove();
+                addEventSource(data);
+            }
+            closeEditModal();
+        } catch (e) {
+            errEl.textContent = '網路錯誤，請重試';
+            errEl.style.display = 'block';
+        } finally {
+            btn.disabled = false;
+            btn.textContent = '儲存變更';
+        }
     }
 </script>
 {% endblock %}
