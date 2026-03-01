@@ -58,6 +58,7 @@ with app.app_context():
     try:
         from flask_apscheduler import APScheduler
         from services.reminder_service import ReminderService
+        from services.calendar_notify_service import CalendarNotifyService
         
         scheduler = APScheduler()
         app.config['SCHEDULER_API_ENABLED'] = True
@@ -68,6 +69,11 @@ with app.app_context():
             # Wrap in app context inside the task
             with app.app_context():
                 ReminderService.check_and_send_reminders(app)
+        
+        @scheduler.task('cron', id='calendar_notify', hour=20, minute=0, timezone='Asia/Taipei')
+        def calendar_notify_task():
+            """Daily at 20:00 Taiwan Time: notify users about tomorrow's calendar events."""
+            CalendarNotifyService.check_and_send(app)
             
         scheduler.start()
         print("Scheduler started successfully.")

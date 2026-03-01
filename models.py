@@ -148,3 +148,15 @@ class UserCalendar(db.Model):
     source = db.Column(db.String(500), nullable=False)       # URL or absolute file path
     color = db.Column(db.String(10), default='#4285F4')
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+
+class CalendarNotificationLog(db.Model):
+    """Tracks sent calendar event notifications to prevent duplicates."""
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    cal_id = db.Column(db.Integer, nullable=False)
+    # Unique key: "{cal_id}:{start_date}:{title[:100]}" to identify the event
+    event_key = db.Column(db.String(350), nullable=False)
+    # The date this notification was sent (= day before event)
+    sent_date = db.Column(db.String(10), nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
