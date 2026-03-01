@@ -612,6 +612,19 @@
         // Initialize sortable on page load
         initSortable();
 
+        // Handle form submit - save budget/cycle settings
+        document.getElementById('settingsForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            try {
+                await expenseApp.saveSettings();
+                alert('✅ 設定已儲存！');
+                location.reload();
+            } catch (err) {
+                console.error('[SAVE] Error:', err);
+                alert('❌ 儲存失敗，請重試');
+            }
+        });
+
         function saveSettings(key, data) {
             // Map key to API endpoint
             let url = '';
