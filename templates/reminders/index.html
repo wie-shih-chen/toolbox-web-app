@@ -609,17 +609,17 @@
 {% block extra_js %}
 <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
 <script>
-    // Move modal to body to ensure it is positioned relative to the viewport, not a parent container
     $(document).ready(function () {
+        // Move modal to body to ensure proper viewport positioning
         $('#reminderModal').appendTo("body");
-    });
 
-    // Initialize current date for date picker
-    document.getElementById('remindDate').valueAsDate = new Date();
+        // Initialize current date for date picker (must be inside ready to avoid null error)
+        document.getElementById('remindDate').valueAsDate = new Date();
 
-    // Weekday Button Click Logic
-    $(document).on('click', '.weekday-btn', function () {
-        $(this).toggleClass('active');
+        // Weekday Button Click Logic
+        $(document).on('click', '.weekday-btn', function () {
+            $(this).toggleClass('active');
+        });
     });
 
     function toggleDateInput() {
@@ -777,13 +777,19 @@
     }
 
     async function toggleReminder(id) {
+        const card = document.getElementById(`card-${id}`);
+        const checkbox = card ? card.querySelector('input[type="checkbox"]') : null;
+        // Remember original state in case we need to roll back
+        const originalChecked = checkbox ? checkbox.checked : null;
+
         try {
-            const res = await fetch(`/reminders/${id}/toggle`, { method: 'POST' });
+            const res = await fetch(`/reminders/${id}/toggle`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' }
+            });
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
             const data = await res.json();
             if (data.success) {
-                const card = document.getElementById(`card-${id}`);
-                const checkbox = card.querySelector('input[type="checkbox"]'); // Get local checkbox
-
                 if (data.is_active) {
                     card.classList.remove('inactive');
                     if (checkbox) checkbox.checked = true;
@@ -793,45 +799,20 @@
                     if (checkbox) checkbox.checked = false;
                     toastr.info('提醒已關閉');
                 }
+            } else {
+                // Roll back UI
+                if (checkbox && originalChecked !== null) checkbox.checked = originalChecked;
+                toastr.error('操作失敗：' + (data.error || '未知錯誤'));
             }
         } catch (e) {
             console.error(e);
-            toastr.error('操作失敗');
+            // Roll back UI
+            if (checkbox && originalChecked !== null) checkbox.checked = originalChecked;
+            toastr.error('操作失敗，請重試');
         }
     }
 
-    // Auto Refresh Status (Every 5 seconds)
-    function startAutoRefresh() {
-        setInterval(async () => {
-            try {
-                const res = await fetch('/reminders/api/list');
-                const data = await res.json();
-                if (data.success) {
-                    data.reminders.forEach(r => {
-                        const card = document.getElementById(`card-${r.id}`);
-                        if (card) {
-                            // Update Card Style based on backend status
-                            if (r.is_active) {
-                                card.classList.remove('inactive');
-                            } else {
-                                card.classList.add('inactive');
-                            }
-
-                            // Update Switch State without triggering onchange
-                            const checkbox = card.querySelector('input[type="checkbox"]');
-                            if (checkbox && checkbox.checked !== r.is_active) {
-                                checkbox.checked = r.is_active;
-                            }
-                        }
-                    });
-                }
-            } catch (e) {
-                console.error("Auto refresh failed", e);
-            }
-        }, 5000); // 5 seconds interval
-    }
-
-    // Start polling
-    startAutoRefresh();
+    // Remove auto-refresh - it was overwriting toggle state and causing the switch to reset
+    // The toggle function now directly updates the UI after successful DB save
 </script>
 {% endblock %}
