@@ -5,6 +5,40 @@
 
 {% block extra_css %}
 <link rel="stylesheet" href="{{ url_for('static', filename='css/salary.css') }}">
+<style>
+    .settings-save-row {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        margin-top: 25px;
+    }
+
+    .settings-save-row .btn {
+        flex: 1;
+        height: 50px;
+        font-size: 1.1rem;
+    }
+
+    .settings-save-status {
+        font-size: 0.9rem;
+        font-weight: 500;
+        white-space: nowrap;
+        min-width: 80px;
+        transition: opacity 0.3s;
+    }
+
+    .settings-save-status.status-saving {
+        color: var(--text-secondary);
+    }
+
+    .settings-save-status.status-saved {
+        color: #4ade80;
+    }
+
+    .settings-save-status.status-error {
+        color: #f87171;
+    }
+</style>
 {% endblock %}
 
 {% block content %}
@@ -95,10 +129,12 @@
                 <p class="settings-help-text">防止誤觸更早之前的歷史紀錄。</p>
             </div>
 
-            <button type="submit" class="btn btn-primary btn-block"
-                style="height: 50px; font-size: 1.1rem; margin-top: 25px; width: 100%;">
-                儲存設定
-            </button>
+            <div class="settings-save-row">
+                <button type="submit" class="btn btn-primary btn-block">
+                    儲存設定
+                </button>
+                <span id="settings-save-status" class="settings-save-status"></span>
+            </div>
         </form>
     </div>
 </div>

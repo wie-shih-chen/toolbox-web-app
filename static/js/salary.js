@@ -751,20 +751,64 @@ const salaryApp = {
 
     initSettings() {
         const form = document.getElementById('settingsForm');
-        if (form) {
-            form.addEventListener('submit', async (e) => {
-                e.preventDefault();
-                const data = Object.fromEntries(new FormData(e.target).entries());
-                try {
-                    const res = await fetch('/salary/api/settings', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(data)
-                    });
-                    if (res.ok) alert('設定已儲存');
-                } catch (error) { alert('網路錯誤'); }
-            });
-        }
+        if (!form) return;
+
+        // --- Status badge helper ---
+        const statusEl = document.getElementById('settings-save-status');
+        const setStatus = (state) => {
+            if (!statusEl) return;
+            const map = {
+                saving: { text: '儲存中…', cls: 'status-saving' },
+                saved: { text: '✓ 已儲存', cls: 'status-saved' },
+                error: { text: '✗ 儲存失敗', cls: 'status-error' },
+                idle: { text: '', cls: '' }
+            };
+            statusEl.textContent = map[state].text;
+            statusEl.className = 'settings-save-status ' + map[state].cls;
+        };
+
+        // --- Core save function ---
+        const doSave = async () => {
+            setStatus('saving');
+            const data = Object.fromEntries(new FormData(form).entries());
+            try {
+                const res = await fetch('/salary/api/settings', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+                if (res.ok) {
+                    setStatus('saved');
+                    setTimeout(() => setStatus('idle'), 2500);
+                } else {
+                    setStatus('error');
+                }
+            } catch (e) {
+                setStatus('error');
+            }
+        };
+
+        // --- Debounce wrapper (800ms) ---
+        let debounceTimer;
+        const debouncedSave = () => {
+            clearTimeout(debounceTimer);
+            debounceTimer = setTimeout(doSave, 800);
+        };
+
+        // --- Attach listeners to all inputs ---
+        form.querySelectorAll('input, select, textarea').forEach(el => {
+            // For text/number: use 'input' (fires on every keystroke)
+            el.addEventListener('input', debouncedSave);
+            // For select/time: also use 'change' (fires immediately on pick)
+            el.addEventListener('change', debouncedSave);
+        });
+
+        // --- Keep submit button for explicit save (no page reload) ---
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            clearTimeout(debounceTimer);
+            await doSave();
+        });
     }
 };
 
