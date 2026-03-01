@@ -609,6 +609,36 @@
         <button class="btn-submit" id="btn-edit-submit" onclick="submitEditCalendar()">儲存變更</button>
     </div>
 </div>
+
+<!-- ── Event Details Modal ── -->
+<div id="eventModal" class="modal-overlay" style="display:none" onclick="handleEventOverlayClick(event)">
+    <div class="modal-box">
+        <div class="modal-header">
+            <h3>行程詳細資訊</h3>
+            <button class="btn-close-modal" onclick="closeEventModal()">✕</button>
+        </div>
+
+        <div style="margin-bottom: 20px;">
+            <div style="display:flex; align-items:center; gap: 8px; margin-bottom: 12px;">
+                <span id="event-color-dot" class="cal-dot"></span>
+                <h4 id="event-title"
+                    style="margin: 0; font-size: 1.2rem; color: var(--text-primary); word-break: break-word;"></h4>
+            </div>
+
+            <div
+                style="display:flex; flex-direction: column; gap: 8px; font-size: 0.95rem; color: var(--text-secondary);">
+                <div style="display: flex; gap: 8px;">
+                    <span class="material-icons" style="font-size: 18px; color: var(--text-tertiary);">schedule</span>
+                    <span id="event-time"></span>
+                </div>
+                <div style="display: flex; gap: 8px;">
+                    <span class="material-icons" style="font-size: 18px; color: var(--text-tertiary);">source</span>
+                    <span id="event-source-name"></span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
 {% endblock %}
 
 {% block extra_js %}
@@ -648,6 +678,9 @@
             contentHeight: isMobile ? 'auto' : undefined, /* Better scrolling on mobile list view */
             eventSources: [],
             noEventsContent: '沒有活動',
+            eventClick: function (info) {
+                openEventModal(info.event);
+            }
         });
         fcCalendar.render();
 
@@ -748,12 +781,64 @@
         document.getElementById('editModal').style.display = 'none';
     }
 
+    function openEventModal(event) {
+        document.getElementById('eventModal').style.display = 'flex';
+
+        // title
+        document.getElementById('event-title').textContent = event.title || '（無標題）';
+
+        // color dot
+        document.getElementById('event-color-dot').style.background = event.backgroundColor;
+
+        // time formatting
+        const start = event.start;
+        const end = event.end || event.start;
+        const opts = { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' };
+
+        let timeStr = '';
+        if (event.allDay) {
+            timeStr = start.toLocaleDateString('zh-TW', { month: '2-digit', day: '2-digit' }) + ' (整天)';
+            if (end > new Date(start.getTime() + 86400000)) { // handles multi-day allDay events
+                const endDisplay = new Date(end.getTime() - 86400000); // end date is exclusive in fullcalendar array
+                timeStr += ' ~ ' + endDisplay.toLocaleDateString('zh-TW', { month: '2-digit', day: '2-digit' });
+            }
+        } else {
+            timeStr = start.toLocaleString('zh-TW', opts);
+            if (end.getTime() !== start.getTime()) {
+                // If same day, just show end time
+                if (start.toDateString() === end.toDateString()) {
+                    timeStr += ' ~ ' + end.toLocaleTimeString('zh-TW', { hour: '2-digit', minute: '2-digit' });
+                } else {
+                    timeStr += ' ~ ' + end.toLocaleString('zh-TW', opts);
+                }
+            }
+        }
+        document.getElementById('event-time').textContent = timeStr;
+
+        // get calendar name by extracting from the sidebar list using the event's source ID mapped to the html list
+        try {
+            const calId = event.source.id;
+            const calName = document.querySelector(`#cal-item-${calId} .cal-item-name`)?.textContent || '未知日曆';
+            document.getElementById('event-source-name').textContent = `來自日曆: ${calName}`;
+        } catch {
+            document.getElementById('event-source-name').textContent = '';
+        }
+    }
+
+    function closeEventModal() {
+        document.getElementById('eventModal').style.display = 'none';
+    }
+
     function handleOverlayClick(e) {
         if (e.target === document.getElementById('addModal')) closeAddModal();
     }
 
     function handleEditOverlayClick(e) {
         if (e.target === document.getElementById('editModal')) closeEditModal();
+    }
+
+    function handleEventOverlayClick(e) {
+        if (e.target === document.getElementById('eventModal')) closeEventModal();
     }
 
     function switchTab(tab) {
