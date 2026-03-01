@@ -27,7 +27,7 @@ web_app/
 │   ├── main_routes.py              # 首頁與通用路由
 │   ├── expense_routes.py           # 💰 記帳模組路由
 │   ├── salary_routes.py            # 💼 薪資模組路由
-│   ├── ntut_routes.py              # 🏫 北科大功能路由 (課表/成績)
+│   ├── ntut_routes.py              # 🏫 整合行事曆路由 (多來源 ICS 管理 API)
 │   ├── reminder_routes.py          # 🔔 提醒事項路由
 │   ├── download_routes.py          # 📥 影音下載器路由
 │   ├── line_routes.py              # 📱 LINE Bot Webhook
@@ -69,8 +69,8 @@ web_app/
 │   ├── reminders/                  # 🔔 提醒事項模組
 │   │   └── index.html              # 提醒列表與設定
 │   │
-│   ├── ntut/                       # 🏫 北科大模組
-│   │   └── calendar.html           # 課表/行事曆
+│   ├── ntut/                       # 🏫 整合行事曆模組
+│   │   └── calendar.html           # 行事曆 (FullCalendar 多來源 ICS)
 │   │
 │   └── email/                      # 📧 Email 模板
 │       ├── welcome.html
@@ -144,11 +144,11 @@ web_app/
 │       ├── 固定支出 (名稱、金額、日期、類別)
 │       └── 快捷摘要 (emoji + 名稱)
 │
-├── 🏫 北科生活 (/school)
-│   ├── 課表查詢 (schedule)
-│   ├── 成績查詢 (grades)
-│   ├── 缺曠查詢 (absences)
-│   └── 個人資訊 (info)
+├── 🗓️ 整合行事曆 (/ntut/calendar)
+│   ├── 多來源日曆管理 (側邊欄顯示清單)
+│   ├── 支援訂閱 ICS URL (如北科大/台科大校曆)
+│   ├── 支援上傳本地 .ics 實體檔案
+│   └── 內建 FullCalendar 呈現 (支援自訂標籤顏色、刪除日曆)
 │
 ├── 🔔 提醒事項 (/reminders)
 │   └── 提醒列表與設定 (index)
