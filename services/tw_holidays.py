@@ -25,6 +25,54 @@ TW_HOLIDAY_ICS_URL = (
     "zh-tw.taiwan%23holiday%40group.v.calendar.google.com/public/basic.ics"
 )
 
+# ── 勞基法第37條 國定假日關鍵字白名單 ──────────────────────────────────────────
+# Google Calendar 台灣假日 ICS 包含許多非勞基法假日（婦女節、青年節、軍人節…）。
+# 只有以下 16 個假日才需要「工資加倍」，其他一律不列入。
+# 關鍵字以名稱「包含」方式比對（涵蓋補假情況，如「除夕補假」）。
+_LSA_KEYWORDS = [
+    # 元旦、開國紀念
+    "開國紀念",
+    "元旦",
+    # 農曆春節五天（含農曆小年夜 2025 新增）
+    "小年夜",
+    "除夕",
+    "春節",
+    "初一",
+    "初二",
+    "初三",
+    # 和平紀念日
+    "和平紀念",
+    # 兒童節 + 清明節
+    "兒童節",
+    "清明",
+    "掃墓",
+    # 勞動節
+    "勞動節",
+    # 端午節
+    "端午",
+    # 中秋節
+    "中秋",
+    # 教師節 / 孔子誕辰（2025 新增）
+    "教師節",
+    "孔子",
+    # 國慶日
+    "國慶",
+    # 台灣光復暨金門古寧頭大捷紀念日（2025 新增）
+    "臺灣光復",
+    "台灣光復",
+    "光復節",
+    "古寧頭",
+    # 行憲紀念日（2025 新增）
+    "行憲紀念",
+]
+
+def _is_lsa_holiday(name: str) -> bool:
+    """Return True if the holiday name matches any LSA Art.37 keyword."""
+    for kw in _LSA_KEYWORDS:
+        if kw in name:
+            return True
+    return False
+
 
 def _fetch_and_parse_all() -> dict:
     """
@@ -55,9 +103,14 @@ def _fetch_and_parse_all() -> dict:
                 continue
             start = dtstart.dt
             start_date = start if isinstance(start, date) and not isinstance(start, datetime) else start.date()
-            name = str(component.get('SUMMARY', '國定假日'))
+            name = str(component.get('SUMMARY', ''))
             # Strip trailing " (substitute)" or " (补假)" style suffixes that Google appends
             name = name.split(' (')[0].strip()
+
+            # ── LSA filter: only keep 勞基法第37條 national holidays ──────────
+            if not _is_lsa_holiday(name):
+                continue
+
             result[start_date.isoformat()] = name
     except Exception as e:
         print(f"[tw_holidays] ICS parse error: {e}")
