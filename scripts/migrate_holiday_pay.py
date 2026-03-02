@@ -1,12 +1,12 @@
 """
 migrate_holiday_pay.py — 補算所有歷史排班的國定假日薪資
-Run: python scripts/migrate_holiday_pay.py           # dry-run
+Run: python scripts/migrate_holiday_pay.py           # dry-run (preview only)
      python scripts/migrate_holiday_pay.py --apply   # actually save
 
-Uses plain sqlite3 + requests/icalendar, no Flask needed.
+Uses ONLY Python built-ins (urllib, sqlite3) — no pip installs needed.
 """
-import sys, os, sqlite3, argparse, requests
-from datetime import datetime, date
+import sys, os, sqlite3, argparse
+import urllib.request
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
@@ -36,12 +36,7 @@ if not db_path:
 
 print(f"📂 DB: {db_path}\n")
 
-# ── Fetch Taiwan LSA holidays from Google ICS ─────────────────────────────
-TW_ICS_URL = (
-    "https://calendar.google.com/calendar/ical/"
-    "zh-tw.taiwan%23holiday%40group.v.calendar.google.com/public/basic.ics"
-)
-
+# ── LSA whitelist ─────────────────────────────────────────────────────────────
 _LSA_KEYWORDS = [
     "開國紀念", "元旦", "小年夜", "除夕", "春節", "初一", "初二", "初三",
     "和平紀念", "兒童節", "清明", "掃墓", "勞動節", "端午", "中秋",
@@ -52,43 +47,58 @@ _LSA_KEYWORDS = [
 def _is_lsa(name):
     return any(kw in name for kw in _LSA_KEYWORDS)
 
+# ── Parse ICS without external libs ──────────────────────────────────────────
+TW_ICS_URL = (
+    "https://calendar.google.com/calendar/ical/"
+    "zh-tw.taiwan%23holiday%40group.v.calendar.google.com/public/basic.ics"
+)
+
 def fetch_holidays():
-    """Returns {YYYY-MM-DD: holiday_name} for all years."""
+    """Returns {YYYY-MM-DD: holiday_name} using only built-in urllib."""
+    print("📡 Fetching Taiwan holidays from Google Calendar...")
     try:
-        from icalendar import Calendar
-    except ImportError:
-        print("❌ icalendar not installed. Run: pip install icalendar")
-        sys.exit(1)
-    try:
-        resp = requests.get(TW_ICS_URL, timeout=20)
-        resp.raise_for_status()
+        req = urllib.request.Request(TW_ICS_URL, headers={'User-Agent': 'Mozilla/5.0'})
+        with urllib.request.urlopen(req, timeout=20) as resp:
+            raw = resp.read().decode('utf-8', errors='replace')
     except Exception as e:
         print(f"❌ Cannot fetch ICS: {e}")
         sys.exit(1)
+
     result = {}
-    cal = Calendar.from_ical(resp.content)
-    for c in cal.walk():
-        if c.name != 'VEVENT':
-            continue
-        dt = c.get('DTSTART')
-        if not dt:
-            continue
-        d = dt.dt
-        if isinstance(d, datetime):
-            d = d.date()
-        name = str(c.get('SUMMARY', '')).split(' (')[0].strip()
-        if _is_lsa(name):
-            result[d.isoformat()] = name
+    cur_date = None
+    cur_name = None
+    in_event = False
+
+    for line in raw.splitlines():
+        line = line.strip()
+        if line == 'BEGIN:VEVENT':
+            in_event = True
+            cur_date = None
+            cur_name = None
+        elif line == 'END:VEVENT':
+            if in_event and cur_date and cur_name and _is_lsa(cur_name):
+                result[cur_date] = cur_name
+            in_event = False
+        elif in_event:
+            if line.startswith('DTSTART'):
+                # DTSTART;VALUE=DATE:20260228  OR  DTSTART:20260228
+                val = line.split(':', 1)[-1].strip()
+                if len(val) == 8 and val.isdigit():
+                    cur_date = f"{val[:4]}-{val[4:6]}-{val[6:8]}"
+            elif line.startswith('SUMMARY:'):
+                name = line[len('SUMMARY:'):]
+                # Strip Google's " (substitute)" suffix
+                cur_name = name.split(' (')[0].strip()
+
+    print(f"✅ Loaded {len(result)} LSA national holidays.\n")
     return result
 
 # ── Main ─────────────────────────────────────────────────────────────────────
 parser = argparse.ArgumentParser()
-parser.add_argument('--apply', action='store_true', help='Write changes to DB (default: dry-run)')
+parser.add_argument('--apply', action='store_true', help='Write changes (default: dry-run)')
 args = parser.parse_args()
 
-print("📡 Fetching Taiwan holidays from Google Calendar...")
 holidays = fetch_holidays()
-print(f"✅ Loaded {len(holidays)} LSA national holidays.\n")
 
 HOLIDAY_TAG = '【國定假日'
 
