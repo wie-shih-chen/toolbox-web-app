@@ -82,9 +82,15 @@ def calendar_settings():
 @login_required
 def get_calendar_settings():
     s = _get_or_create_settings(current_user.id)
+    import json as _json
+    try:
+        methods = _json.loads(s.notification_methods or '["email"]')
+    except Exception:
+        methods = ['email']
     return jsonify({
         'calendar_notify_enabled': s.calendar_notify_enabled,
         'calendar_notify_time':    s.calendar_notify_time or '20:00',
+        'notification_methods':    methods,
     })
 
 

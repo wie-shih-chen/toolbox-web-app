@@ -223,6 +223,42 @@
         color: var(--text-tertiary);
         text-align: center;
     }
+
+    .method-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        background: rgba(99, 102, 241, 0.15);
+        border: 1px solid rgba(99, 102, 241, 0.3);
+        color: #a5b4fc;
+        border-radius: 8px;
+        padding: 4px 10px;
+        font-size: 0.82rem;
+        font-weight: 500;
+    }
+
+    .method-badge.line {
+        background: rgba(6, 188, 82, 0.12);
+        border-color: rgba(6, 188, 82, 0.3);
+        color: #4ade80;
+    }
+
+    .method-badge .material-icons {
+        font-size: 14px;
+    }
+
+    .info-link {
+        font-size: 0.8rem;
+        color: var(--text-tertiary);
+        text-decoration: none;
+        display: block;
+        margin-top: 8px;
+        transition: color .2s;
+    }
+
+    .info-link:hover {
+        color: var(--text-secondary);
+    }
 </style>
 {% endblock %}
 
@@ -255,6 +291,16 @@
                 <div class="row-desc">每天幾點發送明天的行程提醒</div>
             </div>
             <input type="time" id="notify-time" class="time-input" value="20:00">
+        </div>
+        <div class="settings-row">
+            <div class="row-info">
+                <div class="row-label">傳送方式</div>
+                <div class="row-desc">依照「總設定」的通知方式發送</div>
+            </div>
+            <div>
+                <div id="methods-badges" style="display:flex; flex-wrap:wrap; gap:6px; justify-content:flex-end;"></div>
+                <a href="/settings" class="info-link" style="text-align:right;">前往總設定修改 &rsaquo;</a>
+            </div>
         </div>
     </div>
 
@@ -313,6 +359,24 @@
         document.getElementById('toggle-notify').checked = data.calendar_notify_enabled;
         document.getElementById('notify-time').value = data.calendar_notify_time || '20:00';
         updateTimeRowVisibility(data.calendar_notify_enabled);
+
+        // Display notification methods from global settings
+        const methods = data.notification_methods || [];
+        const badgeContainer = document.getElementById('methods-badges');
+        if (badgeContainer) {
+            if (methods.length === 0) {
+                badgeContainer.innerHTML = '<span style="color:var(--text-tertiary);font-size:0.82rem">未設定</span>';
+            } else {
+                badgeContainer.innerHTML = methods.map(m => {
+                    if (m === 'line') {
+                        return `<span class="method-badge line"><span class="material-icons">chat</span> LINE</span>`;
+                    } else if (m === 'email') {
+                        return `<span class="method-badge"><span class="material-icons">mail</span> Email</span>`;
+                    }
+                    return `<span class="method-badge">${m}</span>`;
+                }).join('');
+            }
+        }
     }
 
     async function loadCalendars() {
