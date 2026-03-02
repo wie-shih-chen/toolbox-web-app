@@ -38,6 +38,7 @@ web_app/
 │   ├── expense_service.py          # 記帳邏輯 (CRUD, 統計, 週期計算)
 │   ├── salary_service.py           # 薪資計算與排班邏輯
 │   ├── reminder_service.py         # 提醒排程與通知發送
+│   ├── calendar_notify_service.py  # 🗋 行事曆 ICS 每日前一天通知 (APScheduler)
 │   ├── report_service.py           # 報表生成 (Excel, PDF)
 │   ├── email_service.py            # Email 發送邏輯
 │   └── line_service.py             # LINE 訊息推送邏輯
@@ -104,7 +105,9 @@ web_app/
 │   ├── migrate_settings_v3.py
 │   ├── migrate_settings_v4.py
 │   ├── migrate_avatar_v6.py
-│   └── migrate_line_bot_v5.py
+│   ├── migrate_line_bot_v5.py
+│   ├── migrate_calendar_notify_log.py   # 建立 CalendarNotificationLog 資料表
+│   └── migrate_calendar_settings.py     # 新增 calendar 設定欄位 (notify toggle, time, per-cal mute)
 │
 └── 📦 其他資料檔案
     ├── expense_data.json           # 舊版記帳資料 (已遷移至 DB)
@@ -144,12 +147,17 @@ web_app/
 │       ├── 固定支出 (名稱、金額、日期、類別)
 │       └── 快捷摘要 (emoji + 名稱)
 │
-├── 🗓️ 整合行事曆 (/ntut/calendar)
+├── 📅 整合行事曆 (/ntut/calendar)
 │   ├── 多來源日曆管理 (側邊欄顯示清單)
 │   ├── 支援訂閱 ICS URL (如北科大/台科大校曆)
 │   ├── 支援上傳本地 .ics 實體檔案
-│   └── 內建 FullCalendar 呈現 (支援自訂標籤顏色、刪除日曆)
-│
+│   ├── 內建 FullCalendar 呈現 (自訂標籤顏色、點擊行程彈出詳細視窗)
+│   ├── 每個日曆小鈴鐺圖示 (🔔 即時靜音切換)
+│   └── ⚙️ 通知設定 (/ntut/calendar/settings)
+│       ├── 開啟/關閉行事曆通知 (Toggle)
+│       ├── 自訂傳送時間 (預設 20:00)
+│       ├── 顯示總設定通知方式 (LINE / Email 彩色標籤)
+│       └── 個別日曆靜音開關
 ├── 🔔 提醒事項 (/reminders)
 │   └── 提醒列表與設定 (index)
 │       ├── 新增/編輯提醒
@@ -204,8 +212,11 @@ web_app/
 │   │
 │   ├── 📧 通知設定
 │   │   ├── line_user_id
-│   │   ├── binding_code
-│   │   └── notification_methods (JSON Array)
+│   │   ├── binding_code, binding_expiry
+│   │   ├── notification_methods (JSON Array)
+│   │   ├── monthly_report_day (Integer)
+│   │   ├── calendar_notify_enabled (行事曆通知開關, Boolean)
+│   │   └── calendar_notify_time    (通知時間 HH:MM, 預設 20:00)
 │   │
 │   ├── 💰 記帳設定
 │   │   ├── monthly_budget (Integer)
@@ -253,18 +264,23 @@ web_app/
 │   ├── total_pay (Decimal)
 │   └── created_at (DateTime)
 │
-└── Reminder (提醒事項 - One-to-Many with User)
+├── UserCalendar (使用者 ICS 來源 - One-to-Many with User)
+│   ├── id (PK)
+│   ├── user_id (FK → User)
+│   ├── name           # 日曆名稱
+│   ├── source_type    # 'url' | 'file'
+│   ├── source         # URL 或檔案路徑
+│   ├── color          # 自訂顏色 (hex)
+│   ├── notify_enabled # 是否發送通知 (Boolean, 預設 True)
+│   └── created_at
+│
+└── CalendarNotificationLog (日曆通知發送記錄 - 防重複)
     ├── id (PK)
     ├── user_id (FK → User)
-    ├── title (String, 例: "吃藥")
-    ├── description (Text)
-    ├── remind_time (Time, 例: 08:30)
-    ├── remind_date (Date, 單次提醒用)
-    ├── frequency (String: once/daily/weekly/monthly)
-    ├── weekdays (JSON Array, 例: [1,3,5])
-    ├── notification_methods (JSON Array: ['line', 'email'])
-    ├── is_active (Boolean)
-    └── created_at (DateTime)
+    ├── cal_id         # UserCalendar ID
+    ├── event_key      # "{cal_id}:{start_date}:{title[:100]}"
+    ├── sent_date      # 發送日期 (YYYY-MM-DD)
+    └── created_at
 ```
 
 ---
@@ -305,6 +321,17 @@ web_app/
 ├── PUT  /reminders/<id>                # 更新提醒
 ├── DELETE /reminders/<id>              # 刪除提醒
 └── POST /reminders/<id>/toggle         # 切換啟用/停用狀態
+
+/ntut/ (行事曆 API)
+├── GET  /calendar                      # 行事曆頁面
+├── GET  /calendar/settings             # 通知設定頁面
+├── GET  /calendar/settings/api         # 讀取通知設定 (JSON)
+├── POST /calendar/settings/api         # 儲存通知設定
+├── GET  /calendars                     # 列出日曆清單 (含 notify_enabled)
+├── POST /calendars                     # 新增日曆 (URL 或 .ics 檔案)
+├── PUT  /calendars/<id>                # 更新名稱/顏色/notify_enabled
+├── DELETE /calendars/<id>              # 刪除日曆
+└── GET  /calendars/<id>/events         # 取得 FullCalendar JSON 事件
 
 /line/webhook (LINE Bot Webhook)
 └── POST /webhook                       # LINE 平台事件接收
@@ -696,5 +723,16 @@ Sortable.create(element, {
 
 ---
 
-**文件最後更新**: 2026-02-17  
-**專案版本**: v2.1 (新增手機端設計規範)
+**文件最後更新**: 2026-03-03  
+**專案版本**: v2.3
+
+### v2.3 更新摘要 (2026-03)
+- 新增整合行事曆功能：支援訂閱 ICS URL 與上傳本地 .ics 檔案
+- 新增 `UserCalendar` 與 `CalendarNotificationLog` 資料模型
+- 新增 `CalendarNotifyService` ：每日按用戶自訂時間掃描 ICS 日曆，发送「明天 XXX 」提醒
+- 新增行事曆通知設定頁：開關、傳送時間、個別日曆靈音
+- `UserSettings` 新增 `calendar_notify_enabled` 、`calendar_notify_time` 欄位
+- `UserCalendar` 新增 `notify_enabled` 欄位（個別靈音）
+- 豚子尋頂新增靈音可切換的 🔔 圖示按鈕
+- 自導航布局 (base.html) 日曆點遠 「北科」 改名為 「日曆」
+
