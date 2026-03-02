@@ -91,6 +91,20 @@ def get_stats():
     summary = service.calculate_weekly_summary(start_date)
     return jsonify(summary)
 
+@salary_bp.route('/api/holidays', methods=['GET'])
+@login_required
+def get_holidays():
+    """Return Taiwan national holidays for a given year as {YYYY-MM-DD: name}."""
+    try:
+        year = int(request.args.get('year', datetime.now().year))
+    except (ValueError, TypeError):
+        year = datetime.now().year
+    try:
+        from services.tw_holidays import get_holidays as _get
+        return jsonify(_get(year))
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
 @salary_bp.route('/api/settings', methods=['GET', 'POST'])
 @login_required
 def handle_settings():

@@ -5,6 +5,40 @@
 
 {% block extra_css %}
 <link rel="stylesheet" href="{{ url_for('static', filename='css/salary.css') }}">
+<style>
+    /* ── National Holiday styles ── */
+    .calendar-day.holiday {
+        border: 1px solid rgba(248, 113, 113, 0.4) !important;
+        background: rgba(248, 113, 113, 0.06) !important;
+    }
+
+    .cal-day-header {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        flex-wrap: wrap;
+    }
+
+    .holiday-badge {
+        font-size: 0.6rem;
+        font-weight: 600;
+        background: rgba(248, 113, 113, 0.85);
+        color: #fff;
+        border-radius: 4px;
+        padding: 1px 5px;
+        line-height: 1.4;
+        white-space: nowrap;
+        max-width: 80px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    /* Holiday shift cal-items are already coloured red via JS;
+       make the ×2 tag stand out a bit more */
+    .cal-item[style*="f87171"] {
+        font-weight: 600;
+    }
+</style>
 {% endblock %}
 
 {% block content %}

@@ -516,6 +516,7 @@ const salaryApp = {
     initMonthly() {
         const now = new Date();
         this.currentMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+        this.holidays = {};   // { 'YYYY-MM-DD': '假日名稱' }
         this.bindEvents();
         this.loadSettings().then(() => this.loadMonth());
     },
@@ -536,8 +537,13 @@ const salaryApp = {
         gridStart.setDate(1 - (firstDay.getDay() || 7) + 1);
 
         try {
-            const res = await fetch(`/salary/api/records?start_date=${this.formatDate(gridStart)}&end_date=${this.formatDate(new Date(gridStart.getTime() + 42 * 864e5))}`);
-            this.records = await res.json();
+            // Fetch shift records AND holidays in parallel
+            const [recRes, holRes] = await Promise.all([
+                fetch(`/salary/api/records?start_date=${this.formatDate(gridStart)}&end_date=${this.formatDate(new Date(gridStart.getTime() + 42 * 864e5))}`),
+                fetch(`/salary/api/holidays?year=${y}`)
+            ]);
+            this.records = await recRes.json();
+            this.holidays = holRes.ok ? await holRes.json() : {};
             this.renderCalendar(gridStart);
 
             // Cycle: 1st ~ Last Day of Month (Standard)
@@ -582,13 +588,25 @@ const salaryApp = {
             const current = new Date(startDate);
             current.setDate(startDate.getDate() + i);
             const dateStr = this.formatDate(current);
+            const holidayName = (this.holidays || {})[dateStr];
 
             const cell = document.createElement('div');
-            cell.className = `calendar-day ${current.getMonth() !== this.currentMonth.getMonth() ? 'other-month' : ''} ${dateStr === todayStr ? 'today' : ''}`;
+            let cellClass = `calendar-day ${current.getMonth() !== this.currentMonth.getMonth() ? 'other-month' : ''} ${dateStr === todayStr ? 'today' : ''}`;
+            if (holidayName) cellClass += ' holiday';
+            cell.className = cellClass;
 
             const header = document.createElement('div');
             header.className = 'cal-day-header';
             header.textContent = current.getDate();
+
+            // Holiday badge inside header
+            if (holidayName) {
+                const badge = document.createElement('span');
+                badge.className = 'holiday-badge';
+                badge.textContent = holidayName;
+                header.appendChild(badge);
+            }
+
             cell.appendChild(header);
 
             const content = document.createElement('div');
@@ -602,8 +620,12 @@ const salaryApp = {
             dayRecords.forEach(r => {
                 const item = document.createElement('div');
                 item.className = 'cal-item';
-                item.textContent = r.type === 'shift' ? `• ${r.start_time}` : `• 💰`;
+                const isHolidayShift = r.type === 'shift' && holidayName;
+                item.textContent = r.type === 'shift'
+                    ? `• ${r.start_time}${isHolidayShift ? ' ×2' : ''}`
+                    : `• 💰`;
                 if (r.type === 'bonus') item.style.color = '#ffd700';
+                if (isHolidayShift) item.style.color = '#f87171';
                 item.onclick = (e) => {
                     e.stopPropagation();
                     this.openEditModal(r);
@@ -621,9 +643,13 @@ const salaryApp = {
 
         this.resetForm();
 
-        document.getElementById('recordDate').value = this.formatDate(date);
-        document.getElementById('modalTitle').textContent = `新增紀錄 (${date.getMonth() + 1}/${date.getDate()})`;
-        document.getElementById('deleteBtn').classList.add('hidden');
+        const dateStr = this.formatDate(date);
+        const holidayName = (this.holidays || {})[dateStr];
+
+        document.getElementById('recordDate').value = dateStr;
+        let titleText = `新增紀錄 (${date.getMonth() + 1}/${date.getDate()})`;
+        if (holidayName) titleText += ` 🎌 ${holidayName}（國定假日，薪水自動加倍）`;
+        document.getElementById('modalTitle').textContent = titleText;
 
         document.querySelectorAll('#recordForm input').forEach(el => {
             if (el.type !== 'hidden') {

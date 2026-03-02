@@ -3,6 +3,32 @@ from flask_login import current_user
 from datetime import datetime, timedelta
 from sqlalchemy import func
 
+def _apply_holiday_pay(date_str: str, rate: float, hours: float, note: str | None) -> tuple[float, float, str | None]:
+    """
+    If date_str is a Taiwan national holiday, double the rate and prepend a note.
+    Returns (effective_rate, amount, updated_note).
+    """
+    try:
+        from services.tw_holidays import is_holiday
+        holiday_name = is_holiday(date_str)
+    except Exception:
+        holiday_name = None
+
+    if holiday_name:
+        effective_rate = rate * 2
+        amount = int(hours * effective_rate)
+        holiday_note = f"【國定假日：{holiday_name}，工資加倍 ×2 ({rate:.0f} × 2 = {effective_rate:.0f} 元/hr)】"
+        if note:
+            updated_note = holiday_note + " " + note
+        else:
+            updated_note = holiday_note
+    else:
+        effective_rate = rate
+        amount = int(hours * rate)
+        updated_note = note
+
+    return effective_rate, amount, updated_note
+
 class SalaryService:
     def get_all_records(self, user=None):
         target_user = user or current_user
@@ -69,15 +95,15 @@ class SalaryService:
             settings = self.get_settings()
             default_rate = float(settings.get('hourly_rate', 183.0))
             
-            if not raw_rate:
-                new_record.rate = default_rate
-            else:
-                try:
-                    new_record.rate = float(raw_rate)
-                except:
-                    new_record.rate = default_rate
-                    
-            new_record.amount = int(new_record.hours * new_record.rate)
+            base_rate = default_rate if not raw_rate else (float(raw_rate) if str(raw_rate).strip() else default_rate)
+
+            # Holiday pay: double rate if national holiday
+            effective_rate, amount, holiday_note = _apply_holiday_pay(
+                new_record.date, base_rate, new_record.hours, record_data.get('note')
+            )
+            new_record.rate = effective_rate
+            new_record.amount = amount
+            new_record.note = holiday_note
             
         else:
             # Bonus
@@ -126,7 +152,30 @@ class SalaryService:
                 except:
                     pass
             
-            record.amount = int(record.hours * record.rate)
+            # Re-apply holiday pay based on base rate (before any doubling)
+            # Determine the base rate (user-specified or stored rate ÷ 2 if it was a holiday rate)
+            # We use record.rate as stored (could already be doubled); re-check cleanly:
+            base_rate = record.rate
+            # Check if the current note already contains a holiday tag (meaning rate is already doubled)
+            existing_note = record.note or ''
+            if '【國定假日' in existing_note:
+                # The stored rate is already 2x; get the base back
+                try:
+                    from services.tw_holidays import is_holiday
+                    h = is_holiday(record.date)
+                    base_rate = record.rate / 2 if h else record.rate
+                except Exception:
+                    pass
+                # Strip old holiday note
+                existing_note = existing_note.split('】', 1)[-1].strip() if '】' in existing_note else existing_note
+
+            effective_rate, amount, updated_note = _apply_holiday_pay(
+                record.date, base_rate, record.hours,
+                record_data.get('note', existing_note)
+            )
+            record.rate = effective_rate
+            record.amount = amount
+            record.note = updated_note
             
         else:
             if 'amount' in record_data:
