@@ -36,7 +36,8 @@ web_app/
 ├── 🧠 services/ (服務層 - 商業邏輯處理)
 │   ├── data_service.py             # 通用資料處理
 │   ├── expense_service.py          # 記帳邏輯 (CRUD, 統計, 週期計算)
-│   ├── salary_service.py           # 薪資計算與排班邏輯
+│   ├── salary_service.py           # 薪資計算與排班邏輯 (自動偵測國定假日工資加倍)
+│   ├── tw_holidays.py              # 國定假日服務 (Google ICS 圖 + 勞基法白名單過濾)
 │   ├── reminder_service.py         # 提醒排程與通知發送
 │   ├── calendar_notify_service.py  # 🗋 行事曆 ICS 每日前一天通知 (APScheduler)
 │   ├── report_service.py           # 報表生成 (Excel, PDF)
@@ -63,8 +64,8 @@ web_app/
 │   │
 │   ├── salary/                     # 💼 薪資模組
 │   │   ├── dashboard.html          # 本週排班
-│   │   ├── monthly.html            # 月曆檢視
-│   │   ├── history.html            # 歷史排班
+│   │   ├── monthly.html            # 月曆檢視 (國定假日標記)
+│   │   ├── history.html            # 歷史排班 (含備註欄)
 │   │   └── settings.html           # ⚙️ 薪資設定 (時薪/勞健保)
 │   │
 │   ├── reminders/                  # 🔔 提醒事項模組
@@ -107,7 +108,8 @@ web_app/
 │   ├── migrate_avatar_v6.py
 │   ├── migrate_line_bot_v5.py
 │   ├── migrate_calendar_notify_log.py   # 建立 CalendarNotificationLog 資料表
-│   └── migrate_calendar_settings.py     # 新增 calendar 設定欄位 (notify toggle, time, per-cal mute)
+│   ├── migrate_calendar_settings.py     # 新增 calendar 設定欄位 (notify toggle, time, per-cal mute)
+│   └── migrate_holiday_pay.py           # 補算舊排班國定假日工資加倍 (--apply 實際寫入)
 │
 └── 📦 其他資料檔案
     ├── expense_data.json           # 舊版記帳資料 (已遷移至 DB)
@@ -126,8 +128,8 @@ web_app/
 │
 ├── 💼 薪水小幫手 (/salary)
 │   ├── 本週排班 (dashboard)
-│   ├── 月曆檢視 (monthly)
-│   ├── 歷史排班 (history)
+│   ├── 月曆檢視 (monthly) — 紅色國定假日標籤 + 厒班顧示 ×2
+│   ├── 歷史排班 (history) — 含備註欄（國定假日工資加倍說明）
 │   └── ⚙️ 設定 (settings)
 │       ├── 時薪設定
 │       ├── 勞保/健保扣款
@@ -309,11 +311,16 @@ web_app/
 └── GET  /period                        # 獲取當前週期資訊
 
 /salary/api/ (薪資模組 API)
-├── GET  /shifts                        # 查詢排班資料
-├── POST /shifts                        # 新增排班記錄
-├── PUT  /shifts/<id>                   # 更新排班記錄
-├── DELETE /shifts/<id>                 # 刪除排班記錄
-└── GET  /period                        # 獲取當前週期資訊
+├── GET  /records                       # 查詢排班資料
+├── POST /records                       # 新增排班記錄 (國定假日自動 ×2)
+├── PUT  /records/<id>                   # 更新排班記錄 (國定假日自動 ×2)
+├── DELETE /records/<id>                 # 刪除排班記錄
+├── GET  /api/holidays?year=YYYY        # 取得指定年度國定假日 JSON (從 Google ICS)
+├── GET  /stats                         # 排班統計摘要
+├── GET/POST /settings                  # 薪資設定
+├── POST /actions/copy_week             # 複製上週排班
+├── POST /actions/clear_week            # 清空本週排班
+└── GET  /export                        # CSV 導出
 
 /reminders/api/ (提醒事項 API)
 ├── GET  /reminders                     # 查詢所有提醒
