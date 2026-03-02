@@ -102,6 +102,10 @@ class UserSettings(db.Model):
     notification_methods = db.Column(db.Text, default='["email"]') # JSON list: ["email", "line"]
     monthly_report_day = db.Column(db.Integer, default=5) # 1-28
 
+    # Calendar notification settings
+    calendar_notify_enabled = db.Column(db.Boolean, default=True)
+    calendar_notify_time = db.Column(db.String(5), default='20:00')  # HH:MM
+
 class ReportLog(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
@@ -147,6 +151,7 @@ class UserCalendar(db.Model):
     source_type = db.Column(db.String(10), nullable=False)  # 'url' or 'file'
     source = db.Column(db.String(500), nullable=False)       # URL or absolute file path
     color = db.Column(db.String(10), default='#4285F4')
+    notify_enabled = db.Column(db.Boolean, default=True)    # Per-calendar mute toggle
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
 

@@ -533,9 +533,15 @@
     <aside class="cal-sidebar" id="cal-sidebar">
         <div class="sidebar-header">
             <h4>我的日曆</h4>
-            <button class="btn-add-cal" onclick="openAddModal()" title="新增日曆">
-                <span class="material-icons">add</span>
-            </button>
+            <div style="display:flex;gap:4px;">
+                <a href="{{ url_for('ntut.calendar_settings') }}" class="btn-add-cal" title="通知設定"
+                    style="text-decoration:none;">
+                    <span class="material-icons">notifications_none</span>
+                </a>
+                <button class="btn-add-cal" onclick="openAddModal()" title="新增日曆">
+                    <span class="material-icons">add</span>
+                </button>
+            </div>
         </div>
         <div id="cal-list">
             <p class="cal-empty" id="cal-empty-hint">還沒有日曆<br>點 + 新增</p>
@@ -710,10 +716,15 @@
         const div = document.createElement('div');
         div.className = 'cal-item';
         div.id = `cal-item-${c.id}`;
+        const muteIcon = c.notify_enabled !== false ? 'notifications' : 'notifications_off';
+        const muteTitle = c.notify_enabled !== false ? '關閉通知' : '開啟通知';
         div.innerHTML = `
         <span class="cal-dot" style="background:${c.color}"></span>
         <span class="cal-item-name" title="${c.name}">${c.name}</span>
         <div class="cal-item-actions">
+            <button class="btn-edit-cal btn-mute-cal" id="mute-btn-${c.id}" onclick="toggleCalMute(${c.id})" title="${muteTitle}" style="opacity:${c.notify_enabled !== false ? '0.4' : '1'}">
+                <span class="material-icons" id="mute-icon-${c.id}">${muteIcon}</span>
+            </button>
             <button class="btn-edit-cal" onclick="openEditModal(${c.id}, '${c.name}', '${c.color}')" title="編輯">
                 <span class="material-icons">edit</span>
             </button>
@@ -745,6 +756,26 @@
                 document.getElementById('cal-empty-hint').style.display = 'block';
             }
         }
+    }
+
+    async function toggleCalMute(id) {
+        // Read current state from icon
+        const iconEl = document.getElementById(`mute-icon-${id}`);
+        const btn = document.getElementById(`mute-btn-${id}`);
+        if (!iconEl || !btn) return;
+        const currentlyEnabled = iconEl.textContent.trim() === 'notifications';
+        const newEnabled = !currentlyEnabled;
+
+        const res = await fetch(`/ntut/calendars/${id}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ notify_enabled: newEnabled }),
+        });
+        if (!res.ok) return;
+
+        iconEl.textContent = newEnabled ? 'notifications' : 'notifications_off';
+        btn.title = newEnabled ? '關閉通知' : '開啟通知';
+        btn.style.opacity = newEnabled ? '0.4' : '1';
     }
 
     /* ─────────────────────────────────────────────

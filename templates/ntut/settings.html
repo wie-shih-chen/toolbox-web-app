@@ -1,0 +1,363 @@
+{% extends "base.html" %}
+
+{% block title %}日曆通知設定 | 工具箱{% endblock %}
+
+{% block extra_css %}
+<style>
+    :root {
+        --text-primary: rgba(255, 255, 255, 0.9);
+        --text-secondary: rgba(255, 255, 255, 0.6);
+        --text-tertiary: rgba(255, 255, 255, 0.35);
+        --card-bg: rgba(255, 255, 255, 0.05);
+        --card-border: rgba(255, 255, 255, 0.08);
+        --accent: #6366f1;
+        --accent-light: rgba(99, 102, 241, 0.15);
+    }
+
+    .settings-container {
+        max-width: 640px;
+        margin: 0 auto;
+        padding: 24px 16px 80px;
+    }
+
+    .settings-back {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        color: var(--text-secondary);
+        text-decoration: none;
+        font-size: 0.9rem;
+        margin-bottom: 20px;
+        transition: color .2s;
+    }
+
+    .settings-back:hover {
+        color: var(--text-primary);
+    }
+
+    .settings-back .material-icons {
+        font-size: 18px;
+    }
+
+    .settings-title {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: var(--text-primary);
+        margin: 0 0 6px;
+    }
+
+    .settings-subtitle {
+        font-size: 0.88rem;
+        color: var(--text-tertiary);
+        margin: 0 0 28px;
+    }
+
+    .settings-section {
+        background: var(--card-bg);
+        border: 1px solid var(--card-border);
+        border-radius: 16px;
+        overflow: hidden;
+        margin-bottom: 20px;
+    }
+
+    .section-header {
+        padding: 14px 18px 10px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: .08em;
+        color: var(--text-tertiary);
+        border-bottom: 1px solid var(--card-border);
+    }
+
+    .settings-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 16px 18px;
+        border-bottom: 1px solid var(--card-border);
+        gap: 16px;
+    }
+
+    .settings-row:last-child {
+        border-bottom: none;
+    }
+
+    .row-info {
+        flex: 1;
+        min-width: 0;
+    }
+
+    .row-label {
+        font-size: 0.95rem;
+        color: var(--text-primary);
+        margin-bottom: 2px;
+    }
+
+    .row-desc {
+        font-size: 0.8rem;
+        color: var(--text-tertiary);
+    }
+
+    /* Toggle switch */
+    .toggle-wrap {
+        flex-shrink: 0;
+    }
+
+    .toggle-input {
+        display: none;
+    }
+
+    .toggle-label {
+        display: block;
+        width: 46px;
+        height: 26px;
+        background: rgba(255, 255, 255, 0.15);
+        border-radius: 13px;
+        cursor: pointer;
+        position: relative;
+        transition: background .25s;
+    }
+
+    .toggle-label::after {
+        content: '';
+        position: absolute;
+        width: 20px;
+        height: 20px;
+        background: white;
+        border-radius: 50%;
+        top: 3px;
+        left: 3px;
+        transition: left .25s;
+        box-shadow: 0 1px 4px rgba(0, 0, 0, .3);
+    }
+
+    .toggle-input:checked+.toggle-label {
+        background: var(--accent);
+    }
+
+    .toggle-input:checked+.toggle-label::after {
+        left: 23px;
+    }
+
+    /* Time picker */
+    .time-input {
+        background: rgba(255, 255, 255, 0.06);
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        border-radius: 10px;
+        color: var(--text-primary);
+        padding: 8px 12px;
+        font-size: 1rem;
+        width: 110px;
+        text-align: center;
+        cursor: pointer;
+        transition: border-color .2s;
+    }
+
+    .time-input:focus {
+        outline: none;
+        border-color: rgba(99, 102, 241, .6);
+    }
+
+    /* Dark colorscheme for time picker */
+    .time-input::-webkit-calendar-picker-indicator {
+        filter: invert(1) opacity(0.5);
+    }
+
+    /* Cal list for mute toggles */
+    .cal-mute-item {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 14px 18px;
+        border-bottom: 1px solid var(--card-border);
+    }
+
+    .cal-mute-item:last-child {
+        border-bottom: none;
+    }
+
+    .cal-mute-dot {
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        flex-shrink: 0;
+    }
+
+    .cal-mute-name {
+        flex: 1;
+        font-size: 0.92rem;
+        color: var(--text-primary);
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    /* Toast */
+    .toast {
+        position: fixed;
+        bottom: 80px;
+        left: 50%;
+        transform: translateX(-50%) translateY(20px);
+        background: rgba(30, 30, 50, 0.95);
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        color: var(--text-primary);
+        padding: 10px 20px;
+        border-radius: 10px;
+        font-size: 0.9rem;
+        opacity: 0;
+        transition: opacity .3s, transform .3s;
+        pointer-events: none;
+        z-index: 999;
+        white-space: nowrap;
+    }
+
+    .toast.show {
+        opacity: 1;
+        transform: translateX(-50%) translateY(0);
+    }
+
+    .empty-cals {
+        padding: 20px 18px;
+        font-size: 0.88rem;
+        color: var(--text-tertiary);
+        text-align: center;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="settings-container">
+    <a href="{{ url_for('ntut.calendar') }}" class="settings-back">
+        <span class="material-icons">arrow_back</span>
+        返回日曆
+    </a>
+
+    <h1 class="settings-title">🔔 通知設定</h1>
+    <p class="settings-subtitle">管理日曆行程的提醒通知方式</p>
+
+    <!-- Global notify settings -->
+    <div class="settings-section">
+        <div class="section-header">全域設定</div>
+        <div class="settings-row">
+            <div class="row-info">
+                <div class="row-label">開啟行事曆通知</div>
+                <div class="row-desc">在行程前一天發送提醒通知</div>
+            </div>
+            <div class="toggle-wrap">
+                <input type="checkbox" class="toggle-input" id="toggle-notify" checked>
+                <label class="toggle-label" for="toggle-notify"></label>
+            </div>
+        </div>
+        <div class="settings-row" id="time-row">
+            <div class="row-info">
+                <div class="row-label">傳送時間</div>
+                <div class="row-desc">每天幾點發送明天的行程提醒</div>
+            </div>
+            <input type="time" id="notify-time" class="time-input" value="20:00">
+        </div>
+    </div>
+
+    <!-- Per-calendar mute toggles -->
+    <div class="settings-section" id="cal-mute-section">
+        <div class="section-header">個別日曆設定</div>
+        <div id="cal-mute-list">
+            <div class="empty-cals">載入中...</div>
+        </div>
+    </div>
+</div>
+
+<div class="toast" id="toast"></div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    let saveTimer = null;
+
+    function showToast(msg) {
+        const el = document.getElementById('toast');
+        el.textContent = msg;
+        el.classList.add('show');
+        clearTimeout(el._t);
+        el._t = setTimeout(() => el.classList.remove('show'), 2000);
+    }
+
+    function scheduleSaveGlobal() {
+        clearTimeout(saveTimer);
+        saveTimer = setTimeout(saveGlobalSettings, 800);
+    }
+
+    async function saveGlobalSettings() {
+        const enabled = document.getElementById('toggle-notify').checked;
+        const time = document.getElementById('notify-time').value;
+        await fetch('/ntut/calendar/settings/api', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ calendar_notify_enabled: enabled, calendar_notify_time: time }),
+        });
+        showToast('✅ 設定已儲存');
+    }
+
+    async function toggleCalMute(calId, enabled) {
+        await fetch(`/ntut/calendars/${calId}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ notify_enabled: enabled }),
+        });
+        showToast(enabled ? '🔔 已開啟通知' : '🔕 已靜音此日曆');
+    }
+
+    async function loadSettings() {
+        const res = await fetch('/ntut/calendar/settings/api');
+        const data = await res.json();
+        document.getElementById('toggle-notify').checked = data.calendar_notify_enabled;
+        document.getElementById('notify-time').value = data.calendar_notify_time || '20:00';
+        updateTimeRowVisibility(data.calendar_notify_enabled);
+    }
+
+    async function loadCalendars() {
+        const res = await fetch('/ntut/calendars');
+        const cals = await res.json();
+        const list = document.getElementById('cal-mute-list');
+
+        if (!cals.length) {
+            list.innerHTML = '<div class="empty-cals">你還沒有新增任何日曆</div>';
+            return;
+        }
+
+        list.innerHTML = '';
+        cals.forEach(c => {
+            const item = document.createElement('div');
+            item.className = 'cal-mute-item';
+            const uid = `mute-${c.id}`;
+            item.innerHTML = `
+                <span class="cal-mute-dot" style="background:${c.color}"></span>
+                <span class="cal-mute-name">${c.name}</span>
+                <div class="toggle-wrap">
+                    <input type="checkbox" class="toggle-input" id="${uid}" ${c.notify_enabled ? 'checked' : ''}>
+                    <label class="toggle-label" for="${uid}"></label>
+                </div>`;
+            item.querySelector(`#${uid}`).addEventListener('change', function () {
+                toggleCalMute(c.id, this.checked);
+            });
+            list.appendChild(item);
+        });
+    }
+
+    function updateTimeRowVisibility(enabled) {
+        document.getElementById('time-row').style.opacity = enabled ? '1' : '0.4';
+        document.getElementById('notify-time').disabled = !enabled;
+    }
+
+    document.getElementById('toggle-notify').addEventListener('change', function () {
+        updateTimeRowVisibility(this.checked);
+        scheduleSaveGlobal();
+    });
+    document.getElementById('notify-time').addEventListener('change', scheduleSaveGlobal);
+
+    document.addEventListener('DOMContentLoaded', async () => {
+        await loadSettings();
+        await loadCalendars();
+    });
+</script>
+{% endblock %}

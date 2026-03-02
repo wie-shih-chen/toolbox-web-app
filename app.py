@@ -70,9 +70,9 @@ with app.app_context():
             with app.app_context():
                 ReminderService.check_and_send_reminders(app)
         
-        @scheduler.task('cron', id='calendar_notify', hour=20, minute=0, timezone='Asia/Taipei')
+        @scheduler.task('interval', id='calendar_notify', seconds=60)
         def calendar_notify_task():
-            """Daily at 20:00 Taiwan Time: notify users about tomorrow's calendar events."""
+            """Every minute: check if any user's notify_time matches now → send calendar reminders."""
             CalendarNotifyService.check_and_send(app)
             
         scheduler.start()

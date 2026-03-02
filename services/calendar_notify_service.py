@@ -1,11 +1,12 @@
 """
-CalendarNotifyService
+CalendarNotifyService (updated)
 ------------------------------------
-Daily scheduler job that:
-1. Scans every UserCalendar for all users.
-2. Finds ICS events whose start date == tomorrow (Taiwan time).
-3. Sends a notification via the user's preferred method (LINE / Email).
-4. Logs each sent notification to CalendarNotificationLog to prevent duplicates.
+Daily interval check (every minute) that:
+1. For each user, reads their calendar_notify_enabled & calendar_notify_time settings.
+2. Skips users with notifications disabled.
+3. Scans only notify_enabled calendars via ICS.
+4. Sends LINE/Email if the event starts tomorrow.
+5. Logs to CalendarNotificationLog to prevent duplicate sends.
 """
 
 from datetime import datetime, timedelta, date
@@ -28,8 +29,6 @@ def _get_tomorrow_events(cal_record: UserCalendar, tomorrow: date) -> list:
     """
     Fetch and parse the ICS source of `cal_record`, returning a list of dicts
     for events whose start date is exactly `tomorrow`.
-
-    Returns: [{'title': str, 'start': date, 'key': str}]
     """
     try:
         from icalendar import Calendar
@@ -60,14 +59,12 @@ def _get_tomorrow_events(cal_record: UserCalendar, tomorrow: date) -> list:
             if not dtstart:
                 continue
             start = dtstart.dt
-            # icalendar returns date or datetime
             start_date = start if isinstance(start, date) and not isinstance(start, datetime) else start.date()
 
             if start_date != tomorrow:
                 continue
 
             title = str(component.get('SUMMARY', '（無標題）'))
-            # Build a deterministic key for de-dup
             key = f"{cal_record.id}:{start_date.isoformat()}:{title[:100]}"
             events.append({'title': title, 'start': start_date, 'key': key})
     except Exception as e:
@@ -84,28 +81,35 @@ class CalendarNotifyService:
 
     @staticmethod
     def check_and_send(app):
-        """Entry point called by the APScheduler cron job."""
+        """
+        Entry point called by the APScheduler interval job (every minute).
+        For each user, checks if current time matches their calendar_notify_time.
+        """
         with app.app_context():
-            # Taiwan Time = UTC+8
             now_tw = datetime.utcnow() + timedelta(hours=8)
+            current_time = now_tw.strftime('%H:%M')
             tomorrow = (now_tw + timedelta(days=1)).date()
             today_str = now_tw.strftime('%Y-%m-%d')
 
-            print(f"[CalNotify] Running for tomorrow={tomorrow} (today={today_str})")
+            # Only proceed if any user has this time set as their notify time
+            matching_settings = UserSettings.query.filter_by(
+                calendar_notify_enabled=True,
+                calendar_notify_time=current_time
+            ).all()
 
-            # Collect all users who have at least one calendar
-            cal_user_ids = db.session.query(UserCalendar.user_id).distinct().all()
-            user_ids = [row[0] for row in cal_user_ids]
+            if not matching_settings:
+                return  # No-op for most minutes
+
+            print(f"[CalNotify] Triggered at {current_time} for {len(matching_settings)} user(s)")
 
             sent_total = 0
-
-            for user_id in user_ids:
+            for s in matching_settings:
                 try:
                     sent_total += CalendarNotifyService._process_user(
-                        user_id, tomorrow, today_str
+                        s.user_id, tomorrow, today_str
                     )
                 except Exception as e:
-                    print(f"[CalNotify] Error processing user {user_id}: {e}")
+                    print(f"[CalNotify] Error processing user {s.user_id}: {e}")
 
             if sent_total:
                 db.session.commit()
@@ -116,6 +120,10 @@ class CalendarNotifyService:
     @staticmethod
     def _process_user(user_id: int, tomorrow: date, today_str: str) -> int:
         """Process one user. Returns number of notifications sent."""
+        user = User.query.get(user_id)
+        if not user:
+            return 0
+
         settings = UserSettings.query.filter_by(user_id=user_id).first()
         if not settings:
             return 0
@@ -128,17 +136,15 @@ class CalendarNotifyService:
         if not methods:
             return 0
 
-        user = User.query.get(user_id)
-        if not user:
-            return 0
+        # Only scan calendars with notify_enabled = True
+        calendars = UserCalendar.query.filter_by(
+            user_id=user_id, notify_enabled=True
+        ).all()
 
-        calendars = UserCalendar.query.filter_by(user_id=user_id).all()
         sent = 0
-
         for cal in calendars:
             events = _get_tomorrow_events(cal, tomorrow)
             for ev in events:
-                # De-dup check
                 already_sent = CalendarNotificationLog.query.filter_by(
                     user_id=user_id,
                     cal_id=cal.id,
@@ -148,11 +154,8 @@ class CalendarNotifyService:
                 if already_sent:
                     continue
 
-                # Send
-                msg_text = f"📅 行事曆提醒：明天 {ev['title']}"
                 CalendarNotifyService._send(user, settings, methods, ev['title'], cal.name)
 
-                # Log it
                 log = CalendarNotificationLog(
                     user_id=user_id,
                     cal_id=cal.id,

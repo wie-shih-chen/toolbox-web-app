@@ -1,6 +1,6 @@
 from flask import Blueprint, render_template, request, jsonify, current_app
 from flask_login import login_required, current_user
-from models import db, UserCalendar
+from models import db, UserCalendar, UserSettings
 from datetime import datetime, date
 import os, uuid, requests as http_req
 
@@ -14,6 +14,16 @@ def _get_upload_dir():
                         'calendars', str(current_user.id))
     os.makedirs(path, exist_ok=True)
     return path
+
+
+def _get_or_create_settings(user_id):
+    """Return UserSettings for user, creating a row if it doesn't exist yet."""
+    s = UserSettings.query.filter_by(user_id=user_id).first()
+    if not s:
+        s = UserSettings(user_id=user_id)
+        db.session.add(s)
+        db.session.commit()
+    return s
 
 
 def _parse_ics(content: bytes, color: str = '#4285F4') -> list:
@@ -60,7 +70,45 @@ def calendar():
     return render_template('ntut/calendar.html')
 
 
-# ── API ───────────────────────────────────────────────────────────────────────
+@ntut_bp.route('/calendar/settings')
+@login_required
+def calendar_settings():
+    return render_template('ntut/settings.html')
+
+
+# ── Settings API ──────────────────────────────────────────────────────────────
+
+@ntut_bp.route('/calendar/settings/api', methods=['GET'])
+@login_required
+def get_calendar_settings():
+    s = _get_or_create_settings(current_user.id)
+    return jsonify({
+        'calendar_notify_enabled': s.calendar_notify_enabled,
+        'calendar_notify_time':    s.calendar_notify_time or '20:00',
+    })
+
+
+@ntut_bp.route('/calendar/settings/api', methods=['POST'])
+@login_required
+def save_calendar_settings():
+    data = request.json or {}
+    s = _get_or_create_settings(current_user.id)
+
+    if 'calendar_notify_enabled' in data:
+        s.calendar_notify_enabled = bool(data['calendar_notify_enabled'])
+
+    if 'calendar_notify_time' in data:
+        t = str(data['calendar_notify_time']).strip()
+        # Basic HH:MM validation
+        parts = t.split(':')
+        if len(parts) == 2 and parts[0].isdigit() and parts[1].isdigit():
+            s.calendar_notify_time = t
+
+    db.session.commit()
+    return jsonify({'success': True})
+
+
+# ── Calendar CRUD API ─────────────────────────────────────────────────────────
 
 @ntut_bp.route('/calendars', methods=['GET'])
 @login_required
@@ -68,10 +116,11 @@ def list_calendars():
     cals = UserCalendar.query.filter_by(user_id=current_user.id)\
                              .order_by(UserCalendar.created_at).all()
     return jsonify([{
-        'id':          c.id,
-        'name':        c.name,
-        'source_type': c.source_type,
-        'color':       c.color,
+        'id':             c.id,
+        'name':           c.name,
+        'source_type':    c.source_type,
+        'color':          c.color,
+        'notify_enabled': c.notify_enabled,
     } for c in cals])
 
 
@@ -112,8 +161,11 @@ def add_calendar():
 
     db.session.add(cal)
     db.session.commit()
-    return jsonify({'id': cal.id, 'name': cal.name,
-                    'source_type': cal.source_type, 'color': cal.color})
+    return jsonify({
+        'id': cal.id, 'name': cal.name,
+        'source_type': cal.source_type, 'color': cal.color,
+        'notify_enabled': cal.notify_enabled,
+    })
 
 
 @ntut_bp.route('/calendars/<int:cal_id>', methods=['DELETE'])
@@ -126,7 +178,6 @@ def delete_calendar(cal_id):
         os.remove(cal.source)
     db.session.delete(cal)
     db.session.commit()
-    db.session.commit()
     return jsonify({'success': True})
 
 
@@ -136,22 +187,25 @@ def update_calendar(cal_id):
     cal = UserCalendar.query.filter_by(id=cal_id, user_id=current_user.id).first()
     if not cal:
         return jsonify({'error': '找不到日曆'}), 404
-        
+
     data = request.json or {}
     name = data.get('name', '').strip()
     color = data.get('color', '').strip()
-    
+
     if name:
         cal.name = name
     if color:
         cal.color = color
-        
+    if 'notify_enabled' in data:
+        cal.notify_enabled = bool(data['notify_enabled'])
+
     db.session.commit()
     return jsonify({
         'id': cal.id,
         'name': cal.name,
         'color': cal.color,
-        'source_type': cal.source_type
+        'source_type': cal.source_type,
+        'notify_enabled': cal.notify_enabled,
     })
 
 
