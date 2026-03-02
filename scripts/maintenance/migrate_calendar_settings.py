@@ -1,15 +1,24 @@
 """
-Migration: Add calendar notification settings columns.
-Uses plain sqlite3 – no Flask dependencies required.
+【狀態】已執行過，通常不需要再跑。
 
-Run:  python scripts/migrate_calendar_settings.py
+【使用時機】
+  部署「行事曆通知設定」功能後，若 user_settings 或 user_calendar 資料表
+  缺少下列欄位時執行：
+    - user_settings.calendar_notify_enabled  通知開關（預設開啟）
+    - user_settings.calendar_notify_time     通知時間（預設 '20:00'）
+    - user_calendar.notify_enabled           個別日曆靜音開關（預設開啟）
+
+【執行方式】
+  cd ~/toolbox-web-app
+  python scripts/maintenance/migrate_calendar_settings.py
+
+【依賴】
+  純 sqlite3，不需要 Flask 虛擬環境。自動從 .env 讀取 DB 路徑。
 """
 import sqlite3, os, sys
 
-# Find the database path
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-# Try to read DATABASE_URL from .env
 db_path = None
 env_file = os.path.join(BASE_DIR, '.env')
 if os.path.exists(env_file):
@@ -23,7 +32,6 @@ if os.path.exists(env_file):
                     db_path = path if os.path.isabs(path) else os.path.join(BASE_DIR, path)
                     break
 
-# Fallback: look for common db file names
 if not db_path:
     for name in ['app.db', 'database.db', 'toolbox.db', 'site.db']:
         candidate = os.path.join(BASE_DIR, name)
@@ -32,7 +40,7 @@ if not db_path:
             break
 
 if not db_path:
-    print("❌ Could not find SQLite database. Please edit the db_path variable manually.")
+    print("❌ Could not find SQLite database.")
     sys.exit(1)
 
 print(f"📂 Using database: {db_path}")

@@ -99,17 +99,18 @@ web_app/
 │   └── img/                        # 圖片資源
 │       └── line_qr_code.png        # LINE Bot QR Code
 │
-├── 🛠️ scripts/ (維護腳本 - 資料庫遷移與初始化)
-│   ├── init_db.py                  # 資料庫初始化
-│   ├── migrate_settings.py         # 設定資料遷移
-│   ├── migrate_settings_v2.py
-│   ├── migrate_settings_v3.py
-│   ├── migrate_settings_v4.py
-│   ├── migrate_avatar_v6.py
-│   ├── migrate_line_bot_v5.py
-│   ├── migrate_calendar_notify_log.py   # 建立 CalendarNotificationLog 資料表
-│   ├── migrate_calendar_settings.py     # 新增 calendar 設定欄位 (notify toggle, time, per-cal mute)
-│   └── migrate_holiday_pay.py           # 補算舊排班國定假日工資加倍 (--apply 實際寫入)
+├── 🛠️ scripts/ (維護腳本)
+│   └── maintenance/                     # 手動執行的一次性遷移腳本（已加中文註解）
+│       ├── init_db.py                   # 全新展開時建立所有資料表
+│       ├── migrate_settings_v1.py       # 新增時薪/預算警戒等基礎欄位
+│       ├── migrate_settings_v2.py       # 新增帳単週期/自訂類別/固定支出
+│       ├── migrate_settings_v3.py       # 新增 quick_shortcuts 欄位
+│       ├── migrate_settings_v4.py       # 新增 monthly_report_day 欄位
+│       ├── migrate_avatar_v6.py         # 新增 avatar_type / avatar_val 欄位
+│       ├── migrate_line_bot_v5.py       # 新增 LINE Bot 綁定相關欄位
+│       ├── migrate_calendar_notify_log.py # 建立 CalendarNotificationLog 資料表
+│       ├── migrate_calendar_settings.py  # 新增行事曆通知設定欄位
+│       └── migrate_holiday_pay.py        # 补算舊排班國定假日工資加倍 (--apply 實際寫入)
 │
 └── 📦 其他資料檔案
     ├── expense_data.json           # 舊版記帳資料 (已遷移至 DB)
@@ -378,8 +379,8 @@ web_app/
 - PythonAnywhere 免費版可能會休眠，建議定期喚醒或升級方案
 
 ### 3. 資料庫遷移
-- 使用 `scripts/init_db.py` 初始化資料庫
-- 使用 `scripts/migrate_*.py` 進行資料遷移
+- 全新展開時執行 `scripts/maintenance/init_db.py` 建立所有資料表
+- 需要資料庫結構升級時，執行 `scripts/maintenance/migrate_*.py` （每支腳本內部均有中文說明使用時機與方法）
 
 ---
 

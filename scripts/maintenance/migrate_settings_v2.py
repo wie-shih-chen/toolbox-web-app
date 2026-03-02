@@ -1,8 +1,24 @@
+"""
+【狀態】已執行過，通常不需要再跑。
 
+【使用時機】
+  從不含下列欄位的舊版升級時執行。
+  新增欄位：user_settings 資料表
+    - billing_cycle_start_day  帳單週期起始日
+    - custom_categories        自訂記帳類別（JSON）
+    - recurring_expenses       固定支出（JSON）
+
+【執行方式】
+  cd ~/toolbox-web-app
+  python scripts/maintenance/migrate_settings_v2.py
+
+【依賴】
+  純 sqlite3，不需要 Flask 虛擬環境套件。
+"""
 import sqlite3
 import os
 
-DB_PATH = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'app.db')
+DB_PATH = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), 'app.db')
 
 def migrate():
     if not os.path.exists(DB_PATH):
@@ -13,21 +29,18 @@ def migrate():
     cursor = conn.cursor()
 
     try:
-        # Add billing_cycle_start_day
         try:
             cursor.execute("ALTER TABLE user_settings ADD COLUMN billing_cycle_start_day INTEGER DEFAULT 10")
             print("Added billing_cycle_start_day")
         except sqlite3.OperationalError:
             print("billing_cycle_start_day already exists")
 
-        # Add custom_categories
         try:
             cursor.execute("ALTER TABLE user_settings ADD COLUMN custom_categories TEXT DEFAULT '[]'")
             print("Added custom_categories")
         except sqlite3.OperationalError:
             print("custom_categories already exists")
 
-        # Add recurring_expenses
         try:
             cursor.execute("ALTER TABLE user_settings ADD COLUMN recurring_expenses TEXT DEFAULT '[]'")
             print("Added recurring_expenses")
