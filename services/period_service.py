@@ -210,56 +210,83 @@ class PeriodService:
                 }
             })
             
-        # 2. Add predictions
+        # 2. Add past predictions (each history record predicting the next)
+        if len(history) > 1:
+            avg_cycle = self.settings.avg_period_cycle or 28
+            duration = self.settings.avg_period_duration or 5
+            for r in history[1:]:
+                past_start_dt = datetime.datetime.strptime(r['start_date'], '%Y-%m-%d')
+                p_start = past_start_dt + timedelta(days=avg_cycle)
+                p_end = p_start + timedelta(days=duration - 1)
+                o_day = p_start - timedelta(days=14)
+                f_start = o_day - timedelta(days=5)
+                f_end = o_day + timedelta(days=1)
+                
+                p = {
+                    "period_start": p_start.strftime('%Y-%m-%d'),
+                    "period_end": p_end.strftime('%Y-%m-%d'),
+                    "ovulation_day": o_day.strftime('%Y-%m-%d'),
+                    "fertile_window_start": f_start.strftime('%Y-%m-%d'),
+                    "fertile_window_end": f_end.strftime('%Y-%m-%d')
+                }
+                events.extend(self._create_prediction_events(p, f"past_pred_{r['id']}"))
+
+        # 3. Add future predictions
         preds = self.get_predictions(months=6) # Get half year of predictions
         for i, p in enumerate(preds):
-            p_start = datetime.datetime.strptime(p['period_start'], '%Y-%m-%d')
-            p_end = datetime.datetime.strptime(p['period_end'], '%Y-%m-%d')
-            p_end_exclusive = p_end + timedelta(days=1)
+            events.extend(self._create_prediction_events(p, f"future_pred_{i}"))
             
-            # predicted period
-            events.append({
-                "id": f"pred_period_{i}",
-                "groupId": "predicted_period",
-                "title": "預測經期",
-                "start": p_start.strftime('%Y-%m-%d'),
-                "end": p_end_exclusive.strftime('%Y-%m-%d'),
-                "backgroundColor": "transparent",
-                "borderColor": "#ffa39e", # Light red
-                "textColor": "#cf1322",
-                "className": "dashed-border",
-                "extendedProps": {"type": "predicted_period"}
-            })
-            
-            # fertile window (excluding ovulation day to show it separately, or overlapping it)
-            f_start = datetime.datetime.strptime(p['fertile_window_start'], '%Y-%m-%d')
-            f_end = datetime.datetime.strptime(p['fertile_window_end'], '%Y-%m-%d')
-            f_end_exclusive = f_end + timedelta(days=1)
-            
-            events.append({
-                "id": f"pred_fertile_{i}",
-                "groupId": "fertile_window",
-                "title": "易孕期",
-                "start": f_start.strftime('%Y-%m-%d'),
-                "end": f_end_exclusive.strftime('%Y-%m-%d'),
-                "backgroundColor": "rgba(115, 209, 61, 0.2)", # Light green transparent
-                "borderColor": "#73d13d",
-                "textColor": "#b7eb8f",
-                "extendedProps": {"type": "fertile_window"}
-            })
-            
-            # ovulation day
-            o_day = datetime.datetime.strptime(p['ovulation_day'], '%Y-%m-%d')
-            events.append({
-                "id": f"pred_ovulation_{i}",
-                "groupId": "ovulation",
-                "title": "🥚 排卵日",
-                "start": o_day.strftime('%Y-%m-%d'),
-                "allDay": True,
-                "backgroundColor": "rgba(255, 255, 255, 0.1)",
-                "borderColor": "transparent",
-                "textColor": "#73d13d",
-                "extendedProps": {"type": "ovulation"}
-            })
-            
+        return events
+
+    def _create_prediction_events(self, p, prefix_id):
+        events = []
+        p_start = datetime.datetime.strptime(p['period_start'], '%Y-%m-%d')
+        p_end = datetime.datetime.strptime(p['period_end'], '%Y-%m-%d')
+        p_end_exclusive = p_end + timedelta(days=1)
+        
+        # predicted period
+        events.append({
+            "id": f"{prefix_id}_period",
+            "groupId": "predicted_period",
+            "title": "預測經期",
+            "start": p_start.strftime('%Y-%m-%d'),
+            "end": p_end_exclusive.strftime('%Y-%m-%d'),
+            "backgroundColor": "transparent",
+            "borderColor": "#ffa39e", # Light red
+            "textColor": "#cf1322",
+            "className": "dashed-border",
+            "extendedProps": {"type": "predicted_period"}
+        })
+        
+        # fertile window
+        f_start = datetime.datetime.strptime(p['fertile_window_start'], '%Y-%m-%d')
+        f_end = datetime.datetime.strptime(p['fertile_window_end'], '%Y-%m-%d')
+        f_end_exclusive = f_end + timedelta(days=1)
+        
+        events.append({
+            "id": f"{prefix_id}_fertile",
+            "groupId": "fertile_window",
+            "title": "易孕期",
+            "start": f_start.strftime('%Y-%m-%d'),
+            "end": f_end_exclusive.strftime('%Y-%m-%d'),
+            "backgroundColor": "rgba(115, 209, 61, 0.2)", # Light green transparent
+            "borderColor": "#73d13d",
+            "textColor": "#b7eb8f",
+            "extendedProps": {"type": "fertile_window"}
+        })
+        
+        # ovulation day
+        o_day = datetime.datetime.strptime(p['ovulation_day'], '%Y-%m-%d')
+        events.append({
+            "id": f"{prefix_id}_ovulation",
+            "groupId": "ovulation",
+            "title": "🥚 排卵日",
+            "start": o_day.strftime('%Y-%m-%d'),
+            "allDay": True,
+            "backgroundColor": "rgba(255, 255, 255, 0.1)",
+            "borderColor": "transparent",
+            "textColor": "#73d13d",
+            "extendedProps": {"type": "ovulation"}
+        })
+        
         return events
