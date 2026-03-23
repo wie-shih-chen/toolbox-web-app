@@ -488,6 +488,48 @@ const salaryApp = {
         }
     },
 
+    async handlePeriodExport() {
+        const select = document.getElementById('periodSelect');
+        const period = select ? select.value : '';
+        if (!period) { alert('請先選擇匯出週期'); return; }
+
+        const btn = document.getElementById('exportPeriodBtn');
+        const originalText = btn ? btn.innerHTML : '';
+        if (btn) { btn.disabled = true; btn.innerHTML = '⏳ 處理中...'; }
+
+        try {
+            const res = await fetch(`/salary/api/export-period?period=${encodeURIComponent(period)}`);
+            const contentType = res.headers.get('content-type');
+
+            if (contentType && contentType.includes('application/json')) {
+                const data = await res.json();
+                if (data.success) alert('✅ ' + data.message);
+                else if (data.error) alert('❌ ' + data.error);
+            } else {
+                const blob = await res.blob();
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                const disposition = res.headers.get('Content-Disposition');
+                let filename = `salary_${period}.csv`;
+                if (disposition) {
+                    const m = /filename[^;=\n]*=((['"]).*)?\2|([^;\n]*)/.exec(disposition);
+                    if (m && m[1]) filename = m[1].replace(/['"]/g, '');
+                }
+                a.download = filename;
+                document.body.appendChild(a);
+                a.click();
+                a.remove();
+                window.URL.revokeObjectURL(url);
+            }
+        } catch (err) {
+            alert('匯出失敗：網路錯誤');
+            console.error(err);
+        } finally {
+            if (btn) { btn.disabled = false; btn.innerHTML = originalText; }
+        }
+    },
+
     async clearThisWeek() {
         if (!confirm('確定要清空本週的所有排班與獎金嗎？')) return;
         const weekStart = this.formatDate(this.currentWeekStart);
@@ -697,8 +739,12 @@ const salaryApp = {
             // Period navigation
             const prevBtn = document.getElementById('prevPeriodBtn');
             const nextBtn = document.getElementById('nextPeriodBtn');
-            if (prevBtn) prevBtn.addEventListener('click', () => this.changeHistoryPeriod(-1)); // Older (up in list / lower index)
-            if (nextBtn) nextBtn.addEventListener('click', () => this.changeHistoryPeriod(1)); // Newer (down in list / higher index)
+            if (prevBtn) prevBtn.addEventListener('click', () => this.changeHistoryPeriod(-1));
+            if (nextBtn) nextBtn.addEventListener('click', () => this.changeHistoryPeriod(1));
+
+            // Period export
+            const exportPeriodBtn = document.getElementById('exportPeriodBtn');
+            if (exportPeriodBtn) exportPeriodBtn.addEventListener('click', () => this.handlePeriodExport());
 
             this.loadSettings().then(() => this.loadHistoryPeriods());
         }

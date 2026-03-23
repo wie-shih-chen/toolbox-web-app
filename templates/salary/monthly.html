@@ -6,6 +6,52 @@
 {% block extra_css %}
 <link rel="stylesheet" href="{{ url_for('static', filename='css/salary.css') }}">
 <style>
+    /* ── Calendar Grid Layout ── */
+    .calendar-grid {
+        display: flex;
+        flex-direction: column;
+        width: 100%;
+        overflow-x: hidden;
+    }
+
+    /* Weekday header row: 7 equal columns */
+    .calendar-header {
+        display: grid;
+        grid-template-columns: repeat(7, 1fr);
+        text-align: center;
+        font-size: 0.75rem;
+        font-weight: 600;
+        color: var(--text-secondary);
+        padding: 8px 0;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    /* Calendar body: direct 7-column grid — JS injects 42 .calendar-day cells */
+    .calendar-body {
+        display: grid;
+        grid-template-columns: repeat(7, 1fr);
+        width: 100%;
+    }
+
+    /* Each day cell */
+    .calendar-day {
+        min-height: 72px;
+        padding: 4px;
+        border-right: 1px solid rgba(255, 255, 255, 0.06);
+        overflow: hidden;
+        box-sizing: border-box;
+        width: 100%;
+        /* ensure no cell overflows its column */
+    }
+
+    .calendar-day:last-child {
+        border-right: none;
+    }
+
+    .calendar-day.other-month {
+        opacity: 0.35;
+    }
+
     /* ── National Holiday styles ── */
     .calendar-day.holiday {
         border: 1px solid rgba(248, 113, 113, 0.4) !important;
@@ -15,28 +61,60 @@
     .cal-day-header {
         display: flex;
         align-items: center;
-        gap: 5px;
+        gap: 3px;
         flex-wrap: wrap;
+        font-size: 0.75rem;
     }
 
     .holiday-badge {
-        font-size: 0.6rem;
+        font-size: 0.55rem;
         font-weight: 600;
         background: rgba(248, 113, 113, 0.85);
         color: #fff;
-        border-radius: 4px;
-        padding: 1px 5px;
+        border-radius: 3px;
+        padding: 1px 4px;
         line-height: 1.4;
         white-space: nowrap;
-        max-width: 80px;
+        max-width: 70px;
         overflow: hidden;
         text-overflow: ellipsis;
     }
 
-    /* Holiday shift cal-items are already coloured red via JS;
-       make the ×2 tag stand out a bit more */
+    /* Shift items inside each day cell */
+    .cal-item {
+        font-size: 0.7rem;
+        border-radius: 4px;
+        padding: 2px 4px;
+        margin-top: 2px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        cursor: pointer;
+    }
+
     .cal-item[style*="f87171"] {
         font-weight: 600;
+    }
+
+    /* Mobile: tighten up */
+    @media (max-width: 480px) {
+        .calendar-day {
+            min-height: 56px;
+            padding: 2px;
+        }
+
+        .cal-day-header {
+            font-size: 0.7rem;
+        }
+
+        .cal-item {
+            font-size: 0.6rem;
+        }
+
+        .holiday-badge {
+            max-width: 50px;
+            font-size: 0.5rem;
+        }
     }
 </style>
 {% endblock %}

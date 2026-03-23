@@ -224,6 +224,108 @@ def export_csv():
     # Fallback if methods is empty but logic fell through (shouldn't happen with 'if' above)
     return jsonify({"success": True, "message": "無選取任何管道"})
 
+@salary_bp.route('/api/export-period', methods=['GET'])
+@login_required
+def export_period_csv():
+    """
+    匯出指定月份週期的 CSV。
+    期望參數: ?period=YYYY-MM（e.g. 2026-03）
+    """
+    from flask_login import current_user
+    from services.email_service import EmailService
+    import calendar as cal_module
+
+    period = request.args.get('period', '')  # e.g. '2026-03'
+    try:
+        year, month = int(period[:4]), int(period[5:7])
+    except (ValueError, IndexError):
+        return jsonify({'error': '無效的週期格式，請提供 YYYY-MM'}), 400
+
+    last_day = cal_module.monthrange(year, month)[1]
+    start_date = f"{year:04d}-{month:02d}-01"
+    end_date   = f"{year:04d}-{month:02d}-{last_day:02d}"
+
+    records = service.get_records_by_range(start_date, end_date)
+    if not records:
+        return jsonify({'error': f'{period} 該週期無資料'}), 404
+
+    records.sort(key=lambda x: x['date'])
+    total_amount = sum(r.get('amount', 0) for r in records)
+
+    # Build CSV
+    lines = ['日期,類型,開始時間,結束時間,時數,時薪,金額,備註']
+    for r in records:
+        note = (r.get('note') or '').replace(',', '，')
+        lines.append(
+            f"{r['date']},"
+            f"{'排班' if r['type']=='shift' else '獎金'},"
+            f"{r.get('start_time','') or ''},"
+            f"{r.get('end_time','') or ''},"
+            f"{r.get('hours','')},"
+            f"{r.get('rate','')},"
+            f"{r.get('amount','')},"
+            f"{note}"
+        )
+    lines.append(f"合計,,,,,${total_amount:,}")
+    csv_content = '\n'.join(lines)
+    filename = f"salary_{period}.csv"
+
+    # Parse notification methods
+    try:
+        import json
+        methods = json.loads(current_user.settings.notification_methods or '["download"]')
+    except:
+        methods = ['download']
+
+    # Email
+    if 'email' in methods and current_user.email:
+        export_date = datetime.now().strftime('%Y/%m/%d %H:%M')
+        try:
+            EmailService.send_email(
+                to=current_user.email,
+                subject=f'薪資排班報表（{start_date} ~ {end_date}）- {export_date}',
+                template='email/salary_export.html',
+                username=current_user.username,
+                record_count=len(records),
+                export_date=export_date,
+                total_amount=f"${total_amount:,}",
+                records=records
+            )
+        except Exception as e:
+            print(f"Email Error: {e}")
+
+    # LINE
+    if 'line' in methods and current_user.settings.line_user_id:
+        from services.line_service import LineService
+        msg = (
+            f"📊 [薪資匯出] {start_date} ~ {end_date}\n"
+            f"總金額: ${total_amount:,}\n"
+            f"筆數: {len(records)} 筆\n"
+            f"------------------\n"
+        )
+        detail_lines = []
+        for r in records:
+            rtype = '排班' if r['type'] == 'shift' else '獎金'
+            line = f"{r['date'][5:]} {rtype} ${r['amount']}"
+            if r['type'] == 'shift':
+                line += f" ({r['hours']}h)"
+            detail_lines.append(line)
+        msg += '\n'.join(detail_lines)
+        try:
+            LineService.push_message(current_user.settings.line_user_id, msg)
+        except Exception as e:
+            print(f"LINE Error: {e}")
+
+    # Download
+    if 'download' in methods:
+        return Response(
+            csv_content,
+            mimetype="text/csv; charset=utf-8-sig",
+            headers={"Content-Disposition": f"attachment; filename={filename}"}
+        )
+
+    return jsonify({"success": True, "message": f"報表（{period}）已透過已選管道發送"})
+
 @salary_bp.route('/api/history/periods', methods=['GET'])
 @login_required
 def get_history_periods():
