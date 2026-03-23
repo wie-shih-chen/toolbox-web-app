@@ -358,47 +358,61 @@ class SalaryService:
     def get_monthly_periods(self):
         if not current_user.is_authenticated:
             return []
-            
-        # Find min and max date
+
+        # Read billing cycle start day (default 10)
+        start_day = getattr(current_user.settings, 'billing_cycle_start_day', 10) or 10
+
+        # Find min and max record dates
         result = db.session.query(
-            func.min(SalaryRecord.date), 
+            func.min(SalaryRecord.date),
             func.max(SalaryRecord.date)
         ).filter_by(user_id=current_user.id).first()
-        
+
         if not result or not result[0]:
             now = datetime.now()
-            start_date = now - timedelta(days=30)
-            end_date = now + timedelta(days=30)
+            min_date = now - timedelta(days=30)
+            max_date = now + timedelta(days=30)
         else:
-            start_date = datetime.strptime(result[0], '%Y-%m-%d') - timedelta(days=30)
-            end_date = datetime.strptime(result[1], '%Y-%m-%d') + timedelta(days=30)
+            min_date = datetime.strptime(result[0], '%Y-%m-%d')
+            max_date = datetime.strptime(result[1], '%Y-%m-%d')
 
-        # Normalize to 1st of month
-        current = datetime(start_date.year, start_date.month, 1)
+        def period_start_for(d):
+            """Return the billing cycle start date that contains date d."""
+            if d.day >= start_day:
+                return d.replace(day=start_day)
+            else:
+                # Period started in the previous month
+                if d.month == 1:
+                    return datetime(d.year - 1, 12, start_day)
+                else:
+                    return datetime(d.year, d.month - 1, start_day)
+
+        def next_period_start(p_start):
+            """Advance one billing cycle (one month)."""
+            if p_start.month == 12:
+                return datetime(p_start.year + 1, 1, start_day)
+            else:
+                return datetime(p_start.year, p_start.month + 1, start_day)
+
+        # Start one period before the earliest record to make sure it's covered
+        current = period_start_for(min_date - timedelta(days=start_day))
+        now = datetime.now()
+        final_limit = max_date + timedelta(days=40)
+        if final_limit < now:
+            final_limit = now
 
         periods = []
-        now = datetime.now()
-        final_date = end_date if end_date > now else now
-        
-        while current <= final_date:
-            # Next month start
-            if current.month == 12:
-                next_month = datetime(current.year + 1, 1, 1)
-            else:
-                next_month = datetime(current.year, current.month + 1, 1)
-            
-            p_end_dt = next_month - timedelta(days=1)
-            
+        while current <= final_limit:
+            p_end_dt = next_period_start(current) - timedelta(days=1)
             p_start = current.strftime('%Y-%m-%d')
             p_end = p_end_dt.strftime('%Y-%m-%d')
-            
             periods.append({
                 'label': f"{p_start} ~ {p_end}",
                 'start': p_start,
                 'end': p_end
             })
-            current = next_month
-            
+            current = next_period_start(current)
+
         return periods
 
     def get_history_summary(self, start_date_str, end_date_str):
