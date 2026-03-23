@@ -196,6 +196,79 @@
         cursor: pointer;
         margin-right: auto;
     }
+
+    /* History Table Styles */
+    .history-section {
+        margin-top: 24px;
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 18px;
+        padding: 20px;
+        backdrop-filter: blur(10px);
+    }
+    
+    .history-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 16px;
+    }
+    
+    .history-header h3 {
+        font-size: 1.1rem;
+        color: var(--text-primary);
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin: 0;
+    }
+    
+    .table-responsive {
+        overflow-x: auto;
+    }
+    
+    .history-table {
+        width: 100%;
+        border-collapse: collapse;
+        color: var(--text-primary);
+    }
+    
+    .history-table th, .history-table td {
+        padding: 12px 10px;
+        text-align: left;
+        border-bottom: 1px solid rgba(255,255,255,0.05);
+    }
+    
+    .history-table th {
+        color: var(--text-secondary);
+        font-weight: 500;
+        font-size: 0.9rem;
+        white-space: nowrap;
+    }
+    
+    .history-table tr:hover {
+        background: rgba(255,255,255,0.02);
+    }
+    
+    .history-table td {
+        white-space: nowrap;
+    }
+    
+    .btn-icon {
+        background: transparent;
+        border: none;
+        color: var(--text-secondary);
+        cursor: pointer;
+        display: inline-flex;
+        padding: 4px;
+        border-radius: 6px;
+        transition: background 0.2s, color 0.2s;
+    }
+    
+    .btn-icon:hover {
+        background: rgba(255,255,255,0.1);
+        color: white;
+    }
 </style>
 {% endblock %}
 
@@ -225,6 +298,50 @@
 
 <div class="cal-container">
     <div id="calendar"></div>
+</div>
+
+<div class="history-section">
+    <div class="history-header">
+        <h3><span class="material-icons">history</span> 歷史紀錄</h3>
+        <button class="btn-log-period" onclick="openRecordModal()" style="padding: 6px 14px; font-size: 0.9rem;">
+            <span class="material-icons" style="font-size: 1.1rem;">add</span> 新增
+        </button>
+    </div>
+    
+    <div class="table-responsive">
+        <table class="history-table">
+            <thead>
+                <tr>
+                    <th>開始時間</th>
+                    <th>結束時間</th>
+                    <th>週期 (天)</th>
+                    <th>備註</th>
+                    <th>操作</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for r in history %}
+                <tr>
+                    <td>{{ r.start_date }}</td>
+                    <td>{{ r.end_date or '-' }}</td>
+                    <td>{{ r.cycle_length or '-' }}</td>
+                    <td>{{ r.note or '-' }}</td>
+                    <td>
+                        <button class="btn-icon" onclick="openRecordModal('{{ r.id }}', '{{ r.start_date }}', '{{ r.end_date }}', '{{ r.note }}')" title="編輯">
+                            <span class="material-icons" style="font-size: 18px;">edit</span>
+                        </button>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="5" style="text-align: center; color: var(--text-secondary); padding: 20px;">
+                        尚無任何紀錄
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
 </div>
 
 <!-- Modal 記錄經期 -->

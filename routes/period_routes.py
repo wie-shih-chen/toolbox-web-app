@@ -19,10 +19,14 @@ def dashboard():
     predictions = service.get_predictions(months=1)
     next_prediction = predictions[0] if predictions else None
     
+    # 取得歷史紀錄列表
+    history = service.get_history()
+    
     return render_template(
         'period/dashboard.html',
         settings=settings,
-        next_prediction=next_prediction
+        next_prediction=next_prediction,
+        history=history
     )
 
 @period_bp.route('/api/events', methods=['GET'])
