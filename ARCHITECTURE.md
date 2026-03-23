@@ -64,8 +64,8 @@ web_app/
 │   │
 │   ├── salary/                     # 💼 薪資模組
 │   │   ├── dashboard.html          # 本週排班
-│   │   ├── monthly.html            # 月曆檢視 (國定假日標記)
-│   │   ├── history.html            # 歷史排班 (含備註欄)
+│   │   ├── monthly.html            # 月曆檢視 (國定假日標記 + 手機7欄等寬網格)
+│   │   ├── history.html            # 歷史排班 (此週期匯出 + 匯出全部)
 │   │   └── settings.html           # ⚙️ 薪資設定 (時薪/勞健保)
 │   │
 │   ├── reminders/                  # 🔔 提醒事項模組
@@ -128,9 +128,11 @@ web_app/
 🏠 首頁 (/)
 │
 ├── 💼 薪水小幫手 (/salary)
-│   ├── 本週排班 (dashboard)
-│   ├── 月曆檢視 (monthly) — 紅色國定假日標籤 + 厒班顧示 ×2
+│   ├── 本週排班 (dashboard)  — 已移除匯出按鈕
+│   ├── 月曆檢視 (monthly) — 紅色國定假日標籤 + 排班顯示 ×2 + CSS Grid 7欄等寬(手機對齊)
 │   ├── 歷史排班 (history) — 含備註欄（國定假日工資加倍說明）
+│   │   ├── 📅 此週期匯出（只匯出目前選取月份週期）
+│   │   └── 📤 匯出全部（所有歷史資料）
 │   └── ⚙️ 設定 (settings)
 │       ├── 時薪設定
 │       ├── 勞保/健保扣款
@@ -321,7 +323,11 @@ web_app/
 ├── GET/POST /settings                  # 薪資設定
 ├── POST /actions/copy_week             # 複製上週排班
 ├── POST /actions/clear_week            # 清空本週排班
-└── GET  /export                        # CSV 導出
+├── GET  /api/export                    # CSV 導出（全部資料）
+├── GET  /api/export-period?period=YYYY-MM  # CSV 導出（單月週期，e.g. 2026-03）
+├── GET  /api/history/periods           # 帳務週期清單 (依 billing_cycle_start_day 對齊)
+├── GET  /api/history/data?start_date=&end_date=  # 指定區間歷史資料
+└── GET  /api/income-trend              # 全歷史月收入趨勢圖資料
 
 /reminders/api/ (提醒事項 API)
 ├── GET  /reminders                     # 查詢所有提醒
@@ -731,8 +737,25 @@ Sortable.create(element, {
 
 ---
 
-**文件最後更新**: 2026-03-03  
-**專案版本**: v2.3
+**文件最後更新**: 2026-03-24  
+**專案版本**: v2.4
+
+### v2.4 更新摘要 (2026-03-24)
+
+#### 薪水小幫手
+- **匯出按鈕重整**：本週排班頁移除匯出按鈕；歷史排班改為兩個並排按鈕「📅 此週期匯出」與「📤 匯出全部」
+- **新增 `/salary/api/export-period?period=YYYY-MM` 端點**：只匯出指定月份週期 CSV，同樣支援 Email/LINE/Download
+- **修正帳務週期計算 (`get_monthly_periods`)**：原先產生日曆月週期 (1日~月底)，現根據 `billing_cycle_start_day` 產生正確週期（例：設10 → `02/10 ~ 03/09`）
+- **修正月曆手機版格子對齊**：`monthly.html` 改用 CSS Grid `repeat(7, 1fr)`，解決手機上格子大小不一、無法與星期標題對齊的問題
+
+#### 記帳工具
+- **修正帳務週期末日被排除的 Bug**：`expense_service.py` `get_summary()` 過濾改用 `<=`（含），確保週期最後一天（如 3/9）資料正確歸入當期
+
+#### 腳本整理
+- 所有遷移腳本移至 `scripts/maintenance/` 並加入中文說明
+- `migrate_settings.py` 重命名為 `migrate_settings_v1.py`
+
+---
 
 ### v2.3 更新摘要 (2026-03)
 - 新增整合行事曆功能：支援訂閱 ICS URL 與上傳本地 .ics 檔案
