@@ -144,11 +144,26 @@ class ExpenseService:
             weeks_grouped[wk_start]['days'][day_str]['records_count'] += 1
 
         sorted_weeks = []
+        period_start_dt = datetime.strptime(start_date_str, '%Y-%m-%d')
+        period_end_dt   = datetime.strptime(end_date_str,   '%Y-%m-%d')
+
         for ws in sorted(weeks_grouped.keys(), reverse=True):
             w_data = weeks_grouped[ws]
             ws_dt = datetime.strptime(ws, '%Y-%m-%d')
             we_dt = ws_dt + timedelta(days=6)
-            w_data['week_end'] = we_dt.strftime('%Y-%m-%d')
+
+            # ── Plan A: clip to billing period boundaries ──────────────────
+            # Some weeks may only partially overlap with the billing period.
+            # e.g. period 2/10~3/9, but natural week for 3/9 is 3/9~3/15.
+            # Display it as "3/9~3/9" (single day, end capped at period end).
+            # Similarly the first week may start before the period start.
+            displayed_start = max(ws_dt, period_start_dt)
+            displayed_end   = min(we_dt, period_end_dt)
+
+            w_data['week_start']          = displayed_start.strftime('%Y-%m-%d')
+            w_data['week_end']            = displayed_end.strftime('%Y-%m-%d')
+            # Keep the natural week_start as the group key (unchanged)
+            w_data['natural_week_start']  = ws
             
             sorted_days = []
             for ds in sorted(w_data['days'].keys(), reverse=True):

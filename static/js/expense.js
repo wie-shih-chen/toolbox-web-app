@@ -359,7 +359,11 @@ const expenseApp = {
         } else if (level === 'days') {
             if (localNav) localNav.classList.remove('hidden');
             if (backText) backText.textContent = '返回週期';
-            if (levelTitle) levelTitle.textContent = `週份: ${context.week.week_start}`;
+            if (levelTitle) {
+                const s = context.week.week_start.substring(5).replace('-', '/');
+                const e = context.week.week_end.substring(5).replace('-', '/');
+                levelTitle.textContent = `週份: ${s} ~ ${e}`;
+            }
             this.viewState.currentWeek = context.week;
             this.renderDays(context.week);
         } else if (level === 'records') {
