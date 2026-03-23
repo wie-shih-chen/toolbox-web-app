@@ -188,9 +188,8 @@ class PeriodService:
         history = self.get_history()
         for r in history:
             start_dt = datetime.datetime.strptime(r['start_date'], '%Y-%m-%d')
-            # If end_date missing, assume duration
-            duration = self.settings.avg_period_duration or 5
-            end_dt = datetime.datetime.strptime(r['end_date'], '%Y-%m-%d') if r['end_date'] else start_dt + timedelta(days=duration - 1)
+            # If end_date missing, only show the start date (1 day)
+            end_dt = datetime.datetime.strptime(r['end_date'], '%Y-%m-%d') if r['end_date'] else start_dt
             
             # Fullcalendar end date is exclusive, so add 1 day
             cal_end_dt = end_dt + timedelta(days=1)
