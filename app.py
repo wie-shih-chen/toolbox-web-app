@@ -54,6 +54,9 @@ with app.app_context():
     from routes.reminder_routes import reminder_bp
     app.register_blueprint(reminder_bp, url_prefix='/reminders')
 
+    from routes.period_routes import period_bp
+    app.register_blueprint(period_bp)
+
     # Initialize Scheduler
     try:
         from flask_apscheduler import APScheduler

@@ -152,6 +152,10 @@ web_app/
 │       ├── 固定支出 (名稱、金額、日期、類別)
 │       └── 快捷摘要 (emoji + 名稱)
 │
+├── 🩸 生理期追蹤器 (/period)
+│   ├── 儀表板與預測 (dashboard) — FullCalendar月曆、下次經期/易孕期/排卵日預測
+│   └── ⚙️ 設定 (settings) — 自訂平均週期天數、平均經期長度
+│
 ├── 📅 整合行事曆 (/ntut/calendar)
 │   ├── 多來源日曆管理 (側邊欄顯示清單)
 │   ├── 支援訂閱 ICS URL (如北科大/台科大校曆)
@@ -269,6 +273,15 @@ web_app/
 │   ├── total_pay (Decimal)
 │   └── created_at (DateTime)
 │
+├── PeriodRecord (生理期紀錄 - One-to-Many with User)
+│   ├── id (PK)
+│   ├── user_id (FK → User)
+│   ├── start_date (Date)
+│   ├── end_date (Date, Nullable)
+│   ├── cycle_length (Integer, Nullable)
+│   ├── note (Text)
+│   └── created_at (DateTime)
+│
 ├── UserCalendar (使用者 ICS 來源 - One-to-Many with User)
 │   ├── id (PK)
 │   ├── user_id (FK → User)
@@ -303,6 +316,12 @@ web_app/
 ├── POST /update_quick_shortcuts        # 更新快捷摘要 ← 嚴格驗證物件結構
 ├── POST /set_preset_avatar             # 設定預設頭像
 └── POST /test_notification             # 測試通知發送
+
+/period/api/ (生理期追蹤 API)
+├── GET  /events                        # 取得 FullCalendar JSON (歷史+預測)
+├── POST /records                       # 新增紀錄 (自動重算週期)
+├── PUT  /records/<id>                  # 更新紀錄 (自動重算週期)
+└── DELETE /records/<id>                # 刪除紀錄 (自動重算週期)
 
 /expense/api/ (記帳模組 API)
 ├── GET  /settings                      # 讀取記帳設定
@@ -738,7 +757,15 @@ Sortable.create(element, {
 ---
 
 **文件最後更新**: 2026-03-24  
-**專案版本**: v2.4
+**專案版本**: v2.5
+
+### v2.5 更新摘要 (2026-03-24)
+- **新增 🩸 生理期追蹤器**：依照醫學標準算法推算下次經期、易孕期 (排卵日前5後1天) 與排卵日。
+- **資料庫層**：新增 `PeriodRecord` 模型與 `UserSettings` 中的 `avg_period_cycle` / `avg_period_duration`。
+- **後端介面**：新增 `/period/` 系列路由與 API 端點 (`events`, `records`)，自動處理紀錄間隔天數的平均值。
+- **前端介面**：使用 `FullCalendar` 實作視覺化月曆，紅色標示經期、淺綠標示易孕期、深綠標示排卵日；首頁與選單加入專屬捷徑。
+
+---
 
 ### v2.4 更新摘要 (2026-03-24)
 

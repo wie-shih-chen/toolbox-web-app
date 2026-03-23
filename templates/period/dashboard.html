@@ -1,0 +1,375 @@
+{% extends "base.html" %}
+
+{% block title %}生理期追蹤器{% endblock %}
+{% block page_title %}🩸 生理期追蹤器{% endblock %}
+
+{% block extra_css %}
+<link href='https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.css' rel='stylesheet' />
+<style>
+    .dashboard-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+        flex-wrap: wrap;
+        gap: 10px;
+    }
+
+    .prediction-card {
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 16px;
+        padding: 16px 20px;
+        backdrop-filter: blur(10px);
+        flex: 1;
+        min-width: 250px;
+    }
+
+    .prediction-card h3 {
+        font-size: 1rem;
+        color: var(--text-secondary);
+        margin-bottom: 8px;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+    .prediction-card p {
+        font-size: 1.1rem;
+        margin: 4px 0;
+        font-weight: 500;
+    }
+
+    .prediction-card .highlight {
+        color: #ff4d4f;
+        font-weight: 600;
+    }
+    
+    .prediction-card .fertile {
+        color: #73d13d;
+    }
+
+    .action-buttons {
+        display: flex;
+        gap: 10px;
+    }
+
+    .btn-log-period {
+        background: linear-gradient(135deg, #ff4d4f 0%, #cf1322 100%);
+        color: white;
+        border: none;
+        padding: 10px 20px;
+        border-radius: 12px;
+        font-weight: 500;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        cursor: pointer;
+        transition: transform 0.2s, background 0.2s;
+    }
+
+    .btn-log-period:active {
+        transform: scale(0.96);
+    }
+    
+    .btn-settings {
+        background: rgba(255, 255, 255, 0.1);
+        color: var(--text-primary);
+        border: none;
+        padding: 10px 15px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        text-decoration: none;
+    }
+
+    .cal-container {
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 18px;
+        padding: 16px;
+        backdrop-filter: blur(10px);
+        min-height: 500px;
+    }
+
+    #calendar {
+        height: 100%;
+    }
+
+    /* Target FullCalendar overrides */
+    .fc-theme-standard .fc-scrollgrid { border-color: rgba(255, 255, 255, 0.1); }
+    .fc-theme-standard td, .fc-theme-standard th { border-color: rgba(255, 255, 255, 0.1); }
+    .fc-col-header-cell-cushion, .fc-daygrid-day-number { color: var(--text-primary); text-decoration: none; }
+    
+    /* Dashed border for predictions */
+    .dashed-border {
+        border-style: dashed !important;
+        background: rgba(255, 77, 79, 0.1) !important;
+    }
+    
+    .fc-event {
+        border-radius: 6px;
+        padding: 2px 4px;
+        cursor: pointer;
+    }
+
+    /* Modal Styles */
+    .modal {
+        display: none;
+        position: fixed;
+        z-index: 2000;
+        left: 0; top: 0; width: 100%; height: 100%;
+        background-color: rgba(0, 0, 0, 0.6);
+        backdrop-filter: blur(5px);
+        align-items: center; justify-content: center;
+    }
+
+    .modal-content {
+        background: #1c1c1e;
+        border: 1px solid rgba(255,255,255,0.1);
+        border-radius: 20px;
+        padding: 24px;
+        width: 90%;
+        max-width: 400px;
+        animation: modalScale 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+
+    @keyframes modalScale {
+        from { transform: scale(0.9); opacity: 0; }
+        to { transform: scale(1); opacity: 1; }
+    }
+
+    .form-group {
+        margin-bottom: 15px;
+        text-align: left;
+    }
+
+    .form-group label {
+        display: block;
+        margin-bottom: 6px;
+        color: var(--text-secondary);
+        font-size: 0.9rem;
+    }
+
+    .form-control {
+        width: 100%;
+        padding: 12px;
+        background: rgba(255,255,255,0.05);
+        border: 1px solid rgba(255,255,255,0.1);
+        color: white;
+        border-radius: 12px;
+        box-sizing: border-box;
+    }
+
+    .modal-actions {
+        display: flex;
+        justify-content: flex-end;
+        gap: 10px;
+        margin-top: 20px;
+    }
+
+    .btn-cancel {
+        background: transparent;
+        color: var(--text-secondary);
+        border: none;
+        padding: 10px 16px;
+        border-radius: 10px;
+        cursor: pointer;
+    }
+
+    .btn-save {
+        background: #0A84FF;
+        color: white;
+        border: none;
+        padding: 10px 20px;
+        border-radius: 10px;
+        cursor: pointer;
+        font-weight: 500;
+    }
+    
+    .btn-delete {
+        background: transparent;
+        color: #ff4d4f;
+        border: 1px solid #ff4d4f;
+        padding: 10px 16px;
+        border-radius: 10px;
+        cursor: pointer;
+        margin-right: auto;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="dashboard-header">
+    <div class="prediction-card">
+        <h3><span class="material-icons" style="font-size: 1.2rem;">auto_awesome</span> 預測與狀態</h3>
+        {% if next_prediction %}
+            <p>下次經期：<span class="highlight">{{ next_prediction.period_start }}</span></p>
+            <p>近幾天易孕期：<span class="fertile">{{ next_prediction.fertile_window_start }} ~ {{ next_prediction.fertile_window_end }}</span></p>
+            <p style="font-size:0.85rem; color:var(--text-secondary); margin-top:5px;">排卵日預測：{{ next_prediction.ovulation_day }}</p>
+        {% else %}
+            <p>尚無足夠紀錄</p>
+            <p style="font-size:0.85rem; color:var(--text-secondary);">新增第一筆經期以啟用預測功能。</p>
+        {% endif %}
+    </div>
+
+    <div class="action-buttons">
+        <a href="{{ url_for('period.period_settings') }}" class="btn-settings">
+            <span class="material-icons">settings</span>
+        </a>
+        <button class="btn-log-period" onclick="openRecordModal()">
+            <span class="material-icons">add</span> 記錄經期
+        </button>
+    </div>
+</div>
+
+<div class="cal-container">
+    <div id="calendar"></div>
+</div>
+
+<!-- Modal 記錄經期 -->
+<div id="recordModal" class="modal">
+    <div class="modal-content">
+        <h3 id="modalTitle" style="margin-top:0;">新增經期紀錄</h3>
+        <input type="hidden" id="recordId">
+        <div class="form-group">
+            <label>開始日期 <span style="color:red;">*</span></label>
+            <input type="date" id="startDate" class="form-control" required>
+        </div>
+        <div class="form-group">
+            <label>結束日期 (非必填，若進行中留空)</label>
+            <input type="date" id="endDate" class="form-control">
+        </div>
+        <div class="form-group">
+            <label>症狀或備註</label>
+            <input type="text" id="note" class="form-control" placeholder="例如：經痛、流量多">
+        </div>
+        <div class="modal-actions">
+            <button class="btn-delete" id="btnDelete" onclick="deleteRecord()" style="display:none;">刪除</button>
+            <button class="btn-cancel" onclick="closeModal()">取消</button>
+            <button class="btn-save" onclick="saveRecord()">儲存</button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src='https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.js'></script>
+<script src='https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/locales/zh-tw.js'></script>
+<script>
+    let calendar;
+
+    document.addEventListener('DOMContentLoaded', function() {
+        const calendarEl = document.getElementById('calendar');
+        
+        calendar = new FullCalendar.Calendar(calendarEl, {
+            initialView: window.innerWidth < 768 ? 'listMonth' : 'dayGridMonth',
+            locale: 'zh-tw',
+            headerToolbar: {
+                left: 'prev,next today',
+                center: 'title',
+                right: 'dayGridMonth,listMonth'
+            },
+            height: 'auto',
+            events: '/period/api/events',
+            eventClick: function(info) {
+                const props = info.event.extendedProps;
+                if (props.type === 'history') {
+                    // Extract ID from 'history_XX'
+                    const recordId = info.event.id.replace('history_', '');
+                    
+                    // The end date in fullcalendar is exclusive + 1 day, so we subtract 1 day back for the UI
+                    let trueEndDate = '';
+                    if (info.event.end) {
+                        const endDt = new Date(info.event.end);
+                        endDt.setDate(endDt.getDate() - 1);
+                        trueEndDate = endDt.toISOString().slice(0, 10);
+                    }
+                    
+                    openRecordModal(recordId, info.event.startStr, trueEndDate, props.note);
+                }
+            }
+        });
+        
+        calendar.render();
+    });
+
+    function openRecordModal(id = null, start = '', end = '', note = '') {
+        document.getElementById('recordModal').style.display = 'flex';
+        document.getElementById('recordId').value = id || '';
+        document.getElementById('startDate').value = start || new Date().toISOString().slice(0, 10);
+        document.getElementById('endDate').value = end;
+        document.getElementById('note').value = note;
+        
+        if (id) {
+            document.getElementById('modalTitle').textContent = '編輯經期紀錄';
+            document.getElementById('btnDelete').style.display = 'block';
+        } else {
+            document.getElementById('modalTitle').textContent = '新增經期紀錄';
+            document.getElementById('btnDelete').style.display = 'none';
+        }
+    }
+
+    function closeModal() {
+        document.getElementById('recordModal').style.display = 'none';
+    }
+
+    async function saveRecord() {
+        const id = document.getElementById('recordId').value;
+        const start = document.getElementById('startDate').value;
+        const end = document.getElementById('endDate').value;
+        const note = document.getElementById('note').value;
+
+        if (!start) {
+            alert('請填寫開始日期喔！');
+            return;
+        }
+
+        const url = id ? `/period/api/records/${id}` : `/period/api/records`;
+        const method = id ? 'PUT' : 'POST';
+
+        try {
+            const res = await fetch(url, {
+                method: method,
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ start_date: start, end_date: end, note: note })
+            });
+
+            const data = await res.json();
+            if (data.success) {
+                closeModal();
+                calendar.refetchEvents();
+                // reload page to update predictions
+                window.location.reload();
+            } else {
+                alert(data.error || '儲存失敗');
+            }
+        } catch (e) {
+            console.error(e);
+            alert('系統發生錯誤');
+        }
+    }
+    
+    async function deleteRecord() {
+        if (!confirm('確定要刪除這筆紀錄嗎？')) return;
+        
+        const id = document.getElementById('recordId').value;
+        if (!id) return;
+        
+        try {
+            const res = await fetch(`/period/api/records/${id}`, { method: 'DELETE' });
+            const data = await res.json();
+            if (data.success) {
+                closeModal();
+                calendar.refetchEvents();
+                window.location.reload();
+            } else {
+                alert(data.error || '刪除失敗');
+            }
+        } catch (e) {
+            console.error(e);
+            alert('系統發生錯誤');
+        }
+    }
+</script>
+{% endblock %}

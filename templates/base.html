@@ -148,6 +148,11 @@
                 <span class="material-icons">account_balance_wallet</span>
                 <span class="nav-text">記帳</span>
             </a>
+            <a href="{{ url_for('period.dashboard') }}"
+                class="mobile-nav-item {% if 'period' in request.endpoint %}active{% endif %}">
+                <span class="material-icons">water_drop</span>
+                <span class="nav-text">生理期</span>
+            </a>
 
         </nav>
         <!-- Feature Introduction Modal (Custom Implementation) -->

@@ -18,6 +18,7 @@ class User(UserMixin, db.Model):
     # Relationships
     salary_records = db.relationship('SalaryRecord', backref='user', lazy=True)
     expense_records = db.relationship('ExpenseRecord', backref='user', lazy=True)
+    period_records = db.relationship('PeriodRecord', backref='user', lazy=True)
     settings = db.relationship('UserSettings', backref='user', uselist=False, lazy=True)
     reminders = db.relationship('Reminder', backref='user', lazy=True)
 
@@ -105,6 +106,19 @@ class UserSettings(db.Model):
     # Calendar notification settings
     calendar_notify_enabled = db.Column(db.Boolean, default=True)
     calendar_notify_time = db.Column(db.String(5), default='20:00')  # HH:MM
+
+    # Menstrual Cycle settings
+    avg_period_cycle = db.Column(db.Integer, default=28)
+    avg_period_duration = db.Column(db.Integer, default=5)
+
+class PeriodRecord(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    start_date = db.Column(db.String(10), nullable=False) # YYYY-MM-DD
+    end_date = db.Column(db.String(10), nullable=True)    # YYYY-MM-DD
+    cycle_length = db.Column(db.Integer, nullable=True)   # Length since previous period
+    note = db.Column(db.String(255), nullable=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
 class ReportLog(db.Model):
     id = db.Column(db.Integer, primary_key=True)
