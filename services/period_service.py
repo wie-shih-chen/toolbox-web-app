@@ -243,10 +243,9 @@ class PeriodService:
                 "title": "易孕期",
                 "start": f_start.strftime('%Y-%m-%d'),
                 "end": f_end_exclusive.strftime('%Y-%m-%d'),
-                "backgroundColor": "#d9f7be", # Light green
-                "borderColor": "#d9f7be",
-                "textColor": "#389e0d",
-                "display": "background",
+                "backgroundColor": "rgba(115, 209, 61, 0.2)", # Light green transparent
+                "borderColor": "#73d13d",
+                "textColor": "#b7eb8f",
                 "extendedProps": {"type": "fertile_window"}
             })
             
@@ -258,9 +257,9 @@ class PeriodService:
                 "title": "🥚 排卵日",
                 "start": o_day.strftime('%Y-%m-%d'),
                 "allDay": True,
-                "backgroundColor": "transparent",
+                "backgroundColor": "rgba(255, 255, 255, 0.1)",
                 "borderColor": "transparent",
-                "textColor": "#237804",
+                "textColor": "#73d13d",
                 "extendedProps": {"type": "ovulation"}
             })
             
