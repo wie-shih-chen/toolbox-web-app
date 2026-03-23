@@ -86,7 +86,7 @@ class ExpenseService:
         
         records = ExpenseRecord.query.filter_by(user_id=target_user.id)\
             .filter(ExpenseRecord.timestamp >= start_date_str)\
-            .filter(ExpenseRecord.timestamp < end_date_str + " 23:59:59")\
+            .filter(ExpenseRecord.timestamp <= end_date_str + " 23:59:59")\
             .order_by(ExpenseRecord.timestamp.desc())\
             .all()
             
@@ -97,7 +97,7 @@ class ExpenseService:
         
         for r in records:
             rec_date = r.timestamp[:10]
-            if start_date_str <= rec_date < end_date_str:
+            if start_date_str <= rec_date <= end_date_str:  # inclusive end
                 filtered.append(self._to_dict(r))
                 total += r.amount
                 cat = r.category or '其他'
