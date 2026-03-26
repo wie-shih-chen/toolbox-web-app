@@ -464,7 +464,7 @@
             <div style="margin-bottom: 16px; color: var(--text-secondary); font-size: 1rem; text-align: center; font-weight: 500;">
                 調整照片位置
             </div>
-            <div style="position: relative; width: 100%; max-width: 450px; margin: 0 auto 16px; max-height: 50vh;">
+            <div style="position: relative; width: 100%; max-width: 450px; margin: 0 auto 16px;">
                 <img id="cdCropTarget" src="" style="max-width: 100%; display: block;">
             </div>
             
@@ -501,6 +501,7 @@
             #cdAvatarModal > div { padding: 20px !important; width: 95% !important; max-height: 85vh !important; }
             #cdAvatarCropView img { max-height: 50vh !important; }
             .cropper-container { max-height: 50vh !important; }
+            #cdAvatarSelectionView .avatar-option { height: 50px !important; font-size: 1.5rem !important; }
         }
     `;
     document.head.appendChild(cropStyle);
@@ -604,9 +605,18 @@
                         cropBoxMovable: true,
                         cropBoxResizable: true,
                         toggleDragModeOnDblclick: false,
-                        minCropBoxWidth: 150,
-                        minCropBoxHeight: 150
+                        minCropBoxWidth: 200,
+                        minCropBoxHeight: 200
                     });
+                    
+                    setTimeout(() => {
+                        const cropBox = document.querySelector('.cropper-crop-box');
+                        const face = document.querySelector('.cropper-face');
+                        if (cropBox && face) {
+                            cropBox.style.borderRadius = '50%';
+                            face.style.borderRadius = '50%';
+                        }
+                    }, 100);
                 };
             }
             reader.readAsDataURL(e.target.files[0]);
