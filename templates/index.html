@@ -6,7 +6,7 @@
 {% block content %}
 
 {% if pinned_countdowns %}
-<div class="pinned-widgets-container" style="margin-bottom: 24px;">
+<div class="pinned-widgets-container" style="margin-top: 16px; margin-bottom: 24px;">
     {% for item in pinned_countdowns %}
     <!-- Aesthetic VIP Widget -->
     <a href="{{ url_for('countdown.index') }}" style="text-decoration: none; display: block; touch-action: manipulation;">
