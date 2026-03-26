@@ -147,6 +147,15 @@
     .cropper-view-box, .cropper-face { border-radius: 50%; }
     .cropper-crop-box { border-radius: 50%; }
     .cropper-view-box { outline: 0; box-shadow: 0 0 0 1px #39f; }
+    
+    /* Mobile Modal Layout Fixes */
+    @media (max-width: 600px) {
+        #cdModal .modal-content {
+            max-height: calc(100vh - 100px) !important; /* Leave space for bottom nav */
+            margin-bottom: 60px !important; /* Push above bottom nav */
+            overflow-y: auto;
+        }
+    }
 
     .empty-state {
         text-align: center;
