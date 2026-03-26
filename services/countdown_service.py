@@ -22,7 +22,10 @@ class CountdownService:
         return [self._format_item(item) for item in items]
 
     def _format_item(self, item):
-        today = datetime.datetime.now().date()
+        import datetime
+        # Enforce UTC+8 (Taiwan Time)
+        tz_tw = datetime.timezone(datetime.timedelta(hours=8))
+        today = datetime.datetime.now(tz_tw).date()
         target = datetime.datetime.strptime(item.target_date, '%Y-%m-%d').date()
 
         from dateutil.relativedelta import relativedelta
