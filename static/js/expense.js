@@ -279,10 +279,8 @@ const expenseApp = {
     async loadTodayData() {
         const today = new Date();
         const localDate = this.formatDate(today);
-        const tomorrow = this.formatDate(new Date(today.getTime() + 86400000));
-
-
-        const res = await fetch(`/expense/api/records?start_date=${localDate}&end_date=${tomorrow}`);
+        // Backend adds ' 23:59:59' to end_date, so passing localDate is sufficient for today's records only
+        const res = await fetch(`/expense/api/records?start_date=${localDate}&end_date=${localDate}`);
         const data = await res.json();
         this.records = data.records;
 
@@ -438,8 +436,8 @@ const expenseApp = {
     },
 
     async renderRecords(day) {
-        const nextDay = new Date(new Date(day.date).getTime() + 86400000);
-        const res = await fetch(`/expense/api/records?start_date=${day.date}&end_date=${this.formatDate(nextDay)}`);
+        // Pass the same date as both start and end — the backend adds ' 23:59:59' internally
+        const res = await fetch(`/expense/api/records?start_date=${day.date}&end_date=${day.date}`);
 
         const data = await res.json();
         this.records = data.records;
