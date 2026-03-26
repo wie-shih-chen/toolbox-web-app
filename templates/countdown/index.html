@@ -146,6 +146,104 @@
         padding: 40px 20px;
         grid-column: 1 / -1;
     }
+
+    /* Form Layout Fixes */
+    .cd-modal-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+        border-bottom: 1px solid rgba(255,255,255,0.1);
+        padding-bottom: 16px;
+    }
+    .cd-modal-header h3 {
+        margin: 0;
+        font-size: 1.2rem;
+        color: #fff;
+    }
+    .cd-close-btn {
+        background: rgba(255,255,255,0.1);
+        border: none;
+        color: white;
+        width: 32px;
+        height: 32px;
+        border-radius: 16px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+    }
+    .cd-form-label {
+        display: block;
+        font-size: 0.85rem;
+        color: var(--text-secondary);
+        margin-bottom: 6px;
+    }
+    .cd-input {
+        width: 100%;
+        background: rgba(255,255,255,0.05);
+        border: 1px solid rgba(255,255,255,0.1);
+        border-radius: 12px;
+        padding: 12px;
+        color: white;
+        font-size: 1rem;
+        box-sizing: border-box;
+    }
+    .cd-input:focus {
+        border-color: var(--accent-blue);
+        outline: none;
+    }
+    .cd-radio-group {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+    }
+    .cd-radio-card {
+        background: rgba(255,255,255,0.05);
+        border: 1px solid rgba(255,255,255,0.1);
+        border-radius: 12px;
+        padding: 12px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        cursor: pointer;
+    }
+    .cd-radio-card:has(input:checked) {
+        border-color: var(--accent-blue);
+        background: rgba(10, 132, 255, 0.1);
+    }
+    .cd-radio-card input[type="radio"] {
+        margin: 0;
+        width: 18px;
+        height: 18px;
+        accent-color: var(--accent-blue);
+        flex-shrink: 0;
+    }
+    .cd-radio-text {
+        font-size: 0.95rem;
+        color: #fff;
+        white-space: nowrap;
+    }
+    .cd-checkbox-row {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        background: rgba(255,255,255,0.05);
+        padding: 12px;
+        border-radius: 12px;
+        cursor: pointer;
+    }
+    .cd-checkbox-row input[type="checkbox"] {
+        margin: 0;
+        width: 20px;
+        height: 20px;
+        accent-color: #FFD60A;
+        flex-shrink: 0;
+    }
+    .cd-checkbox-text {
+        font-size: 0.95rem;
+        color: #fff;
+    }
 </style>
 {% endblock %}
 
@@ -189,58 +287,61 @@
 
 <!-- Add/Edit Modal -->
 <div class="modal" id="cdModal" style="display: none;">
-    <div class="modal-content glass" style="max-width: 400px; width: 100%;">
-        <div class="modal-header">
+    <div class="modal-content glass" style="max-width: 400px; width: 90%; padding: 24px;">
+        <div class="cd-modal-header">
             <h3 id="cdModalTitle">新增事件</h3>
-            <button class="close-btn" onclick="closeCdModal()">
-                <span class="material-icons">close</span>
+            <button type="button" class="cd-close-btn" onclick="closeCdModal()">
+                <span class="material-icons" style="font-size: 20px;">close</span>
             </button>
         </div>
-        <div class="modal-body">
+        <div>
             <form id="cdForm">
                 <input type="hidden" id="cdId">
                 
-                <div style="display: flex; gap: 12px; margin-bottom: 16px;">
-                    <div style="width: 70px;">
-                        <label class="form-label">圖示</label>
-                        <input type="text" id="cdIcon" class="btn-emoji-select" value="🎂" maxlength="2" required>
+                <div style="display: flex; gap: 12px; margin-bottom: 20px;">
+                    <div style="width: 80px; flex-shrink: 0;">
+                        <label class="cd-form-label">圖示</label>
+                        <input type="text" id="cdIcon" class="cd-input" style="text-align: center; font-size: 1.5rem; padding: 8px;" value="🎂" maxlength="2" required>
                     </div>
                     <div style="flex: 1;">
-                        <label class="form-label">名稱 (如: 女友生日)</label>
-                        <input type="text" class="form-control" id="cdTitle" required placeholder="請輸入名稱">
+                        <label class="cd-form-label">名稱 (如: 女友生日)</label>
+                        <input type="text" class="cd-input" id="cdTitle" required placeholder="例如：日本旅行">
                     </div>
                 </div>
 
-                <div class="form-group" style="margin-bottom: 16px;">
-                    <label class="form-label">目標日期</label>
-                    <input type="date" class="form-control" id="cdTargetDate" required>
+                <div style="margin-bottom: 20px;">
+                    <label class="cd-form-label">目標日期</label>
+                    <input type="date" class="cd-input" id="cdTargetDate" required>
                 </div>
 
-                <div class="form-group" style="margin-bottom: 16px;">
-                    <label class="form-label">類型</label>
-                    <div style="display: flex; gap: 12px;">
-                        <label style="flex: 1; display:flex; align-items:center; gap:8px; background: rgba(255,255,255,0.05); padding:10px; border-radius:12px; border:1px solid rgba(255,255,255,0.1); cursor:pointer;">
-                            <input type="radio" name="cdIsAnniversary" value="false" checked> ⏳ 倒數日
+                <div style="margin-bottom: 20px;">
+                    <label class="cd-form-label">類型</label>
+                    <div class="cd-radio-group">
+                        <label class="cd-radio-card">
+                            <input type="radio" name="cdIsAnniversary" value="false" checked>
+                            <span class="cd-radio-text">⏳ 倒數日</span>
                         </label>
-                        <label style="flex: 1; display:flex; align-items:center; gap:8px; background: rgba(255,255,255,0.05); padding:10px; border-radius:12px; border:1px solid rgba(255,255,255,0.1); cursor:pointer;">
-                            <input type="radio" name="cdIsAnniversary" value="true"> 💖 紀念日
+                        <label class="cd-radio-card">
+                            <input type="radio" name="cdIsAnniversary" value="true">
+                            <span class="cd-radio-text">💖 紀念日</span>
                         </label>
                     </div>
-                    <div class="help-text" style="margin-top: 8px;">
+                    <div style="font-size: 0.8rem; color: var(--text-secondary); margin-top: 8px; line-height: 1.4;">
                         倒數日：距離未來的某天還有多久。<br>
                         紀念日：從過去的某天到現在過了多久。
                     </div>
                 </div>
 
-                <div class="form-group" style="margin-bottom: 24px;">
-                    <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
-                        <input type="checkbox" id="cdPinned"> 📌 同時釘選在首頁顯示
+                <div style="margin-bottom: 28px;">
+                    <label class="cd-checkbox-row">
+                        <input type="checkbox" id="cdPinned">
+                        <span class="cd-checkbox-text">📌 同時釘選在首頁顯示</span>
                     </label>
                 </div>
 
                 <div style="display: flex; gap: 12px;">
-                    <button type="button" class="btn btn-secondary w-100" id="btnDeleteCd" style="display: none;" onclick="deleteCd()">刪除</button>
-                    <button type="submit" class="btn btn-primary w-100">儲存</button>
+                    <button type="button" class="btn btn-secondary w-100" id="btnDeleteCd" style="display: none; padding: 12px; border-radius: 12px;" onclick="deleteCd()">刪除</button>
+                    <button type="submit" class="btn btn-primary w-100" style="padding: 12px; border-radius: 12px; background-color: var(--accent-blue);">儲存</button>
                 </div>
             </form>
         </div>
