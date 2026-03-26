@@ -366,10 +366,11 @@
                 
                 <div style="display: flex; gap: 16px; margin-bottom: 20px; align-items: center;">
                     <div style="position: relative;">
-                        <input type="file" id="cdImageUpload" accept="image/*" style="display: none;">
-                        <div class="cd-avatar-picker" onclick="document.getElementById('cdImageUpload').click()">
+                        <input type="hidden" id="cdIconVal" value="📅">
+                        <!-- Click to open Avatar Modal instead of file input -->
+                        <div class="cd-avatar-picker" onclick="openCdAvatarModal()">
                             <img id="cdPreviewImg" class="cd-avatar-preview" style="display:none;">
-                            <span id="cdEmojiFallback" class="cd-avatar-emoji">🎂</span>
+                            <span id="cdEmojiFallback" class="cd-avatar-emoji">📅</span>
                             <div class="cd-badge-cam">
                                 <span class="material-icons" style="font-size: 14px;">photo_camera</span>
                             </div>
@@ -379,12 +380,6 @@
                         <label class="cd-form-label">名稱 (如: 女友生日)</label>
                         <input type="text" class="cd-input" id="cdTitle" required placeholder="例如：日本旅行">
                     </div>
-                </div>
-
-                <div style="display: flex; justify-content: flex-end; margin-top: -12px; margin-bottom: 20px;">
-                    <button type="button" class="btn btn-sm btn-secondary" onclick="clearImageAndUseEmoji()" style="font-size: 0.8rem; padding: 4px 8px; border-radius: 8px;">清除照片並換回 Emoji</button>
-                    <!-- Hidden input to store chosen emoji if user clears photo -->
-                    <input type="hidden" id="cdIconVal" value="🎂">
                 </div>
 
                 <div style="margin-bottom: 20px;">
@@ -426,19 +421,51 @@
     </div>
 <!-- Add/Edit Modal (End) -->
 
-<!-- Crop Modal -->
-<div class="modal" id="cropModal" style="display: none; z-index: 2000;">
-    <div class="modal-content glass" style="max-width: 400px; width: 90%; padding: 24px;">
-        <div class="cd-modal-header">
-            <h3>裁剪相片</h3>
-            <button type="button" class="cd-close-btn" onclick="closeCropModal()">
-                <span class="material-icons" style="font-size: 20px;">close</span>
+<!-- Avatar / Crop Modal -->
+<div id="cdAvatarModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 2000; align-items: center; justify-content: center;">
+    <div style="background: #1a1a1a; padding: 30px; border-radius: 16px; width: 90%; max-width: 550px; max-height: 90vh; overflow-y: auto;">
+        <h3 id="cdAvatarModalTitle" style="margin-top: 0; margin-bottom: 20px; font-size: 1.3rem;">選擇圖示</h3>
+
+        <!-- SELECTION VIEW -->
+        <div id="cdAvatarSelectionView">
+            <div style="font-size: 1rem; color: var(--text-secondary); margin-bottom: 12px; font-weight: 500;">預設圖示</div>
+            <div style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; margin-bottom: 24px;">
+                {% for icon in ['🎂', '❤️', '💍', '🎓', '✈️', '🏝️', '🎉', '👶', '🏠', '🎁'] %}
+                <div onclick="selectCdPreset('{{ icon }}')"
+                    style="background: rgba(255,255,255,0.05); border-radius: 10px; height: 65px; display: flex; align-items: center; justify-content: center; font-size: 2rem; cursor: pointer; border: 1px solid transparent;">
+                    {{ icon }}
+                </div>
+                {% endfor %}
+            </div>
+
+            <!-- Upload Tab -->
+            <div style="font-size: 1rem; color: var(--text-secondary); margin-bottom: 12px; font-weight: 500;">或上傳圖片</div>
+            <input type="file" id="cdImageUpload" accept="image/*" style="display: none;" onchange="handleCdImageSelect(event)">
+            <button type="button" onclick="document.getElementById('cdImageUpload').click()" class="btn"
+                style="width: 100%; font-size: 1.05rem; padding: 12px; margin-bottom: 16px; background: #2dd4bf; color: #0f172a; border: none; font-weight: 600;">
+                📂 選擇檔案
             </button>
+
+            <button type="button" onclick="closeCdAvatarModal()"
+                style="margin-top: 0; background: transparent; border: none; color: var(--text-tertiary); width: 100%; cursor: pointer; font-size: 1rem;">關閉</button>
         </div>
-        <div class="cropper-container">
-            <img id="cropTarget" src="" style="max-width: 100%;">
+
+        <!-- CROP VIEW -->
+        <div id="cdAvatarCropView" style="display: none;">
+            <div style="margin-bottom: 16px; color: var(--text-secondary); font-size: 1rem; text-align: center; font-weight: 500;">
+                調整相片大小與位置
+            </div>
+            <div style="position: relative; width: 100%; max-width: 450px; margin: 0 auto 16px; max-height: 50vh;">
+                <img id="cdCropTarget" src="" style="max-width: 100%; display: block;">
+            </div>
+            
+            <div style="display: flex; gap: 8px; margin-top: 16px; justify-content: center;">
+                <button type="button" onclick="cancelCdCrop()" class="btn"
+                    style="flex: 1; background: rgba(239, 68, 68, 0.15); border: 1px solid rgba(239, 68, 68, 0.3); color: #fca5a5; padding: 12px; font-size: 1rem; font-weight: 500;">取消</button>
+                <button type="button" onclick="applyCdCrop()" class="btn"
+                    style="flex: 1; padding: 12px; font-size: 1rem; background: #2dd4bf; color: #0f172a; font-weight: 600;">確認裁剪</button>
+            </div>
         </div>
-        <button type="button" class="btn btn-primary w-100" style="padding: 12px; border-radius: 12px; background-color: var(--accent-blue);" onclick="applyCrop()">確定裁剪</button>
     </div>
 </div>
 
@@ -453,6 +480,21 @@
     // Cropper State
     let cropper = null;
     let croppedImageData = null; // store base64 data here when cropped
+    
+    // Add custom styles for circular crop mask dynamically to match avatar_cropper
+    const cropStyle = document.createElement('style');
+    cropStyle.textContent = `
+        .cropper-view-box, .cropper-face { border-radius: 50%; }
+        .cropper-crop-box { border-radius: 50%; }
+        .cropper-view-box { outline: 0; box-shadow: 0 0 0 1px #39f; }
+        
+        @media (max-width: 600px) {
+            #cdAvatarModal > div { padding: 20px !important; width: 95% !important; max-height: 85vh !important; }
+            #cdAvatarCropView img { max-height: 50vh !important; }
+            .cropper-container { max-height: 50vh !important; }
+        }
+    `;
+    document.head.appendChild(cropStyle);
     
     // Default date to today
     document.getElementById('cdTargetDate').valueAsDate = new Date();
@@ -503,62 +545,84 @@
         }
     }
 
-    function clearImageAndUseEmoji() {
-        const emoji = prompt("請輸入一個 Emoji (例如: 🎂, ❤️, 🏖️)", document.getElementById('cdIconVal').value);
-        if (emoji && emoji.trim() !== '') {
-            document.getElementById('cdIconVal').value = emoji.trim().substring(0, 2);
-            document.getElementById('cdEmojiFallback').innerText = emoji.trim().substring(0, 2);
-            setPreviewImage(null);
-            croppedImageData = null;
-            document.getElementById('cdImageUpload').value = ''; // clear input
-        }
+    // --- Avatar / Cropper Logic ---
+    const cdAvatarModal = document.getElementById('cdAvatarModal');
+    const selectionView = document.getElementById('cdAvatarSelectionView');
+    const cropView = document.getElementById('cdAvatarCropView');
+    const imageInput = document.getElementById('cdImageUpload');
+    const cropTarget = document.getElementById('cdCropTarget');
+
+    function openCdAvatarModal() {
+        cdAvatarModal.style.display = 'flex';
+        selectionView.style.display = 'block';
+        cropView.style.display = 'none';
     }
 
-    // --- Cropper Logic ---
-    const imageInput = document.getElementById('cdImageUpload');
-    const cropModal = document.getElementById('cropModal');
-    const cropTarget = document.getElementById('cropTarget');
+    function closeCdAvatarModal() {
+        cdAvatarModal.style.display = 'none';
+        if (cropper) { cropper.destroy(); cropper = null; }
+        imageInput.value = '';
+    }
+    
+    function selectCdPreset(icon) {
+        document.getElementById('cdIconVal').value = icon;
+        document.getElementById('cdEmojiFallback').innerText = icon;
+        setPreviewImage(null);
+        croppedImageData = null;
+        closeCdAvatarModal();
+    }
 
-    imageInput.addEventListener('change', function(e) {
+    function handleCdImageSelect(e) {
         if (e.target.files && e.target.files[0]) {
             const reader = new FileReader();
             reader.onload = function(evt) {
                 cropTarget.src = evt.target.result;
-                cropModal.style.display = 'flex';
+                selectionView.style.display = 'none';
+                cropView.style.display = 'block';
                 
                 if (cropper) { cropper.destroy(); }
-                cropper = new Cropper(cropTarget, {
-                    aspectRatio: 1,
-                    viewMode: 1,
-                    dragMode: 'move',
-                    autoCropArea: 0.9,
-                    restore: false,
-                    guides: true,
-                    center: true,
-                    highlight: false,
-                    cropBoxMovable: true,
-                    cropBoxResizable: true,
-                    toggleDragModeOnDblclick: false,
-                    minCropBoxWidth: 150,
-                    minCropBoxHeight: 150
-                });
+                
+                cropTarget.onload = function() {
+                    cropper = new Cropper(cropTarget, {
+                        aspectRatio: 1,
+                        viewMode: 1,
+                        dragMode: 'move',
+                        autoCropArea: 0.9,
+                        restore: false,
+                        guides: true,
+                        center: true,
+                        highlight: false,
+                        cropBoxMovable: true,
+                        cropBoxResizable: true,
+                        toggleDragModeOnDblclick: false,
+                        minCropBoxWidth: 150,
+                        minCropBoxHeight: 150
+                    });
+                };
             }
             reader.readAsDataURL(e.target.files[0]);
         }
-    });
-
-    function closeCropModal() {
-        if (cropper) { cropper.destroy(); cropper = null; }
-        cropModal.style.display = 'none';
-        imageInput.value = ''; // clear input so user can select same image again if needed
     }
 
-    function applyCrop() {
+    function cancelCdCrop() {
+        selectionView.style.display = 'block';
+        cropView.style.display = 'none';
+        imageInput.value = ''; 
+        if (cropper) { cropper.destroy(); cropper = null; }
+    }
+
+    function applyCdCrop() {
         if (!cropper) return;
-        const canvas = cropper.getCroppedCanvas({ width: 300, height: 300 });
-        croppedImageData = canvas.toDataURL('image/jpeg', 0.85);
+        const canvas = cropper.getCroppedCanvas({ 
+            width: 400, height: 400,
+            imageSmoothingEnabled: true,
+            imageSmoothingQuality: 'high'
+        });
+        croppedImageData = canvas.toDataURL('image/jpeg', 0.9);
         setPreviewImage(croppedImageData);
-        closeCropModal();
+        
+        // Ensure emoji fallback is hidden but its value remains intact for db fallback
+        closeCdAvatarModal();
     }
     // ---------------------
 
