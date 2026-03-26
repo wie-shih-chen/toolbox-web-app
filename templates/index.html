@@ -6,21 +6,43 @@
 {% block content %}
 
 {% if pinned_countdowns %}
-<div class="pinned-cd-section" style="margin-bottom: 24px;">
-    <h3 style="font-size: 1.1rem; margin-bottom: 12px; color: var(--text-primary); display: flex; align-items: center; gap: 8px;">
-        <span class="material-icons" style="font-size: 18px; color: #FFD60A;">push_pin</span> 釘選的期待與回憶
-    </h3>
-    <div style="display: flex; gap: 12px; overflow-x: auto; padding-bottom: 8px; -webkit-overflow-scrolling: touch;">
-        {% for item in pinned_countdowns %}
-        <div class="glass" style="flex: 0 0 auto; width: 140px; border-radius: 16px; padding: 12px; text-align: center; border: 1px solid rgba(255,255,255,0.1); 
-             background: {% if item.is_anniversary %}rgba(48,209,88,0.06){% else %}rgba(10,132,255,0.06){% endif %};">
-            <div style="font-size: 2rem; margin-bottom: 4px;">{{ item.icon }}</div>
-            <div style="font-size: 0.85rem; font-weight: 500; margin-bottom: 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{ item.title }}</div>
-            <div style="font-size: 0.8rem; color: var(--text-secondary);">{{ item.display_text.replace(item.days_diff|string, "").strip() }}</div>
-            <div style="font-size: 1.5rem; font-weight: 700; color: {% if item.is_anniversary %}#30D158{% else %}#5EADFF{% endif %};">{{ item.days_diff }}天</div>
+<div class="pinned-widgets-container" style="margin-bottom: 24px;">
+    {% for item in pinned_countdowns %}
+    <!-- Aesthetic VIP Widget -->
+    <a href="{{ url_for('countdown.index') }}" style="text-decoration: none; display: block; touch-action: manipulation;">
+    <div style="position: relative; border-radius: 28px; overflow: hidden; padding: 20px; color: white; margin-bottom: 16px;
+                background: linear-gradient(135deg, {% if item.is_anniversary %}#ff758c 0%, #ff7eb3 100%{% else %}#11998e 0%, #38ef7d 100%{% endif %});
+                box-shadow: 0 10px 30px rgba(0,0,0,0.15);">
+        
+        <!-- Blurred circles for aesthetic background -->
+        <div style="position: absolute; top: -20px; right: -20px; width: 150px; height: 150px; border-radius: 50%; background: rgba(255,255,255,0.15); filter: blur(20px);"></div>
+        <div style="position: absolute; bottom: -30px; left: -20px; width: 100px; height: 100px; border-radius: 50%; background: rgba(0,0,0,0.15); filter: blur(15px);"></div>
+
+        <div style="display: flex; align-items: center; gap: 16px; position: relative; z-index: 1;">
+            
+            <!-- Left Avatar / Icon -->
+            <div style="width: 80px; height: 80px; border-radius: 50%; background: rgba(255,255,255,0.2); 
+                        border: 2px solid rgba(255,255,255,0.5); display: flex; align-items: center; justify-content: center; font-size: 2.5rem; flex-shrink: 0; backdrop-filter: blur(5px); box-shadow: 0 4px 15px rgba(0,0,0,0.1);">
+                {{ item.icon }}
+            </div>
+
+            <!-- Right Content -->
+            <div style="flex: 1; display: flex; flex-direction: column; justify-content: center; text-shadow: 0 2px 4px rgba(0,0,0,0.2);">
+                <div style="font-size: 1rem; font-weight: 500; opacity: 0.9; margin-bottom: -2px;">{{ item.title }}</div>
+                
+                <div style="display: flex; align-items: baseline; gap: 4px; margin-bottom: 2px;">
+                    <span style="font-size: 2.5rem; font-weight: 700; line-height: 1.1;">{{ item.days_diff }}</span>
+                    <span style="font-size: 0.9rem; opacity: 0.9;">天</span>
+                </div>
+                
+                <div style="font-size: 0.8rem; opacity: 0.85; letter-spacing: 0.5px;">
+                    目標：{{ item.target_date }}
+                </div>
+            </div>
         </div>
-        {% endfor %}
     </div>
+    </a>
+    {% endfor %}
 </div>
 {% endif %}
 
@@ -63,6 +85,17 @@
         <div class="widget-content">
             <h3>影音下載器</h3>
             <p>快速下載網路影音檔案</p>
+        </div>
+    </a>
+
+    <!-- Countdown Widget -->
+    <a href="{{ url_for('countdown.index') }}" class="tool-card glass widget-medium">
+        <div class="widget-icon" style="background: linear-gradient(135deg, #FF2A6D 0%, #D1025B 100%);">
+            <span class="material-icons">hourglass_empty</span>
+        </div>
+        <div class="widget-content">
+            <h3>倒數與紀念日</h3>
+            <p>重要日子提醒</p>
         </div>
     </a>
 
