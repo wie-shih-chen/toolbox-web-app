@@ -451,7 +451,7 @@
             <div style="font-size: 1rem; color: var(--text-secondary); margin-bottom: 12px; font-weight: 500;">或上傳圖片</div>
             <input type="file" id="cdImageUpload" accept="image/*" style="display: none;" onchange="handleCdImageSelect(event)">
             <button type="button" onclick="document.getElementById('cdImageUpload').click()" class="btn"
-                style="width: 100%; font-size: 1.05rem; padding: 12px; margin-bottom: 16px; background: #2dd4bf; color: #0f172a; border: none; font-weight: 600;">
+                style="width: 100%; font-size: 1.05rem; padding: 12px; margin-bottom: 16px; background: #2dd4bf; color: #0f172a; border: none; font-weight: 600; border-radius: 12px; box-shadow: 0 0 15px rgba(45, 212, 191, 0.3), 0 4px 6px rgba(0, 0, 0, 0.1);">
                 📂 選擇檔案
             </button>
 
@@ -462,7 +462,7 @@
         <!-- CROP VIEW -->
         <div id="cdAvatarCropView" style="display: none;">
             <div style="margin-bottom: 16px; color: var(--text-secondary); font-size: 1rem; text-align: center; font-weight: 500;">
-                調整相片大小與位置
+                調整照片位置
             </div>
             <div style="position: relative; width: 100%; max-width: 450px; margin: 0 auto 16px; max-height: 50vh;">
                 <img id="cdCropTarget" src="" style="max-width: 100%; display: block;">
@@ -470,9 +470,9 @@
             
             <div style="display: flex; gap: 8px; margin-top: 16px; justify-content: center;">
                 <button type="button" onclick="cancelCdCrop()" class="btn"
-                    style="flex: 1; background: rgba(239, 68, 68, 0.15); border: 1px solid rgba(239, 68, 68, 0.3); color: #fca5a5; padding: 12px; font-size: 1rem; font-weight: 500;">取消</button>
+                    style="flex: 1; background: rgba(239, 68, 68, 0.15); border: 1px solid rgba(239, 68, 68, 0.3); color: #fca5a5; padding: 12px; font-size: 1rem; font-weight: 500; border-radius: 12px; transition: all 0.2s;">取消</button>
                 <button type="button" onclick="applyCdCrop()" class="btn"
-                    style="flex: 1; padding: 12px; font-size: 1rem; background: #2dd4bf; color: #0f172a; font-weight: 600;">確認裁剪</button>
+                    style="flex: 1; padding: 12px; font-size: 1rem; background: #2dd4bf; color: #0f172a; font-weight: 600; border: none; border-radius: 12px; box-shadow: 0 0 15px rgba(45, 212, 191, 0.3), 0 4px 6px rgba(0, 0, 0, 0.1); transition: all 0.3s;">確認上傳</button>
             </div>
         </div>
     </div>
