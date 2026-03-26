@@ -26,7 +26,8 @@ web_app/
 │   ├── auth.py                     # 認證相關 (登入/註冊/個人設定頁)
 │   ├── main_routes.py              # 首頁與通用路由
 │   ├── expense_routes.py           # 💰 記帳模組路由
-│   ├── salary_routes.py            # 💼 薪資模組路由
+│   ├── salary_routes.py            # 💼 薪薪資模組路由
+│   ├── countdown_routes.py         # ⏳ 倒數與紀念日路由
 │   ├── ntut_routes.py              # 🏫 整合行事曆路由 (多來源 ICS 管理 API)
 │   ├── reminder_routes.py          # 🔔 提醒事項路由
 │   ├── download_routes.py          # 📥 影音下載器路由
@@ -37,6 +38,7 @@ web_app/
 │   ├── data_service.py             # 通用資料處理
 │   ├── expense_service.py          # 記帳邏輯 (CRUD, 統計, 週期計算)
 │   ├── salary_service.py           # 薪資計算與排班邏輯 (自動偵測國定假日工資加倍)
+│   ├── countdown_service.py        # ⏳ 倒數邏輯 (天數計算、圖片 Base64 處理與儲存)
 │   ├── tw_holidays.py              # 國定假日服務 (Google ICS 圖 + 勞基法白名單過濾)
 │   ├── reminder_service.py         # 提醒排程與通知發送
 │   ├── calendar_notify_service.py  # 🗋 行事曆 ICS 每日前一天通知 (APScheduler)
@@ -70,6 +72,9 @@ web_app/
 │   │
 │   ├── reminders/                  # 🔔 提醒事項模組
 │   │   └── index.html              # 提醒列表與設定
+│   │
+│   ├── countdown/                  # ⏳ 倒數與紀念日模組
+│   │   └── index.html              # 倒數列表與專屬自訂相片裁切設定
 │   │
 │   ├── ntut/                       # 🏫 整合行事曆模組
 │   │   └── calendar.html           # 行事曆 (FullCalendar 多來源 ICS)
@@ -110,7 +115,8 @@ web_app/
 │       ├── migrate_line_bot_v5.py       # 新增 LINE Bot 綁定相關欄位
 │       ├── migrate_calendar_notify_log.py # 建立 CalendarNotificationLog 資料表
 │       ├── migrate_calendar_settings.py  # 新增行事曆通知設定欄位
-│       └── migrate_holiday_pay.py        # 补算舊排班國定假日工資加倍 (--apply 實際寫入)
+│       ├── migrate_holiday_pay.py        # 补算舊排班國定假日工資加倍 (--apply 實際寫入)
+│       └── migrate_countdown_v2.py       # 新增倒數圖片欄位及 sqlite 遷移
 │
 └── 📦 其他資料檔案
     ├── expense_data.json           # 舊版記帳資料 (已遷移至 DB)
@@ -155,6 +161,10 @@ web_app/
 ├── 🩸 生理期追蹤器 (/period)
 │   ├── 儀表板與預測 (dashboard) — FullCalendar月曆、下次經期/易孕期/排卵日預測
 │   └── ⚙️ 設定 (settings) — 自訂平均週期天數、平均經期長度
+│
+├── ⏳ 倒數與紀念日 (/countdown)
+│   ├── 儀表板 (index) — 顯示所有倒數事件卡片，支援自訂頭像上傳、縮放裁切及點擊圖片預覽
+│   └── 釘選功能 — 將重要事件釘選顯示於首頁獨立區塊上方
 │
 ├── 📅 整合行事曆 (/ntut/calendar)
 │   ├── 多來源日曆管理 (側邊欄顯示清單)
@@ -282,6 +292,17 @@ web_app/
 │   ├── note (Text)
 │   └── created_at (DateTime)
 │
+├── Countdown (倒數與紀念日事件 - One-to-Many with User)
+│   ├── id (PK)
+│   ├── user_id (FK → User)
+│   ├── title (String)
+│   ├── target_date (Date)
+│   ├── is_anniversary (Boolean)
+│   ├── is_pinned (Boolean)
+│   ├── icon (String)               # 預設 Emoji
+│   ├── image_path (String)         # 自訂上傳相片路徑 (支援裁切)
+│   └── created_at (DateTime)
+│
 ├── UserCalendar (使用者 ICS 來源 - One-to-Many with User)
 │   ├── id (PK)
 │   ├── user_id (FK → User)
@@ -347,6 +368,13 @@ web_app/
 ├── GET  /api/history/periods           # 帳務週期清單 (依 billing_cycle_start_day 對齊)
 ├── GET  /api/history/data?start_date=&end_date=  # 指定區間歷史資料
 └── GET  /api/income-trend              # 全歷史月收入趨勢圖資料
+
+/countdown/api/ (倒數與紀念日 API)
+├── GET  /countdowns                    # 查詢所有事件
+├── POST /countdowns                    # 新增事件 (含自訂圖片 Base64 上傳、儲存與裁切處理)
+├── PUT  /countdowns/<id>               # 更新事件 (含圖片替換與刪除)
+├── DELETE /countdowns/<id>             # 刪除事件 (自動清除實體圖片檔案)
+└── POST /countdowns/<id>/pin           # 切換首頁釘選狀態
 
 /reminders/api/ (提醒事項 API)
 ├── GET  /reminders                     # 查詢所有提醒
