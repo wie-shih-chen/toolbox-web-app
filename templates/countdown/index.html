@@ -142,6 +142,11 @@
 
     /* Cropper CSS */
     @import url("https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.1/cropper.min.css");
+    
+    /* Circular Cropper Style matching Avatar settings */
+    .cropper-view-box, .cropper-face { border-radius: 50%; }
+    .cropper-crop-box { border-radius: 50%; }
+    .cropper-view-box { outline: 0; box-shadow: 0 0 0 1px #39f; }
 
     .empty-state {
         text-align: center;
@@ -526,13 +531,16 @@
                     aspectRatio: 1,
                     viewMode: 1,
                     dragMode: 'move',
-                    autoCropArea: 1,
+                    autoCropArea: 0.9,
                     restore: false,
-                    guides: false,
+                    guides: true,
+                    center: true,
                     highlight: false,
-                    cropBoxMovable: false,
-                    cropBoxResizable: false,
+                    cropBoxMovable: true,
+                    cropBoxResizable: true,
                     toggleDragModeOnDblclick: false,
+                    minCropBoxWidth: 150,
+                    minCropBoxHeight: 150
                 });
             }
             reader.readAsDataURL(e.target.files[0]);
