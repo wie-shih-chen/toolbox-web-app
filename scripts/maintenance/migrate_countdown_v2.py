@@ -9,9 +9,14 @@ from models import Countdown
 
 def migrate_v2():
     """Adds image_path column to Countdown table"""
-    db_path = os.path.join(app.root_path, 'instance', 'toolbox.db')
-    
-    # Let's use raw SQL since SQLite alter table is easiest this way
+    db_uri = app.config.get('SQLALCHEMY_DATABASE_URI', '')
+    if db_uri.startswith('sqlite:///'):
+        db_path = db_uri.replace('sqlite:///', '')
+    else:
+        print(f"❌ Unsupported DB URI for raw SQLite script: {db_uri}")
+        return
+        
+    print(f"Using database: {db_path}")
     try:
         conn = sqlite3.connect(db_path)
         cursor = conn.cursor()
