@@ -188,5 +188,6 @@ class Countdown(db.Model):
     target_date = db.Column(db.String(10), nullable=False)  # YYYY-MM-DD
     is_anniversary = db.Column(db.Boolean, default=False)
     icon = db.Column(db.String(10), default='📅')
+    image_path = db.Column(db.String(255), nullable=True) # For custom uploaded photos
     pinned = db.Column(db.Boolean, default=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)

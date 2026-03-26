@@ -140,11 +140,66 @@
         outline: none;
     }
 
+    /* Cropper CSS */
+    @import url("https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.1/cropper.min.css");
+
     .empty-state {
         text-align: center;
         color: var(--text-secondary);
         padding: 40px 20px;
         grid-column: 1 / -1;
+    }
+
+    .cd-avatar-picker {
+        width: 80px;
+        height: 80px;
+        border-radius: 50%;
+        background: rgba(255,255,255,0.05);
+        border: 2px dashed rgba(255,255,255,0.2);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        position: relative;
+        overflow: hidden;
+        flex-shrink: 0;
+    }
+    .cd-avatar-picker:hover {
+        border-color: var(--accent-blue);
+    }
+    .cd-avatar-preview {
+        position: absolute;
+        top: 0; left: 0; width: 100%; height: 100%;
+        object-fit: cover;
+        z-index: 2;
+        background: black;
+    }
+    .cd-avatar-emoji {
+        position: absolute;
+        z-index: 1;
+        font-size: 2rem;
+    }
+    .cd-badge-cam {
+        position: absolute;
+        bottom: 0;
+        right: 0;
+        background: var(--accent-blue);
+        color: white;
+        border-radius: 50%;
+        width: 24px;
+        height: 24px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 3;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+    }
+
+    .cropper-container {
+        width: 100%;
+        max-height: 350px;
+        margin-bottom: 20px;
+        background: #000;
     }
 
     /* Form Layout Fixes */
@@ -270,7 +325,13 @@
             </button>
         </div>
 
-        <div class="cd-icon">{{ item.icon }}</div>
+        <div class="cd-icon">
+            {% if item.image_path %}
+            <img src="{{ url_for('static', filename=item.image_path) }}" style="width: 100px; height: 100px; border-radius: 50%; object-fit: cover; border: 3px solid rgba(255,255,255,0.3);">
+            {% else %}
+            {{ item.icon }}
+            {% endif %}
+        </div>
         <div class="cd-title">{{ item.title }}</div>
         <div class="cd-date">{{ item.target_date }}</div>
         
@@ -298,15 +359,27 @@
             <form id="cdForm">
                 <input type="hidden" id="cdId">
                 
-                <div style="display: flex; gap: 12px; margin-bottom: 20px;">
-                    <div style="width: 80px; flex-shrink: 0;">
-                        <label class="cd-form-label">圖示</label>
-                        <input type="text" id="cdIcon" class="cd-input" style="text-align: center; font-size: 1.5rem; padding: 8px;" value="🎂" maxlength="2" required>
+                <div style="display: flex; gap: 16px; margin-bottom: 20px; align-items: center;">
+                    <div style="position: relative;">
+                        <input type="file" id="cdImageUpload" accept="image/*" style="display: none;">
+                        <div class="cd-avatar-picker" onclick="document.getElementById('cdImageUpload').click()">
+                            <img id="cdPreviewImg" class="cd-avatar-preview" style="display:none;">
+                            <span id="cdEmojiFallback" class="cd-avatar-emoji">🎂</span>
+                            <div class="cd-badge-cam">
+                                <span class="material-icons" style="font-size: 14px;">photo_camera</span>
+                            </div>
+                        </div>
                     </div>
                     <div style="flex: 1;">
                         <label class="cd-form-label">名稱 (如: 女友生日)</label>
                         <input type="text" class="cd-input" id="cdTitle" required placeholder="例如：日本旅行">
                     </div>
+                </div>
+
+                <div style="display: flex; justify-content: flex-end; margin-top: -12px; margin-bottom: 20px;">
+                    <button type="button" class="btn btn-sm btn-secondary" onclick="clearImageAndUseEmoji()" style="font-size: 0.8rem; padding: 4px 8px; border-radius: 8px;">清除照片並換回 Emoji</button>
+                    <!-- Hidden input to store chosen emoji if user clears photo -->
+                    <input type="hidden" id="cdIconVal" value="🎂">
                 </div>
 
                 <div style="margin-bottom: 20px;">
@@ -346,13 +419,35 @@
             </form>
         </div>
     </div>
+<!-- Add/Edit Modal (End) -->
+
+<!-- Crop Modal -->
+<div class="modal" id="cropModal" style="display: none; z-index: 2000;">
+    <div class="modal-content glass" style="max-width: 400px; width: 90%; padding: 24px;">
+        <div class="cd-modal-header">
+            <h3>裁剪相片</h3>
+            <button type="button" class="cd-close-btn" onclick="closeCropModal()">
+                <span class="material-icons" style="font-size: 20px;">close</span>
+            </button>
+        </div>
+        <div class="cropper-container">
+            <img id="cropTarget" src="" style="max-width: 100%;">
+        </div>
+        <button type="button" class="btn btn-primary w-100" style="padding: 12px; border-radius: 12px; background-color: var(--accent-blue);" onclick="applyCrop()">確定裁剪</button>
+    </div>
 </div>
+
 {% endblock %}
 
 {% block extra_js %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.1/cropper.min.js"></script>
 <script>
     const modal = document.getElementById('cdModal');
     const form = document.getElementById('cdForm');
+    
+    // Cropper State
+    let cropper = null;
+    let croppedImageData = null; // store base64 data here when cropped
     
     // Default date to today
     document.getElementById('cdTargetDate').valueAsDate = new Date();
@@ -361,7 +456,12 @@
         document.getElementById('cdModalTitle').innerText = '新增事件';
         document.getElementById('cdId').value = '';
         form.reset();
-        document.getElementById('cdIcon').value = '📅';
+        
+        document.getElementById('cdIconVal').value = '📅';
+        document.getElementById('cdEmojiFallback').innerText = '📅';
+        setPreviewImage(null);
+        croppedImageData = null;
+
         document.getElementById('cdTargetDate').valueAsDate = new Date();
         document.getElementById('btnDeleteCd').style.display = 'none';
         modal.style.display = 'flex';
@@ -371,13 +471,88 @@
         document.getElementById('cdModalTitle').innerText = '編輯事件';
         document.getElementById('cdId').value = item.id;
         document.getElementById('cdTitle').value = item.title;
-        document.getElementById('cdIcon').value = item.icon;
+        
+        document.getElementById('cdIconVal').value = item.icon || '📅';
+        document.getElementById('cdEmojiFallback').innerText = item.icon || '📅';
+        setPreviewImage(item.image_path ? `/static/${item.image_path}` : null);
+        croppedImageData = null;
+
         document.getElementById('cdTargetDate').value = item.target_date;
         document.querySelector(`input[name="cdIsAnniversary"][value="${item.is_anniversary}"]`).checked = true;
         document.getElementById('cdPinned').checked = item.pinned;
         document.getElementById('btnDeleteCd').style.display = 'block';
         modal.style.display = 'flex';
     }
+
+    function setPreviewImage(src) {
+        const preview = document.getElementById('cdPreviewImg');
+        const fallback = document.getElementById('cdEmojiFallback');
+        if (src) {
+            preview.src = src;
+            preview.style.display = 'block';
+            fallback.style.display = 'none';
+        } else {
+            preview.src = '';
+            preview.style.display = 'none';
+            fallback.style.display = 'block';
+        }
+    }
+
+    function clearImageAndUseEmoji() {
+        const emoji = prompt("請輸入一個 Emoji (例如: 🎂, ❤️, 🏖️)", document.getElementById('cdIconVal').value);
+        if (emoji && emoji.trim() !== '') {
+            document.getElementById('cdIconVal').value = emoji.trim().substring(0, 2);
+            document.getElementById('cdEmojiFallback').innerText = emoji.trim().substring(0, 2);
+            setPreviewImage(null);
+            croppedImageData = null;
+            document.getElementById('cdImageUpload').value = ''; // clear input
+        }
+    }
+
+    // --- Cropper Logic ---
+    const imageInput = document.getElementById('cdImageUpload');
+    const cropModal = document.getElementById('cropModal');
+    const cropTarget = document.getElementById('cropTarget');
+
+    imageInput.addEventListener('change', function(e) {
+        if (e.target.files && e.target.files[0]) {
+            const reader = new FileReader();
+            reader.onload = function(evt) {
+                cropTarget.src = evt.target.result;
+                cropModal.style.display = 'flex';
+                
+                if (cropper) { cropper.destroy(); }
+                cropper = new Cropper(cropTarget, {
+                    aspectRatio: 1,
+                    viewMode: 1,
+                    dragMode: 'move',
+                    autoCropArea: 1,
+                    restore: false,
+                    guides: false,
+                    highlight: false,
+                    cropBoxMovable: false,
+                    cropBoxResizable: false,
+                    toggleDragModeOnDblclick: false,
+                });
+            }
+            reader.readAsDataURL(e.target.files[0]);
+        }
+    });
+
+    function closeCropModal() {
+        if (cropper) { cropper.destroy(); cropper = null; }
+        cropModal.style.display = 'none';
+        imageInput.value = ''; // clear input so user can select same image again if needed
+    }
+
+    function applyCrop() {
+        if (!cropper) return;
+        const canvas = cropper.getCroppedCanvas({ width: 300, height: 300 });
+        croppedImageData = canvas.toDataURL('image/jpeg', 0.85);
+        setPreviewImage(croppedImageData);
+        closeCropModal();
+    }
+    // ---------------------
 
     function closeCdModal() {
         modal.style.display = 'none';
@@ -393,11 +568,22 @@
         const id = document.getElementById('cdId').value;
         const data = {
             title: document.getElementById('cdTitle').value,
-            icon: document.getElementById('cdIcon').value,
+            icon: document.getElementById('cdIconVal').value,
             target_date: document.getElementById('cdTargetDate').value,
             is_anniversary: document.querySelector('input[name="cdIsAnniversary"]:checked').value === 'true',
             pinned: document.getElementById('cdPinned').checked
         };
+        
+        // Include base64 image if a new image was cropped.
+        // If they cleared the image, we can send a special flag or just handle it if image data is absent plus checking old vs new.
+        // Actually, if croppedImageData is null, but they used the "clear" button, the server needs to know to remove it.
+        // We can pass `image_data: croppedImageData` if they cropped a new one.
+        // If they cleared it, we send `clear_image: true`.
+        if (croppedImageData) {
+            data.image_data = croppedImageData;
+        } else if (document.getElementById('cdPreviewImg').style.display === 'none') {
+            data.clear_image = true;
+        }
 
         const url = id ? `/countdown/api/events/${id}` : '/countdown/api/events';
         const method = id ? 'PUT' : 'POST';
