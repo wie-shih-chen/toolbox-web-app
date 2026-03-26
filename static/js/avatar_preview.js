@@ -28,12 +28,27 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 });
 
-window.openAvatarPreview = function () {
+window.openAvatarPreview = function (customImgSrc = null, customEmoji = null) {
     const modal = document.getElementById('avatarPreviewModal');
     if (!modal) return;
 
     const previewImg = document.getElementById('avatarPreviewImage');
     const previewEmoji = document.getElementById('avatarPreviewEmoji');
+
+    // If explicit sources are provided (e.g. from countdown items)
+    if (customImgSrc) {
+        previewImg.src = customImgSrc;
+        previewImg.style.display = 'block';
+        previewEmoji.style.display = 'none';
+        modal.style.display = 'flex';
+        return;
+    } else if (customEmoji) {
+        previewEmoji.textContent = customEmoji;
+        previewEmoji.style.display = 'flex';
+        previewImg.style.display = 'none';
+        modal.style.display = 'flex';
+        return;
+    }
 
     // Get avatar data from settings avatar (priority) or nav-avatar
     const settingsAvatar = document.getElementById('settingsAvatar');

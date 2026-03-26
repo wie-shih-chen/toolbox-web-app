@@ -21,8 +21,9 @@
         <div style="display: flex; align-items: center; gap: 16px; position: relative; z-index: 1;">
             
             <!-- Left Avatar / Icon -->
-            <div style="width: 80px; height: 80px; border-radius: 50%; background: rgba(255,255,255,0.2); 
-                        border: 2px solid rgba(255,255,255,0.5); display: flex; align-items: center; justify-content: center; font-size: 2.5rem; flex-shrink: 0; backdrop-filter: blur(5px); box-shadow: 0 4px 15px rgba(0,0,0,0.1); overflow: hidden;">
+            <div onclick="event.preventDefault(); window.openAvatarPreview({% if item.image_path %}'{{ url_for('static', filename=item.image_path) }}', null{% else %}null, '{{ item.icon }}'{% endif %})"
+                 style="width: 80px; height: 80px; border-radius: 50%; background: rgba(255,255,255,0.2); 
+                        border: 2px solid rgba(255,255,255,0.5); display: flex; align-items: center; justify-content: center; font-size: 2.5rem; flex-shrink: 0; backdrop-filter: blur(5px); box-shadow: 0 4px 15px rgba(0,0,0,0.1); overflow: hidden; cursor: zoom-in;">
                 {% if item.image_path %}
                 <img src="{{ url_for('static', filename=item.image_path) }}" style="width: 100%; height: 100%; object-fit: cover;">
                 {% else %}
