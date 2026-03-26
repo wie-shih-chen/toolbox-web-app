@@ -179,3 +179,14 @@ class CalendarNotificationLog(db.Model):
     # The date this notification was sent (= day before event)
     sent_date = db.Column(db.String(10), nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+class Countdown(db.Model):
+    """Countdown and Anniversary events."""
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    title = db.Column(db.String(100), nullable=False)
+    target_date = db.Column(db.String(10), nullable=False)  # YYYY-MM-DD
+    is_anniversary = db.Column(db.Boolean, default=False)
+    icon = db.Column(db.String(10), default='📅')
+    pinned = db.Column(db.Boolean, default=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)

@@ -57,6 +57,9 @@ with app.app_context():
     from routes.period_routes import period_bp
     app.register_blueprint(period_bp)
 
+    from routes.countdown_routes import countdown_bp
+    app.register_blueprint(countdown_bp)
+
     # Initialize Scheduler
     try:
         from flask_apscheduler import APScheduler

@@ -1,0 +1,351 @@
+{% extends "base.html" %}
+
+{% block title %}倒數與紀念日{% endblock %}
+{% block page_title %}⏳ 倒數與紀念日{% endblock %}
+
+{% block extra_css %}
+<style>
+    .cd-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+    }
+
+    .btn-add-cd {
+        background: var(--accent-blue);
+        color: white;
+        border: none;
+        border-radius: 20px;
+        padding: 8px 16px;
+        font-weight: 600;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        cursor: pointer;
+        transition: transform 0.2s;
+    }
+    .btn-add-cd:active { transform: scale(0.96); }
+
+    .cd-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+        gap: 16px;
+        padding-bottom: 80px; /* Mobile safe area */
+    }
+
+    .cd-card {
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 20px;
+        padding: 16px;
+        position: relative;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+        backdrop-filter: blur(10px);
+        transition: transform 0.2s;
+    }
+    .cd-card:active { transform: scale(0.98); }
+
+    .cd-card.anniversary {
+        background: rgba(48, 209, 88, 0.06);
+        border-color: rgba(48, 209, 88, 0.2);
+    }
+    
+    .cd-card.countdown {
+        background: rgba(10, 132, 255, 0.06);
+        border-color: rgba(10, 132, 255, 0.2);
+    }
+
+    .cd-icon {
+        font-size: 2.5rem;
+        margin-bottom: 8px;
+        filter: drop-shadow(0 2px 4px rgba(0,0,0,0.2));
+    }
+
+    .cd-title {
+        font-size: 0.95rem;
+        font-weight: 600;
+        color: #fff;
+        margin-bottom: 4px;
+        line-height: 1.3;
+        word-break: break-all;
+    }
+
+    .cd-date {
+        font-size: 0.8rem;
+        color: var(--text-secondary);
+        margin-bottom: 12px;
+    }
+
+    .cd-days-label {
+        font-size: 0.85rem;
+        color: var(--text-secondary);
+        margin-bottom: -4px;
+    }
+
+    .cd-days-value {
+        font-size: 2rem;
+        font-weight: 700;
+        color: #fff;
+        letter-spacing: 1px;
+    }
+    
+    .cd-card.countdown .cd-days-value { color: #5EADFF; }
+    .cd-card.anniversary .cd-days-value { color: #30D158; }
+
+    .cd-actions {
+        position: absolute;
+        top: 8px;
+        right: 8px;
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+    }
+
+    .btn-icon {
+        background: none;
+        border: none;
+        color: rgba(255,255,255,0.4);
+        padding: 4px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 50%;
+        transition: 0.2s;
+    }
+    .btn-icon:hover, .btn-icon:active {
+        background: rgba(255,255,255,0.1);
+        color: #fff;
+    }
+    .btn-icon.pinned { color: #FFD60A; opacity: 1; }
+
+    /* Modal Tweaks */
+    .btn-emoji-select {
+        background: rgba(255,255,255,0.05);
+        border: 1px solid rgba(255,255,255,0.1);
+        border-radius: 12px;
+        font-size: 1.5rem;
+        padding: 8px;
+        cursor: text;
+        width: 100%;
+        text-align: center;
+        color: #fff;
+    }
+    .btn-emoji-select:focus {
+        border-color: var(--accent-blue);
+        outline: none;
+    }
+
+    .empty-state {
+        text-align: center;
+        color: var(--text-secondary);
+        padding: 40px 20px;
+        grid-column: 1 / -1;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="cd-header">
+    <div style="color: var(--text-secondary); font-size: 0.95rem;">
+        管理未來的期待與過去的回憶
+    </div>
+    <button class="btn-add-cd" onclick="openCdModal()">
+        <span class="material-icons" style="font-size: 18px;">add</span> 新增
+    </button>
+</div>
+
+<div class="cd-grid" id="cdGrid">
+    {% for item in items %}
+    <div class="cd-card {% if item.is_anniversary %}anniversary{% else %}countdown{% endif %}" data-id="{{ item.id }}">
+        
+        <div class="cd-actions">
+            <button class="btn-icon {% if item.pinned %}pinned{% endif %}" onclick="togglePin({{ item.id }})" title="釘選到首頁">
+                <span class="material-icons" style="font-size: 18px;">{% if item.pinned %}push_pin{% else %}push_pin{% endif %}</span>
+            </button>
+            <button class="btn-icon" onclick='openEditModal({{ item | tojson | safe }})' title="編輯/刪除">
+                <span class="material-icons" style="font-size: 18px;">more_vert</span>
+            </button>
+        </div>
+
+        <div class="cd-icon">{{ item.icon }}</div>
+        <div class="cd-title">{{ item.title }}</div>
+        <div class="cd-date">{{ item.target_date }}</div>
+        
+        <div class="cd-days-label">{{ item.display_text.replace(item.days_diff|string, "").strip() }}</div>
+        <div class="cd-days-value">{{ item.days_diff }}天</div>
+    </div>
+    {% else %}
+    <div class="empty-state">
+        <span class="material-icons" style="font-size: 48px; margin-bottom: 16px; opacity: 0.5;">hourglass_empty</span>
+        <p>還沒有任何倒數或紀念日，點擊右上角新增吧！</p>
+    </div>
+    {% endfor %}
+</div>
+
+<!-- Add/Edit Modal -->
+<div class="modal" id="cdModal" style="display: none;">
+    <div class="modal-content glass" style="max-width: 400px; width: 100%;">
+        <div class="modal-header">
+            <h3 id="cdModalTitle">新增事件</h3>
+            <button class="close-btn" onclick="closeCdModal()">
+                <span class="material-icons">close</span>
+            </button>
+        </div>
+        <div class="modal-body">
+            <form id="cdForm">
+                <input type="hidden" id="cdId">
+                
+                <div style="display: flex; gap: 12px; margin-bottom: 16px;">
+                    <div style="width: 70px;">
+                        <label class="form-label">圖示</label>
+                        <input type="text" id="cdIcon" class="btn-emoji-select" value="🎂" maxlength="2" required>
+                    </div>
+                    <div style="flex: 1;">
+                        <label class="form-label">名稱 (如: 女友生日)</label>
+                        <input type="text" class="form-control" id="cdTitle" required placeholder="請輸入名稱">
+                    </div>
+                </div>
+
+                <div class="form-group" style="margin-bottom: 16px;">
+                    <label class="form-label">目標日期</label>
+                    <input type="date" class="form-control" id="cdTargetDate" required>
+                </div>
+
+                <div class="form-group" style="margin-bottom: 16px;">
+                    <label class="form-label">類型</label>
+                    <div style="display: flex; gap: 12px;">
+                        <label style="flex: 1; display:flex; align-items:center; gap:8px; background: rgba(255,255,255,0.05); padding:10px; border-radius:12px; border:1px solid rgba(255,255,255,0.1); cursor:pointer;">
+                            <input type="radio" name="cdIsAnniversary" value="false" checked> ⏳ 倒數日
+                        </label>
+                        <label style="flex: 1; display:flex; align-items:center; gap:8px; background: rgba(255,255,255,0.05); padding:10px; border-radius:12px; border:1px solid rgba(255,255,255,0.1); cursor:pointer;">
+                            <input type="radio" name="cdIsAnniversary" value="true"> 💖 紀念日
+                        </label>
+                    </div>
+                    <div class="help-text" style="margin-top: 8px;">
+                        倒數日：距離未來的某天還有多久。<br>
+                        紀念日：從過去的某天到現在過了多久。
+                    </div>
+                </div>
+
+                <div class="form-group" style="margin-bottom: 24px;">
+                    <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                        <input type="checkbox" id="cdPinned"> 📌 同時釘選在首頁顯示
+                    </label>
+                </div>
+
+                <div style="display: flex; gap: 12px;">
+                    <button type="button" class="btn btn-secondary w-100" id="btnDeleteCd" style="display: none;" onclick="deleteCd()">刪除</button>
+                    <button type="submit" class="btn btn-primary w-100">儲存</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    const modal = document.getElementById('cdModal');
+    const form = document.getElementById('cdForm');
+    
+    // Default date to today
+    document.getElementById('cdTargetDate').valueAsDate = new Date();
+
+    function openCdModal() {
+        document.getElementById('cdModalTitle').innerText = '新增事件';
+        document.getElementById('cdId').value = '';
+        form.reset();
+        document.getElementById('cdIcon').value = '📅';
+        document.getElementById('cdTargetDate').valueAsDate = new Date();
+        document.getElementById('btnDeleteCd').style.display = 'none';
+        modal.style.display = 'flex';
+    }
+
+    function openEditModal(item) {
+        document.getElementById('cdModalTitle').innerText = '編輯事件';
+        document.getElementById('cdId').value = item.id;
+        document.getElementById('cdTitle').value = item.title;
+        document.getElementById('cdIcon').value = item.icon;
+        document.getElementById('cdTargetDate').value = item.target_date;
+        document.querySelector(`input[name="cdIsAnniversary"][value="${item.is_anniversary}"]`).checked = true;
+        document.getElementById('cdPinned').checked = item.pinned;
+        document.getElementById('btnDeleteCd').style.display = 'block';
+        modal.style.display = 'flex';
+    }
+
+    function closeCdModal() {
+        modal.style.display = 'none';
+    }
+
+    // click outside to close
+    modal.addEventListener('click', function(e) {
+        if (e.target === this) closeCdModal();
+    });
+
+    form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const id = document.getElementById('cdId').value;
+        const data = {
+            title: document.getElementById('cdTitle').value,
+            icon: document.getElementById('cdIcon').value,
+            target_date: document.getElementById('cdTargetDate').value,
+            is_anniversary: document.querySelector('input[name="cdIsAnniversary"]:checked').value === 'true',
+            pinned: document.getElementById('cdPinned').checked
+        };
+
+        const url = id ? `/countdown/api/events/${id}` : '/countdown/api/events';
+        const method = id ? 'PUT' : 'POST';
+
+        try {
+            const res = await fetch(url, {
+                method: method,
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+            if (res.ok) {
+                window.location.reload();
+            } else {
+                alert('儲存失敗');
+            }
+        } catch (err) {
+            console.error(err);
+            alert('系統錯誤');
+        }
+    });
+
+    async function deleteCd() {
+        const id = document.getElementById('cdId').value;
+        if (!id || !confirm('確定要刪除此事件嗎？')) return;
+
+        try {
+            const res = await fetch(`/countdown/api/events/${id}`, { method: 'DELETE' });
+            if (res.ok) {
+                window.location.reload();
+            } else {
+                alert('刪除失敗');
+            }
+        } catch (err) {
+            console.error(err);
+        }
+    }
+
+    async function togglePin(id) {
+        // Prevent event propagation
+        event.stopPropagation();
+        
+        try {
+            const res = await fetch(`/countdown/api/events/${id}/toggle-pin`, { method: 'POST' });
+            if (res.ok) {
+                window.location.reload();
+            }
+        } catch(err) {
+            console.error(err);
+        }
+    }
+</script>
+{% endblock %}

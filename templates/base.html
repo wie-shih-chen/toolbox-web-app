@@ -69,6 +69,9 @@
                 <a href="{{ url_for('reminder.index') }}" class="nav-link" title="提醒">
                     <span class="material-icons" style="font-size: 20px;">notifications</span>
                 </a>
+                <a href="{{ url_for('countdown.index') }}" class="nav-link" title="倒數與紀念日">
+                    <span class="material-icons" style="font-size: 20px;">hourglass_empty</span>
+                </a>
                 <a href="{{ url_for('auth.settings') }}" class="nav-link" title="設定">
                     <span class="material-icons" style="font-size: 20px;">settings</span>
                 </a>
@@ -142,6 +145,11 @@
                 class="mobile-nav-item {% if 'ntut' in request.endpoint %}active{% endif %}">
                 <span class="material-icons">school</span>
                 <span class="nav-text">日曆</span>
+            </a>
+            <a href="{{ url_for('countdown.index') }}"
+                class="mobile-nav-item {% if 'countdown' in request.endpoint %}active{% endif %}">
+                <span class="material-icons">hourglass_empty</span>
+                <span class="nav-text">倒數日</span>
             </a>
             <a href="{{ url_for('expense.today') }}"
                 class="mobile-nav-item {% if 'expense' in request.endpoint %}active{% endif %}">

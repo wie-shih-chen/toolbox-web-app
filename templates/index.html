@@ -4,6 +4,26 @@
 {% block page_title %}歡迎回來{% endblock %}
 
 {% block content %}
+
+{% if pinned_countdowns %}
+<div class="pinned-cd-section" style="margin-bottom: 24px;">
+    <h3 style="font-size: 1.1rem; margin-bottom: 12px; color: var(--text-primary); display: flex; align-items: center; gap: 8px;">
+        <span class="material-icons" style="font-size: 18px; color: #FFD60A;">push_pin</span> 釘選的期待與回憶
+    </h3>
+    <div style="display: flex; gap: 12px; overflow-x: auto; padding-bottom: 8px; -webkit-overflow-scrolling: touch;">
+        {% for item in pinned_countdowns %}
+        <div class="glass" style="flex: 0 0 auto; width: 140px; border-radius: 16px; padding: 12px; text-align: center; border: 1px solid rgba(255,255,255,0.1); 
+             background: {% if item.is_anniversary %}rgba(48,209,88,0.06){% else %}rgba(10,132,255,0.06){% endif %};">
+            <div style="font-size: 2rem; margin-bottom: 4px;">{{ item.icon }}</div>
+            <div style="font-size: 0.85rem; font-weight: 500; margin-bottom: 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{ item.title }}</div>
+            <div style="font-size: 0.8rem; color: var(--text-secondary);">{{ item.display_text.replace(item.days_diff|string, "").strip() }}</div>
+            <div style="font-size: 1.5rem; font-weight: 700; color: {% if item.is_anniversary %}#30D158{% else %}#5EADFF{% endif %};">{{ item.days_diff }}天</div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
+
 <div class="dashboard-grid ios-widgets">
     <!-- Salary Widget -->
     <a href="{{ url_for('salary.index') }}" class="tool-card glass widget-large">
