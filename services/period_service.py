@@ -132,7 +132,8 @@ class PeriodService:
         """From actual records with both start and end date, calculate average period duration."""
         records = PeriodRecord.query.filter(
             PeriodRecord.user_id == self.user_id,
-            PeriodRecord.end_date.isnot(None)
+            PeriodRecord.end_date.isnot(None),
+            PeriodRecord.end_date != ''
         ).order_by(PeriodRecord.start_date.desc()).limit(6).all()
         
         durations = []
@@ -174,7 +175,7 @@ class PeriodService:
         today_dt = datetime.datetime.strptime(today, '%Y-%m-%d')
         record = PeriodRecord.query.filter(
             PeriodRecord.user_id == self.user_id,
-            PeriodRecord.end_date.is_(None)
+            PeriodRecord.end_date.is_(None) | (PeriodRecord.end_date == '')
         ).order_by(PeriodRecord.start_date.desc()).first()
         if not record:
             return {"success": False, "error": "沒有進行中的紀錄"}
@@ -201,7 +202,7 @@ class PeriodService:
 
         for r in all_records:
             start_dt = datetime.datetime.strptime(r.start_date, '%Y-%m-%d')
-            if r.end_date is None:
+            if not r.end_date:  # None or empty string
                 if start_dt <= today:
                     in_period = True
                     has_open_record = True
