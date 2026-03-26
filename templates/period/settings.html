@@ -107,6 +107,21 @@
         from { opacity: 0; transform: translateY(-10px); }
         to { opacity: 1; transform: translateY(0); }
     }
+    /* Auto-save indicator */
+    .save-status {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 0.82rem;
+        padding: 5px 12px;
+        border-radius: 20px;
+        transition: opacity 0.4s;
+        font-weight: 500;
+    }
+    .save-status.idle   { opacity: 0; }
+    .save-status.saving { opacity: 1; background: rgba(255,255,255,0.08); color: var(--text-secondary); }
+    .save-status.saved  { opacity: 1; background: rgba(48,209,88,0.15); color: #30D158; }
+    .save-status.error  { opacity: 1; background: rgba(255,77,79,0.15); color: #ff4d4f; }
 </style>
 {% endblock %}
 
@@ -123,9 +138,15 @@
         {% endif %}
     {% endwith %}
 
-    <form method="POST" action="{{ url_for('period.period_settings') }}">
+    <form id="settingsForm" method="POST" action="{{ url_for('period.period_settings') }}">
         <div class="settings-card">
-            <h3><span class="material-icons">tune</span> 週期設定</h3>
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+                <h3 style="margin:0;"><span class="material-icons">tune</span> 週期設定</h3>
+                <span id="saveStatus" class="save-status idle">
+                    <span class="material-icons" style="font-size:15px;">check_circle</span>
+                    <span id="saveStatusText">已儲存</span>
+                </span>
+            </div>
             
             <div class="form-group">
                 <label class="form-label" for="avg_period_cycle">平均週期天數 (天)</label>
@@ -146,13 +167,67 @@
             </div>
             
         </div>
-
-        <div style="margin-top: 24px;">
-            <button type="submit" class="btn-save">
-                <span class="material-icons">save</span>
-                儲存設定
-            </button>
-        </div>
     </form>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    let saveTimer = null;
+    const form = document.getElementById('settingsForm');
+    const statusEl = document.getElementById('saveStatus');
+    const statusText = document.getElementById('saveStatusText');
+    const icon = statusEl.querySelector('.material-icons');
+
+    function setStatus(state) {
+        statusEl.className = 'save-status ' + state;
+        if (state === 'saving') {
+            icon.textContent = 'sync';
+            statusText.textContent = '儲存中…';
+        } else if (state === 'saved') {
+            icon.textContent = 'check_circle';
+            statusText.textContent = '已儲存';
+            setTimeout(() => { statusEl.className = 'save-status idle'; }, 2500);
+        } else if (state === 'error') {
+            icon.textContent = 'error';
+            statusText.textContent = '儲存失敗';
+        }
+    }
+
+    async function autoSave() {
+        const cycle = document.getElementById('avg_period_cycle').value;
+        const duration = document.getElementById('avg_period_duration').value;
+        if (!cycle || !duration) return;
+
+        setStatus('saving');
+        try {
+            const fd = new FormData();
+            fd.append('avg_period_cycle', cycle);
+            fd.append('avg_period_duration', duration);
+            const res = await fetch('{{ url_for("period.period_settings") }}', {
+                method: 'POST',
+                body: fd
+            });
+            if (res.ok) {
+                setStatus('saved');
+            } else {
+                setStatus('error');
+            }
+        } catch(e) {
+            setStatus('error');
+        }
+    }
+
+    form.querySelectorAll('input').forEach(input => {
+        input.addEventListener('change', () => {
+            clearTimeout(saveTimer);
+            saveTimer = setTimeout(autoSave, 600);
+        });
+        // Also trigger on manual typing after user stops
+        input.addEventListener('input', () => {
+            clearTimeout(saveTimer);
+            saveTimer = setTimeout(autoSave, 1000);
+        });
+    });
+</script>
 {% endblock %}
