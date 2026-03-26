@@ -14,19 +14,16 @@ def dashboard():
     """Render the main menstrual tracker dashboard with calendar."""
     service = PeriodService(current_user.id)
     settings = service.settings
-    
-    # 預測未來一週期的資訊供上方卡片顯示
     predictions = service.get_predictions(months=1)
     next_prediction = predictions[0] if predictions else None
-    
-    # 取得歷史紀錄列表
     history = service.get_history()
-    
+    status = service.get_status()
     return render_template(
         'period/dashboard.html',
         settings=settings,
         next_prediction=next_prediction,
-        history=history
+        history=history,
+        status=status
     )
 
 @period_bp.route('/api/events', methods=['GET'])
@@ -75,6 +72,26 @@ def delete_record(record_id):
     service = PeriodService(current_user.id)
     result = service.delete_record(record_id)
     return jsonify(result)
+
+@period_bp.route('/api/quick-start', methods=['POST'])
+def quick_start():
+    """One-tap: record today as period start."""
+    service = PeriodService(current_user.id)
+    result = service.quick_start_today()
+    return jsonify(result)
+
+@period_bp.route('/api/quick-end', methods=['POST'])
+def quick_end():
+    """One-tap: set today as end date of the latest open period."""
+    service = PeriodService(current_user.id)
+    result = service.quick_end_today()
+    return jsonify(result)
+
+@period_bp.route('/api/status', methods=['GET'])
+def get_status():
+    """Return current period status."""
+    service = PeriodService(current_user.id)
+    return jsonify(service.get_status())
 
 @period_bp.route('/settings', methods=['GET', 'POST'])
 def period_settings():

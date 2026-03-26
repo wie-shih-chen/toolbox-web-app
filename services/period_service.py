@@ -107,35 +107,130 @@ class PeriodService:
         self.settings.avg_period_cycle = self._calculate_avg_cycle([r.cycle_length for r in records if r.cycle_length])
 
     def _calculate_avg_cycle(self, latest_cycles=None):
-        if latest_cycles is None or len(latest_cycles) == 0:
-            records = PeriodRecord.query.filter(
-                PeriodRecord.user_id == self.user_id,
-                PeriodRecord.cycle_length.isnot(None)
-            ).order_by(PeriodRecord.start_date.desc()).limit(6).all()
-            cycles = [r.cycle_length for r in records]
-        else:
-            # Combine current DB latest 5 with the new ones
-            records = PeriodRecord.query.filter(
-                PeriodRecord.user_id == self.user_id,
-                PeriodRecord.cycle_length.isnot(None)
-            ).order_by(PeriodRecord.start_date.desc()).limit(5).all()
-            cycles = [r.cycle_length for r in records] + latest_cycles
+        """加權平均：最近的週期占更高比重"""
+        records = PeriodRecord.query.filter(
+            PeriodRecord.user_id == self.user_id,
+            PeriodRecord.cycle_length.isnot(None)
+        ).order_by(PeriodRecord.start_date.desc()).limit(6).all()
+        
+        cycles = [r.cycle_length for r in records]
+        if latest_cycles:
+            cycles = latest_cycles + cycles  # Prepend newest
+        
+        # Filter outliers (14~90 days)
+        cycles = [c for c in cycles if 14 <= c <= 90]
+        if not cycles:
+            return self.settings.avg_period_cycle or 28
+        
+        # Weights: 6, 5, 4, 3, 2, 1 (newest first)
+        weights = list(range(len(cycles), 0, -1))
+        weighted_sum = sum(c * w for c, w in zip(cycles, weights))
+        total_weight = sum(weights)
+        return int(round(weighted_sum / total_weight))
 
-        # Filter out extreme outliers (e.g. > 90 days or < 14 days)
-        valid_cycles = [c for c in cycles if 14 <= c <= 90]
+    def _calculate_avg_duration(self):
+        """From actual records with both start and end date, calculate average period duration."""
+        records = PeriodRecord.query.filter(
+            PeriodRecord.user_id == self.user_id,
+            PeriodRecord.end_date.isnot(None)
+        ).order_by(PeriodRecord.start_date.desc()).limit(6).all()
         
-        if valid_cycles:
-            avg = sum(valid_cycles) / len(valid_cycles)
-            return int(round(avg))
+        durations = []
+        for r in records:
+            try:
+                s = datetime.datetime.strptime(r.start_date, '%Y-%m-%d')
+                e = datetime.datetime.strptime(r.end_date, '%Y-%m-%d')
+                d = (e - s).days + 1  # inclusive
+                if 1 <= d <= 14:  # Sanity check
+                    durations.append(d)
+            except:
+                continue
         
-        return self.settings.avg_period_cycle or 28
+        if durations:
+            # Weighted average (recent records have more weight)
+            weights = list(range(len(durations), 0, -1))
+            weighted_sum = sum(d * w for d, w in zip(durations, weights))
+            return int(round(weighted_sum / sum(weights)))
+        
+        return self.settings.avg_period_duration or 5
 
     def update_settings(self, avg_period_cycle, avg_period_duration):
         self.settings.avg_period_cycle = int(avg_period_cycle)
         self.settings.avg_period_duration = int(avg_period_duration)
         db.session.commit()
         return {"success": True}
-        
+
+    def quick_start_today(self):
+        """一鍵：今天開始新的經期。"""
+        today = datetime.datetime.now().strftime('%Y-%m-%d')
+        existing = PeriodRecord.query.filter_by(user_id=self.user_id, start_date=today).first()
+        if existing:
+            return {"success": False, "error": "今日已有紀錄"}
+        return self.add_record(today)
+
+    def quick_end_today(self):
+        """一鍵：把最近一筆未結束的紀錄結束日設為今天。"""
+        today = datetime.datetime.now().strftime('%Y-%m-%d')
+        today_dt = datetime.datetime.strptime(today, '%Y-%m-%d')
+        record = PeriodRecord.query.filter(
+            PeriodRecord.user_id == self.user_id,
+            PeriodRecord.end_date.is_(None)
+        ).order_by(PeriodRecord.start_date.desc()).first()
+        if not record:
+            return {"success": False, "error": "沒有進行中的紀錄"}
+        start_dt = datetime.datetime.strptime(record.start_date, '%Y-%m-%d')
+        if today_dt < start_dt:
+            return {"success": False, "error": "結束日期不能早於開始日期"}
+        record.end_date = today
+        db.session.commit()
+        # Recalculate avg duration from actual records
+        self.settings.avg_period_duration = self._calculate_avg_duration()
+        db.session.commit()
+        return {"success": True, "start_date": record.start_date, "end_date": today}
+
+    def get_status(self):
+        """回傳今日生理期狀態（是否在經期、第幾天、距離下次幾天、是否有未結束紀錄）。"""
+        today = datetime.datetime.now()
+        today_str = today.strftime('%Y-%m-%d')
+
+        all_records = PeriodRecord.query.filter_by(user_id=self.user_id).order_by(PeriodRecord.start_date.desc()).all()
+        in_period = False
+        period_day = None
+        active_id = None
+        has_open_record = False
+
+        for r in all_records:
+            start_dt = datetime.datetime.strptime(r.start_date, '%Y-%m-%d')
+            if r.end_date is None:
+                if start_dt <= today:
+                    in_period = True
+                    has_open_record = True
+                    period_day = (today - start_dt).days + 1
+                    active_id = r.id
+                    break
+            else:
+                end_dt = datetime.datetime.strptime(r.end_date, '%Y-%m-%d')
+                if start_dt <= today <= end_dt:
+                    in_period = True
+                    period_day = (today - start_dt).days + 1
+                    active_id = r.id
+                    break
+
+        days_until_next = None
+        preds = self.get_predictions(months=3)
+        if preds:
+            next_start = datetime.datetime.strptime(preds[0]['period_start'], '%Y-%m-%d')
+            days_until_next = (next_start - today).days
+
+        return {
+            "is_in_period": in_period,
+            "period_day": period_day,
+            "days_until_next": days_until_next,
+            "has_open_record": has_open_record,
+            "active_record_id": active_id
+        }
+
+
     def get_predictions(self, months=3):
         """
         Predict future periods based on the latest record and average cycle length.

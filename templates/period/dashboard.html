@@ -269,29 +269,169 @@
         background: rgba(255,255,255,0.1);
         color: white;
     }
+
+    /* Status Banner */
+    .status-banner {
+        border-radius: 20px;
+        padding: 18px 22px;
+        margin-bottom: 16px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        flex-wrap: wrap;
+    }
+    .status-banner.in-period {
+        background: linear-gradient(135deg, rgba(255,77,79,0.25) 0%, rgba(207,19,34,0.15) 100%);
+        border: 1px solid rgba(255,77,79,0.4);
+    }
+    .status-banner.not-in-period {
+        background: rgba(255,255,255,0.05);
+        border: 1px solid rgba(255,255,255,0.1);
+    }
+    .status-main {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+    .status-icon {
+        font-size: 2.2rem;
+        line-height: 1;
+    }
+    .status-text h2 {
+        font-size: 1.2rem;
+        margin: 0 0 4px 0;
+        font-weight: 700;
+    }
+    .status-text p {
+        font-size: 0.85rem;
+        color: var(--text-secondary);
+        margin: 0;
+    }
+    .status-badge {
+        background: rgba(255,77,79,0.2);
+        color: #ff4d4f;
+        border-radius: 20px;
+        padding: 4px 12px;
+        font-size: 0.78rem;
+        font-weight: 600;
+        white-space: nowrap;
+    }
+
+    /* Quick Action Buttons */
+    .quick-actions {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+        margin-bottom: 16px;
+    }
+    .btn-quick {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        padding: 16px 10px;
+        border-radius: 16px;
+        border: none;
+        font-size: 1rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: transform 0.15s, opacity 0.15s;
+        letter-spacing: 0.5px;
+    }
+    .btn-quick:active { transform: scale(0.96); }
+    .btn-quick:disabled { opacity: 0.35; cursor: not-allowed; }
+    .btn-quick-start {
+        background: linear-gradient(135deg, #ff4d4f 0%, #cf1322 100%);
+        color: white;
+    }
+    .btn-quick-end {
+        background: linear-gradient(135deg, #52c41a 0%, #237804 100%);
+        color: white;
+    }
+    .btn-detail {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        background: rgba(255,255,255,0.08);
+        color: var(--text-secondary);
+        border: none;
+        padding: 9px 16px;
+        border-radius: 10px;
+        font-size: 0.85rem;
+        cursor: pointer;
+        transition: background 0.2s;
+    }
+    .btn-detail:hover { background: rgba(255,255,255,0.14); color: var(--text-primary); }
+    .header-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 16px;
+    }
 </style>
 {% endblock %}
 
 {% block content %}
-<div class="dashboard-header">
-    <div class="prediction-card">
-        <h3><span class="material-icons" style="font-size: 1.2rem;">auto_awesome</span> 預測與狀態</h3>
-        {% if next_prediction %}
-            <p>下次經期：<span class="highlight">{{ next_prediction.period_start }}</span></p>
-            <p>近幾天易孕期：<span class="fertile">{{ next_prediction.fertile_window_start }} ~ {{ next_prediction.fertile_window_end }}</span></p>
-            <p style="font-size:0.85rem; color:var(--text-secondary); margin-top:5px;">排卵日預測：{{ next_prediction.ovulation_day }}</p>
-        {% else %}
-            <p>尚無足夠紀錄</p>
-            <p style="font-size:0.85rem; color:var(--text-secondary);">新增第一筆經期以啟用預測功能。</p>
-        {% endif %}
+<!-- Status Banner -->
+{% if status.is_in_period %}
+<div class="status-banner in-period">
+    <div class="status-main">
+        <div class="status-icon">🩸</div>
+        <div class="status-text">
+            <h2>目前是經期第 {{ status.period_day }} 天</h2>
+            <p>{% if next_prediction %}下次預測：{{ next_prediction.period_start }}{% endif %}</p>
+        </div>
     </div>
+    <span class="status-badge">進行中</span>
+</div>
+{% elif status.days_until_next is not none and status.days_until_next >= 0 %}
+<div class="status-banner not-in-period">
+    <div class="status-main">
+        <div class="status-icon">📅</div>
+        <div class="status-text">
+            <h2>距離下次經期還有 <span style="color:#ff4d4f;">{{ status.days_until_next }}</span> 天</h2>
+            <p>{% if next_prediction %}預測：{{ next_prediction.period_start }} | 易孕期：{{ next_prediction.fertile_window_start }}~{{ next_prediction.fertile_window_end }}{% endif %}</p>
+        </div>
+    </div>
+</div>
+{% else %}
+<div class="status-banner not-in-period">
+    <div class="status-main">
+        <div class="status-icon">🗓️</div>
+        <div class="status-text">
+            <h2>尚無紀錄</h2>
+            <p>新增第一筆經期來啟用預測功能</p>
+        </div>
+    </div>
+</div>
+{% endif %}
 
-    <div class="action-buttons">
-        <a href="{{ url_for('period.period_settings') }}" class="btn-settings">
-            <span class="material-icons">settings</span>
+<!-- Quick Action Buttons -->
+<div class="quick-actions">
+    <button class="btn-quick btn-quick-start"
+        {% if status.is_in_period %}disabled title="目前已在經期中"{% endif %}
+        onclick="quickStart()">
+        <span class="material-icons">water_drop</span>
+        今天開始
+    </button>
+    <button class="btn-quick btn-quick-end"
+        {% if not status.has_open_record %}disabled title="沒有進行中的紀錄"{% endif %}
+        onclick="quickEnd()">
+        <span class="material-icons">check_circle</span>
+        今天結束
+    </button>
+</div>
+
+<!-- Calendar -->
+<div class="header-row">
+    <span style="font-size:0.9rem; color:var(--text-secondary);">月曆總覽</span>
+    <div style="display:flex; gap:8px;">
+        <a href="{{ url_for('period.period_settings') }}" class="btn-detail">
+            <span class="material-icons" style="font-size:16px;">settings</span> 設定
         </a>
-        <button class="btn-log-period" onclick="openRecordModal()">
-            <span class="material-icons">add</span> 記錄經期
+        <button class="btn-detail" onclick="openRecordModal()">
+            <span class="material-icons" style="font-size:16px;">edit_note</span> 詳細記錄
         </button>
     </div>
 </div>
@@ -464,6 +604,30 @@
         }
     }
     
+    async function quickStart() {
+        try {
+            const res = await fetch('/period/api/quick-start', { method: 'POST' });
+            const data = await res.json();
+            if (data.success) {
+                window.location.reload();
+            } else {
+                alert(data.error || '操作失敗');
+            }
+        } catch(e) { alert('系統發生錯誤'); }
+    }
+
+    async function quickEnd() {
+        try {
+            const res = await fetch('/period/api/quick-end', { method: 'POST' });
+            const data = await res.json();
+            if (data.success) {
+                window.location.reload();
+            } else {
+                alert(data.error || '操作失敗');
+            }
+        } catch(e) { alert('系統發生錯誤'); }
+    }
+
     async function deleteRecord() {
         if (!confirm('確定要刪除這筆紀錄嗎？')) return;
         
