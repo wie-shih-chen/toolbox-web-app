@@ -288,6 +288,11 @@ class CountdownService:
                     except ValueError:
                         # Handle Feb 29 on non-leap years → use Feb 28
                         occ_date = se_date.replace(year=today.year + year_offset, day=28)
+                    
+                    # 跳過事件建立日之前的歷史重複年份
+                    if occ_date < se_date:
+                        continue
+                        
                     custom.append({
                         'type': 'custom',
                         'id': se.id if occ_date == se_date else None,  # Only allow delete on the original
