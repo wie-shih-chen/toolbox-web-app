@@ -8,47 +8,84 @@
 {% if pinned_countdowns %}
 <div class="pinned-widgets-container" style="margin-top: 16px; margin-bottom: 24px;">
     {% for item in pinned_countdowns %}
-    <!-- Aesthetic VIP Widget -->
-    <a href="{{ url_for('countdown.detail', item_id=item.id) }}" style="text-decoration: none; display: block; touch-action: manipulation;">
-    <div style="position: relative; border-radius: 28px; overflow: hidden; padding: 20px; color: white; margin-bottom: 16px;
-                background: linear-gradient(135deg, {% if item.is_anniversary %}#ff758c 0%, #ff7eb3 100%{% else %}#11998e 0%, #38ef7d 100%{% endif %});
-                box-shadow: 0 10px 30px rgba(0,0,0,0.15);">
-        
-        <!-- Blurred circles for aesthetic background -->
-        <div style="position: absolute; top: -20px; right: -20px; width: 150px; height: 150px; border-radius: 50%; background: rgba(255,255,255,0.15); filter: blur(20px);"></div>
-        <div style="position: absolute; bottom: -30px; left: -20px; width: 100px; height: 100px; border-radius: 50%; background: rgba(0,0,0,0.15); filter: blur(15px);"></div>
-
-        <div style="display: flex; align-items: center; gap: 16px; position: relative; z-index: 1;">
+    <!-- Premium Pinned Card v2 -->
+    <a href="{{ url_for('countdown.detail', item_id=item.id) }}" style="text-decoration: none; display: block; touch-action: manipulation; margin-bottom: 20px;">
+        <div class="vip-card" style="position: relative; border-radius: 32px; overflow: hidden; padding: 24px; color: white;
+                    background: linear-gradient(135deg, {% if item.is_anniversary %}#ff758c 0%, #ff7eb3 100%{% else %}#00b4db 0%, #0083b0 100%{% endif %});
+                    box-shadow: 0 15px 35px rgba(0,0,0,0.2); transition: transform 0.3s ease;">
             
-            <!-- Left Avatar / Icon -->
-            <div onclick="event.preventDefault(); window.openAvatarPreview({% if item.image_path %}'{{ url_for('static', filename=item.image_path) }}', null{% else %}null, '{{ item.icon }}'{% endif %})"
-                 style="width: 80px; height: 80px; border-radius: 50%; background: rgba(255,255,255,0.2); 
-                        border: 2px solid rgba(255,255,255,0.5); display: flex; align-items: center; justify-content: center; font-size: 2.5rem; flex-shrink: 0; backdrop-filter: blur(5px); box-shadow: 0 4px 15px rgba(0,0,0,0.1); overflow: hidden; cursor: zoom-in;">
-                {% if item.image_path %}
-                <img src="{{ url_for('static', filename=item.image_path) }}" style="width: 100%; height: 100%; object-fit: cover;">
-                {% else %}
-                {{ item.icon }}
+            <!-- Abstract background elements -->
+            <div style="position: absolute; top: -30%; right: -10%; width: 200px; height: 200px; border-radius: 50%; background: rgba(255,255,255,0.12); filter: blur(40px);"></div>
+            <div style="position: absolute; bottom: -20%; left: -5%; width: 150px; height: 150px; border-radius: 50%; background: rgba(0,0,0,0.1); filter: blur(30px);"></div>
+
+            <div style="position: relative; z-index: 1;">
+                <!-- Header: Title & Anniversary tag -->
+                <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 16px;">
+                    <h4 style="margin: 0; font-size: 1.1rem; font-weight: 600; text-shadow: 0 2px 4px rgba(0,0,0,0.1);">{{ item.title }}</h4>
+                    {% if item.is_anniversary %}
+                    <span style="background: rgba(255,255,255,0.2); backdrop-filter: blur(5px); padding: 4px 10px; border-radius: 100px; font-size: 0.75rem; font-weight: 600; border: 1px solid rgba(255,255,255,0.3);">
+                        💖 紀念日
+                    </span>
+                    {% else %}
+                    <span style="background: rgba(255,255,255,0.2); backdrop-filter: blur(5px); padding: 4px 10px; border-radius: 100px; font-size: 0.75rem; font-weight: 600; border: 1px solid rgba(255,255,255,0.3);">
+                        ⏳ 倒數中
+                    </span>
+                    {% endif %}
+                </div>
+
+                <div style="display: flex; align-items: center; gap: 20px;">
+                    <!-- Avatar with Pulse effect if it's the target day -->
+                    <div style="position: relative; flex-shrink: 0;">
+                        <div onclick="event.preventDefault(); window.openAvatarPreview({% if item.image_path %}'{{ url_for('static', filename=item.image_path) }}', null{% else %}null, '{{ item.icon }}'{% endif %})"
+                             style="width: 84px; height: 84px; border-radius: 50%; background: rgba(255,255,255,0.25); 
+                                    border: 2.5px solid rgba(255,255,255,0.6); display: flex; align-items: center; justify-content: center; font-size: 2.8rem; flex-shrink: 0; backdrop-filter: blur(8px); box-shadow: 0 8px 20px rgba(0,0,0,0.15); overflow: hidden; cursor: zoom-in;">
+                            {% if item.image_path %}
+                            <img src="{{ url_for('static', filename=item.image_path) }}" style="width: 100%; height: 100%; object-fit: cover;">
+                            {% else %}
+                            {{ item.icon }}
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <!-- Main Counter -->
+                    <div style="flex: 1;">
+                        <div style="display: flex; align-items: baseline; gap: 6px; margin-bottom: 2px;">
+                            <span style="font-size: 3.2rem; font-weight: 800; line-height: 1; letter-spacing: -1px; text-shadow: 0 3px 6px rgba(0,0,0,0.15);">{{ item.days_diff }}</span>
+                            <span style="font-size: 1rem; font-weight: 500; opacity: 0.9;">天</span>
+                        </div>
+                        <div style="font-size: 0.85rem; opacity: 0.8; font-weight: 400;">
+                            目標日：{{ item.target_date }}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Footer: Next Milestone Info -->
+                {% if item.next_milestone %}
+                <div style="margin-top: 20px; padding-top: 16px; border-top: 1px solid rgba(255,255,255,0.2); display: flex; justify-content: space-between; align-items: center;">
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <span class="material-icons" style="font-size: 16px; opacity: 0.7;">flag</span>
+                        <span style="font-size: 0.85rem; font-weight: 500; opacity: 0.9;">下個目標：{{ item.next_milestone.title }}</span>
+                    </div>
+                    <div style="background: rgba(0,0,0,0.15); padding: 4px 12px; border-radius: 12px; font-size: 0.8rem; font-weight: 600;">
+                        還有 {{ item.next_milestone.days_left }} 天
+                    </div>
+                </div>
                 {% endif %}
             </div>
-
-            <!-- Right Content -->
-            <div style="flex: 1; display: flex; flex-direction: column; justify-content: center; text-shadow: 0 2px 4px rgba(0,0,0,0.2);">
-                <div style="font-size: 1rem; font-weight: 500; opacity: 0.9; margin-bottom: -2px;">{{ item.title }}</div>
-                
-                <div style="display: flex; align-items: baseline; gap: 4px; margin-bottom: 2px;">
-                    <span style="font-size: 2.5rem; font-weight: 700; line-height: 1.1;">{{ item.days_diff }}</span>
-                    <span style="font-size: 0.9rem; opacity: 0.9;">天</span>
-                </div>
-                
-                <div style="font-size: 0.8rem; opacity: 0.85; letter-spacing: 0.5px;">
-                    目標：{{ item.target_date }}
-                </div>
-            </div>
         </div>
-    </div>
     </a>
     {% endfor %}
 </div>
+
+<style>
+    .vip-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 20px 45px rgba(0,0,0,0.25);
+    }
+    .vip-card:active {
+        transform: scale(0.98);
+    }
+</style>
 {% endif %}
 
 <div class="dashboard-grid ios-widgets">

@@ -15,13 +15,13 @@ class CountdownService:
         return [self._format_item(item) for item in items]
 
     def get_pinned(self):
-        """Get only pinned items for the dashboard."""
+        """Get only pinned items for the dashboard, with next milestone data."""
         items = Countdown.query.filter_by(user_id=self.user_id, pinned=True).order_by(
             Countdown.target_date.asc()
         ).all()
-        return [self._format_item(item) for item in items]
+        return [self._format_item(item, include_next_milestone=True) for item in items]
 
-    def _format_item(self, item):
+    def _format_item(self, item, include_next_milestone=False):
         import datetime
         # Enforce UTC+8 (Taiwan Time)
         tz_tw = datetime.timezone(datetime.timedelta(hours=8))
@@ -85,7 +85,7 @@ class CountdownService:
                 display_text = f"已過 {-display_days} 天"
                 display_days = -display_days
 
-        return {
+        res = {
             "id": item.id,
             "title": item.title,
             "target_date": item.target_date,
@@ -96,8 +96,24 @@ class CountdownService:
             "notify_enabled": item.notify_enabled,
             "days_diff": display_days,
             "is_past": is_past,
-            "display_text": display_text
+            "display_text": display_text,
+            "repeat_annually": item.repeat_annually
         }
+
+        if include_next_milestone:
+            milestones = self.get_milestones(item.id)
+            # Find first milestone that is in the future (today or later)
+            next_m = next((m for m in milestones if m['days_from_today'] >= 0), None)
+            if next_m:
+                res["next_milestone"] = {
+                    "title": next_m['title'],
+                    "days_left": next_m['days_from_today'],
+                    "date": next_m['target_date']
+                }
+            else:
+                res["next_milestone"] = None
+
+        return res
 
     def _save_base64_image(self, image_data):
         import base64
