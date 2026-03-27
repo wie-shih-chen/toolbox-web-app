@@ -80,6 +80,12 @@ with app.app_context():
         def calendar_notify_task():
             """Every minute: check if any user's notify_time matches now → send calendar reminders."""
             CalendarNotifyService.check_and_send(app)
+
+        from services.countdown_notify_service import CountdownNotifyService
+        @scheduler.task('interval', id='countdown_notify', seconds=60)
+        def countdown_notify_task():
+            """Every minute: at 09:00 TW time, send countdown/anniversary milestone reminders."""
+            CountdownNotifyService.check_and_send(app)
             
         scheduler.start()
         print("Scheduler started successfully.")

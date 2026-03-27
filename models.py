@@ -190,4 +190,14 @@ class Countdown(db.Model):
     icon = db.Column(db.String(10), default='📅')
     image_path = db.Column(db.String(255), nullable=True) # For custom uploaded photos
     pinned = db.Column(db.Boolean, default=False)
+    notify_enabled = db.Column(db.Boolean, default=True) # Notification toggle
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+class CountdownSubEvent(db.Model):
+    """Custom milestones/events attached to a parent Countdown/Anniversary."""
+    id = db.Column(db.Integer, primary_key=True)
+    countdown_id = db.Column(db.Integer, db.ForeignKey('countdown.id'), nullable=False)
+    title = db.Column(db.String(100), nullable=False)
+    target_date = db.Column(db.String(10), nullable=False)  # YYYY-MM-DD
+    icon = db.Column(db.String(10), default='📅')
     created_at = db.Column(db.DateTime, default=datetime.utcnow)

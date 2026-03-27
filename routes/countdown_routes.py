@@ -16,6 +16,17 @@ def index():
     items = service.get_all()
     return render_template('countdown/index.html', items=items)
 
+@countdown_bp.route('/<int:item_id>')
+def detail(item_id):
+    """Render the milestone detail page for a specific countdown."""
+    service = CountdownService(current_user.id)
+    event = service.get_event(item_id)
+    if not event:
+        from flask import abort
+        abort(404)
+    milestones = service.get_milestones(item_id)
+    return render_template('countdown/detail.html', event=event, milestones=milestones)
+
 @countdown_bp.route('/api/events', methods=['GET'])
 def get_events():
     service = CountdownService(current_user.id)
@@ -40,3 +51,26 @@ def delete_event(item_id):
 def toggle_pin(item_id):
     service = CountdownService(current_user.id)
     return jsonify(service.toggle_pin(item_id))
+
+@countdown_bp.route('/api/events/<int:item_id>/toggle-notify', methods=['POST'])
+def toggle_notify(item_id):
+    service = CountdownService(current_user.id)
+    from models import Countdown
+    item = Countdown.query.filter_by(id=item_id, user_id=current_user.id).first_or_404()
+    item.notify_enabled = not item.notify_enabled
+    from app import db
+    db.session.commit()
+    return jsonify({"success": True, "notify_enabled": item.notify_enabled})
+
+# --- Sub-event (Milestone) API ---
+
+@countdown_bp.route('/api/events/<int:item_id>/sub-events', methods=['POST'])
+def add_sub_event(item_id):
+    service = CountdownService(current_user.id)
+    return jsonify(service.add_sub_event(item_id, request.json))
+
+@countdown_bp.route('/api/events/<int:item_id>/sub-events/<int:sub_id>', methods=['DELETE'])
+def delete_sub_event(item_id, sub_id):
+    service = CountdownService(current_user.id)
+    return jsonify(service.delete_sub_event(item_id, sub_id))
+

@@ -1,5 +1,5 @@
 from app import db
-from models import Countdown
+from models import Countdown, CountdownSubEvent
 import datetime
 
 class CountdownService:
@@ -77,6 +77,7 @@ class CountdownService:
             "icon": item.icon,
             "image_path": item.image_path,
             "pinned": item.pinned,
+            "notify_enabled": item.notify_enabled,
             "days_diff": display_days,
             "is_past": is_past,
             "display_text": display_text
@@ -125,7 +126,8 @@ class CountdownService:
             is_anniversary=data.get('is_anniversary', False),
             icon=data.get('icon', '📅'),
             image_path=image_path,
-            pinned=data.get('pinned', False)
+            pinned=data.get('pinned', False),
+            notify_enabled=data.get('notify_enabled', True)
         )
         db.session.add(new_item)
         db.session.commit()
@@ -144,6 +146,8 @@ class CountdownService:
             item.icon = data.get('icon')
         if 'pinned' in data:
             item.pinned = data.get('pinned')
+        if 'notify_enabled' in data:
+            item.notify_enabled = data.get('notify_enabled')
             
         if data.get('image_data'):
             import os
@@ -200,3 +204,98 @@ class CountdownService:
         item.pinned = not item.pinned
         db.session.commit()
         return {"success": True, "pinned": item.pinned}
+
+    def get_event(self, item_id):
+        """Get a single countdown event by id."""
+        item = Countdown.query.filter_by(id=item_id, user_id=self.user_id).first()
+        if not item:
+            return None
+        return self._format_item(item)
+
+    def get_milestones(self, item_id):
+        """Return a sorted merged list of system milestones + custom sub-events for a countdown."""
+        item = Countdown.query.filter_by(id=item_id, user_id=self.user_id).first()
+        if not item:
+            return []
+
+        import datetime
+        from dateutil.relativedelta import relativedelta
+
+        tz_tw = datetime.timezone(datetime.timedelta(hours=8))
+        today = datetime.datetime.now(tz_tw).date()
+        target = datetime.datetime.strptime(item.target_date, '%Y-%m-%d').date()
+
+        # --- System milestones (only for anniversary items) ---
+        system = []
+        if item.is_anniversary:
+            # 50-day milestones up to 5 years out
+            max_days = 365 * 5
+            for n in range(50, max_days + 1, 50):
+                milestone_date = target + datetime.timedelta(days=n - 1)  # inclusive
+                label = f'{n}天'
+                system.append({
+                    'type': 'system',
+                    'id': None,
+                    'title': label,
+                    'target_date': milestone_date.isoformat(),
+                    'icon': '🗓️',
+                    'days_from_today': (milestone_date - today).days,
+                })
+            # Annual milestones
+            for y in range(1, 6):
+                annual_date = target + relativedelta(years=y)
+                label = f'{y}年'
+                system.append({
+                    'type': 'system',
+                    'id': None,
+                    'title': label,
+                    'target_date': annual_date.isoformat(),
+                    'icon': '🎉',
+                    'days_from_today': (annual_date - today).days,
+                })
+
+        # --- Custom sub-events ---
+        sub_events = CountdownSubEvent.query.filter_by(countdown_id=item_id).all()
+        custom = []
+        for se in sub_events:
+            se_date = datetime.datetime.strptime(se.target_date, '%Y-%m-%d').date()
+            custom.append({
+                'type': 'custom',
+                'id': se.id,
+                'title': se.title,
+                'target_date': se.target_date,
+                'icon': se.icon,
+                'days_from_today': (se_date - today).days,
+            })
+
+        # Merge, sort by date, de-dup dates where system & custom overlap
+        all_milestones = system + custom
+        all_milestones.sort(key=lambda x: x['target_date'])
+        return all_milestones
+
+    def add_sub_event(self, item_id, data):
+        """Add a custom sub-event/milestone to a countdown."""
+        item = Countdown.query.filter_by(id=item_id, user_id=self.user_id).first()
+        if not item:
+            return {"success": False, "error": "Item not found"}
+
+        se = CountdownSubEvent(
+            countdown_id=item_id,
+            title=data.get('title', '新事件'),
+            target_date=data.get('target_date'),
+            icon=data.get('icon', '📅'),
+        )
+        db.session.add(se)
+        db.session.commit()
+        return {"success": True, "id": se.id}
+
+    def delete_sub_event(self, item_id, sub_id):
+        """Delete a custom sub-event."""
+        se = CountdownSubEvent.query.filter_by(
+            id=sub_id, countdown_id=item_id
+        ).first()
+        if not se:
+            return {"success": False, "error": "Sub-event not found"}
+        db.session.delete(se)
+        db.session.commit()
+        return {"success": True}

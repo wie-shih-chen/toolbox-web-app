@@ -348,13 +348,13 @@
 
 <div class="cd-grid" id="cdGrid">
     {% for item in items %}
-    <div class="cd-card {% if item.is_anniversary %}anniversary{% else %}countdown{% endif %}" data-id="{{ item.id }}">
+    <div class="cd-card {% if item.is_anniversary %}anniversary{% else %}countdown{% endif %}" data-id="{{ item.id }}" onclick="window.location.href='{{ url_for('countdown.detail', item_id=item.id) }}'" style="cursor:pointer;">
         
         <div class="cd-actions">
-            <button class="btn-icon {% if item.pinned %}pinned{% endif %}" onclick="togglePin({{ item.id }})" title="釘選到首頁">
+            <button class="btn-icon {% if item.pinned %}pinned{% endif %}" onclick="event.stopPropagation(); togglePin({{ item.id }})" title="釘選到首頁">
                 <span class="material-icons" style="font-size: 18px;">{% if item.pinned %}push_pin{% else %}push_pin{% endif %}</span>
             </button>
-            <button class="btn-icon" onclick='openEditModal({{ item | tojson | safe }})' title="編輯/刪除">
+            <button class="btn-icon" onclick='event.stopPropagation(); openEditModal({{ item | tojson | safe }})' title="編輯/刪除">
                 <span class="material-icons" style="font-size: 18px;">more_vert</span>
             </button>
         </div>
