@@ -856,9 +856,30 @@ Sortable.create(element, {
 
 ---
 
-## 🚀 Part 6: 部署與版本控制 (Deployment & Git)
+## 📱 Part 3: 全域導覽列 (Global Navigation)
 
-本專案的 Github 儲存庫 (`toolbox-web-app.git`) 綁定於 `工具箱/web_app` 資料夾中。
+專案採用雙軌導覽設計，確保在桌面端與行動端均有良好體驗：
+
+### 1. 桌面端導覽 (Top Bar)
+- 定義於 `base.html` 的 `.nav-bar.glass` 中。
+- 包含品牌 Logo、提醒通知鈴鐺、個人設定及登出按鈕。
+
+### 2. 行動端底部導覽 (Mobile Bottom Nav)
+- **核心模組**：僅保留 4 個最核心的入口以確保間距舒適：
+  1.  🏠 **首頁** (`main.index`)
+  2.  💵 **薪資** (`salary.index`)
+  3.  📅 **日曆** (`ntut.calendar`)
+  4.  📒 **記帳** (`expense.today`)
+- **技術注記**：
+  - **獨立層級**：為了防止個別頁面標籤未閉合（如 `index.html` 的 `div` 遺失）導致導覽列隱藏，導覽列已移至 `base.html` 的 `.container` 容器**之外**，直接作為 `body` 的子元素並配合 `position: fixed` 定位。
+  - **安全距離**：所有需要滾動的頁面應在內容區底部保留至少 `80px` 的 `padding` (或由 `.container` 的 `75px` bottom padding 覆蓋)，避免內容被導覽列遮擋。
+  - **生理期/倒數**：為節省底部空間，這兩個模組不列入常駐導航，需從首頁入口進入。
+
+---
+
+## 🚀 Part 4: 開發與部署流程 (Workflow)
+
+### 1. 版本控制原則專案的 Github 儲存庫 (`toolbox-web-app.git`) 綁定於 `工具箱/web_app` 資料夾中。
 
 ### 正確的上傳（Push）流程
 
