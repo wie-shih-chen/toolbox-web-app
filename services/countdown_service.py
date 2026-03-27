@@ -89,15 +89,15 @@ class CountdownService:
             "id": item.id,
             "title": item.title,
             "target_date": item.target_date,
-            "is_anniversary": item.is_anniversary,
+            "is_anniversary": bool(item.is_anniversary),
             "icon": item.icon,
             "image_path": item.image_path,
-            "pinned": item.pinned,
-            "notify_enabled": item.notify_enabled,
+            "pinned": bool(item.pinned),
+            "notify_enabled": bool(item.notify_enabled),
             "days_diff": display_days,
             "is_past": is_past,
             "display_text": display_text,
-            "repeat_annually": item.repeat_annually
+            "repeat_annually": bool(item.repeat_annually)
         }
 
         if include_next_milestone:
@@ -178,11 +178,11 @@ class CountdownService:
         if 'icon' in data:
             item.icon = data.get('icon')
         if 'pinned' in data:
-            item.pinned = data.get('pinned')
+            item.pinned = bool(data.get('pinned'))
         if 'notify_enabled' in data:
-            item.notify_enabled = data.get('notify_enabled')
+            item.notify_enabled = bool(data.get('notify_enabled'))
         if 'repeat_annually' in data:
-            item.repeat_annually = data.get('repeat_annually')
+            item.repeat_annually = bool(data.get('repeat_annually'))
             
         if data.get('image_data'):
             import os

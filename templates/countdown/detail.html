@@ -884,7 +884,7 @@ document.getElementById('notifyToggleBtn').addEventListener('click', async () =>
         document.getElementById('cdTargetDate').value = item.target_date;
         document.querySelector(`input[name="cdIsAnniversary"][value="${item.is_anniversary}"]`).checked = true;
         document.getElementById('cdPinned').checked = item.pinned;
-        document.getElementById('cdRepeatAnnually').checked = item.repeat_annually || false;
+        document.getElementById('cdRepeatAnnually').checked = Boolean(item.repeat_annually);
         document.getElementById('btnDeleteCd').style.display = 'block';
         modal.style.display = 'flex';
     }
