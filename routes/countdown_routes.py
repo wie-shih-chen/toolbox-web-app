@@ -1,13 +1,13 @@
-from flask import Blueprint, render_template, request, jsonify
+from flask import Blueprint, render_template, request, jsonify, redirect, url_for
 from flask_login import login_required, current_user
 from services.countdown_service import CountdownService
 
 countdown_bp = Blueprint('countdown', __name__, url_prefix='/countdown')
 
 @countdown_bp.before_request
-@login_required
 def require_login():
-    pass
+    if not current_user.is_authenticated:
+        return redirect(url_for('auth.login'))
 
 @countdown_bp.route('/')
 def index():

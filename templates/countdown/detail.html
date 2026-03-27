@@ -1,328 +1,448 @@
 {% extends "base.html" %}
-
 {% block title %}{{ event.title }} - 里程碑時間軸{% endblock %}
 {% block page_title %}{% endblock %}
 
 {% block extra_css %}
 <style>
+    /* ——— Back button ——— */
+    .back-btn {
+        display: inline-flex; align-items: center; gap: 6px;
+        color: rgba(255,255,255,0.55);
+        font-size: 0.85rem; font-weight: 600;
+        text-decoration: none;
+        margin-bottom: 20px;
+        transition: color 0.2s;
+        cursor: pointer;
+        background: none; border: none; padding: 0;
+    }
+    .back-btn:hover { color: white; }
+    .back-btn .material-icons { font-size: 1.1rem; }
+
+    /* ——— Header Card ——— */
     .detail-header {
         background: linear-gradient(135deg, 
-            {% if event.is_anniversary %}#ff758c 0%, #ff7eb3 100%{% else %}#11998e 0%, #38ef7d 100%{% endif %});
+            {% if event.is_anniversary %}#ff416c 0%, #ff4b2b 100%{% else %}#0f9b8e 0%, #00c9ff 100%{% endif %});
         border-radius: 24px;
-        padding: 24px;
+        padding: 28px 24px;
         color: white;
-        margin-bottom: 28px;
+        margin-bottom: 20px;
         position: relative;
         overflow: hidden;
-        box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        box-shadow: 0 12px 40px {% if event.is_anniversary %}rgba(255,65,108,0.4){% else %}rgba(0,201,255,0.3){% endif %};
     }
     .detail-header::before {
         content: '';
-        position: absolute;
-        top: -40px; right: -40px;
-        width: 200px; height: 200px;
-        border-radius: 50%;
-        background: rgba(255,255,255,0.12);
-        pointer-events: none;
+        position: absolute; top: -60px; right: -60px;
+        width: 240px; height: 240px; border-radius: 50%;
+        background: rgba(255,255,255,0.1);
+    }
+    .detail-header::after {
+        content: '';
+        position: absolute; bottom: -40px; left: -20px;
+        width: 160px; height: 160px; border-radius: 50%;
+        background: rgba(255,255,255,0.06);
     }
     .detail-header-inner {
-        display: flex;
-        align-items: center;
-        gap: 20px;
-        position: relative;
-        z-index: 1;
+        display: flex; align-items: center; gap: 20px;
+        position: relative; z-index: 1;
     }
     .detail-avatar {
-        width: 90px; height: 90px;
+        width: 88px; height: 88px;
         border-radius: 50%;
-        border: 3px solid rgba(255,255,255,0.5);
+        border: 3px solid rgba(255,255,255,0.6);
         display: flex; align-items: center; justify-content: center;
-        font-size: 3rem;
+        font-size: 2.8rem;
         flex-shrink: 0;
         background: rgba(255,255,255,0.2);
-        backdrop-filter: blur(5px);
+        backdrop-filter: blur(8px);
         overflow: hidden;
         cursor: zoom-in;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+        transition: transform 0.2s;
     }
-    .detail-meta { flex: 1; }
+    .detail-avatar:hover { transform: scale(1.05); }
+    .detail-meta { flex: 1; min-width: 0; }
     .detail-meta h1 {
-        font-size: 1.4rem;
-        font-weight: 700;
-        margin: 0 0 4px;
+        font-size: 1.3rem; font-weight: 800;
+        margin: 0 0 2px;
         text-shadow: 0 2px 8px rgba(0,0,0,0.2);
+        white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
     }
-    .detail-days {
-        font-size: 2.8rem;
-        font-weight: 800;
-        line-height: 1;
-        margin-bottom: 4px;
+    .detail-days-block { display: flex; align-items: baseline; gap: 6px; margin: 4px 0; }
+    .detail-days-num {
+        font-size: 3.2rem; font-weight: 900; line-height: 1;
+        text-shadow: 0 4px 16px rgba(0,0,0,0.3);
     }
-    .detail-date { font-size: 0.85rem; opacity: 0.85; }
-
-    .detail-actions {
-        display: flex;
-        gap: 10px;
-        margin-bottom: 24px;
-        flex-wrap: wrap;
-    }
-    .btn-action {
-        display: inline-flex; align-items: center; gap: 6px;
-        padding: 8px 16px;
-        border-radius: 20px;
-        border: 1px solid rgba(255,255,255,0.15);
-        background: rgba(255,255,255,0.07);
-        color: white;
-        font-size: 0.85rem;
-        font-weight: 600;
-        cursor: pointer;
-        transition: all 0.2s;
-        text-decoration: none;
-    }
-    .btn-action:hover { background: rgba(255,255,255,0.15); color: white; }
-    .btn-action.primary { background: #00e5ff22; border-color: #00e5ff; color: #00e5ff; }
-    .btn-action.primary:hover { background: #00e5ff33; }
-    .btn-action.danger { background: rgba(255,60,60,0.15); border-color: rgba(255,80,80,0.4); color: #ff6b6b; }
-
-    /* Timeline */
-    .timeline { padding-bottom: 80px; }
-    .timeline-item {
-        display: flex;
-        gap: 16px;
-        margin-bottom: 8px;
-        position: relative;
-    }
-    .timeline-left {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        width: 48px;
-        flex-shrink: 0;
-    }
-    .timeline-dot {
-        width: 44px; height: 44px;
-        border-radius: 50%;
-        display: flex; align-items: center; justify-content: center;
-        font-size: 1.3rem;
-        flex-shrink: 0;
-        z-index: 1;
-        position: relative;
-    }
-    .timeline-dot.system {
-        background: rgba(100,200,255,0.15);
-        border: 2px solid rgba(100,200,255,0.35);
-    }
-    .timeline-dot.custom {
-        background: rgba(255,180,100,0.18);
-        border: 2px solid rgba(255,180,100,0.4);
-    }
-    .timeline-dot.past {
-        opacity: 0.45;
-        filter: grayscale(0.5);
-    }
-    .timeline-line {
-        width: 2px;
-        flex: 1;
-        min-height: 20px;
-        background: rgba(255,255,255,0.08);
-        margin: 4px 0;
-    }
-    .timeline-card {
-        flex: 1;
-        background: rgba(255,255,255,0.05);
-        border: 1px solid rgba(255,255,255,0.09);
-        border-radius: 16px;
-        padding: 14px 16px;
-        margin-bottom: 12px;
-        transition: background 0.2s;
-    }
-    .timeline-card.past {
-        opacity: 0.5;
-    }
-    .timeline-card.today {
-        border-color: #00e5ff;
-        background: rgba(0,229,255,0.07);
-        box-shadow: 0 0 14px rgba(0,229,255,0.15);
-    }
-    .timeline-card-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        gap: 10px;
-        flex-wrap: wrap;
-    }
-    .milestone-label { font-size: 1.05rem; font-weight: 700; flex: 1; }
-    .milestone-date { font-size: 0.78rem; color: rgba(255,255,255,0.5); white-space: nowrap; }
-    .milestone-countdown {
-        font-size: 0.82rem;
-        padding: 3px 10px;
-        border-radius: 20px;
-        font-weight: 600;
-        margin-top: 6px;
+    .detail-days-unit { font-size: 1rem; font-weight: 700; opacity: 0.85; }
+    .detail-badge {
         display: inline-block;
+        background: rgba(255,255,255,0.2);
+        border: 1px solid rgba(255,255,255,0.35);
+        border-radius: 20px;
+        padding: 2px 12px;
+        font-size: 0.8rem; font-weight: 600;
+        backdrop-filter: blur(4px);
     }
-    .milestone-countdown.future { background: rgba(0,229,255,0.12); color: #00e5ff; }
-    .milestone-countdown.past { background: rgba(255,255,255,0.07); color: rgba(255,255,255,0.45); }
-    .milestone-countdown.today-badge { background: rgba(255,220,0,0.15); color: #ffd700; }
-    .milestone-delete {
-        background: none; border: none; color: rgba(255,100,100,0.55);
-        cursor: pointer; opacity: 0; transition: opacity 0.2s; font-size: 1rem;
-        padding: 2px 6px;
-    }
-    .timeline-card:hover .milestone-delete { opacity: 1; }
 
-    /* Add sub-event form */
+    /* ——— Action Row ——— */
+    .detail-actions {
+        display: flex; gap: 10px; margin-bottom: 22px; flex-wrap: wrap;
+    }
+    .action-btn {
+        display: inline-flex; align-items: center; gap: 7px;
+        padding: 10px 18px;
+        border-radius: 50px;
+        border: none;
+        font-size: 0.85rem; font-weight: 700;
+        cursor: pointer; transition: all 0.25s;
+        text-decoration: none; white-space: nowrap;
+    }
+    .action-btn .material-icons { font-size: 1rem; }
+    .action-btn-notify {
+        background: linear-gradient(135deg, #1a1a2e, #16213e);
+        border: 1.5px solid rgba(0,229,255,0.4);
+        color: #00e5ff;
+        box-shadow: 0 0 18px rgba(0,229,255,0.15);
+    }
+    .action-btn-notify:hover {
+        background: rgba(0,229,255,0.15);
+        box-shadow: 0 0 28px rgba(0,229,255,0.3);
+        color: #00e5ff;
+    }
+    .action-btn-notify.notify-off {
+        border-color: rgba(255,255,255,0.2);
+        color: rgba(255,255,255,0.4);
+        box-shadow: none;
+    }
+    .action-btn-edit {
+        background: rgba(255,255,255,0.08);
+        border: 1.5px solid rgba(255,255,255,0.15);
+        color: rgba(255,255,255,0.7);
+    }
+    .action-btn-edit:hover {
+        background: rgba(255,255,255,0.15);
+        color: white;
+    }
+
+    /* ——— Add event bar  ——— */
     .add-subevent-bar {
-        background: rgba(255,255,255,0.04);
-        border: 1px dashed rgba(255,255,255,0.15);
-        border-radius: 16px;
-        padding: 14px 18px;
-        margin-bottom: 20px;
+        background: linear-gradient(135deg, rgba(0,229,255,0.06), rgba(100,120,255,0.06));
+        border: 1.5px dashed rgba(0,229,255,0.35);
+        border-radius: 18px;
+        padding: 16px 20px;
+        margin-bottom: 22px;
         cursor: pointer;
         text-align: center;
-        color: rgba(255,255,255,0.4);
-        font-size: 0.9rem;
-        transition: all 0.2s;
+        color: rgba(0,229,255,0.7);
+        font-size: 0.92rem; font-weight: 600;
+        transition: all 0.25s;
+        display: flex; align-items: center; justify-content: center; gap: 8px;
     }
     .add-subevent-bar:hover {
         border-color: #00e5ff;
         color: #00e5ff;
-        background: rgba(0,229,255,0.05);
+        background: rgba(0,229,255,0.1);
+        box-shadow: 0 0 24px rgba(0,229,255,0.12);
     }
-    .add-subevent-form { display: none; }
+    .add-subevent-bar .material-icons { font-size: 1.2rem; }
+
+    /* ——— Add form ——— */
+    .add-subevent-form { display: none; margin-bottom: 22px; }
     .add-subevent-form.open { display: block; }
-    .form-row { display: flex; gap: 10px; align-items: flex-end; flex-wrap: wrap; }
-    .form-row input, .form-row select {
-        flex: 1; min-width: 140px;
+    .add-form-card {
+        background: rgba(0,229,255,0.05);
+        border: 1.5px solid rgba(0,229,255,0.2);
+        border-radius: 18px;
+        padding: 18px;
+    }
+    .add-form-title {
+        font-size: 0.85rem; font-weight: 700; color: #00e5ff;
+        margin-bottom: 14px; text-transform: uppercase; letter-spacing: 0.05em;
+    }
+    .form-row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+    .emoji-btn {
+        font-size: 1.8rem; cursor: pointer;
+        background: rgba(255,255,255,0.08);
+        border: 1.5px solid rgba(255,255,255,0.12);
+        border-radius: 12px;
+        width: 48px; height: 48px;
+        display: flex; align-items: center; justify-content: center;
+        flex-shrink: 0;
+        transition: all 0.2s;
+    }
+    .emoji-btn:hover { background: rgba(255,255,255,0.14); border-color: rgba(255,255,255,0.25); }
+    .form-input {
+        flex: 1; min-width: 130px;
         background: rgba(255,255,255,0.07);
-        border: 1px solid rgba(255,255,255,0.12);
-        color: white; border-radius: 10px; padding: 9px 12px;
-        font-size: 0.9rem;
+        border: 1.5px solid rgba(255,255,255,0.12);
+        color: white; border-radius: 12px;
+        padding: 11px 14px; font-size: 0.9rem;
+        transition: border-color 0.2s;
     }
-    .form-row input::placeholder { color: rgba(255,255,255,0.35); }
-    .form-row input:focus { outline: none; border-color: #00e5ff; }
-    .notify-toggle {
-        display: flex; align-items: center; gap: 10px;
-        margin-bottom: 16px;
-        font-size: 0.9rem; color: rgba(255,255,255,0.7);
+    .form-input::placeholder { color: rgba(255,255,255,0.3); }
+    .form-input:focus { outline: none; border-color: #00e5ff; }
+    .form-save-btn {
+        background: linear-gradient(135deg, #00b4d8, #0077b6);
+        border: none; color: white; font-weight: 700;
+        padding: 11px 22px; border-radius: 12px;
+        cursor: pointer; font-size: 0.9rem;
+        transition: all 0.2s;
+        white-space: nowrap;
     }
-    .toggle-switch {
-        position: relative; width: 42px; height: 24px; cursor: pointer;
+    .form-save-btn:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(0,180,216,0.4); }
+    .emoji-panel {
+        display: none; flex-wrap: wrap; gap: 8px;
+        margin-top: 12px; padding: 14px;
+        background: rgba(255,255,255,0.05);
+        border: 1px solid rgba(255,255,255,0.1);
+        border-radius: 14px;
     }
-    .toggle-switch input { opacity: 0; width: 0; height: 0; }
-    .toggle-slider {
-        position: absolute; inset: 0; border-radius: 24px;
-        background: rgba(255,255,255,0.15); transition: 0.3s;
+    .emoji-panel.open { display: flex; }
+    .emoji-option { font-size: 1.8rem; cursor: pointer; line-height: 1; transition: transform 0.15s; }
+    .emoji-option:hover { transform: scale(1.25); }
+
+    /* ——— Timeline ——— */
+    .timeline { padding-bottom: 100px; }
+    .timeline-item {
+        display: flex; gap: 14px;
+        margin-bottom: 4px; position: relative;
+        animation: fadeUp 0.4s ease both;
     }
-    .toggle-slider:before {
-        content: ''; position: absolute;
-        left: 3px; top: 3px; width: 18px; height: 18px;
-        border-radius: 50%; background: white; transition: 0.3s;
+    @keyframes fadeUp {
+        from { opacity: 0; transform: translateY(16px); }
+        to { opacity: 1; transform: translateY(0); }
     }
-    input:checked + .toggle-slider { background: #00e5ff; }
-    input:checked + .toggle-slider:before { transform: translateX(18px); }
+    .timeline-item:nth-child(2) { animation-delay: 0.05s; }
+    .timeline-item:nth-child(3) { animation-delay: 0.1s; }
+    .timeline-item:nth-child(4) { animation-delay: 0.15s; }
+    .timeline-item:nth-child(5) { animation-delay: 0.2s; }
+
+    .timeline-left {
+        display: flex; flex-direction: column; align-items: center;
+        width: 46px; flex-shrink: 0;
+    }
+    .timeline-dot {
+        width: 46px; height: 46px; border-radius: 50%;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 1.3rem; flex-shrink: 0;
+        z-index: 1; position: relative; transition: transform 0.2s;
+    }
+    .timeline-dot:hover { transform: scale(1.1); }
+    .timeline-dot.system {
+        background: linear-gradient(135deg, rgba(0,180,255,0.2), rgba(100,100,255,0.15));
+        border: 2px solid rgba(0,180,255,0.4);
+        box-shadow: 0 0 12px rgba(0,180,255,0.12);
+    }
+    .timeline-dot.custom {
+        background: linear-gradient(135deg, rgba(255,180,80,0.2), rgba(255,100,150,0.15));
+        border: 2px solid rgba(255,180,80,0.45);
+        box-shadow: 0 0 12px rgba(255,180,80,0.1);
+    }
+    .timeline-dot.past { opacity: 0.38; filter: grayscale(0.6); }
+    .timeline-line {
+        width: 2px; flex: 1; min-height: 18px;
+        background: linear-gradient(to bottom, rgba(255,255,255,0.1), rgba(255,255,255,0.03));
+        margin: 4px 0;
+    }
+
+    /* ——— Milestone Cards ——— */
+    .timeline-card {
+        flex: 1;
+        background: rgba(255,255,255,0.04);
+        border: 1.5px solid rgba(255,255,255,0.08);
+        border-radius: 18px;
+        padding: 14px 16px;
+        margin-bottom: 14px;
+        transition: all 0.25s;
+        position: relative;
+        overflow: hidden;
+    }
+    .timeline-card:hover {
+        background: rgba(255,255,255,0.07);
+        border-color: rgba(255,255,255,0.14);
+    }
+    .timeline-card.past { opacity: 0.42; }
+    .timeline-card.today {
+        border-color: #ffd700;
+        background: rgba(255,215,0,0.07);
+        box-shadow: 0 0 20px rgba(255,215,0,0.15);
+    }
+    .timeline-card.today::before {
+        content: '🎊';
+        position: absolute; top: -10px; right: 14px;
+        font-size: 1.8rem; opacity: 0.4;
+    }
+    .timeline-card.upcoming {
+        border-color: rgba(0,229,255,0.25);
+        background: rgba(0,229,255,0.04);
+    }
+    .timeline-card-header {
+        display: flex; justify-content: space-between;
+        align-items: flex-start; gap: 8px; flex-wrap: wrap;
+    }
+    .milestone-label {
+        font-size: 1rem; font-weight: 700; flex: 1; line-height: 1.3;
+    }
+    .milestone-date {
+        font-size: 0.75rem;
+        color: rgba(255,255,255,0.4);
+        white-space: nowrap; margin-top: 2px;
+    }
+    .milestone-delete {
+        background: none; border: none;
+        color: rgba(255,80,80,0.4);
+        cursor: pointer; opacity: 0;
+        transition: opacity 0.2s, color 0.2s;
+        padding: 0 4px; line-height: 1;
+    }
+    .timeline-card:hover .milestone-delete { opacity: 1; }
+    .milestone-delete:hover { color: #ff5252; }
+    .milestone-delete .material-icons { font-size: 0.95rem; }
+
+    .milestone-badge {
+        display: inline-flex; align-items: center; gap: 5px;
+        padding: 4px 12px; border-radius: 20px;
+        font-size: 0.8rem; font-weight: 700;
+        margin-top: 8px;
+    }
+    .badge-future {
+        background: linear-gradient(135deg, rgba(0,180,255,0.15), rgba(0,100,255,0.1));
+        border: 1px solid rgba(0,180,255,0.3);
+        color: #4fc3f7;
+    }
+    .badge-past {
+        background: rgba(255,255,255,0.06);
+        border: 1px solid rgba(255,255,255,0.1);
+        color: rgba(255,255,255,0.35);
+    }
+    .badge-today {
+        background: linear-gradient(135deg, rgba(255,215,0,0.2), rgba(255,165,0,0.15));
+        border: 1px solid rgba(255,215,0,0.4);
+        color: #ffd700;
+        animation: pulse 1.8s ease-in-out infinite;
+    }
+    @keyframes pulse {
+        0%, 100% { box-shadow: 0 0 0 0 rgba(255,215,0,0.3); }
+        50% { box-shadow: 0 0 0 6px rgba(255,215,0,0); }
+    }
+
+    /* ——— Section dividers ——— */
+    .section-divider {
+        display: flex; align-items: center; gap: 12px;
+        margin: 28px 0 20px; color: rgba(255,255,255,0.3);
+        font-size: 0.78rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em;
+    }
+    .section-divider::before, .section-divider::after {
+        content: ''; flex: 1; height: 1px;
+        background: rgba(255,255,255,0.08);
+    }
 </style>
 {% endblock %}
 
 {% block content %}
-<!-- Back button -->
-<a href="{{ url_for('countdown.index') }}" class="btn-action" style="display:inline-flex; margin-bottom:16px;">
-    <span class="material-icons" style="font-size:1rem;">arrow_back</span> 返回
+<!-- Back -->
+<a href="{{ url_for('countdown.index') }}" class="back-btn">
+    <span class="material-icons">arrow_back</span> 返回
 </a>
 
-<!-- Header Card -->
+<!-- ——— Header ——— -->
 <div class="detail-header">
     <div class="detail-header-inner">
         <div class="detail-avatar"
              onclick="window.openAvatarPreview({% if event.image_path %}'{{ url_for('static', filename=event.image_path) }}', null{% else %}null, '{{ event.icon }}'{% endif %})">
             {% if event.image_path %}
             <img src="{{ url_for('static', filename=event.image_path) }}" style="width:100%;height:100%;object-fit:cover;">
-            {% else %}
-            {{ event.icon }}
-            {% endif %}
+            {% else %}{{ event.icon }}{% endif %}
         </div>
         <div class="detail-meta">
             <h1>{{ event.title }}</h1>
-            <div class="detail-days">{{ event.days_diff }}</div>
-            <div class="detail-date">
-                {% if event.is_anniversary %}天 🎉{% else %}天 ⏳{% endif %}
-                &nbsp;·&nbsp; 目標：{{ event.target_date }}
+            <div class="detail-days-block">
+                <span class="detail-days-num">{{ event.days_diff }}</span>
+                <span class="detail-days-unit">{{ '天 🎉' if event.is_anniversary else '天 ⏳' }}</span>
             </div>
+            <span class="detail-badge">📅 {{ event.target_date }}</span>
         </div>
     </div>
 </div>
 
-<!-- Action Buttons -->
+<!-- ——— Action Buttons ——— -->
 <div class="detail-actions">
-    <!-- Notify toggle -->
-    <label class="notify-toggle btn-action" style="cursor:pointer;" id="notifyToggleBtn">
-        <span class="material-icons" style="font-size:1.1rem;" id="notifyIcon">
+    <button class="action-btn action-btn-notify {% if not event.notify_enabled %}notify-off{% endif %}" id="notifyToggleBtn">
+        <span class="material-icons" id="notifyIcon">
             {% if event.notify_enabled %}notifications_active{% else %}notifications_off{% endif %}
         </span>
         <span id="notifyLabel">{% if event.notify_enabled %}通知已開啟{% else %}通知已關閉{% endif %}</span>
-    </label>
-    <a href="{{ url_for('countdown.index') }}?edit={{ event.id }}" class="btn-action">
-        <span class="material-icons" style="font-size:1rem;">edit</span> 編輯
+    </button>
+    <a href="{{ url_for('countdown.index') }}?edit={{ event.id }}" class="action-btn action-btn-edit">
+        <span class="material-icons">edit</span> 編輯事件
     </a>
 </div>
 
-<!-- Add Sub-event -->
+<!-- ——— Add sub-event bar ——— -->
 <div class="add-subevent-bar" id="addBar" onclick="toggleAddForm()">
-    <span class="material-icons" style="font-size:1rem; vertical-align:middle;">add_circle_outline</span>
+    <span class="material-icons">add_circle</span>
     加入過程中的日子
 </div>
+
 <div class="add-subevent-form" id="addForm">
-    <div class="form-row" style="margin-bottom:10px;">
-        <div style="font-size:1.5rem; cursor:pointer;" id="emojiPicker" onclick="toggleEmojiPanel()">📅</div>
-        <input type="text" id="subTitle" placeholder="例：第一次旅行" maxlength="50">
-        <input type="date" id="subDate">
-        <button class="btn-action primary" onclick="submitSubEvent()">儲存</button>
-    </div>
-    <div id="emojiPanel" style="display:none; flex-wrap:wrap; gap:8px; margin-bottom:10px; padding:10px; background:rgba(255,255,255,0.05); border-radius:12px;">
-        {% for e in ['📅','❤️','🎉','✈️','🎂','🎁','💍','🌸','🍽️','🎵','🏖️','🌙','⭐','🤝','💕','📸','🎊','🏠','🌺','🍀'] %}
-        <span style="font-size:1.6rem; cursor:pointer;" onclick="selectEmoji('{{ e }}')">{{ e }}</span>
-        {% endfor %}
+    <div class="add-form-card">
+        <div class="add-form-title">✨ 新增里程碑</div>
+        <div class="form-row">
+            <div class="emoji-btn" id="emojiPicker" onclick="toggleEmojiPanel()">📅</div>
+            <input type="text" class="form-input" id="subTitle" placeholder="例：第一次旅行 🌏" maxlength="50">
+            <input type="date" class="form-input" id="subDate" style="max-width:160px;">
+            <button class="form-save-btn" onclick="submitSubEvent()">儲存</button>
+        </div>
+        <div class="emoji-panel" id="emojiPanel">
+            {% for e in ['📅','❤️','🎉','✈️','🎂','🎁','💍','🌸','🍽️','🎵','🏖️','🌙','⭐','🤝','💕','📸','🎊','🏠','🌺','🍀'] %}
+            <span class="emoji-option" onclick="selectEmoji('{{ e }}')">{{ e }}</span>
+            {% endfor %}
+        </div>
     </div>
 </div>
 
-<!-- Milestone Timeline -->
+<!-- ——— Milestone Timeline ——— -->
+<div class="section-divider">里程碑時間軸</div>
 <div class="timeline">
     {% if milestones %}
         {% for m in milestones %}
         {% set is_past = m.days_from_today < 0 %}
         {% set is_today = m.days_from_today == 0 %}
+        {% set is_upcoming = not is_past and not is_today and m.days_from_today <= 30 %}
         <div class="timeline-item" id="milestone-{% if m.id %}c{{ m.id }}{% else %}s{{ loop.index }}{% endif %}">
             <div class="timeline-left">
                 <div class="timeline-dot {{ m.type }} {% if is_past %}past{% endif %}">{{ m.icon }}</div>
                 <div class="timeline-line"></div>
             </div>
-            <div class="timeline-card {% if is_past %}past{% endif %} {% if is_today %}today{% endif %}">
+            <div class="timeline-card {% if is_past %}past{% endif %} {% if is_today %}today{% elif is_upcoming %}upcoming{% endif %}">
                 <div class="timeline-card-header">
-                    <span class="milestone-label">{{ m.title }}</span>
-                    <span class="milestone-date">{{ m.target_date }}</span>
+                    <div>
+                        <div class="milestone-label">{{ m.title }}</div>
+                        <div class="milestone-date">{{ m.target_date }}</div>
+                    </div>
                     {% if m.type == 'custom' %}
                     <button class="milestone-delete" onclick="deleteSubEvent({{ m.id }}, this)" title="刪除">
-                        <span class="material-icons" style="font-size:0.9rem;">close</span>
+                        <span class="material-icons">close</span>
                     </button>
                     {% endif %}
                 </div>
                 {% if is_today %}
-                <span class="milestone-countdown today-badge">🎊 就是今天！</span>
+                <span class="milestone-badge badge-today">🎊 就是今天！</span>
                 {% elif is_past %}
-                <span class="milestone-countdown past">已過 {{ (-m.days_from_today) }} 天</span>
+                <span class="milestone-badge badge-past">已過 {{ (-m.days_from_today) }} 天</span>
                 {% else %}
-                <span class="milestone-countdown future">還有 {{ m.days_from_today }} 天</span>
+                <span class="milestone-badge badge-future">⏳ 還有 {{ m.days_from_today }} 天</span>
                 {% endif %}
             </div>
         </div>
         {% endfor %}
     {% else %}
-    <div style="text-align:center; padding:40px; color:rgba(255,255,255,0.3); font-size:0.9rem;">
-        <div style="font-size:3rem; margin-bottom:12px;">🗓️</div>
-        <div>你可以主動加入過程中的重要日子，<br>例如第一次旅行、特別的紀念節日！</div>
+    <div style="text-align:center; padding:50px 20px; color:rgba(255,255,255,0.25); font-size:0.9rem;">
+        <div style="font-size:3.5rem; margin-bottom:14px; filter:grayscale(0.3);">🗓️</div>
+        <div>加入你們的過程記憶<br><span style="color:rgba(0,229,255,0.5);">第一次旅行、特別紀念日...</span></div>
     </div>
     {% endif %}
 </div>
-
 {% endblock %}
 
 {% block extra_js %}
@@ -332,59 +452,54 @@ let selectedEmoji = '📅';
 
 function toggleAddForm() {
     const form = document.getElementById('addForm');
-    const bar = document.getElementById('addBar');
+    const bar  = document.getElementById('addBar');
     const open = form.classList.toggle('open');
-    bar.style.display = open ? 'none' : 'block';
+    bar.style.display = open ? 'none' : 'flex';
     if (open) document.getElementById('subTitle').focus();
 }
 
 function toggleEmojiPanel() {
-    const p = document.getElementById('emojiPanel');
-    p.style.display = p.style.display === 'flex' ? 'none' : 'flex';
+    document.getElementById('emojiPanel').classList.toggle('open');
 }
 
 function selectEmoji(e) {
     selectedEmoji = e;
     document.getElementById('emojiPicker').textContent = e;
-    document.getElementById('emojiPanel').style.display = 'none';
+    document.getElementById('emojiPanel').classList.remove('open');
 }
 
 async function submitSubEvent() {
     const title = document.getElementById('subTitle').value.trim();
-    const date = document.getElementById('subDate').value;
-    if (!title || !date) {
-        alert('請填寫名稱和日期！');
-        return;
-    }
+    const date  = document.getElementById('subDate').value;
+    if (!title || !date) { alert('請填寫名稱和日期！'); return; }
     const res = await fetch(`/countdown/api/events/${ITEM_ID}/sub-events`, {
         method: 'POST',
         headers: {'Content-Type':'application/json'},
         body: JSON.stringify({title, target_date: date, icon: selectedEmoji})
     });
-    if ((await res.json()).success) {
-        location.reload();
-    }
+    if ((await res.json()).success) location.reload();
 }
 
 async function deleteSubEvent(subId, btn) {
     if (!confirm('確定刪除這個里程碑？')) return;
     const res = await fetch(`/countdown/api/events/${ITEM_ID}/sub-events/${subId}`, {method:'DELETE'});
     if ((await res.json()).success) {
-        const card = btn.closest('.timeline-item');
-        card.style.transition = 'opacity 0.3s, transform 0.3s';
-        card.style.opacity = '0';
-        card.style.transform = 'translateX(20px)';
-        setTimeout(() => card.remove(), 300);
+        const item = btn.closest('.timeline-item');
+        item.style.transition = 'opacity 0.3s, transform 0.3s';
+        item.style.opacity = '0'; item.style.transform = 'translateX(30px)';
+        setTimeout(() => item.remove(), 310);
     }
 }
 
 // Notify toggle
 document.getElementById('notifyToggleBtn').addEventListener('click', async () => {
-    const res = await fetch(`/countdown/api/events/${ITEM_ID}/toggle-notify`, {method: 'POST'});
+    const res  = await fetch(`/countdown/api/events/${ITEM_ID}/toggle-notify`, {method: 'POST'});
     const data = await res.json();
     if (data.success) {
-        document.getElementById('notifyIcon').textContent = data.notify_enabled ? 'notifications_active' : 'notifications_off';
+        const btn = document.getElementById('notifyToggleBtn');
+        document.getElementById('notifyIcon').textContent  = data.notify_enabled ? 'notifications_active' : 'notifications_off';
         document.getElementById('notifyLabel').textContent = data.notify_enabled ? '通知已開啟' : '通知已關閉';
+        btn.classList.toggle('notify-off', !data.notify_enabled);
     }
 });
 </script>
