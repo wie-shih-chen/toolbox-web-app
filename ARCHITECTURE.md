@@ -116,13 +116,13 @@ web_app/
 │       ├── migrate_calendar_notify_log.py # 建立 CalendarNotificationLog 資料表
 │       ├── migrate_calendar_settings.py  # 新增行事曆通知設定欄位
 │       ├── migrate_holiday_pay.py        # 补算舊排班國定假日工資加倍 (--apply 實際寫入)
-│       └── migrate_countdown_v2.py       # 新增倒數圖片欄位及 sqlite 遷移
+│       ├── migrate_countdown_v2.py       # 新增倒數圖片欄位及 sqlite 遷移
+│       ├── migrate_repeat_annually.py    # 建立 repeat_annually 全新布林值欄位以支援每年自動重複功能
+│       ├── migrate_user_email_v0.py      # [舊] 新增 user.email 欄位 (初期遷移用)
+│       └── migrate_reminder_weekdays_v0.py # [舊] 新增 reminder.weekdays 欄位 (初期遷移用)
 │
 └── 📦 其他資料檔案
-    ├── expense_data.json           # 舊版記帳資料 (已遷移至 DB)
-    ├── salary_data.json            # 舊版薪資資料 (已遷移至 DB)
     └── downloads/                  # 暫存下載檔案
-```
 
 ---
 
@@ -164,7 +164,8 @@ web_app/
 │
 ├── ⏳ 倒數與紀念日 (/countdown)
 │   ├── 儀表板 (index) — 顯示所有倒數事件卡片，支援自訂頭像上傳、縮放裁切及點擊圖片預覽
-│   └── 釘選功能 — 將重要事件釘選顯示於首頁獨立區塊上方
+│   ├── 釘選功能 — 將重要事件釘選顯示於首頁獨立區塊上方
+│   └── 🚀 頂級 VIP 首頁小卡 (v2.6.2) — 採用璃光玻璃化設計 (Glassmorphism)，並具備「下一個目標」智慧偵測里程碑功能。
 │
 ├── 📅 整合行事曆 (/ntut/calendar)
 │   ├── 多來源日曆管理 (側邊欄顯示清單)
@@ -434,6 +435,7 @@ web_app/
 ### 3. 資料庫遷移
 - 全新展開時執行 `scripts/maintenance/init_db.py` 建立所有資料表
 - 需要資料庫結構升級時，執行 `scripts/maintenance/migrate_*.py` （每支腳本內部均有中文說明使用時機與方法）
+- ⚠️ 注意：根目錄下的 `expense_data.json` 與 `salary_data.json` 已全數遷移至資料庫並刪除，不再使用。
 
 ---
 
@@ -786,6 +788,12 @@ Sortable.create(element, {
 
 **文件最後更新**: 2026-03-24  
 **專案版本**: v2.6
+
+### v2.6.2 更新摘要 (2026-03-28)
+- **首頁倒數卡片極致視覺化 (VIP Redesign)**：
+  - 全新 Glassmorphism 璃光卡片設計：根據「週年紀念」或「目標倒數」自動切換多重層次漸層色背景（如櫻粉至火紅、湛藍至潮汐紫）。
+  - **下一個目標 (Next Up) 智慧追蹤**：卡片底部新增「下一個目標」區區塊，自動掃描所有子事件與系統里程碑（如 500 天、1000 天、5 週年），顯示最近的目標名稱與剩餘天數。
+  - **操作體驗優化**：修正「每年自動重複」勾選後無法持久儲存的 Bug，透過後端布林值強制轉型提升資料穩定度。
 
 ### v2.6 更新摘要 (2026-03-28)
 - **倒數日與紀念日 (Countdown) 升級**：
