@@ -9,7 +9,7 @@
 <div class="pinned-widgets-container" style="margin-top: 16px; margin-bottom: 24px;">
     {% for item in pinned_countdowns %}
     <!-- Aesthetic VIP Widget -->
-    <a href="{{ url_for('countdown.index') }}" style="text-decoration: none; display: block; touch-action: manipulation;">
+    <a href="{{ url_for('countdown.detail', item_id=item.id) }}" style="text-decoration: none; display: block; touch-action: manipulation;">
     <div style="position: relative; border-radius: 28px; overflow: hidden; padding: 20px; color: white; margin-bottom: 16px;
                 background: linear-gradient(135deg, {% if item.is_anniversary %}#ff758c 0%, #ff7eb3 100%{% else %}#11998e 0%, #38ef7d 100%{% endif %});
                 box-shadow: 0 10px 30px rgba(0,0,0,0.15);">

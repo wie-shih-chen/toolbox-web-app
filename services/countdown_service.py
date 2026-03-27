@@ -56,6 +56,22 @@ class CountdownService:
                 display_days = days_diff
         else:
             # Countdown: excludes the start day (target - today)
+            
+            # Auto-advance annual recurring countdowns
+            if item.repeat_annually:
+                try:
+                    target_this_year = target.replace(year=today.year)
+                except ValueError:
+                    target_this_year = target.replace(year=today.year, day=28)
+                
+                if target_this_year < today:
+                    try:
+                        target = target.replace(year=today.year + 1)
+                    except ValueError:
+                        target = target.replace(year=today.year + 1, day=28)
+                else:
+                    target = target_this_year
+
             days_diff = (target - today).days
             display_days = days_diff
             if display_days > 0:
@@ -127,7 +143,8 @@ class CountdownService:
             icon=data.get('icon', '📅'),
             image_path=image_path,
             pinned=data.get('pinned', False),
-            notify_enabled=data.get('notify_enabled', True)
+            notify_enabled=data.get('notify_enabled', True),
+            repeat_annually=data.get('repeat_annually', False)
         )
         db.session.add(new_item)
         db.session.commit()
@@ -148,6 +165,8 @@ class CountdownService:
             item.pinned = data.get('pinned')
         if 'notify_enabled' in data:
             item.notify_enabled = data.get('notify_enabled')
+        if 'repeat_annually' in data:
+            item.repeat_annually = data.get('repeat_annually')
             
         if data.get('image_data'):
             import os
@@ -259,16 +278,39 @@ class CountdownService:
         custom = []
         for se in sub_events:
             se_date = datetime.datetime.strptime(se.target_date, '%Y-%m-%d').date()
-            custom.append({
-                'type': 'custom',
-                'id': se.id,
-                'title': se.title,
-                'target_date': se.target_date,
-                'icon': se.icon,
-                'days_from_today': (se_date - today).days,
-            })
+            if se.repeat_annually:
+                # Expand to occurrences from 2 years ago to 5 years ahead
+                base_month = se_date.month
+                base_day = se_date.day
+                for year_offset in range(-2, 6):
+                    try:
+                        occ_date = se_date.replace(year=today.year + year_offset)
+                    except ValueError:
+                        # Handle Feb 29 on non-leap years → use Feb 28
+                        occ_date = se_date.replace(year=today.year + year_offset, day=28)
+                    custom.append({
+                        'type': 'custom',
+                        'id': se.id if occ_date == se_date else None,  # Only allow delete on the original
+                        'title': se.title,
+                        'target_date': occ_date.isoformat(),
+                        'icon': se.icon,
+                        'days_from_today': (occ_date - today).days,
+                        'repeat_annually': True,
+                        'sub_id': se.id,  # Always carry sub_id for delete
+                    })
+            else:
+                custom.append({
+                    'type': 'custom',
+                    'id': se.id,
+                    'title': se.title,
+                    'target_date': se.target_date,
+                    'icon': se.icon,
+                    'days_from_today': (se_date - today).days,
+                    'repeat_annually': False,
+                    'sub_id': se.id,
+                })
 
-        # Merge, sort by date, de-dup dates where system & custom overlap
+        # Merge, sort by date
         all_milestones = system + custom
         all_milestones.sort(key=lambda x: x['target_date'])
         return all_milestones
@@ -284,6 +326,7 @@ class CountdownService:
             title=data.get('title', '新事件'),
             target_date=data.get('target_date'),
             icon=data.get('icon', '📅'),
+            repeat_annually=data.get('repeat_annually', False),
         )
         db.session.add(se)
         db.session.commit()

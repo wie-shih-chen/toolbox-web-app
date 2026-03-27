@@ -3,6 +3,7 @@
 {% block page_title %}{% endblock %}
 
 {% block extra_css %}
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.1/cropper.min.css">
 <style>
     /* ——— Back button ——— */
     .back-btn {
@@ -336,6 +337,217 @@
         content: ''; flex: 1; height: 1px;
         background: rgba(255,255,255,0.08);
     }
+
+
+    /* Modal Tweaks */
+    .btn-emoji-select {
+        background: rgba(255,255,255,0.05);
+        border: 1px solid rgba(255,255,255,0.1);
+        border-radius: 12px;
+        font-size: 1.5rem;
+        padding: 8px;
+        cursor: text;
+        width: 100%;
+        text-align: center;
+        color: #fff;
+    }
+    .btn-emoji-select:focus {
+        border-color: var(--accent-blue);
+        outline: none;
+    }
+
+    /* Cropper CSS is loaded via <link> above */
+    
+    .cropper-container {
+        width: 100%;
+        max-height: 60vh !important;
+        margin-bottom: 20px;
+        background: #000;
+    }
+
+    /* Circular Cropper Style matching Avatar settings */
+    .cropper-view-box, .cropper-face { border-radius: 50%; }
+    .cropper-crop-box { border-radius: 50%; }
+    .cropper-view-box { outline: 0; box-shadow: 0 0 0 1px #39f; }
+    
+    /* Mobile Modal Layout Fixes */
+    @media (max-width: 600px) {
+        #cdModal .modal-content {
+            max-height: calc(100vh - 100px) !important; /* Leave space for bottom nav */
+            margin-bottom: 60px !important; /* Push above bottom nav */
+            overflow-y: auto;
+        }
+
+        #cdAvatarModal > div { 
+            padding: 20px !important; 
+            width: 95% !important; 
+            max-height: 85vh !important; 
+        }
+        
+        #cdAvatarCropView img { 
+            max-height: 50vh !important; 
+        }
+        
+        .cropper-container { 
+            max-height: 50vh !important; 
+        }
+        
+        #cdAvatarSelectionView .avatar-option { 
+            height: 50px !important; 
+            font-size: 1.5rem !important; 
+        }
+    }
+
+    .empty-state {
+        text-align: center;
+        color: var(--text-secondary);
+        padding: 40px 20px;
+        grid-column: 1 / -1;
+    }
+
+    .cd-avatar-picker {
+        width: 80px;
+        height: 80px;
+        border-radius: 50%;
+        background: rgba(255,255,255,0.05);
+        border: 2px dashed rgba(255,255,255,0.2);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        position: relative;
+        overflow: hidden;
+        flex-shrink: 0;
+    }
+    .cd-avatar-picker:hover {
+        border-color: var(--accent-blue);
+    }
+    .cd-avatar-preview {
+        position: absolute;
+        top: 0; left: 0; width: 100%; height: 100%;
+        object-fit: cover;
+        z-index: 2;
+        background: black;
+    }
+    .cd-avatar-emoji {
+        position: absolute;
+        z-index: 1;
+        font-size: 2rem;
+    }
+    .cd-badge-cam {
+        position: absolute;
+        bottom: 0;
+        right: 0;
+        background: var(--accent-blue);
+        color: white;
+        border-radius: 50%;
+        width: 24px;
+        height: 24px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 3;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+    }
+
+    /* Form Layout Fixes */
+    .cd-modal-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+        border-bottom: 1px solid rgba(255,255,255,0.1);
+        padding-bottom: 16px;
+    }
+    .cd-modal-header h3 {
+        margin: 0;
+        font-size: 1.2rem;
+        color: #fff;
+    }
+    .cd-close-btn {
+        background: rgba(255,255,255,0.1);
+        border: none;
+        color: white;
+        width: 32px;
+        height: 32px;
+        border-radius: 16px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+    }
+    .cd-form-label {
+        display: block;
+        font-size: 0.85rem;
+        color: var(--text-secondary);
+        margin-bottom: 6px;
+    }
+    .cd-input {
+        width: 100%;
+        background: rgba(255,255,255,0.05);
+        border: 1px solid rgba(255,255,255,0.1);
+        border-radius: 12px;
+        padding: 12px;
+        color: white;
+        font-size: 1rem;
+        box-sizing: border-box;
+    }
+    .cd-input:focus {
+        border-color: var(--accent-blue);
+        outline: none;
+    }
+    .cd-radio-group {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+    }
+    .cd-radio-card {
+        background: rgba(255,255,255,0.05);
+        border: 1px solid rgba(255,255,255,0.1);
+        border-radius: 12px;
+        padding: 12px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        cursor: pointer;
+    }
+    .cd-radio-card:has(input:checked) {
+        border-color: var(--accent-blue);
+        background: rgba(10, 132, 255, 0.1);
+    }
+    .cd-radio-card input[type="radio"] {
+        margin: 0;
+        width: 18px;
+        height: 18px;
+        accent-color: var(--accent-blue);
+        flex-shrink: 0;
+    }
+    .cd-radio-text {
+        font-size: 0.95rem;
+        color: #fff;
+        white-space: nowrap;
+    }
+    .cd-checkbox-row {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        background: rgba(255,255,255,0.05);
+        padding: 12px;
+        border-radius: 12px;
+        cursor: pointer;
+    }
+    .cd-checkbox-row input[type="checkbox"] {
+        margin: 0;
+        width: 20px;
+        height: 20px;
+        accent-color: #FFD60A;
+        flex-shrink: 0;
+    }
+    .cd-checkbox-text {
+        font-size: 0.95rem;
+        color: #fff;
+    }
+
 </style>
 {% endblock %}
 
@@ -373,9 +585,9 @@
         </span>
         <span id="notifyLabel">{% if event.notify_enabled %}通知已開啟{% else %}通知已關閉{% endif %}</span>
     </button>
-    <a href="{{ url_for('countdown.index') }}?edit={{ event.id }}" class="action-btn action-btn-edit">
+    <button onclick='openEditModal({{ event | tojson | safe }})' class="action-btn action-btn-edit" style="border:none; cursor:pointer; font-size:0.9rem;">
         <span class="material-icons">edit</span> 編輯事件
-    </a>
+    </button>
 </div>
 
 <!-- ——— Add sub-event bar ——— -->
@@ -392,6 +604,12 @@
             <input type="text" class="form-input" id="subTitle" placeholder="例：第一次旅行 🌏" maxlength="50">
             <input type="date" class="form-input" id="subDate" style="max-width:160px;">
             <button class="form-save-btn" onclick="submitSubEvent()">儲存</button>
+        </div>
+        <div style="margin-top: 14px; margin-left: 58px;">
+            <label style="display:inline-flex; align-items:center; gap:8px; color:rgba(255,255,255,0.7); font-size:0.85rem; cursor:pointer;">
+                <input type="checkbox" id="subRepeat" style="accent-color:#00e5ff; width:16px; height:16px;">
+                每年自動重複
+            </label>
         </div>
         <div class="emoji-panel" id="emojiPanel">
             {% for e in ['📅','❤️','🎉','✈️','🎂','🎁','💍','🌸','🍽️','🎵','🏖️','🌙','⭐','🤝','💕','📸','🎊','🏠','🌺','🍀'] %}
@@ -443,6 +661,32 @@
     </div>
     {% endif %}
 </div>
+
+<!-- Add/Edit Modal -->
+<div class="modal" id="cdModal" style="display: none;">
+    <div class="modal-content glass" style="max-width: 400px; width: 90%; padding: 24px;">
+        <div class="cd-modal-header">
+            <h3 id="cdModalTitle">新增事件</h3>
+            <button type="button" class="cd-close-btn" onclick="closeCdModal()">
+                <span class="material-icons" style="font-size: 20px;">close</span>
+            </button>
+        </div>
+        <div>
+            <form id="cdForm">
+                <input type="hidden" id="cdId">
+                
+                <div style="display: flex; gap: 16px; margin-bottom: 20px; align-items: center;">
+                    <div style="position: relative;">
+                        <input type="hidden" id="cdIconVal" value="📅">
+                        <!-- Click to open Avatar Modal instead of file input -->
+                        <div class="cd-avatar-picker" onclick="openCdAvatarModal()">
+                            <img id="cdPreviewImg" class="cd-avatar-preview" style="display:none;">
+                            <span id="cdEmojiFallback" class="cd-avatar-emoji">📅</span>
+                            <div class="cd-badge-cam">
+                                <span class="material-icons" style="font-size: 14px;">photo_camera</span>
+                            </div>
+                        </div>
+                    </div>
 {% endblock %}
 
 {% block extra_js %}
@@ -471,11 +715,12 @@ function selectEmoji(e) {
 async function submitSubEvent() {
     const title = document.getElementById('subTitle').value.trim();
     const date  = document.getElementById('subDate').value;
+    const repeat = document.getElementById('subRepeat').checked;
     if (!title || !date) { alert('請填寫名稱和日期！'); return; }
     const res = await fetch(`/countdown/api/events/${ITEM_ID}/sub-events`, {
         method: 'POST',
         headers: {'Content-Type':'application/json'},
-        body: JSON.stringify({title, target_date: date, icon: selectedEmoji})
+        body: JSON.stringify({title, target_date: date, icon: selectedEmoji, repeat_annually: repeat})
     });
     if ((await res.json()).success) location.reload();
 }
@@ -502,5 +747,236 @@ document.getElementById('notifyToggleBtn').addEventListener('click', async () =>
         btn.classList.toggle('notify-off', !data.notify_enabled);
     }
 });
+</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.1/cropper.min.js"></script>
+<script>
+    const modal = document.getElementById('cdModal');
+    const form = document.getElementById('cdForm');
+    
+    // Cropper State
+    let cropper = null;
+    let croppedImageData = null; // store base64 data here when cropped
+    
+    // Default date to today
+    document.getElementById('cdTargetDate').valueAsDate = new Date();
+
+    function openCdModal() {
+        document.getElementById('cdModalTitle').innerText = '新增事件';
+        document.getElementById('cdId').value = '';
+        form.reset();
+        
+        document.getElementById('cdIconVal').value = '📅';
+        document.getElementById('cdEmojiFallback').innerText = '📅';
+        setPreviewImage(null);
+        croppedImageData = null;
+
+        document.getElementById('cdTargetDate').valueAsDate = new Date();
+        document.getElementById('btnDeleteCd').style.display = 'none';
+        modal.style.display = 'flex';
+    }
+
+    function openEditModal(item) {
+        document.getElementById('cdModalTitle').innerText = '編輯事件';
+        document.getElementById('cdId').value = item.id;
+        document.getElementById('cdTitle').value = item.title;
+        
+        document.getElementById('cdIconVal').value = item.icon || '📅';
+        document.getElementById('cdEmojiFallback').innerText = item.icon || '📅';
+        setPreviewImage(item.image_path ? `/static/${item.image_path}` : null);
+        croppedImageData = null;
+
+        document.getElementById('cdTargetDate').value = item.target_date;
+        document.querySelector(`input[name="cdIsAnniversary"][value="${item.is_anniversary}"]`).checked = true;
+        document.getElementById('cdPinned').checked = item.pinned;
+        document.getElementById('cdRepeatAnnually').checked = item.repeat_annually || false;
+        document.getElementById('btnDeleteCd').style.display = 'block';
+        modal.style.display = 'flex';
+    }
+
+    function setPreviewImage(src) {
+        const preview = document.getElementById('cdPreviewImg');
+        const fallback = document.getElementById('cdEmojiFallback');
+        if (src) {
+            preview.src = src;
+            preview.style.display = 'block';
+            fallback.style.display = 'none';
+        } else {
+            preview.src = '';
+            preview.style.display = 'none';
+            fallback.style.display = 'block';
+        }
+    }
+
+    // --- Avatar / Cropper Logic ---
+    const cdAvatarModal = document.getElementById('cdAvatarModal');
+    const selectionView = document.getElementById('cdAvatarSelectionView');
+    const cropView = document.getElementById('cdAvatarCropView');
+    const imageInput = document.getElementById('cdImageUpload');
+    const cropTarget = document.getElementById('cdCropTarget');
+
+    function openCdAvatarModal() {
+        cdAvatarModal.style.display = 'flex';
+        selectionView.style.display = 'block';
+        cropView.style.display = 'none';
+    }
+
+    function closeCdAvatarModal() {
+        cdAvatarModal.style.display = 'none';
+        if (cropper) { cropper.destroy(); cropper = null; }
+        imageInput.value = '';
+    }
+    
+    function selectCdPreset(icon) {
+        document.getElementById('cdIconVal').value = icon;
+        document.getElementById('cdEmojiFallback').innerText = icon;
+        setPreviewImage(null);
+        croppedImageData = null;
+        closeCdAvatarModal();
+    }
+
+    function handleCdImageSelect(e) {
+        if (e.target.files && e.target.files[0]) {
+            const reader = new FileReader();
+            reader.onload = function(evt) {
+                cropTarget.src = evt.target.result;
+                selectionView.style.display = 'none';
+                cropView.style.display = 'block';
+                
+                if (cropper) { cropper.destroy(); }
+                
+                cropTarget.onload = function() {
+                    cropper = new Cropper(cropTarget, {
+                        aspectRatio: 1,
+                        viewMode: 1,
+                        dragMode: 'move',
+                        autoCropArea: 0.9,
+                        restore: false,
+                        guides: true,
+                        center: true,
+                        highlight: false,
+                        cropBoxMovable: true,
+                        cropBoxResizable: true,
+                        toggleDragModeOnDblclick: false,
+                        minCropBoxWidth: 200,
+                        minCropBoxHeight: 200
+                    });
+                    
+                    setTimeout(() => {
+                        const cropBox = document.querySelector('.cropper-crop-box');
+                        const face = document.querySelector('.cropper-face');
+                        if (cropBox && face) {
+                            cropBox.style.borderRadius = '50%';
+                            face.style.borderRadius = '50%';
+                        }
+                    }, 100);
+                };
+            }
+            reader.readAsDataURL(e.target.files[0]);
+        }
+    }
+
+    function cancelCdCrop() {
+        selectionView.style.display = 'block';
+        cropView.style.display = 'none';
+        imageInput.value = ''; 
+        if (cropper) { cropper.destroy(); cropper = null; }
+    }
+
+    function applyCdCrop() {
+        if (!cropper) return;
+        const canvas = cropper.getCroppedCanvas({ 
+            width: 400, height: 400,
+            imageSmoothingEnabled: true,
+            imageSmoothingQuality: 'high'
+        });
+        croppedImageData = canvas.toDataURL('image/jpeg', 0.9);
+        setPreviewImage(croppedImageData);
+        
+        // Ensure emoji fallback is hidden but its value remains intact for db fallback
+        closeCdAvatarModal();
+    }
+    // ---------------------
+
+    function closeCdModal() {
+        modal.style.display = 'none';
+    }
+
+    // click outside to close
+    modal.addEventListener('click', function(e) {
+        if (e.target === this) closeCdModal();
+    });
+
+    form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const id = document.getElementById('cdId').value;
+        const data = {
+            title: document.getElementById('cdTitle').value,
+            icon: document.getElementById('cdIconVal').value,
+            target_date: document.getElementById('cdTargetDate').value,
+            is_anniversary: document.querySelector('input[name="cdIsAnniversary"]:checked').value === 'true',
+            pinned: document.getElementById('cdPinned').checked,
+            repeat_annually: document.getElementById('cdRepeatAnnually').checked
+        };
+        
+        // Include base64 image if a new image was cropped.
+        // If they cleared the image, we can send a special flag or just handle it if image data is absent plus checking old vs new.
+        // Actually, if croppedImageData is null, but they used the "clear" button, the server needs to know to remove it.
+        // We can pass `image_data: croppedImageData` if they cropped a new one.
+        // If they cleared it, we send `clear_image: true`.
+        if (croppedImageData) {
+            data.image_data = croppedImageData;
+        } else if (document.getElementById('cdPreviewImg').style.display === 'none') {
+            data.clear_image = true;
+        }
+
+        const url = id ? `/countdown/api/events/${id}` : '/countdown/api/events';
+        const method = id ? 'PUT' : 'POST';
+
+        try {
+            const res = await fetch(url, {
+                method: method,
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+            if (res.ok) {
+                window.location.reload();
+            } else {
+                alert('儲存失敗');
+            }
+        } catch (err) {
+            console.error(err);
+            alert('系統錯誤');
+        }
+    });
+
+    async function deleteCd() {
+        const id = document.getElementById('cdId').value;
+        if (!id || !confirm('確定要刪除此事件嗎？')) return;
+
+        try {
+            const res = await fetch(`/countdown/api/events/${id}`, { method: 'DELETE' });
+            if (res.ok) {
+                window.location.reload();
+            } else {
+                alert('刪除失敗');
+            }
+        } catch (err) {
+            console.error(err);
+        }
+    }
+
+    async function togglePin(id) {
+        // Prevent event propagation
+        event.stopPropagation();
+        
+        try {
+            const res = await fetch(`/countdown/api/events/${id}/toggle-pin`, { method: 'POST' });
+            if (res.ok) {
+                window.location.reload();
+            }
+        } catch(err) {
+            console.error(err);
+        }
+    }
 </script>
 {% endblock %}

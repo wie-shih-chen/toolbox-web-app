@@ -441,9 +441,13 @@
                 </div>
 
                 <div style="margin-bottom: 28px;">
-                    <label class="cd-checkbox-row">
+                    <label class="cd-checkbox-row" style="margin-bottom: 8px;">
                         <input type="checkbox" id="cdPinned">
                         <span class="cd-checkbox-text">📌 同時釘選在首頁顯示</span>
+                    </label>
+                    <label class="cd-checkbox-row">
+                        <input type="checkbox" id="cdRepeatAnnually">
+                        <span class="cd-checkbox-text">🔄 每年自動重複 (適用於生日、節日等)</span>
                     </label>
                 </div>
 
@@ -547,6 +551,7 @@
         document.getElementById('cdTargetDate').value = item.target_date;
         document.querySelector(`input[name="cdIsAnniversary"][value="${item.is_anniversary}"]`).checked = true;
         document.getElementById('cdPinned').checked = item.pinned;
+        document.getElementById('cdRepeatAnnually').checked = item.repeat_annually || false;
         document.getElementById('btnDeleteCd').style.display = 'block';
         modal.style.display = 'flex';
     }
@@ -672,7 +677,8 @@
             icon: document.getElementById('cdIconVal').value,
             target_date: document.getElementById('cdTargetDate').value,
             is_anniversary: document.querySelector('input[name="cdIsAnniversary"]:checked').value === 'true',
-            pinned: document.getElementById('cdPinned').checked
+            pinned: document.getElementById('cdPinned').checked,
+            repeat_annually: document.getElementById('cdRepeatAnnually').checked
         };
         
         // Include base64 image if a new image was cropped.

@@ -191,6 +191,7 @@ class Countdown(db.Model):
     image_path = db.Column(db.String(255), nullable=True) # For custom uploaded photos
     pinned = db.Column(db.Boolean, default=False)
     notify_enabled = db.Column(db.Boolean, default=True) # Notification toggle
+    repeat_annually = db.Column(db.Boolean, default=False)  # For fixed annual holidays
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
 class CountdownSubEvent(db.Model):
@@ -200,4 +201,5 @@ class CountdownSubEvent(db.Model):
     title = db.Column(db.String(100), nullable=False)
     target_date = db.Column(db.String(10), nullable=False)  # YYYY-MM-DD
     icon = db.Column(db.String(10), default='📅')
+    repeat_annually = db.Column(db.Boolean, default=False)  # If True, repeat on same month/day every year
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
