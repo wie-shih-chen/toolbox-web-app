@@ -143,12 +143,18 @@
                 <span class="material-icons">school</span>
                 <span class="nav-text">日曆</span>
             </a>
+            <a href="{{ url_for('countdown.index') }}"
+                class="mobile-nav-item {% if 'countdown' in request.endpoint %}active{% endif %}">
+                <span class="material-icons">hourglass_bottom</span>
+                <span class="nav-text">倒數</span>
+            </a>
             <a href="{{ url_for('expense.today') }}"
                 class="mobile-nav-item {% if 'expense' in request.endpoint %}active{% endif %}">
                 <span class="material-icons">account_balance_wallet</span>
                 <span class="nav-text">記帳</span>
             </a>
         </nav>
+    </div> <!-- End of .container -->
         <!-- Feature Introduction Modal (Custom Implementation) -->
         <div class="modal" id="introModal" style="display: none;">
             <div class="modal-content glass"
