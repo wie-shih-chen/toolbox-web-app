@@ -159,7 +159,7 @@ web_app/
 │       └── 快捷摘要 (emoji + 名稱)
 │
 ├── 🩸 生理期追蹤器 (/period)
-│   ├── 儀表板與預測 (dashboard) — FullCalendar月曆、下次經期/易孕期/排卵日預測
+│   ├── 儀表板與預測 (dashboard) — v2.6.4: 全新自適應「實體色帶 (Ribbon)」月曆、智慧「遺失紀錄」缺漏偵測 (Gap Detection)
 │   └── ⚙️ 設定 (settings) — 自訂平均週期天數、平均經期長度
 │
 ├── ⏳ 倒數與紀念日 (/countdown)
@@ -290,6 +290,7 @@ web_app/
 │   ├── start_date (Date)
 │   ├── end_date (Date, Nullable)
 │   ├── cycle_length (Integer, Nullable)
+│   ├── exclude_from_avg (Boolean, Default False) — 排除異常週期不計入統計
 │   ├── note (Text)
 │   └── created_at (DateTime)
 │
@@ -340,10 +341,10 @@ web_app/
 └── POST /test_notification             # 測試通知發送
 
 /period/api/ (生理期追蹤 API)
-├── GET  /events                        # 取得 FullCalendar JSON (歷史+預測)
-├── POST /records                       # 新增紀錄 (自動重算週期)
-├── PUT  /records/<id>                  # 更新紀錄 (自動重算週期)
-└── DELETE /records/<id>                # 刪除紀錄 (自動重算週期)
+├── GET  /events                        # 取得 FullCalendar JSON (歷史+未來預測，已移除過期預測)
+├── POST /records                       # 新增紀錄 (支援 exclude_from_avg, 自動偵測 60+天缺漏)
+├── PUT  /records/<id>                  # 更新紀錄 (支援 exclude_from_avg)
+└── DELETE /records/<id>                # 刪除紀錄
 
 /expense/api/ (記帳模組 API)
 ├── GET  /settings                      # 讀取記帳設定
