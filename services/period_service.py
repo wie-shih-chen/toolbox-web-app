@@ -21,12 +21,14 @@ class PeriodService:
                 "start_date": r.start_date,
                 "end_date": r.end_date,
                 "cycle_length": r.cycle_length,
-                "note": r.note
+                "note": r.note,
+                "exclude_from_avg": r.exclude_from_avg,
+                "is_gap": (r.cycle_length or 0) > 60
             }
             for r in records
         ]
 
-    def add_record(self, start_date, end_date=None, note=None):
+    def add_record(self, start_date, end_date=None, note=None, exclude_from_avg=False):
         # Calculate cycle length if there's a previous record
         prev_record = PeriodRecord.query.filter(
             PeriodRecord.user_id == self.user_id,
@@ -38,16 +40,18 @@ class PeriodService:
             sd = datetime.datetime.strptime(start_date, '%Y-%m-%d')
             prev_sd = datetime.datetime.strptime(prev_record.start_date, '%Y-%m-%d')
             cycle_length = (sd - prev_sd).days
-
-            # Also update the user's average cycle length dynamically
-            self.settings.avg_period_cycle = self._calculate_avg_cycle([cycle_length])
+            
+            # Auto-exclude if > 60 days gap
+            if cycle_length > 60:
+                exclude_from_avg = True
 
         new_record = PeriodRecord(
             user_id=self.user_id,
             start_date=start_date,
             end_date=end_date,
             cycle_length=cycle_length,
-            note=note
+            note=note,
+            exclude_from_avg=exclude_from_avg
         )
         db.session.add(new_record)
         
@@ -66,7 +70,7 @@ class PeriodService:
         db.session.commit()
         return {"success": True, "id": new_record.id}
 
-    def update_record(self, record_id, start_date, end_date=None, note=None):
+    def update_record(self, record_id, start_date, end_date=None, note=None, exclude_from_avg=None):
         record = PeriodRecord.query.filter_by(id=record_id, user_id=self.user_id).first()
         if not record:
             return {"success": False, "error": "Record not found"}
@@ -75,10 +79,16 @@ class PeriodService:
         record.start_date = start_date
         record.end_date = end_date
         record.note = note
+        
+        if exclude_from_avg is not None:
+            record.exclude_from_avg = exclude_from_avg
 
         if old_start_date != start_date:
             # Recalculate cycle lengths for this and adjacent records
             self._recalculate_all_cycle_lengths()
+        else:
+            # Just update average if exclusion status changed
+            self.settings.avg_period_cycle = self._calculate_avg_cycle()
 
         db.session.commit()
         return {"success": True}
@@ -102,23 +112,30 @@ class PeriodService:
                 curr_sd = datetime.datetime.strptime(records[i].start_date, '%Y-%m-%d')
                 prev_sd = datetime.datetime.strptime(records[i-1].start_date, '%Y-%m-%d')
                 records[i].cycle_length = (curr_sd - prev_sd).days
+                
+                # Auto-exclude extremely long cycles if they haven't been manually set
+                if records[i].cycle_length > 60 and records[i].exclude_from_avg is False:
+                    records[i].exclude_from_avg = True
 
         # Update average
-        self.settings.avg_period_cycle = self._calculate_avg_cycle([r.cycle_length for r in records if r.cycle_length])
+        self.settings.avg_period_cycle = self._calculate_avg_cycle([r.cycle_length for r in records if r.cycle_length and not r.exclude_from_avg])
 
     def _calculate_avg_cycle(self, latest_cycles=None):
         """加權平均：最近的週期占更高比重"""
         records = PeriodRecord.query.filter(
             PeriodRecord.user_id == self.user_id,
-            PeriodRecord.cycle_length.isnot(None)
+            PeriodRecord.cycle_length.isnot(None),
+            PeriodRecord.exclude_from_avg == False
         ).order_by(PeriodRecord.start_date.desc()).limit(6).all()
         
         cycles = [r.cycle_length for r in records]
         if latest_cycles:
+            # Filter latest_cycles to exclude None
+            latest_cycles = [c for c in latest_cycles if c is not None]
             cycles = latest_cycles + cycles  # Prepend newest
         
-        # Filter outliers (14~90 days)
-        cycles = [c for c in cycles if 14 <= c <= 90]
+        # Filter outliers (14~60 days for normal calculation)
+        cycles = [c for c in cycles if 14 <= c <= 60]
         if not cycles:
             return self.settings.avg_period_cycle or 28
         

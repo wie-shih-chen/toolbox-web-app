@@ -43,12 +43,13 @@ def add_record():
     start_date = data.get('start_date')
     end_date = data.get('end_date')
     note = data.get('note')
+    exclude_from_avg = data.get('exclude_from_avg', False)
     
     if not start_date:
         return jsonify({"success": False, "error": "Missing start_date"}), 400
         
     service = PeriodService(current_user.id)
-    result = service.add_record(start_date, end_date, note)
+    result = service.add_record(start_date, end_date, note, exclude_from_avg)
     return jsonify(result)
 
 @period_bp.route('/api/records/<int:record_id>', methods=['PUT'])
@@ -58,12 +59,13 @@ def update_record(record_id):
     start_date = data.get('start_date')
     end_date = data.get('end_date')
     note = data.get('note')
+    exclude_from_avg = data.get('exclude_from_avg')
     
     if not start_date:
         return jsonify({"success": False, "error": "Missing start_date"}), 400
         
     service = PeriodService(current_user.id)
-    result = service.update_record(record_id, start_date, end_date, note)
+    result = service.update_record(record_id, start_date, end_date, note, exclude_from_avg)
     return jsonify(result)
 
 @period_bp.route('/api/records/<int:record_id>', methods=['DELETE'])

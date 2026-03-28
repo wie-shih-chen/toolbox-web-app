@@ -369,6 +369,13 @@
         align-items: center;
         margin-bottom: 16px;
     }
+    .excluded-row td {
+        color: var(--text-secondary) !important;
+        opacity: 0.7;
+    }
+    .excluded-row td:nth-child(3) {
+        text-decoration: line-through rgba(255,255,255,0.3);
+    }
 </style>
 {% endblock %}
 
@@ -458,13 +465,26 @@
             </thead>
             <tbody>
                 {% for r in history %}
-                <tr>
+                <tr class="{% if r.exclude_from_avg %}excluded-row{% endif %}">
                     <td>{{ r.start_date }}</td>
                     <td>{{ r.end_date or '-' }}</td>
-                    <td>{{ r.cycle_length or '-' }}</td>
-                    <td>{{ r.note or '-' }}</td>
                     <td>
-                        <button class="btn-icon" onclick="openRecordModal('{{ r.id }}', '{{ r.start_date }}', '{{ r.end_date }}', '{{ r.note }}')" title="編輯">
+                        {% if r.is_gap %}
+                            <span style="color: #ff9f0a; font-size: 0.85rem; font-weight: 600;">⚠️ 遺失紀錄</span>
+                            <span style="font-size: 0.8rem; opacity: 0.6;">({{ r.cycle_length }}天)</span>
+                        {% elif r.cycle_length %}
+                            {{ r.cycle_length }}
+                        {% else %}
+                            -
+                        {% endif %}
+                        
+                        {% if r.exclude_from_avg %}
+                            <span class="status-badge" style="background: rgba(255,255,255,0.1); color: var(--text-secondary); margin-left: 4px; font-size: 0.7rem;">已排除</span>
+                        {% endif %}
+                    </td>
+                    <td style="{% if r.exclude_from_avg %}opacity: 0.5;{% endif %}">{{ r.note or '-' }}</td>
+                    <td>
+                        <button class="btn-icon" onclick="openRecordModal('{{ r.id }}', '{{ r.start_date }}', '{{ r.end_date }}', '{{ r.note }}', {{ 'true' if r.exclude_from_avg else 'false' }})" title="編輯">
                             <span class="material-icons" style="font-size: 18px;">edit</span>
                         </button>
                     </td>
@@ -497,6 +517,13 @@
         <div class="form-group">
             <label>症狀或備註</label>
             <input type="text" id="note" class="form-control" placeholder="例如：經痛、流量多">
+        </div>
+        <div class="form-group" style="margin-top: 20px;">
+            <label class="cd-checkbox-row" style="background: rgba(255,255,255,0.03); padding: 10px; border-radius: 10px; display: flex; align-items: center; gap: 10px; cursor: pointer;">
+                <input type="checkbox" id="excludeFromAvg" style="width: 18px; height: 18px; accent-color: #ff4d4f;">
+                <span style="font-size: 0.9rem; color: var(--text-primary);">排除此筆數據 (計算平均值時忽略)</span>
+            </label>
+            <p style="font-size: 0.75rem; color: var(--text-secondary); margin: 6px 0 0 10px;">適用於異常週期或是長時間沒紀錄的情況。</p>
         </div>
         <div class="modal-actions">
             <button class="btn-delete" id="btnDelete" onclick="deleteRecord()" style="display:none;">刪除</button>
@@ -548,12 +575,13 @@
         calendar.render();
     });
 
-    function openRecordModal(id = null, start = '', end = '', note = '') {
+    function openRecordModal(id = null, start = '', end = '', note = '', exclude = false) {
         document.getElementById('recordModal').style.display = 'flex';
         document.getElementById('recordId').value = id || '';
         document.getElementById('startDate').value = start || new Date().toISOString().slice(0, 10);
         document.getElementById('endDate').value = end;
         document.getElementById('note').value = note;
+        document.getElementById('excludeFromAvg').checked = exclude;
         
         if (id) {
             document.getElementById('modalTitle').textContent = '編輯經期紀錄';
@@ -573,6 +601,7 @@
         const start = document.getElementById('startDate').value;
         const end = document.getElementById('endDate').value;
         const note = document.getElementById('note').value;
+        const exclude = document.getElementById('excludeFromAvg').checked;
 
         if (!start) {
             alert('請填寫開始日期喔！');
@@ -586,7 +615,12 @@
             const res = await fetch(url, {
                 method: method,
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ start_date: start, end_date: end, note: note })
+                body: JSON.stringify({ 
+                    start_date: start, 
+                    end_date: end, 
+                    note: note,
+                    exclude_from_avg: exclude
+                })
             });
 
             const data = await res.json();

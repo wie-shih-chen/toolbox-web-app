@@ -118,6 +118,7 @@ class PeriodRecord(db.Model):
     end_date = db.Column(db.String(10), nullable=True)    # YYYY-MM-DD
     cycle_length = db.Column(db.Integer, nullable=True)   # Length since previous period
     note = db.Column(db.String(255), nullable=True)
+    exclude_from_avg = db.Column(db.Boolean, default=False) # Skip this cycle in calculations
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
 class ReportLog(db.Model):
