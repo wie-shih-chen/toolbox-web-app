@@ -323,27 +323,6 @@ class PeriodService:
                 }
             })
             
-        # 2. Add past predictions (each history record predicting the next)
-        if len(history) > 1:
-            avg_cycle = self.settings.avg_period_cycle or 28
-            duration = self.settings.avg_period_duration or 5
-            for r in history[1:]:
-                past_start_dt = datetime.datetime.strptime(r['start_date'], '%Y-%m-%d')
-                p_start = past_start_dt + timedelta(days=avg_cycle)
-                p_end = p_start + timedelta(days=duration - 1)
-                o_day = p_start - timedelta(days=14)
-                f_start = o_day - timedelta(days=5)
-                f_end = o_day + timedelta(days=1)
-                
-                p = {
-                    "period_start": p_start.strftime('%Y-%m-%d'),
-                    "period_end": p_end.strftime('%Y-%m-%d'),
-                    "ovulation_day": o_day.strftime('%Y-%m-%d'),
-                    "fertile_window_start": f_start.strftime('%Y-%m-%d'),
-                    "fertile_window_end": f_end.strftime('%Y-%m-%d')
-                }
-                events.extend(self._create_prediction_events(p, f"past_pred_{r['id']}"))
-
         # 3. Add future predictions
         preds = self.get_predictions(months=6) # Get half year of predictions
         for i, p in enumerate(preds):
