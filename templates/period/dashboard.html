@@ -86,106 +86,171 @@
     .cal-container {
         background: rgba(255, 255, 255, 0.03);
         border: 1px solid rgba(255, 255, 255, 0.08);
-        border-radius: 24px;
-        padding: 12px;
+        border-radius: 20px;
+        padding: 5px; /* Minimal padding for mobile */
         backdrop-filter: blur(20px);
         -webkit-backdrop-filter: blur(20px);
-        box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+        box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
         margin-bottom: 24px;
+        overflow: hidden;
     }
 
     #calendar {
         height: auto;
     }
 
-    /* FullCalendar Glassmorphism UI Overrides */
+    /* Target FullCalendar overrides */
     .fc { 
         --fc-border-color: rgba(255, 255, 255, 0.08);
         --fc-button-bg-color: rgba(255, 255, 255, 0.05);
         --fc-button-border-color: rgba(255, 255, 255, 0.1);
-        --fc-button-hover-bg-color: rgba(255, 255, 255, 0.15);
+        --fc-button-hover-bg-color: rgba(255, 255, 255, 0.1);
         --fc-button-active-bg-color: rgba(255, 255, 255, 0.2);
-        --fc-today-bg-color: rgba(255, 255, 255, 0.05);
+        --fc-today-bg-color: rgba(255, 255, 255, 0.03);
     }
 
     .fc-theme-standard .fc-scrollgrid { border: none; }
     .fc-theme-standard td, .fc-theme-standard th { border-right: none; border-left: none; }
     
     .fc-col-header-cell {
-        padding: 12px 0 !important;
+        padding: 10px 0 !important;
         text-transform: uppercase;
         font-size: 0.75rem;
-        letter-spacing: 1px;
         color: var(--text-secondary);
+        background: rgba(255, 255, 255, 0.02);
     }
 
     .fc-daygrid-day-number {
         font-size: 0.85rem;
-        padding: 6px 10px !important;
-        opacity: 0.8;
+        padding: 4px 8px !important;
+        opacity: 0.6;
         font-weight: 300;
         color: var(--text-primary) !important;
         text-decoration: none !important;
     }
 
+    /* Today Marker */
+    .fc-day-today {
+        background: rgba(255, 77, 79, 0.05) !important;
+    }
     .fc-day-today .fc-daygrid-day-number {
         background: #ff4d4f;
         color: white !important;
-        border-radius: 50%;
-        display: inline-block;
-        width: 24px;
-        height: 24px;
-        line-height: 24px;
-        text-align: center;
-        padding: 0 !important;
-        margin: 5px;
-    }
-
-    /* Event Styles */
-    .fc-event {
-        border-radius: 8px !important;
-        border: none !important;
+        opacity: 1;
+        border-radius: 4px;
         padding: 2px 6px !important;
-        font-size: 0.75rem !important;
-        margin: 2px 4px !important;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        margin: 4px;
     }
 
-    .fc-v-event { background-color: transparent; }
+    /* Event Styles: Solid Ribbons */
+    .fc-event {
+        border-radius: 4px !important;
+        border: none !important;
+        padding: 4px 6px !important;
+        font-size: 0.8rem !important;
+        margin: 1px 2px !important;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        font-weight: 500;
+        color: white !important;
+    }
 
-    /* History Events (Actual Period) */
+    /* Period Ribbon - Actual */
     .fc-event[data-type="history"] {
-        background: linear-gradient(135deg, #ff4d4f 0%, #cf1322 100%) !important;
+        background: linear-gradient(90deg, #ff4d4f 0%, #ff7875 100%) !important;
     }
 
-    /* Prediction Events (Dashed) */
+    /* Period Ribbon - Prediction */
     .dashed-border {
-        border: 1.5px dashed #ffa39e !important;
-        background: rgba(255, 77, 79, 0.1) !important;
-        color: #ffccc7 !important;
+        background: repeating-linear-gradient(
+            45deg,
+            rgba(255, 77, 79, 0.2),
+            rgba(255, 77, 79, 0.2) 10px,
+            rgba(255, 77, 79, 0.3) 10px,
+            rgba(255, 77, 79, 0.3) 20px
+        ) !important;
+        border: 1px dashed rgba(255, 255, 255, 0.3) !important;
+        color: rgba(255, 255, 255, 0.9) !important;
+    }
+
+    /* Fertile Window Ribbon */
+    .fc-event[title*="易孕期"] {
+        background: linear-gradient(90deg, #52c41a 0%, #95de64 100%) !important;
+        opacity: 0.8;
+    }
+
+    /* Ovulation Dot Overlay */
+    .fc-event[title*="🥚"] {
+        background: #faad14 !important;
+        text-align: center;
+        width: 32px;
+        margin-left: auto !important;
+        margin-right: auto !important;
     }
 
     /* Toolbars */
-    .fc-toolbar-title {
-        font-size: 1.1rem !important;
-        font-weight: 600 !important;
-    }
-
+    .fc-toolbar-title { font-size: 1.1rem !important; }
     .fc-button {
+        padding: 8px 16px !important;
+        font-size: 0.9rem !important;
         border-radius: 12px !important;
-        padding: 6px 14px !important;
-        font-size: 0.85rem !important;
-        text-transform: capitalize !important;
+        min-height: 44px !important; /* Architecture Requirement */
     }
 
-    /* Mobile Responsive Tweaks */
-    @media (max-width: 576px) {
-        .cal-container { padding: 8px; border-radius: 18px; }
+    /* Desktop View Tweaks */
+    @media (min-width: 600px) {
+        .cal-container { padding: 15px; }
+        .fc-daygrid-event { min-height: 24px; }
+    }
+
+    /* Mobile View Tweaks */
+    @media (max-width: 600px) {
         .fc-col-header-cell { font-size: 0.65rem; }
-        .fc-daygrid-day-number { font-size: 0.75rem; padding: 4px 6px !important; }
-        .fc-event { font-size: 0.65rem !important; padding: 1px 3px !important; margin: 1px 2px !important; }
-        .fc-toolbar-chunk:first-child .fc-button { padding: 4px 8px !important; }
-        .fc-toolbar-title { font-size: 0.95rem !important; }
+        .fc-daygrid-day-number { font-size: 0.75rem; }
+        .fc-event { 
+            font-size: 0.7rem !important; 
+            padding: 2px 4px !important;
+            margin: 1px 0 !important;
+            border-radius: 2px !important;
+        }
+    }
+
+    /* Modal Design: Standard for Desktop, Bottom Sheet for Mobile */
+    .modal {
+        position: fixed;
+        z-index: 1000;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.7);
+        backdrop-filter: blur(5px);
+        display: none;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .modal-content {
+        background: #1a1a1a;
+        width: 100%;
+        max-width: 450px;
+        border-radius: 20px;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        padding: 24px;
+        position: relative;
+        max-height: 90vh;
+        box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+    }
+
+    @media (max-width: 600px) {
+        .modal {
+            align-items: flex-end;
+        }
+        .modal-content {
+            border-radius: 25px 25px 0 0;
+            padding: 20px;
+            padding-bottom: calc(20px + env(safe-area-inset-bottom));
+            max-width: 100%;
+        }
     }
 
     /* Modal Styles */
@@ -627,15 +692,26 @@
                 right: 'dayGridMonth'
             },
             height: 'auto',
-            dayMaxEvents: window.innerWidth < 576 ? 2 : true, // Mobile: show 2 max, Desktop: all
+            dayMaxEvents: true,
             events: '/period/api/events',
             eventContent: function(arg) {
-                // Shorten labels for mobile
-                if (window.innerWidth < 576) {
-                    if (arg.event.title === '預測經期') return { html: '<div class="fc-event-main-frame"><div class="fc-event-title-container"><div class="fc-event-title">預測</div></div></div>' };
-                    if (arg.event.title === '🥚 排卵日') return { html: '<div class="fc-event-main-frame"><div class="fc-event-title-container"><div class="fc-event-title">🥚</div></div></div>' };
+                const isMobile = window.innerWidth < 600;
+                let title = arg.event.title;
+                
+                // Adaptive Labels
+                if (isMobile) {
+                    if (title === '預測經期') title = '預測';
+                    if (title === '🥚 排卵日') title = '🥚';
+                    if (title === '易孕期') title = '易孕';
                 }
-                return true; // Use default
+                
+                return {
+                    html: `<div class="fc-event-main-frame">
+                            <div class="fc-event-title-container">
+                                <div class="fc-event-title">${title}</div>
+                            </div>
+                           </div>`
+                };
             },
             eventClick: function(info) {
                 const props = info.event.extendedProps;
