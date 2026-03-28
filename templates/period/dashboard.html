@@ -84,33 +84,108 @@
     }
 
     .cal-container {
-        background: rgba(255, 255, 255, 0.05);
-        border: 1px solid rgba(255, 255, 255, 0.1);
-        border-radius: 18px;
-        padding: 16px;
-        backdrop-filter: blur(10px);
-        min-height: 500px;
+        background: rgba(255, 255, 255, 0.03);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 24px;
+        padding: 12px;
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
+        box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+        margin-bottom: 24px;
     }
 
     #calendar {
-        height: 100%;
+        height: auto;
     }
 
-    /* Target FullCalendar overrides */
-    .fc-theme-standard .fc-scrollgrid { border-color: rgba(255, 255, 255, 0.1); }
-    .fc-theme-standard td, .fc-theme-standard th { border-color: rgba(255, 255, 255, 0.1); }
-    .fc-col-header-cell-cushion, .fc-daygrid-day-number { color: var(--text-primary); text-decoration: none; }
-    
-    /* Dashed border for predictions */
-    .dashed-border {
-        border-style: dashed !important;
-        background: rgba(255, 77, 79, 0.1) !important;
+    /* FullCalendar Glassmorphism UI Overrides */
+    .fc { 
+        --fc-border-color: rgba(255, 255, 255, 0.08);
+        --fc-button-bg-color: rgba(255, 255, 255, 0.05);
+        --fc-button-border-color: rgba(255, 255, 255, 0.1);
+        --fc-button-hover-bg-color: rgba(255, 255, 255, 0.15);
+        --fc-button-active-bg-color: rgba(255, 255, 255, 0.2);
+        --fc-today-bg-color: rgba(255, 255, 255, 0.05);
     }
+
+    .fc-theme-standard .fc-scrollgrid { border: none; }
+    .fc-theme-standard td, .fc-theme-standard th { border-right: none; border-left: none; }
     
+    .fc-col-header-cell {
+        padding: 12px 0 !important;
+        text-transform: uppercase;
+        font-size: 0.75rem;
+        letter-spacing: 1px;
+        color: var(--text-secondary);
+    }
+
+    .fc-daygrid-day-number {
+        font-size: 0.85rem;
+        padding: 6px 10px !important;
+        opacity: 0.8;
+        font-weight: 300;
+        color: var(--text-primary) !important;
+        text-decoration: none !important;
+    }
+
+    .fc-day-today .fc-daygrid-day-number {
+        background: #ff4d4f;
+        color: white !important;
+        border-radius: 50%;
+        display: inline-block;
+        width: 24px;
+        height: 24px;
+        line-height: 24px;
+        text-align: center;
+        padding: 0 !important;
+        margin: 5px;
+    }
+
+    /* Event Styles */
     .fc-event {
-        border-radius: 6px;
-        padding: 2px 4px;
-        cursor: pointer;
+        border-radius: 8px !important;
+        border: none !important;
+        padding: 2px 6px !important;
+        font-size: 0.75rem !important;
+        margin: 2px 4px !important;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+    .fc-v-event { background-color: transparent; }
+
+    /* History Events (Actual Period) */
+    .fc-event[data-type="history"] {
+        background: linear-gradient(135deg, #ff4d4f 0%, #cf1322 100%) !important;
+    }
+
+    /* Prediction Events (Dashed) */
+    .dashed-border {
+        border: 1.5px dashed #ffa39e !important;
+        background: rgba(255, 77, 79, 0.1) !important;
+        color: #ffccc7 !important;
+    }
+
+    /* Toolbars */
+    .fc-toolbar-title {
+        font-size: 1.1rem !important;
+        font-weight: 600 !important;
+    }
+
+    .fc-button {
+        border-radius: 12px !important;
+        padding: 6px 14px !important;
+        font-size: 0.85rem !important;
+        text-transform: capitalize !important;
+    }
+
+    /* Mobile Responsive Tweaks */
+    @media (max-width: 576px) {
+        .cal-container { padding: 8px; border-radius: 18px; }
+        .fc-col-header-cell { font-size: 0.65rem; }
+        .fc-daygrid-day-number { font-size: 0.75rem; padding: 4px 6px !important; }
+        .fc-event { font-size: 0.65rem !important; padding: 1px 3px !important; margin: 1px 2px !important; }
+        .fc-toolbar-chunk:first-child .fc-button { padding: 4px 8px !important; }
+        .fc-toolbar-title { font-size: 0.95rem !important; }
     }
 
     /* Modal Styles */
@@ -544,15 +619,24 @@
         const calendarEl = document.getElementById('calendar');
         
         calendar = new FullCalendar.Calendar(calendarEl, {
-            initialView: window.innerWidth < 768 ? 'listMonth' : 'dayGridMonth',
+            initialView: 'dayGridMonth',
             locale: 'zh-tw',
             headerToolbar: {
                 left: 'prev,next today',
                 center: 'title',
-                right: 'dayGridMonth,listMonth'
+                right: 'dayGridMonth'
             },
             height: 'auto',
+            dayMaxEvents: window.innerWidth < 576 ? 2 : true, // Mobile: show 2 max, Desktop: all
             events: '/period/api/events',
+            eventContent: function(arg) {
+                // Shorten labels for mobile
+                if (window.innerWidth < 576) {
+                    if (arg.event.title === '預測經期') return { html: '<div class="fc-event-main-frame"><div class="fc-event-title-container"><div class="fc-event-title">預測</div></div></div>' };
+                    if (arg.event.title === '🥚 排卵日') return { html: '<div class="fc-event-main-frame"><div class="fc-event-title-container"><div class="fc-event-title">🥚</div></div></div>' };
+                }
+                return true; // Use default
+            },
             eventClick: function(info) {
                 const props = info.event.extendedProps;
                 if (props.type === 'history') {
