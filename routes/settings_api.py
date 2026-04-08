@@ -42,6 +42,7 @@ def register_settings_api(auth_bp):
             
         current_user.settings.notification_methods = json.dumps(methods)
         current_user.settings.monthly_report_day = report_day
+        
         db.session.commit()
         
         return jsonify({'success': True})

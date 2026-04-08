@@ -166,6 +166,39 @@
                 </div>
             </div>
             
+            <div class="form-group" style="margin-top: 24px; padding-top: 20px; border-top: 1px solid rgba(255,255,255,0.1);">
+                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px;">
+                    <label class="form-label" style="font-weight: 600; font-size: 1.05rem; display: flex; align-items: center; gap: 8px; margin-bottom: 0;">
+                        <span>🔔</span> 預測通知設定
+                    </label>
+                    <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" name="period_notify_enabled" id="period_notify_enabled" 
+                               {% if settings.period_notify_enabled %}checked{% endif %}
+                               style="width: 2.5em; height: 1.25em; cursor: pointer;">
+                    </div>
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+                    <div>
+                        <label class="form-label" style="font-size: 0.85rem;" for="period_notify_days_before">提前通知天數</label>
+                        <div style="display: flex; align-items: center; gap: 8px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; padding: 4px 12px;">
+                            <input type="number" class="form-control" name="period_notify_days_before" id="period_notify_days_before" 
+                                   value="{{ settings.period_notify_days_before or 3 }}" min="1" max="7"
+                                   style="border: none; padding: 8px 0;">
+                            <span style="font-size: 0.85rem; color: var(--text-tertiary); white-space: nowrap;">天前</span>
+                        </div>
+                    </div>
+                    <div>
+                        <label class="form-label" style="font-size: 0.85rem;" for="period_notify_time">通知發送時間</label>
+                        <input type="time" class="form-control" name="period_notify_time" id="period_notify_time" 
+                               value="{{ settings.period_notify_time or '08:00' }}">
+                    </div>
+                </div>
+                <div class="help-text" style="font-size: 0.8rem; margin-top: 12px;">
+                    💡 系統將在生理期預計開始前，根據您在此設定的天數與時間，透過您在「帳號設定」中選擇的偏好方式（LINE 或 Email）發送提醒。
+                </div>
+            </div>
+            
         </div>
     </form>
 </div>
@@ -195,15 +228,9 @@
     }
 
     async function autoSave() {
-        const cycle = document.getElementById('avg_period_cycle').value;
-        const duration = document.getElementById('avg_period_duration').value;
-        if (!cycle || !duration) return;
-
         setStatus('saving');
         try {
-            const fd = new FormData();
-            fd.append('avg_period_cycle', cycle);
-            fd.append('avg_period_duration', duration);
+            const fd = new FormData(form);
             const res = await fetch('{{ url_for("period.period_settings") }}', {
                 method: 'POST',
                 body: fd
@@ -218,15 +245,16 @@
         }
     }
 
-    form.querySelectorAll('input').forEach(input => {
+    form.querySelectorAll('input, select').forEach(input => {
         input.addEventListener('change', () => {
             clearTimeout(saveTimer);
             saveTimer = setTimeout(autoSave, 600);
         });
-        // Also trigger on manual typing after user stops
         input.addEventListener('input', () => {
-            clearTimeout(saveTimer);
-            saveTimer = setTimeout(autoSave, 1000);
+            if (input.type === 'number' || input.type === 'time' || input.type === 'text') {
+                clearTimeout(saveTimer);
+                saveTimer = setTimeout(autoSave, 1000);
+            }
         });
     });
 </script>

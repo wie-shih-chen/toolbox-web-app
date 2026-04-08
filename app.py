@@ -86,9 +86,18 @@ with app.app_context():
         def countdown_notify_task():
             """Every minute: at 09:00 TW time, send countdown/anniversary milestone reminders."""
             CountdownNotifyService.check_and_send(app)
+
+        from services.period_notify_service import PeriodNotifyService
+        @scheduler.task('interval', id='period_notify', seconds=60)
+        def period_notify_task():
+            """Every minute: check if any user's period notice matches now."""
+            PeriodNotifyService.check_and_send(app)
             
-        scheduler.start()
-        print("Scheduler started successfully.")
+        if not os.environ.get('SKIP_SCHEDULER'):
+            scheduler.start()
+            print("Scheduler started successfully.")
+        else:
+            print("Scheduler start skipped (SKIP_SCHEDULER set).")
     except ImportError as e:
         print(f"Scheduler could not start: {e}")
         print("Reminders will not be sent automatically.")

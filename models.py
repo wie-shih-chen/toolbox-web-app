@@ -110,6 +110,9 @@ class UserSettings(db.Model):
     # Menstrual Cycle settings
     avg_period_cycle = db.Column(db.Integer, default=28)
     avg_period_duration = db.Column(db.Integer, default=5)
+    period_notify_enabled = db.Column(db.Boolean, default=True)
+    period_notify_time = db.Column(db.String(5), default='08:00')   # HH:MM
+    period_notify_days_before = db.Column(db.Integer, default=3)
 
 class PeriodRecord(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -178,6 +181,16 @@ class CalendarNotificationLog(db.Model):
     # Unique key: "{cal_id}:{start_date}:{title[:100]}" to identify the event
     event_key = db.Column(db.String(350), nullable=False)
     # The date this notification was sent (= day before event)
+    sent_date = db.Column(db.String(10), nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+class PeriodNotificationLog(db.Model):
+    """Tracks sent period notifications to prevent duplicates for the same predicted cycle."""
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    # The predicted start date this notification is for
+    predicted_start_date = db.Column(db.String(10), nullable=False)
+    # The date this notification was sent
     sent_date = db.Column(db.String(10), nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 

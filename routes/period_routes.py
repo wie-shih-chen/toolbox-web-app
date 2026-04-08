@@ -103,9 +103,18 @@ def period_settings():
     if request.method == 'POST':
         avg_cycle = request.form.get('avg_period_cycle')
         avg_duration = request.form.get('avg_period_duration')
+        # Checkbox is either 'on' or not present
+        notify_enabled = request.form.get('period_notify_enabled') == 'on'
+        notify_time = request.form.get('period_notify_time')
+        notify_days = request.form.get('period_notify_days_before')
         
-        if avg_cycle and avg_duration:
-            service.update_settings(int(avg_cycle), int(avg_duration))
-            flash('設定已儲存！', 'success')
+        service.update_settings(
+            avg_period_cycle=avg_cycle,
+            avg_period_duration=avg_duration,
+            period_notify_enabled=notify_enabled,
+            period_notify_time=notify_time,
+            period_notify_days_before=notify_days
+        )
+        flash('設定已儲存！', 'success')
             
     return render_template('period/settings.html', settings=service.settings)
