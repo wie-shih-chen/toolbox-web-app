@@ -89,6 +89,12 @@
         box-shadow: 0 0 20px rgba(6, 199, 85, 0.15);
     }
 
+    .line-status-info {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+    }
+
     .line-icon {
         width: 44px;
         height: 44px;
@@ -370,18 +376,18 @@
 
                     <div class="line-actions">
                         {% if current_user.settings.line_user_id %}
-                        <form method="POST" action="{{ url_for('auth.settings') }}">
+                        <form method="POST" action="{{ url_for('auth.settings') }}" style="margin: 0;">
                             <input type="hidden" name="action" value="unbind_line">
                             <button type="submit" class="btn"
-                                style="background: rgba(239, 68, 68, 0.1); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.2); padding: 6px 12px; font-size: 0.85rem;">
-                                解除
+                                style="background: rgba(239, 68, 68, 0.15); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.3); padding: 8px 16px; font-size: 0.9rem; border-radius: 8px; font-weight: 500; transition: all 0.2s;">
+                                解除綁定
                             </button>
                         </form>
                         {% else %}
-                        <form method="POST" action="{{ url_for('auth.settings') }}">
+                        <form method="POST" action="{{ url_for('auth.settings') }}" style="margin: 0;">
                             <input type="hidden" name="action" value="generate_binding_code">
                             <button type="submit" class="btn"
-                                style="background: #06c755; color: white; padding: 6px 16px; font-size: 0.9rem; box-shadow: 0 4px 12px rgba(6, 199, 85, 0.3);">
+                                style="background: linear-gradient(135deg, #06c755 0%, #05a044 100%); color: white; padding: 8px 20px; font-size: 0.95rem; font-weight: 600; border-radius: 8px; box-shadow: 0 4px 12px rgba(6, 199, 85, 0.3); border: none; transition: all 0.2s;">
                                 產生驗證碼
                             </button>
                         </form>
@@ -401,10 +407,11 @@
                 </div>
                 {% endif %}
             </div>
+        </div>
 
-            <!-- 3. Notification Methods -->
-            <div class="settings-section">
-                <div class="section-header">
+        <!-- 3. Notification Methods -->
+        <div class="settings-section">
+            <div class="section-header">
                     <span style="font-size: 1.4rem;">🔔</span> 通知方式偏好
                 </div>
 
@@ -416,7 +423,7 @@
                     <label class="method-label">
                         <input type="checkbox" name="notification_methods" value="email" {% if 'email' in notification_methods %}checked{% endif %}>
                         <div class="method-icon">📧</div>
-                        <div style="font-weight: 600; font-size: 1.05rem; margin-bottom: 4px;">Email</h3>
+                        <div style="font-weight: 600; font-size: 1.05rem; margin-bottom: 4px;">Email</div>
                         <div style="font-size: 0.85rem; color: var(--text-tertiary);">完整報表附件</div>
                     </label>
 
@@ -475,11 +482,9 @@
                     </select>
                 </div>
 
-            </div>
+        </div>
 
-            </div>
-
-            <!-- Close the main unified form -->
+        <!-- Close the main unified form -->
     </form>
 
     <!-- 4. Accounting Settings (Moved content removed by user request) -->
