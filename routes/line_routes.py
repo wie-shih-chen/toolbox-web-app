@@ -65,22 +65,37 @@ def register_line_handlers(handler):
 
         # =============== SMART PARSERS =============== #
         
-        # --- Common Date Parsing Magic ---
+        # --- Common Date Parsing Helper ---
         def parse_date(d_str, default_dt):
-            if not d_str: return default_dt
-            formats = ["%H:%M", "%H%M", "%m/%d/%H:%M", "%m/%d %H:%M", "%Y/%m/%d/%H:%M", "%m/%d", "%Y/%m/%d"]
-            for f in formats:
+            """Parse a flexible date/time string, always anchored to default_dt's year."""
+            if not d_str:
+                return default_dt
+            current_year = default_dt.year
+            # Inject year into month/day-only strings so strptime doesn't pick ambiguous year
+            enriched = d_str
+            import re as _re
+            if _re.match(r'^\d{1,2}/\d{1,2}$', d_str):
+                enriched = f"{current_year}/{d_str}"
+            formats = [
+                ("%Y/%m/%d/%H:%M", True, True, True),
+                ("%Y/%m/%d", True, True, False),
+                ("%m/%d/%H:%M", False, True, True),
+                ("%H:%M", False, False, True),
+                ("%H%M", False, False, True),
+            ]
+            for fmt, has_year, has_date, has_time in formats:
                 try:
-                    pd = datetime.strptime(d_str, f)
+                    pd_ = datetime.strptime(enriched if has_date else d_str, fmt)
                     res = default_dt
-                    if "%m" in f: res = res.replace(month=pd.month, day=pd.day)
-                    if "%H" in f: res = res.replace(hour=pd.hour, minute=pd.minute, second=0)
-                    if "%Y" in f: res = res.replace(year=pd.year)
-                    if "%H" not in f and "%m" in f: res = res.replace(hour=12, minute=0, second=0)
+                    if has_year:  res = res.replace(year=pd_.year)
+                    if has_date:  res = res.replace(month=pd_.month, day=pd_.day)
+                    if has_time:  res = res.replace(hour=pd_.hour, minute=pd_.minute, second=0)
+                    else:         res = res.replace(hour=12, minute=0, second=0)
                     return res
-                except ValueError: pass
+                except ValueError:
+                    pass
             return default_dt
-        
+
         # 1. Expense: 記帳 [名稱] [類別：預設飲食] [金額] [預設時間(本年/本月/本日/現在時間)]
         if msg.startswith("記帳"):
             if not setting:
@@ -225,7 +240,6 @@ def register_line_handlers(handler):
                 return
             
             # Compute hours
-            from datetime import timedelta
             t1 = datetime.strptime(start_time, "%H:%M")
             t2 = datetime.strptime(end_time, "%H:%M")
             if t2 < t1: t2 += timedelta(days=1)
