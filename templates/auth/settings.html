@@ -793,14 +793,6 @@
 
         // ======= LINE Binding Management =======
 
-        // Permission toggle click
-        document.querySelectorAll('.perm-toggle').forEach(toggle => {
-            toggle.addEventListener('click', () => {
-                toggle.classList.toggle('active');
-                const cb = toggle.querySelector('input[type=checkbox]');
-                if (cb) cb.checked = toggle.classList.contains('active');
-            });
-        });
 
         // Poll for new binding: reload page when a new binding is detected
         const currentBindingCount = document.querySelectorAll('.line-binding-row').length;
