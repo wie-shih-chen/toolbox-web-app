@@ -4,91 +4,129 @@
 
 {% block content %}
 <style>
-    /* Scoped styles for settings page */
+    /* Premium Glassmorphism Theme */
     .settings-wrapper {
-        max-width: 600px;
+        max-width: 680px;
         margin: 0 auto;
-        padding-bottom: 40px;
+        padding-bottom: 60px;
+        animation: fadeUp 0.5s ease-out;
+    }
+
+    @keyframes fadeUp {
+        from { opacity: 0; transform: translateY(20px); }
+        to { opacity: 1; transform: translateY(0); }
     }
 
     .settings-section {
-        background: rgba(255, 255, 255, 0.03);
-        border: 1px solid rgba(255, 255, 255, 0.05);
-        border-radius: 16px;
-        padding: 20px;
-        margin-bottom: 20px;
-        backdrop-filter: blur(10px);
-        min-height: auto;
-        /* Ensure consistent sizing */
+        background: linear-gradient(145deg, rgba(255,255,255,0.03) 0%, rgba(255,255,255,0.01) 100%);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 20px;
+        padding: 28px;
+        margin-bottom: 24px;
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+        transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s;
+    }
+
+    .settings-section:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 12px 40px rgba(0, 0, 0, 0.3);
+        border-color: rgba(255, 255, 255, 0.12);
     }
 
     .section-header {
         display: flex;
         align-items: center;
-        gap: 10px;
-        margin-bottom: 20px;
-        color: var(--text-secondary);
-        font-size: 1.1rem;
-        font-weight: 500;
-        border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-        padding-bottom: 10px;
+        gap: 12px;
+        margin-bottom: 24px;
+        color: var(--text-primary);
+        font-size: 1.15rem;
+        font-weight: 600;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+        padding-bottom: 14px;
     }
 
+    /* Glass Inputs */
+    .glass-input {
+        width: 100%;
+        padding: 14px 16px;
+        background: rgba(255, 255, 255, 0.03);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 12px;
+        color: white;
+        transition: all 0.3s ease;
+        font-size: 1rem;
+    }
+
+    .glass-input:focus {
+        outline: none;
+        background: rgba(255, 255, 255, 0.06);
+        border-color: #4ecdc4;
+        box-shadow: 0 0 0 3px rgba(78, 205, 196, 0.2);
+    }
+    
+    .glass-input:disabled {
+        background: rgba(0, 0, 0, 0.2);
+        cursor: not-allowed;
+        color: rgba(255,255,255,0.5);
+    }
+
+    /* LINE Card */
     .line-status-card {
         display: flex;
         align-items: center;
         justify-content: space-between;
-        background: rgba(6, 199, 85, 0.1);
-        border: 1px solid rgba(6, 199, 85, 0.2);
-        border-radius: 12px;
-        padding: 16px;
+        background: linear-gradient(135deg, rgba(6, 199, 85, 0.12) 0%, rgba(6, 199, 85, 0.05) 100%);
+        border: 1px solid rgba(6, 199, 85, 0.3);
+        border-radius: 16px;
+        padding: 18px 20px;
         margin-bottom: 16px;
+        transition: all 0.3s ease;
     }
-
-    .line-status-info {
-        display: flex;
-        align-items: center;
-        gap: 12px;
+    .line-status-card:hover {
+        border-color: rgba(6, 199, 85, 0.5);
+        box-shadow: 0 0 20px rgba(6, 199, 85, 0.15);
     }
 
     .line-icon {
-        width: 40px;
-        height: 40px;
+        width: 44px;
+        height: 44px;
         background: #06c755;
         border-radius: 50%;
         display: flex;
         align-items: center;
         justify-content: center;
-        font-size: 20px;
+        font-size: 22px;
         color: white;
+        box-shadow: 0 4px 12px rgba(6, 199, 85, 0.4);
     }
 
     .binding-code-box {
-        background: rgba(0, 0, 0, 0.3);
-        border: 1px dashed rgba(255, 255, 255, 0.2);
-        border-radius: 12px;
-        padding: 20px;
+        background: rgba(0, 0, 0, 0.4);
+        border: 1px dashed rgba(6, 199, 85, 0.4);
+        border-radius: 16px;
+        padding: 24px;
         text-align: center;
-        margin-top: 16px;
+        margin-top: 20px;
         position: relative;
-        overflow: hidden;
     }
 
     .binding-code-display {
         font-family: 'SF Mono', 'Monaco', 'Consolas', monospace;
-        font-size: 2.5rem;
-        font-weight: 700;
+        font-size: 2.8rem;
+        font-weight: 800;
         color: #06c755;
-        letter-spacing: 6px;
-        margin: 10px 0;
-        text-shadow: 0 0 20px rgba(6, 199, 85, 0.3);
+        letter-spacing: 8px;
+        margin: 12px 0;
+        text-shadow: 0 0 20px rgba(6, 199, 85, 0.4);
     }
 
     /* Checkbox Cards */
     .method-grid {
         display: grid;
-        grid-template-columns: repeat(2, 1fr);
-        gap: 12px;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 16px;
     }
 
     .method-label {
@@ -97,157 +135,137 @@
         flex-direction: column;
         align-items: center;
         justify-content: center;
-        padding: 16px;
-        background: rgba(255, 255, 255, 0.05);
-        border: 1px solid rgba(255, 255, 255, 0.1);
-        border-radius: 12px;
+        padding: 20px 12px;
+        background: rgba(255, 255, 255, 0.03);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 16px;
         cursor: pointer;
-        transition: all 0.2s ease;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         text-align: center;
         height: 100%;
+        overflow: hidden;
+    }
+
+    .method-label::before {
+        content: '';
+        position: absolute;
+        top: 0; left: 0; right: 0; bottom: 0;
+        background: linear-gradient(145deg, rgba(255,255,255,0.05) 0%, transparent 100%);
+        opacity: 0;
+        transition: opacity 0.3s;
     }
 
     .method-label:hover {
-        background: rgba(255, 255, 255, 0.08);
+        background: rgba(255, 255, 255, 0.06);
+        transform: translateY(-2px);
     }
+    .method-label:hover::before { opacity: 1; }
 
-    /* Hide actual checkbox but keep functionality */
     .method-label input[type="checkbox"] {
         position: absolute;
         opacity: 0;
         cursor: pointer;
     }
 
-    /* Selected State */
     .method-label:has(input:checked) {
-        background: rgba(var(--primary-rgb), 0.15);
-        border-color: var(--primary-color);
-        box-shadow: 0 0 0 1px var(--primary-color);
+        background: rgba(78, 205, 196, 0.1);
+        border-color: #4ecdc4;
+        box-shadow: 0 8px 24px rgba(78, 205, 196, 0.15);
     }
 
     .method-label.disabled {
-        opacity: 0.5;
+        opacity: 0.4;
         cursor: not-allowed;
-        background: rgba(0, 0, 0, 0.2);
+        background: rgba(0, 0, 0, 0.3);
+        border-style: dashed;
+    }
+    .method-label.disabled:hover {
+        transform: none;
     }
 
     .method-icon {
-        font-size: 28px;
-        margin-bottom: 8px;
+        font-size: 32px;
+        margin-bottom: 12px;
+        transition: transform 0.3s;
+    }
+    .method-label:hover:not(.disabled) .method-icon {
+        transform: scale(1.15);
     }
 
-    .btn-block {
-        width: 100%;
-        padding: 12px;
-        border-radius: 8px;
+    /* Buttons */
+    .btn-glow-cyan {
+        background: linear-gradient(135deg, #14b8a6 0%, #0d9488 100%);
+        color: white;
+        border: none;
+        font-weight: 600;
+        padding: 12px 24px;
+        border-radius: 12px;
+        box-shadow: 0 6px 20px rgba(20, 184, 166, 0.3);
+        transition: all 0.3s ease;
+    }
+    .btn-glow-cyan:hover {
+        background: linear-gradient(135deg, #0d9488 0%, #0f766e 100%);
+        box-shadow: 0 8px 25px rgba(20, 184, 166, 0.4);
+        transform: translateY(-2px);
+    }
+
+    .btn-danger-glass {
+        background: rgba(239, 68, 68, 0.15);
+        color: #f87171;
+        border: 1px solid rgba(239, 68, 68, 0.3);
+        padding: 12px 24px;
+        border-radius: 12px;
         font-weight: 500;
+        transition: all 0.3s ease;
+    }
+    .btn-danger-glass:hover {
+        background: rgba(239, 68, 68, 0.25);
+        border-color: rgba(239, 68, 68, 0.5);
+        color: #fca5a5;
+        box-shadow: 0 8px 20px rgba(239, 68, 68, 0.2);
+    }
+
+    .avatar-wrapper {
+        position: relative;
+        width: 110px; height: 110px;
+        border-radius: 50%;
+        margin: 0 auto 16px;
+        cursor: pointer;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        border: 3px solid rgba(255,255,255,0.15);
+        box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+    }
+    .avatar-wrapper:hover {
+        transform: scale(1.05) translateY(-2px);
+        border-color: rgba(255,255,255,0.4);
+        box-shadow: 0 12px 32px rgba(0,0,0,0.4);
+    }
+    .avatar-edit-overlay {
+        position: absolute;
+        bottom: -5px; right: 0;
+        background: #14b8a6;
+        width: 32px; height: 32px;
+        border-radius: 50%;
+        display: flex; align-items: center; justify-content: center;
+        border: 3px solid #1a1a1a;
+        color: white;
+        font-size: 14px;
+    }
+
+    /* Danger section */
+    .danger-zone {
+        background: linear-gradient(145deg, rgba(239,68,68,0.05) 0%, transparent 100%);
+        border: 1px solid rgba(239,68,68,0.2);
+        border-radius: 16px;
+        padding: 20px;
         margin-top: 16px;
     }
 
-    /* Glowing Button Styles */
-    .btn-glow-dark {
-        background: rgba(30, 30, 30, 0.8);
-        color: rgba(255, 255, 255, 0.6);
-        border: 1px solid rgba(255, 255, 255, 0.1);
-        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
-        transition: all 0.3s ease;
-    }
-
-    .btn-glow-dark:hover {
-        background: rgba(40, 40, 40, 0.9);
-        color: white;
-        box-shadow: 0 6px 24px rgba(0, 0, 0, 0.4);
-    }
-
-    .btn-glow-cyan {
-        background: #4ecdc4;
-        background: linear-gradient(90deg, #4ecdc4 0%, #556270 100%);
-        /* Fallback or specific gradient */
-        background: #2dd4bf;
-        /* Cyan-400 */
-        color: #0f172a;
-        border: none;
-        font-weight: 600;
-        box-shadow: 0 0 15px rgba(45, 212, 191, 0.3), 0 4px 6px rgba(0, 0, 0, 0.1);
-        transition: all 0.3s ease;
-    }
-
-    .btn-glow-cyan:hover {
-        background: #14b8a6;
-        /* Cyan-500 */
-        box-shadow: 0 0 25px rgba(45, 212, 191, 0.5), 0 6px 8px rgba(0, 0, 0, 0.2);
-        transform: translateY(-1px);
-    }
-
-    /* Info Icon Tooltip */
-    .custom-hint {
-        position: absolute;
-        bottom: 100%;
-        left: 0;
-        margin-bottom: 8px;
-        background: rgba(20, 20, 20, 0.98);
-        border: 1px solid rgba(255, 255, 255, 0.3);
-        border-radius: 12px;
-        padding: 14px 18px;
-        font-size: 0.88rem;
-        line-height: 1.6;
-        box-shadow: 0 8px 30px rgba(0, 0, 0, 0.6);
-        z-index: 1000;
-        min-width: 300px;
-        max-width: 420px;
-        animation: fadeInDown 0.2s ease;
-        color: var(--text-primary);
-    }
-
-    @keyframes fadeInUp {
-        from {
-            opacity: 0;
-            transform: translateY(-10px);
-        }
-
-        to {
-            opacity: 1;
-            transform: translateY(0);
-        }
-    }
-
-    .info-icon {
-        transition: all 0.2s ease;
-    }
-
-    .info-icon:hover {
-        color: var(--accent-color) !important;
-        transform: scale(1.1);
-    }
-
     @media (max-width: 768px) {
-        .settings-wrapper {
-            padding: 10px;
-            max-width: 100%;
-        }
-
-        .settings-section {
-            padding: 16px;
-            margin-bottom: 16px;
-            border-radius: 12px;
-        }
-
-        .section-header {
-            font-size: 1rem;
-        }
-
-        .binding-code-display {
-            font-size: 2rem;
-        }
-
-        .method-grid {
-            grid-template-columns: 1fr;
-        }
-
-        .btn-glow-cyan {
-            font-size: 1rem !important;
-            padding: 12px 20px !important;
-        }
+        .settings-wrapper { padding: 12px; }
+        .settings-section { padding: 20px; border-radius: 16px; }
+        .method-grid { grid-template-columns: 1fr; }
+        .binding-code-display { font-size: 2.2rem; }
     }
 </style>
 
@@ -255,19 +273,19 @@
     <!-- Messages -->
     {% with messages = get_flashed_messages() %}
     {% if messages %}
-    <div style="margin-bottom: 20px;">
+    <div style="margin-bottom: 24px;">
         {% for message in messages %}
         <div class="alert {{ 'alert-success' if '成功' in message or '產生' in message else 'alert-error' }}"
-            style="border-radius: 12px; padding: 12px 16px; display: flex; align-items: center; gap: 10px; animation: slideIn 0.3s ease;">
-            <span>{{ '✅' if '成功' in message or '產生' in message else '⚠️' }}</span>
-            <span>{{ message }}</span>
+            style="border-radius: 14px; padding: 16px 20px; display: flex; align-items: center; gap: 12px; animation: slideIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1); background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); backdrop-filter: blur(10px);">
+            <span style="font-size: 1.2rem;">{{ '✅' if '成功' in message or '產生' in message else '⚠️' }}</span>
+            <span style="font-weight: 500;">{{ message }}</span>
         </div>
         {% endfor %}
     </div>
     {% endif %}
     {% endwith %}
 
-    <h1 style="font-size: 1.8rem; font-weight: 700; margin-bottom: 24px;">帳號設定</h1>
+    <h1 style="font-size: 2rem; font-weight: 800; margin-bottom: 30px; background: -webkit-linear-gradient(45deg, #fff, #a5b4fc); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">帳號設定</h1>
 
     <!-- Unified form starts here -->
     <form id="mainSettingsForm" method="POST" action="{{ url_for('auth.settings') }}">
@@ -275,49 +293,35 @@
         <!-- 1. Profile Settings -->
         <div class="settings-section">
             <div class="section-header">
-                <span>👤</span> 個人設定 (Profile)
+                <span style="font-size: 1.4rem;">👤</span> 個人檔案
             </div>
-            <div style="margin-bottom: 16px; text-align: center;">
-                <div onclick="openAvatarPreview()"
-                    style="width: 100px; height: 100px; border-radius: 50%; overflow: hidden; margin: 0 auto 8px; border: 2px solid rgba(255,255,255,0.2); cursor: pointer; transition: transform 0.2s;"
-                    onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
+            
+            <div style="display: flex; flex-direction: column; align-items: center; margin-bottom: 28px;">
+                <div class="avatar-wrapper" onclick="openAvatarModal()">
                     {% if current_user.avatar_type == 'upload' %}
                     <img id="settingsAvatar"
                         src="{{ url_for('static', filename='uploads/avatars/' + current_user.avatar_val) }}"
-                        style="width: 100%; height: 100%; object-fit: cover;">
+                        style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">
                     {% else %}
                     <div id="settingsAvatar"
-                        style="width: 100%; height: 100%; background: #2a2a2a; display: flex; align-items: center; justify-content: center; font-size: 3rem;">
-                        {{ current_user.avatar_val if current_user.avatar_val != 'default' and current_user.avatar_val
-                        !=
-                        'upload' else '👤' }}
+                        style="width: 100%; height: 100%; background: #2a2a2a; display: flex; align-items: center; justify-content: center; font-size: 3.5rem; border-radius: 50%;">
+                        {{ current_user.avatar_val if current_user.avatar_val != 'default' and current_user.avatar_val != 'upload' else '👤' }}
                     </div>
                     {% endif %}
-                </div>
-
-                <div style="display: flex; gap: 8px; justify-content: center;">
-                    <button type="button" class="btn" onclick="openAvatarModal()"
-                        style="background: #14b8a6; color: white; font-size: 0.85rem; padding: 6px 14px; border-radius: 6px; box-shadow: 0 4px 12px rgba(20, 184, 166, 0.3); border: none;">更換頭像</button>
+                    <div class="avatar-edit-overlay"><i class="fas fa-camera"></i></div>
                 </div>
             </div>
 
-            <!-- Inputs -->
-            <!-- Implicit action=None for profile update -->
+            <div class="form-group" style="margin-bottom: 20px;">
+                <label style="display: block; margin-bottom: 8px; color: var(--text-secondary); font-size: 0.95rem; font-weight: 500; margin-left: 4px;">使用者名稱</label>
+                <input type="text" value="{{ current_user.username }}" disabled class="glass-input">
+            </div>
+
             <div class="form-group">
-                <label
-                    style="display: block; margin-bottom: 6px; color: var(--text-secondary); font-size: 0.9rem;">使用者名稱</label>
-                <input type="text" value="{{ current_user.username }}" disabled
-                    style="width: 100%; padding: 10px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; color: var(--text-primary); cursor: not-allowed; opacity: 0.7;">
+                <label for="email" style="display: block; margin-bottom: 8px; color: var(--text-secondary); font-size: 0.95rem; font-weight: 500; margin-left: 4px;">Email (用於接收報表)</label>
+                <input type="email" id="email" name="email" value="{{ current_user.email or '' }}" required class="glass-input">
             </div>
-
-            <div class="form-group" style="margin-top: 12px;">
-                <label for="email"
-                    style="display: block; margin-bottom: 6px; color: var(--text-secondary); font-size: 0.9rem;">Email</label>
-                <input type="email" id="email" name="email" value="{{ current_user.email or '' }}" required
-                    style="width: 100%; padding: 10px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; color: var(--text-primary);">
-            </div>
-
-            <hr style="border: 0; border-top: 1px solid rgba(255,255,255,0.1); margin: 16px 0;">
+        </div>
 
 
         </div>
@@ -401,7 +405,7 @@
             <!-- 3. Notification Methods -->
             <div class="settings-section">
                 <div class="section-header">
-                    <span>🔔</span> 通知方式偏好
+                    <span style="font-size: 1.4rem;">🔔</span> 通知方式偏好
                 </div>
 
                 <!-- Remove redundant form tag -->
@@ -410,72 +414,65 @@
                 <div class="method-grid">
                     <!-- Email Option -->
                     <label class="method-label">
-                        <input type="checkbox" name="notification_methods" value="email" {% if 'email' in
-                            notification_methods %}checked{% endif %}>
+                        <input type="checkbox" name="notification_methods" value="email" {% if 'email' in notification_methods %}checked{% endif %}>
                         <div class="method-icon">📧</div>
-                        <div style="font-weight: 500;">Email 報表</div>
-                        <div style="font-size: 0.8rem; color: var(--text-tertiary); margin-top: 4px;">完整數據附件</div>
+                        <div style="font-weight: 600; font-size: 1.05rem; margin-bottom: 4px;">Email</h3>
+                        <div style="font-size: 0.85rem; color: var(--text-tertiary);">完整報表附件</div>
                     </label>
 
                     <!-- LINE Option -->
                     {% set line_disabled = not current_user.settings.line_user_id %}
                     <label class="method-label {{ 'disabled' if line_disabled else '' }}">
-                        <input type="checkbox" name="notification_methods" value="line" {% if 'line' in
-                            notification_methods %}checked{% endif %} {% if line_disabled %}disabled{% endif %}>
+                        <input type="checkbox" name="notification_methods" value="line" {% if 'line' in notification_methods %}checked{% endif %} {% if line_disabled %}disabled{% endif %}>
                         <div class="method-icon">💬</div>
-                        <div style="font-weight: 500;">LINE 通知</div>
-                        <div style="font-size: 0.8rem; color: var(--text-tertiary); margin-top: 4px;">
+                        <div style="font-weight: 600; font-size: 1.05rem; margin-bottom: 4px;">LINE</div>
+                        <div style="font-size: 0.85rem; color: var(--text-tertiary);">
                             {{ '請先完成綁定' if line_disabled else '即時簡訊推播' }}
                         </div>
                     </label>
 
                     <!-- Download Option -->
                     <label class="method-label">
-                        <input type="checkbox" name="notification_methods" value="download" {% if 'download' in
-                            notification_methods %}checked{% endif %}>
+                        <input type="checkbox" name="notification_methods" value="download" {% if 'download' in notification_methods %}checked{% endif %}>
                         <div class="method-icon">⬇️</div>
-                        <div style="font-weight: 500;">檔案下載</div>
-                        <div style="font-size: 0.8rem; color: var(--text-tertiary); margin-top: 4px;">直接下載報表</div>
+                        <div style="font-weight: 600; font-size: 1.05rem; margin-bottom: 4px;">發薪儲存</div>
+                        <div style="font-size: 0.85rem; color: var(--text-tertiary);">直接產生下載</div>
                     </label>
                 </div>
 
                 {% if not line_disabled %}
-                <div style="margin-top: 12px; text-align: right;">
+                <div style="margin-top: 16px; text-align: right;">
                     <button type="button" id="testLineBtn" class="btn"
-                        style="background: transparent; border: 1px solid rgba(255,255,255,0.2); color: var(--text-secondary); font-size: 0.8rem; padding: 4px 12px;">
-                        <i class="fas fa-paper-plane" style="margin-right: 4px;"></i> 發送所選通知測試
+                        style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.15); color: white; border-radius: 8px; font-size: 0.9rem; padding: 8px 16px; transition: all 0.2s;">
+                        <i class="fas fa-paper-plane" style="margin-right: 6px;"></i> 發送測試通知
                     </button>
                 </div>
                 {% endif %}
 
                 <!-- Monthly Report Date -->
-                <div style="margin-top: 20px; padding-top: 16px; border-top: 1px solid rgba(255,255,255,0.1);">
-                    <label style="display: block; font-weight: 500; margin-bottom: 8px; position: relative;">
-                        📅 每月自動報表日期
+                <div style="margin-top: 24px; padding-top: 20px; border-top: 1px solid rgba(255,255,255,0.08);">
+                    <label style="display: flex; align-items: center; font-weight: 500; margin-bottom: 12px; position: relative; font-size: 1.05rem;">
+                        <span style="font-size: 1.2rem; margin-right: 8px;">📅</span> 每月自動報表日期
                         <i class="material-icons info-icon"
-                            style="font-size: 18px; vertical-align: middle; color: var(--text-tertiary); margin-left: 5px; cursor: pointer;"
-                            onclick="toggleReportHint(event)">info</i>
+                            style="font-size: 20px; color: var(--text-tertiary); margin-left: 8px; cursor: pointer;"
+                            onclick="toggleReportHint(event)">info_outline</i>
 
                         <!-- Custom Hint Popover -->
-                        <div id="reportHint" class="custom-hint" style="display: none;">
+                        <div id="reportHint" class="custom-hint" style="display: none; top: -140px;">
                             <strong>📅 自動報表機制</strong><br>
-                            <div style="margin-top: 8px; line-height: 1.8;">
+                            <div style="margin-top: 8px; line-height: 1.8; color: var(--text-secondary);">
                                 • 報表將在您設定的日期（或之後）<strong>訪問薪資頁面時</strong>自動發送<br>
                                 • 日期限制 1-28 日，確保每月都能穩定發送（含二月）<br>
-                                • 避免大小月問題，建議設為發薪日後一天
+                                • 建議設為發薪日後一天
                             </div>
                         </div>
                     </label>
-                    <div style="display: flex; align-items: center; gap: 10px;">
-                        <select name="monthly_report_day"
-                            style="padding: 10px 12px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; color: white; flex: 1; font-size: 1rem;">
-                            {% for i in range(1, 29) %}
-                            <option value="{{ i }}" {% if current_user.settings.monthly_report_day==i %}selected{% endif
-                                %}>
-                                每月 {{ i }} 號</option>
-                            {% endfor %}
-                        </select>
-                    </div>
+                    <select name="monthly_report_day" class="glass-input" style="appearance: none; background-image: url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%23FFFFFF%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E'); background-repeat: no-repeat; background-position: right 16px top 50%; background-size: 12px auto;">
+                        {% for i in range(1, 29) %}
+                        <option value="{{ i }}" {% if current_user.settings.monthly_report_day==i %}selected{% endif %} style="background: #1a1a1a;">
+                            每月 {{ i }} 號</option>
+                        {% endfor %}
+                    </select>
                 </div>
 
             </div>
@@ -490,45 +487,43 @@
     <!-- 5. Data Management -->
     <div class="settings-section">
         <div class="section-header">
-            <span>💾</span> 資料管理中心
+            <span style="font-size: 1.4rem;">💾</span> 資料管理中心
         </div>
 
-        <div style="margin-bottom: 24px;">
-            <div style="font-weight: 600; margin-bottom: 8px;">安全性</div>
-            <button type="button" class="btn btn-secondary btn-block" onclick="openPasswordModal()"
-                style="display: flex; align-items: center; justify-content: center; gap: 8px; margin-top: 0; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.3); color: white; font-weight: 500; transition: all 0.2s;">
-                <span class="material-icons" style="font-size: 18px;">lock</span>
-                修改密碼
-            </button>
-        </div>
-
-        <div style="margin-bottom: 20px;">
-            <div style="font-weight: 600; margin-bottom: 8px;">全站備份</div>
-            <div style="color: var(--text-tertiary); font-size: 0.9rem; margin-bottom: 12px;">
-                匯出所有薪資與記帳資料 (Excel 格式)
-            </div>
-            <form method="POST" action="{{ url_for('auth.export_excel_all') }}">
-                <button type="submit" class="btn" style="background: #3b82f6; width: 100%; padding: 10px;">
-                    <i class="fas fa-file-excel"></i> 立即備份
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 24px;">
+            <div style="background: rgba(255,255,255,0.02); padding: 20px; border-radius: 16px; border: 1px solid rgba(255,255,255,0.05);">
+                <div style="font-weight: 600; margin-bottom: 4px; font-size: 1.1rem;">安全性</div>
+                <div style="color: var(--text-tertiary); font-size: 0.85rem; margin-bottom: 16px; min-height: 40px;">定期更新以保障您的帳號安全</div>
+                <button type="button" class="btn" onclick="openPasswordModal()"
+                    style="width: 100%; background: rgba(255,255,255,0.1); color: white; padding: 12px; border-radius: 10px; border: none; font-weight: 500; transition: background 0.2s;">
+                    <i class="fas fa-lock" style="margin-right: 6px;"></i> 修改密碼
                 </button>
-            </form>
+            </div>
+
+            <div style="background: rgba(255,255,255,0.02); padding: 20px; border-radius: 16px; border: 1px solid rgba(255,255,255,0.05);">
+                <div style="font-weight: 600; margin-bottom: 4px; font-size: 1.1rem;">全站備份</div>
+                <div style="color: var(--text-tertiary); font-size: 0.85rem; margin-bottom: 16px; min-height: 40px;">匯出所有薪資與記帳資料 (Excel格式)</div>
+                <form method="POST" action="{{ url_for('auth.export_excel_all') }}">
+                    <button type="submit" class="btn btn-glow-cyan" style="width: 100%; padding: 12px; border-radius: 10px;">
+                        <i class="fas fa-file-excel" style="margin-right: 6px;"></i> 立即備份
+                    </button>
+                </form>
+            </div>
         </div>
 
-        <hr style="border: 0; border-top: 1px solid rgba(255,255,255,0.1); margin: 24px 0;">
-
-        <div>
-            <div style="font-weight: 600; margin-bottom: 8px; color: #ef4444;">危險區域</div>
-            <div style="color: var(--text-tertiary); font-size: 0.9rem; margin-bottom: 12px;">
-                重置特定模組的資料，此操作無法復原。
+        <div class="danger-zone">
+            <div style="display: flex; align-items: center; gap: 8px; font-weight: 600; margin-bottom: 6px; color: #f87171; font-size: 1.1rem;">
+                <i class="fas fa-exclamation-triangle"></i> 危險區域
             </div>
-            <div style="display: flex; gap: 10px;">
-                <button type="button" class="btn" onclick="openResetModal('salary')"
-                    style="flex: 1; background: rgba(239, 68, 68, 0.1); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.3);">
-                    重置薪資
+            <div style="color: rgba(255,255,255,0.6); font-size: 0.9rem; margin-bottom: 16px;">
+                重置將永久刪除該模組的所有資料，此操作無法復原。
+            </div>
+            <div style="display: flex; gap: 12px;">
+                <button type="button" class="btn btn-danger-glass" onclick="openResetModal('salary')" style="flex: 1;">
+                    <i class="fas fa-trash-alt" style="margin-right: 6px;"></i> 刪除薪資
                 </button>
-                <button type="button" class="btn" onclick="openResetModal('expense')"
-                    style="flex: 1; background: rgba(239, 68, 68, 0.1); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.3);">
-                    重置記帳
+                <button type="button" class="btn btn-danger-glass" onclick="openResetModal('expense')" style="flex: 1;">
+                    <i class="fas fa-trash-alt" style="margin-right: 6px;"></i> 刪除記帳
                 </button>
             </div>
         </div>
