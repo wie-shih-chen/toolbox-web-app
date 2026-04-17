@@ -151,6 +151,9 @@
     }
     .perm-toggle:hover { opacity: 0.85; }
 
+    .hidden-panel { display: none !important; }
+
+
     /* Checkbox Cards */
     .method-grid {
         display: grid;
@@ -360,19 +363,20 @@
 
             <div style="padding: 10px 0;">
 
-                <!-- QR Code hint (show when no bindings) -->
-                {% if not line_bindings %}
-                <div style="text-align: center; margin-bottom: 24px; animation: fadeIn 0.5s ease; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05); border-radius: 16px; padding: 24px;">
-                    <div style="font-size: 1rem; color: var(--text-primary); margin-bottom: 16px; font-weight: 500;">
-                        <span class="material-icons" style="font-size: 20px; vertical-align: bottom; color: #06c755; margin-right: 4px;">qr_code_2</span>
-                        掃描下方 QR Code 加入好友後再新增綁定
-                    </div>
+                <!-- QR Code toggle button -->
+                <button id="toggleQrBtn" onclick="document.getElementById('qrCodePanel').classList.toggle('hidden-panel')"
+                    style="display: flex; align-items: center; gap: 8px; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; padding: 10px 16px; color: var(--text-secondary); font-size: 0.9rem; cursor: pointer; margin-bottom: 16px; width: 100%; transition: all 0.2s;">
+                    <span class="material-icons" style="font-size: 20px; color: #06c755;">qr_code_2</span>
+                    查看官方帳號 QR Code（讓對方掃描加好友後再新增綁定）
+                    <span class="material-icons" style="margin-left: auto; font-size: 18px;">expand_more</span>
+                </button>
+
+                <div id="qrCodePanel" class="hidden-panel" style="text-align: center; margin-bottom: 20px; animation: fadeIn 0.3s ease; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05); border-radius: 16px; padding: 24px; transition: all 0.3s;">
                     <div style="background: white; padding: 12px; border-radius: 12px; display: inline-block; box-shadow: 0 4px 20px rgba(0,0,0,0.3);">
                         <img src="{{ url_for('static', filename='img/line_qr_code.png') }}" alt="LINE QR Code" style="width: 200px; height: 200px; display: block;">
                     </div>
-                    <div style="margin-top: 12px; font-size: 0.9rem; color: var(--text-tertiary);">綁定後即可接收即時通知</div>
+                    <div style="margin-top: 10px; font-size: 0.9rem; color: var(--text-tertiary);">掃描後在 LINE 中輸入驗證碼即可綁定</div>
                 </div>
-                {% endif %}
 
                 <!-- Bindings List -->
                 <div id="lineBindingsList" style="margin-bottom: 16px;">
