@@ -5,7 +5,7 @@ from linebot.models import MessageEvent, TextMessage, TextSendMessage
 from services.line_service import LineService
 from models import db, UserSettings
 import os
-from datetime import datetime
+from datetime import datetime, timedelta
 
 line_bp = Blueprint('line', __name__)
 
@@ -48,7 +48,7 @@ def register_line_handlers(handler):
             # Find user with this valid binding code
             setting = UserSettings.query.filter_by(binding_code=msg).first()
             if setting:
-                if setting.binding_expiry and setting.binding_expiry > datetime.now():
+                if setting.binding_expiry and setting.binding_expiry > datetime.utcnow() + timedelta(hours=8):
                     setting.line_user_id = user_id
                     setting.binding_code = None 
                     setting.binding_expiry = None
@@ -116,7 +116,7 @@ def register_line_handlers(handler):
                 name = " ".join(text_parts) # combine everything else as name/note if it's super long
                 category = "飲食"
             
-            now_dt = datetime.now()
+            now_dt = datetime.utcnow() + timedelta(hours=8)
             final_time = parse_date(date_str, now_dt)
             now_str = final_time.strftime('%Y-%m-%d %H:%M:%S')
             
@@ -161,7 +161,7 @@ def register_line_handlers(handler):
             hours = amounts[1] if len(amounts) > 1 else 0.0
             note = " ".join(text_parts)
             
-            now_dt = datetime.now()
+            now_dt = datetime.utcnow() + timedelta(hours=8)
             final_time = parse_date(date_str, now_dt)
             now_date = final_time.strftime('%Y-%m-%d')
             
@@ -233,7 +233,7 @@ def register_line_handlers(handler):
             
             rate = custom_rate if custom_rate is not None else float(setting.hourly_rate or 196.0)
             
-            now_dt = datetime.now()
+            now_dt = datetime.utcnow() + timedelta(hours=8)
             final_time = parse_date(date_str, now_dt)
             now_date = final_time.strftime('%Y-%m-%d')
             
@@ -275,7 +275,7 @@ def register_line_handlers(handler):
                     text_parts.append(p)
             
             note = " ".join(text_parts).strip()
-            now_dt = datetime.now()
+            now_dt = datetime.utcnow() + timedelta(hours=8)
             
             from services.period_service import PeriodService
             period_svc = PeriodService(setting.user_id)
