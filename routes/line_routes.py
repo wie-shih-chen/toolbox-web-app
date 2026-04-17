@@ -254,6 +254,65 @@ def register_line_handlers(handler):
             if updated_note: reply += f"\n📝 備註：{updated_note}"
             LineService.push_message(user_id, reply)
 
+        # 4. Period: 月經 [起] [迄] [備註]  OR  月經 結束 [結束日期]
+        elif msg.startswith("月經") or msg.startswith("生理期") or msg.startswith("mc") or msg.startswith("MC"):
+            if not setting:
+                LineService.push_message(user_id, "❌ 請先綁定帳號。")
+                return
+
+            original_msg = msg
+            if msg.lower().startswith("mc"): original_msg = original_msg[2:]
+            else: original_msg = original_msg[2:] # 月經 or 生理期(3 but we just split so doesn't matter)
+            # Actually just split msg
+            parts = [p for p in msg.split() if p.strip()][1:]
+            
+            dates = []
+            text_parts = []
+            for p in parts:
+                if '/' in p:
+                    dates.append(p)
+                else:
+                    text_parts.append(p)
+            
+            note = " ".join(text_parts).strip()
+            now_dt = datetime.now()
+            
+            from services.period_service import PeriodService
+            period_svc = PeriodService(setting.user_id)
+            history = period_svc.get_history()
+            latest = history[0] if history else None
+            
+            if "結束" in note:
+                if not latest or latest['end_date']:
+                    LineService.push_message(user_id, "❌ 目前沒有進行中的生理期可以結束喔！")
+                    return
+                end_str = dates[0] if len(dates) > 0 else None
+                end_dt = parse_date(end_str, now_dt)
+                end_date_fmt = end_dt.strftime('%Y-%m-%d')
+                
+                period_svc.update_record(latest['id'], start_date=latest['start_date'], end_date=end_date_fmt, note=latest['note'])
+                LineService.push_message(user_id, f"🩸 結束生理期紀錄\n📅 開始：{latest['start_date'][5:].replace('-', '/')}\n📅 結束：{end_dt.strftime('%m/%d')}")
+                return
+            
+            # Start a new period
+            start_str = dates[0] if len(dates) > 0 else None
+            end_str = dates[1] if len(dates) > 1 else None
+            
+            start_dt = parse_date(start_str, now_dt)
+            start_date_fmt = start_dt.strftime('%Y-%m-%d')
+            
+            end_date_fmt = None
+            if end_str:
+                end_dt = parse_date(end_str, now_dt)
+                end_date_fmt = end_dt.strftime('%Y-%m-%d')
+            
+            period_svc.add_record(start_date=start_date_fmt, end_date=end_date_fmt, note=note if note else None)
+            
+            reply = f"🩸 新增生理期紀錄\n📅 開始：{start_dt.strftime('%m/%d')}"
+            if end_date_fmt: reply += f"\n📅 結束：{end_dt.strftime('%m/%d')}"
+            if note: reply += f"\n📝 備註：{note}"
+            LineService.push_message(user_id, reply)
+
         elif msg == "查詢":
              LineService.push_message(user_id, f"您的 LINE User ID: {user_id}")
              
@@ -267,7 +326,11 @@ def register_line_handlers(handler):
                     "👉 範例：排班 4/18 1200 1800\n\n"
                     "💰 【獎金】 獎金 [金額] [日期(可省)] [時數(可省)] [備註]\n"
                     "👉 範例：獎金 1500 4/18 三節發放\n\n"
-                    "💡 小提示：順序可以隨便打，只要有金額和日期（如 4/18），我就會聰明地幫你歸位喔！"
+                    "🩸 【月經】 月經 [開始(可省)] [結束(可省)] [備註]\n"
+                    "👉 範例1：月經\n"
+                    "👉 範例2：月經 4/18 4/22\n"
+                    "👉 範例3：月經 結束\n\n"
+                    "💡 小提示：順序可以隨便打，只要有數字和日期（如 4/18），我就會聰明地幫你歸位喔！"
                 )
                 LineService.push_message(user_id, help_msg)
             else:
