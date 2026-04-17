@@ -60,10 +60,23 @@ def register_line_handlers(handler):
                 LineService.push_message(user_id, "❌ 找不到此驗證碼，請確認輸入正確。")
             return
 
-        # Find user if already bound
-        setting = UserSettings.query.filter_by(line_user_id=user_id).first()
-
         # =============== SMART PARSERS =============== #
+        
+        # --- Common Date Parsing Magic ---
+        def parse_date(d_str, default_dt):
+            if not d_str: return default_dt
+            formats = ["%H:%M", "%H%M", "%m/%d/%H:%M", "%m/%d %H:%M", "%Y/%m/%d/%H:%M", "%m/%d", "%Y/%m/%d"]
+            for f in formats:
+                try:
+                    pd = datetime.strptime(d_str, f)
+                    res = default_dt
+                    if "%m" in f: res = res.replace(month=pd.month, day=pd.day)
+                    if "%H" in f: res = res.replace(hour=pd.hour, minute=pd.minute, second=0)
+                    if "%Y" in f: res = res.replace(year=pd.year)
+                    if "%H" not in f and "%m" in f: res = res.replace(hour=12, minute=0, second=0)
+                    return res
+                except ValueError: pass
+            return default_dt
         
         # 1. Expense: 記帳 [名稱] [類別：預設飲食] [金額] [預設時間(本年/本月/本日/現在時間)]
         if msg.startswith("記帳"):
@@ -100,22 +113,6 @@ def register_line_handlers(handler):
                 name = " ".join(text_parts) # combine everything else as name/note if it's super long
                 category = "飲食"
             
-            # --- Date Parsing Magic ---
-            def parse_date(d_str, default_dt):
-                if not d_str: return default_dt
-                formats = ["%H:%M", "%H%M", "%m/%d/%H:%M", "%m/%d %H:%M", "%Y/%m/%d/%H:%M", "%m/%d"]
-                for f in formats:
-                    try:
-                        pd = datetime.strptime(d_str, f)
-                        res = default_dt
-                        if "%m" in f: res = res.replace(month=pd.month, day=pd.day)
-                        if "%H" in f: res = res.replace(hour=pd.hour, minute=pd.minute, second=0)
-                        if "%Y" in f: res = res.replace(year=pd.year)
-                        if "%H" not in f and "%m" in f: res = res.replace(hour=12, minute=0, second=0)
-                        return res
-                    except ValueError: pass
-                return default_dt
-            
             now_dt = datetime.now()
             final_time = parse_date(date_str, now_dt)
             now_str = final_time.strftime('%Y-%m-%d %H:%M:%S')
@@ -141,7 +138,12 @@ def register_line_handlers(handler):
             
             amounts = []
             text_parts = []
+            date_str = None
+            
             for p in parts:
+                if date_str is None and '/' in p:
+                    date_str = p
+                    continue
                 try:
                     val = float(p)
                     amounts.append(val)
@@ -155,7 +157,10 @@ def register_line_handlers(handler):
             amount = int(amounts[0])
             hours = amounts[1] if len(amounts) > 1 else 0.0
             note = " ".join(text_parts)
-            now_date = datetime.now().strftime('%Y-%m-%d')
+            
+            now_dt = datetime.now()
+            final_time = parse_date(date_str, now_dt)
+            now_date = final_time.strftime('%Y-%m-%d')
             
             from models import SalaryRecord
             new_salary = SalaryRecord(
@@ -179,8 +184,12 @@ def register_line_handlers(handler):
             times = []
             amounts = []
             text_parts = []
+            date_str = None
             
             for p in parts:
+                if date_str is None and '/' in p:
+                    date_str = p
+                    continue
                 # heuristic for time: contains colon/dot or is 4 plain digits
                 if ':' in p or '.' in p or (len(p)==4 and p.isdigit()):
                     times.append(p)
@@ -220,7 +229,10 @@ def register_line_handlers(handler):
             hours = (t2 - t1).total_seconds() / 3600.0
             
             rate = custom_rate if custom_rate is not None else float(setting.hourly_rate or 196.0)
-            now_date = datetime.now().strftime('%Y-%m-%d')
+            
+            now_dt = datetime.now()
+            final_time = parse_date(date_str, now_dt)
+            now_date = final_time.strftime('%Y-%m-%d')
             
             from services.salary_service import _apply_holiday_pay
             effective_rate, amount, updated_note = _apply_holiday_pay(now_date, rate, hours, note)
@@ -235,7 +247,7 @@ def register_line_handlers(handler):
             db.session.commit()
             
             holiday_emoji = "🎆 " if (effective_rate == rate and amount == int(hours * rate * 2)) else ""
-            reply = f"✅ 新增排班紀錄\n⏰ 時間：{start_time} ~ {end_time}\n⏱️ 時數：{hours:.1f} 小時\n💵 時薪：${rate:g}/hr\n{holiday_emoji}💰 金額：${amount:,}"
+            reply = f"✅ 新增排班紀錄\n📅 日期：{final_time.strftime('%m/%d')}\n⏰ 時間：{start_time} ~ {end_time}\n⏱️ 時數：{hours:.1f} 小時\n💵 時薪：${rate:g}/hr\n{holiday_emoji}💰 金額：${amount:,}"
             if updated_note: reply += f"\n📝 備註：{updated_note}"
             LineService.push_message(user_id, reply)
 
