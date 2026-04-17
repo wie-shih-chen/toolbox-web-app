@@ -391,27 +391,19 @@
                         
                         <div style="font-size: 0.8rem; color: var(--text-tertiary); flex-shrink: 0;">{{ b.created_at }}</div>
 
-                        <!-- Permission toggles -->
+                        <!-- Permission toggles (buttons) -->
                         <div style="display: flex; gap: 8px; flex-wrap: wrap; flex: 1;">
-                            <label class="perm-toggle {% if 'expense' in b.permissions %}active{% endif %}" data-perm="expense" title="記帳">
-                                <input type="checkbox" {% if 'expense' in b.permissions %}checked{% endif %} style="display:none;">
-                                📝 記帳
-                            </label>
-                            <label class="perm-toggle {% if 'salary' in b.permissions %}active{% endif %}" data-perm="salary" title="排班/獎金">
-                                <input type="checkbox" {% if 'salary' in b.permissions %}checked{% endif %} style="display:none;">
-                                ⏰ 薪資
-                            </label>
-                            <label class="perm-toggle {% if 'period' in b.permissions %}active{% endif %}" data-perm="period" title="月經紀錄">
-                                <input type="checkbox" {% if 'period' in b.permissions %}checked{% endif %} style="display:none;">
-                                🩸 月經
-                            </label>
+                            <button type="button" class="perm-toggle {% if 'expense' in b.permissions %}active{% endif %}" data-perm="expense" title="記帳">📝 記帳</button>
+                            <button type="button" class="perm-toggle {% if 'salary' in b.permissions %}active{% endif %}" data-perm="salary" title="排班/獎金">⏰ 薪資</button>
+                            <button type="button" class="perm-toggle {% if 'period' in b.permissions %}active{% endif %}" data-perm="period" title="月經紀錄">🩸 月經</button>
                         </div>
 
-                        <!-- Save + Remove buttons -->
-                        <div style="display: flex; gap: 8px; flex-shrink: 0;">
-                            <button class="btn save-binding-btn" style="background: linear-gradient(135deg, #06c755 0%, #05a044 100%); color: white; padding: 7px 14px; font-size: 0.85rem; border-radius: 8px; border: none; font-weight: 600;">儲存</button>
-                            <button class="btn delete-binding-btn" style="background: rgba(239,68,68,0.15); color: #f87171; border: 1px solid rgba(239,68,68,0.3); padding: 7px 14px; font-size: 0.85rem; border-radius: 8px; font-weight: 600;">移除</button>
+                        <!-- Auto-save status + Remove -->
+                        <div style="display: flex; align-items: center; gap: 8px; flex-shrink: 0;">
+                            <span class="save-status" style="font-size: 0.8rem; color: var(--text-tertiary); min-width: 48px; text-align: right;"></span>
+                            <button type="button" class="btn delete-binding-btn" style="background: rgba(239,68,68,0.15); color: #f87171; border: 1px solid rgba(239,68,68,0.3); padding: 7px 14px; font-size: 0.85rem; border-radius: 8px; font-weight: 600;">移除</button>
                         </div>
+
                     </div>
                     {% else %}
                     <div id="noBindingsHint" style="text-align: center; color: var(--text-tertiary); padding: 16px 0; font-size: 0.95rem;">
@@ -845,25 +837,40 @@
             });
         }
 
-        // Save binding (nickname + permissions)
-        document.querySelectorAll('.save-binding-btn').forEach(btn => {
-            btn.addEventListener('click', async () => {
-                const row = btn.closest('.line-binding-row');
-                const bid = row.dataset.bid;
-                const nickname = row.querySelector('.nickname-input').value.trim();
-                const permissions = Array.from(row.querySelectorAll('.perm-toggle.active')).map(t => t.dataset.perm);
-                btn.disabled = true;
-                btn.textContent = '⏳';
+        // ---- Auto-save helper ----
+        async function saveBinding(row) {
+            const bid = row.dataset.bid;
+            const nickname = row.querySelector('.nickname-input').value.trim();
+            const permissions = Array.from(row.querySelectorAll('.perm-toggle.active')).map(t => t.dataset.perm);
+            const statusEl = row.querySelector('.save-status');
+            if (statusEl) statusEl.textContent = '⏳';
+            try {
                 const res = await fetch(`/auth/api/line-bindings/${bid}`, {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ nickname, permissions })
                 });
                 const data = await res.json();
-                btn.disabled = false;
-                btn.textContent = data.success ? '✅ 已儲存' : '❌ 失敗';
-                setTimeout(() => btn.textContent = '儲存', 2000);
+                if (statusEl) {
+                    statusEl.textContent = data.success ? '✅ 已存' : '❌';
+                    setTimeout(() => statusEl.textContent = '', 2000);
+                }
+            } catch (e) {
+                if (statusEl) { statusEl.textContent = '❌'; setTimeout(() => statusEl.textContent = '', 2000); }
+            }
+        }
+
+        // Permission toggles: click to toggle, then auto-save
+        document.querySelectorAll('.perm-toggle').forEach(btn => {
+            btn.addEventListener('click', async () => {
+                btn.classList.toggle('active');
+                await saveBinding(btn.closest('.line-binding-row'));
             });
+        });
+
+        // Nickname input: auto-save on blur
+        document.querySelectorAll('.nickname-input').forEach(input => {
+            input.addEventListener('blur', () => saveBinding(input.closest('.line-binding-row')));
         });
 
         // Delete binding

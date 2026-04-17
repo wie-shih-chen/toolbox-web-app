@@ -54,10 +54,12 @@ def register_line_handlers(handler):
                         LineService.push_message(user_id, "⚠️ 此 LINE 帳號已綁定過其他帳號，請先解除舊的綁定。")
                         return
                     # Create new LineBinding with full permissions
+                    existing_count = LineBinding.query.filter_by(user_id=setting.user_id).count()
+                    auto_nickname = f'使用者 {existing_count + 1}'
                     new_binding = LineBinding(
                         user_id=setting.user_id,
                         line_user_id=user_id,
-                        nickname='本人',
+                        nickname=auto_nickname,
                         permissions=json.dumps(["expense", "salary", "period"])
                     )
                     db.session.add(new_binding)
