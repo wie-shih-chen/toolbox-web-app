@@ -139,17 +139,23 @@
         font-weight: 600;
         cursor: pointer;
         user-select: none;
-        border: 1px solid rgba(255,255,255,0.12);
-        background: rgba(255,255,255,0.04);
-        color: var(--text-tertiary);
+        border: 1px solid rgba(239,68,68,0.35);
+        background: rgba(239,68,68,0.1);
+        color: #f87171;
+        opacity: 0.7;
+        text-decoration: line-through;
         transition: all 0.2s ease;
     }
     .perm-toggle.active {
-        background: rgba(6,199,85,0.18);
-        border-color: rgba(6,199,85,0.4);
-        color: #06c755;
+        background: #06c755;
+        border-color: #06c755;
+        color: #fff;
+        opacity: 1;
+        text-decoration: none;
+        box-shadow: 0 2px 8px rgba(6,199,85,0.4);
     }
     .perm-toggle:hover { opacity: 0.85; }
+
 
     .hidden-panel { display: none !important; }
 
