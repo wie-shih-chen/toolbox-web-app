@@ -510,7 +510,8 @@ const expenseApp = {
             item.onclick = () => this.openEditModal(r);
 
             const categoryName = r.category ? (r.category.includes(' ') ? r.category.split(' ')[1] : r.category) : '其他';
-            let catEmoji = r.category ? r.category.split(' ')[0] : (emojiMap[categoryName] || '📦');
+            // Only use category prefix as emoji if it actually contains a space (i.e. "🍽️ 飲食" format)
+            let catEmoji = (r.category && r.category.includes(' ')) ? r.category.split(' ')[0] : (emojiMap[categoryName] || '📦');
 
             // Contextual emoji override for drinks within diet category
             if (categoryName === '飲食' && (r.note.includes('飲料') || r.note.includes('咖啡') || r.note.includes('茶'))) {
