@@ -800,6 +800,30 @@
             });
         });
 
+        // Poll for new binding: reload page when a new binding is detected
+        const currentBindingCount = document.querySelectorAll('.line-binding-row').length;
+        let pollInterval = null;
+
+        function startBindingPoll() {
+            if (pollInterval) return; // already polling
+            pollInterval = setInterval(async () => {
+                try {
+                    const r = await fetch('{{ url_for("auth.check_line_status") }}');
+                    const d = await r.json();
+                    if (d.count > currentBindingCount) {
+                        clearInterval(pollInterval);
+                        window.location.reload();
+                    }
+                } catch (e) { /* ignore network errors */ }
+            }, 3000);
+        }
+
+        // Start polling automatically if there's already a pending code displayed
+        if (document.getElementById('newBindingCodeBox') ||
+            document.querySelector('.binding-code-display')) {
+            startBindingPoll();
+        }
+
         // Generate new binding code
         const genBtn = document.getElementById('genBindingCodeBtn');
         if (genBtn) {
@@ -812,15 +836,7 @@
                     document.getElementById('newBindingCodeDisplay').textContent = data.code;
                     document.getElementById('newBindingCodeBox').style.display = 'block';
                     genBtn.textContent = '✅ 已產生，等待綁定...';
-                    // Poll every 3s to detect when the code is used
-                    const poll = setInterval(async () => {
-                        const r = await fetch('{{ url_for("auth.check_line_status") }}');
-                        const d = await r.json();
-                        if (d.count > document.querySelectorAll('.line-binding-row').length) {
-                            clearInterval(poll);
-                            window.location.reload();
-                        }
-                    }, 3000);
+                    startBindingPoll(); // begin polling
                 }
             });
         }
