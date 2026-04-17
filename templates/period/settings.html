@@ -122,6 +122,78 @@
     .save-status.saving { opacity: 1; background: rgba(255,255,255,0.08); color: var(--text-secondary); }
     .save-status.saved  { opacity: 1; background: rgba(48,209,88,0.15); color: #30D158; }
     .save-status.error  { opacity: 1; background: rgba(255,77,79,0.15); color: #ff4d4f; }
+    
+    /* Custom Checkbox Styles */
+    .notify-options-container {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        margin-top: 16px;
+        margin-bottom: 20px;
+    }
+    .notify-option {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        background: rgba(255, 255, 255, 0.03);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 14px;
+        padding: 14px 16px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+    .notify-option:hover {
+        background: rgba(255, 255, 255, 0.06);
+    }
+    .notify-option.active-red {
+        background: rgba(255, 77, 79, 0.08);
+        border-color: rgba(255, 77, 79, 0.3);
+    }
+    .notify-option.active-green {
+        background: rgba(115, 209, 61, 0.08);
+        border-color: rgba(115, 209, 61, 0.3);
+    }
+    .notify-icon-title {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        font-size: 1rem;
+        font-weight: 500;
+        color: var(--text-primary);
+    }
+    .custom-checkbox {
+        width: 22px;
+        height: 22px;
+        border-radius: 6px;
+        border: 2px solid rgba(255, 255, 255, 0.2);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.2s;
+    }
+    .notify-option.active-red .custom-checkbox {
+        background: #ff4d4f;
+        border-color: #ff4d4f;
+    }
+    .notify-option.active-green .custom-checkbox {
+        background: #73d13d;
+        border-color: #73d13d;
+    }
+    .custom-checkbox .material-icons {
+        font-size: 16px;
+        color: white;
+        opacity: 0;
+        transform: scale(0.5);
+        transition: all 0.2s;
+    }
+    .notify-option.active-red .custom-checkbox .material-icons,
+    .notify-option.active-green .custom-checkbox .material-icons {
+        opacity: 1;
+        transform: scale(1);
+    }
+    .notify-option input[type="checkbox"] {
+        display: none;
+    }
 </style>
 {% endblock %}
 
@@ -167,7 +239,7 @@
             </div>
             
             <div class="form-group" style="margin-top: 24px; padding-top: 20px; border-top: 1px solid rgba(255,255,255,0.1);">
-                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px;">
+                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;">
                     <label class="form-label" style="font-weight: 600; font-size: 1.05rem; display: flex; align-items: center; gap: 8px; margin-bottom: 0;">
                         <span>🔔</span> 預測通知設定
                     </label>
@@ -177,25 +249,58 @@
                                style="width: 2.5em; height: 1.25em; cursor: pointer;">
                     </div>
                 </div>
+                
+                <div id="notifyOptionsSection" style="transition: opacity 0.3s; {% if not settings.period_notify_enabled %}opacity: 0.4; pointer-events: none;{% endif %}">
+                    <div class="notify-options-container">
+                        <label class="notify-option {% if settings.period_notify_period %}active-red{% endif %}" id="labelPeriod">
+                            <input type="checkbox" name="period_notify_period" id="period_notify_period" {% if settings.period_notify_period %}checked{% endif %}>
+                            <div class="notify-icon-title">
+                                <span style="font-size: 1.2rem;">🩸</span>
+                                <div>
+                                    <div style="margin-bottom: 2px;">下次經期到來</div>
+                                    <div style="font-size: 0.8rem; color: var(--text-tertiary); font-weight: normal;">預測月經開始日</div>
+                                </div>
+                            </div>
+                            <div class="custom-checkbox">
+                                <span class="material-icons">check</span>
+                            </div>
+                        </label>
+                        
+                        <label class="notify-option {% if settings.period_notify_ovulation %}active-green{% endif %}" id="labelOvulation">
+                            <input type="checkbox" name="period_notify_ovulation" id="period_notify_ovulation" {% if settings.period_notify_ovulation %}checked{% endif %}>
+                            <div class="notify-icon-title">
+                                <span style="font-size: 1.2rem;">🥚</span>
+                                <div>
+                                    <div style="margin-bottom: 2px;">排卵期 (易孕期)</div>
+                                    <div style="font-size: 0.8rem; color: var(--text-tertiary); font-weight: normal;">預推下次經期前14天</div>
+                                </div>
+                            </div>
+                            <div class="custom-checkbox">
+                                <span class="material-icons">check</span>
+                            </div>
+                        </label>
+                    </div>
 
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
-                    <div>
-                        <label class="form-label" style="font-size: 0.85rem;" for="period_notify_days_before">提前通知天數</label>
-                        <div style="display: flex; align-items: center; gap: 8px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; padding: 4px 12px;">
-                            <input type="number" class="form-control" name="period_notify_days_before" id="period_notify_days_before" 
-                                   value="{{ settings.period_notify_days_before or 3 }}" min="1" max="7"
-                                   style="border: none; padding: 8px 0;">
-                            <span style="font-size: 0.85rem; color: var(--text-tertiary); white-space: nowrap;">天前</span>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+                        <div>
+                            <label class="form-label" style="font-size: 0.85rem;" for="period_notify_days_before">提前通知天數</label>
+                            <div style="display: flex; align-items: center; gap: 8px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; padding: 4px 12px;">
+                                <input type="number" class="form-control" name="period_notify_days_before" id="period_notify_days_before" 
+                                       value="{{ settings.period_notify_days_before or 3 }}" min="1" max="7"
+                                       style="border: none; padding: 8px 0; background: transparent;">
+                                <span style="font-size: 0.85rem; color: var(--text-tertiary); white-space: nowrap;">天前</span>
+                            </div>
+                        </div>
+                        <div>
+                            <label class="form-label" style="font-size: 0.85rem;" for="period_notify_time">通知發送時間</label>
+                            <input type="time" class="form-control" name="period_notify_time" id="period_notify_time" 
+                                   value="{{ settings.period_notify_time or '08:00' }}">
                         </div>
                     </div>
-                    <div>
-                        <label class="form-label" style="font-size: 0.85rem;" for="period_notify_time">通知發送時間</label>
-                        <input type="time" class="form-control" name="period_notify_time" id="period_notify_time" 
-                               value="{{ settings.period_notify_time or '08:00' }}">
-                    </div>
                 </div>
-                <div class="help-text" style="font-size: 0.8rem; margin-top: 12px;">
-                    💡 系統將在生理期預計開始前，根據您在此設定的天數與時間，透過您在「帳號設定」中選擇的偏好方式（LINE 或 Email）發送提醒。
+
+                <div class="help-text" style="font-size: 0.85rem; margin-top: 16px; background: rgba(255,255,255,0.03); padding: 12px; border-radius: 12px;">
+                    💡 系統將在所選項目的預計日期前，根據設定的「天數與時間」，透過您在「帳號設定」中選擇的偏好方式（LINE 或 Email）發送提醒。
                 </div>
             </div>
             
@@ -244,6 +349,38 @@
             setStatus('error');
         }
     }
+
+    const mainToggle = document.getElementById('period_notify_enabled');
+    const notifySection = document.getElementById('notifyOptionsSection');
+    mainToggle.addEventListener('change', () => {
+        if (mainToggle.checked) {
+            notifySection.style.opacity = '1';
+            notifySection.style.pointerEvents = 'auto';
+        } else {
+            notifySection.style.opacity = '0.4';
+            notifySection.style.pointerEvents = 'none';
+        }
+    });
+
+    const periodCheck = document.getElementById('period_notify_period');
+    const labelPeriod = document.getElementById('labelPeriod');
+    periodCheck.addEventListener('change', () => {
+        if (periodCheck.checked) {
+            labelPeriod.classList.add('active-red');
+        } else {
+            labelPeriod.classList.remove('active-red');
+        }
+    });
+
+    const ovulationCheck = document.getElementById('period_notify_ovulation');
+    const labelOvulation = document.getElementById('labelOvulation');
+    ovulationCheck.addEventListener('change', () => {
+        if (ovulationCheck.checked) {
+            labelOvulation.classList.add('active-green');
+        } else {
+            labelOvulation.classList.remove('active-green');
+        }
+    });
 
     form.querySelectorAll('input, select').forEach(input => {
         input.addEventListener('change', () => {

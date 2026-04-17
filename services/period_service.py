@@ -174,7 +174,8 @@ class PeriodService:
 
     def update_settings(self, avg_period_cycle=None, avg_period_duration=None, 
                         period_notify_enabled=None, period_notify_time=None, 
-                        period_notify_days_before=None):
+                        period_notify_days_before=None,
+                        period_notify_period=None, period_notify_ovulation=None):
         if avg_period_cycle is not None:
             self.settings.avg_period_cycle = int(avg_period_cycle)
         if avg_period_duration is not None:
@@ -185,6 +186,10 @@ class PeriodService:
             self.settings.period_notify_time = period_notify_time
         if period_notify_days_before is not None:
             self.settings.period_notify_days_before = int(period_notify_days_before)
+        if period_notify_period is not None:
+            self.settings.period_notify_period = bool(period_notify_period)
+        if period_notify_ovulation is not None:
+            self.settings.period_notify_ovulation = bool(period_notify_ovulation)
             
         db.session.commit()
         return {"success": True}

@@ -9,408 +9,200 @@
 完整的檔案與資料夾配置圖：
 
 ```
+## 📂 Part 2: 專案檔案結構 (File Structure & Modules)
+
+```text
 web_app/
 │
 ├── 🚀 核心啟動檔案
-│   ├── app.py                      # Flask 應用主程式 (Entry Point)
-│   ├── wsgi.py                     # WSGI 入口 (Production)
-│   ├── config.py                   # 設定檔 (DB, Secret Key, Scheduler...)
-│   ├── models.py                   # 資料庫模型 (User, Expense, Salary, Reminder...)
-│   ├── extensions.py               # Flask 擴充套件初始化 (db, login_manager, mail...)
-│   ├── requirements.txt            # Python 依賴套件
-│   ├── Procfile                    # 部署設定檔 (Heroku/PythonAnywhere)
-│   ├── .env                        # 環境變數 (🔒 勿上傳 Git)
-│   └── app.db                      # SQLite 資料庫檔案
+│   ├── app.py                      # Flask 應用主程式 (Entry Point)，負責載入配置與啟動伺服器
+│   ├── wsgi.py                     # WSGI 入口 (Production)，供 Gunicorn 等生產環境伺服器呼叫
+│   ├── config.py                   # 系統全域設定檔 (包含 DB / Secret Key / Scheduler / Mail 等參數)
+│   ├── models.py                   # 資料庫 ORM 模型 (定義 User, Expense, Salary, Reminder 等綱要)
+│   ├── extensions.py               # Flask 擴充套件初始化中心 (db, login_manager, mail, bcrypt)
+│   ├── requirements.txt            # Python 依賴套件清單，用於 pip install -r
+│   ├── Procfile                    # 雲端部署設定檔 (支援 Heroku / PythonAnywhere 啟動指令)
+│   ├── .env                        # 系統環境變數 (🔒 存放敏感情資，勿上傳 Git)
+│   └── app.db                      # SQLite 實體資料庫檔案 (Local 開發用)
 │
 ├── 🚦 routes/ (路由層 - HTTP 請求處理)
-│   ├── auth.py                     # 認證相關 (登入/註冊/個人設定頁)
-│   ├── main_routes.py              # 首頁與通用路由
-│   ├── expense_routes.py           # 💰 記帳模組路由
-│   ├── salary_routes.py            # 💼 薪薪資模組路由
-│   ├── countdown_routes.py         # ⏳ 倒數與紀念日路由
-│   ├── ntut_routes.py              # 🏫 整合行事曆路由 (多來源 ICS 管理 API)
-│   ├── reminder_routes.py          # 🔔 提醒事項路由
-│   ├── download_routes.py          # 📥 影音下載器路由
-│   ├── line_routes.py              # 📱 LINE Bot Webhook
-│   └── settings_api.py             # ⚙️ 設定專用 API (AJAX)
+│   ├── auth.py                     # 密碼學與認證模組 (登入 / 註冊 / 忘記密碼 / 個人設定頁面 rendering)
+│   ├── main_routes.py              # 系統核心路由 (首頁儀表板 / 使用手冊 / 導覽列通用邏輯)
+│   ├── expense_routes.py           # 💰 記帳模組路由 (CRUD API 與頁面呈現)
+│   ├── salary_routes.py            # 💼 薪資模組路由 (排班管理 / CSV匯出 / 月曆顯示)
+│   ├── period_routes.py            # 🩸 生理期追蹤路由 (經期紀錄 API 與月曆呈現)
+│   ├── countdown_routes.py         # ⏳ 倒數與紀念日路由 (獨立卡片 / 圖片自動裁切 API / 目標計算)
+│   ├── ntut_routes.py              # 🏫 整合行事曆路由 (北科大 ICS 解析 / 多來源 ICS 訂閱管理 API)
+│   ├── reminder_routes.py          # 🔔 提醒事項路由 (單次與週期性提醒建立 API)
+│   ├── download_routes.py          # 📥 影音下載器路由 (對接 yt-dlp 任務處理)
+│   ├── line_routes.py              # 📱 LINE Bot Webhook (處理 LINE Server 推播事件與互動)
+│   └── settings_api.py             # ⚙️ 設定專用 API (非同步 AJAX 儲存個人偏好與自動儲存)
 │
 ├── 🧠 services/ (服務層 - 商業邏輯處理)
-│   ├── data_service.py             # 通用資料處理
-│   ├── expense_service.py          # 記帳邏輯 (CRUD, 統計, 週期計算)
-│   ├── salary_service.py           # 薪資計算與排班邏輯 (自動偵測國定假日工資加倍)
-│   ├── countdown_service.py        # ⏳ 倒數邏輯 (天數計算、圖片 Base64 處理與儲存)
-│   ├── tw_holidays.py              # 國定假日服務 (Google ICS 圖 + 勞基法白名單過濾)
-│   ├── reminder_service.py         # 提醒排程與通知發送
-│   ├── calendar_notify_service.py  # 🗋 行事曆 ICS 每日前一天通知 (APScheduler)
-│   ├── report_service.py           # 報表生成 (Excel, PDF)
-│   ├── email_service.py            # Email 發送邏輯
-│   └── line_service.py             # LINE 訊息推送邏輯
+│   ├── data_service.py             # 通用資料處理與工具函數庫 (日期轉換、文字過濾)
+│   ├── expense_service.py          # 記帳深度邏輯 (資料聚合、統計圖表計算、跨期帳務處理)
+│   ├── salary_service.py           # 薪資邏輯分析 (時數精算 / 自動偵測國定假日 / 工資加倍計算)
+│   ├── countdown_service.py        # ⏳ 倒數邏輯演算 (未來天數反向推算、Base64 圖片編碼與壓縮儲存)
+│   ├── period_service.py           # 🩸 生理期醫學標準算法 (動態加權平均週期計算 / 易孕期與排卵日推算)
+│   ├── tw_holidays.py              # 國定假日判定服務 (整合 Google Calendar ICS + 勞基法白名單過濾)
+│   ├── reminder_service.py         # 提醒排程排隊與通知實際派發邏輯
+│   ├── calendar_notify_service.py  # 🗋 行事曆自動化服務 (每日自動掃描 ICS 並透過 APScheduler 發送前一天通知)
+│   ├── report_service.py           # 報表生成引擎 (Excel / PDF / CSV 高效生成與格式化)
+│   ├── email_service.py            # Email 遞送邏輯 (SMTP 整合與 HTML 模板渲染)
+│   ├── line_service.py             # LINE 訊息互動邏輯 (推播 Flex Message 卡片與文字)
+│   └── period_notify_service.py    # 🩸 生理期預測通知服務 (透過 APScheduler 每日檢查並提前提醒)
 │
 ├── 🎨 templates/ (前端頁面 - Jinja2 模板)
-│   ├── base.html                   # 🏗️ 基礎版型 (Header, Nav, Footer)
-│   ├── index.html                  # 🏠 首頁
-│   ├── manual.html                 # 📖 使用手冊
+│   ├── base.html                   # 🏗️ 基礎版型底圖 (包含全局 Header, 側邊/底部 Nav, Modal 框架全域載入)
+│   ├── index.html                  # 🏠 首頁儀表板 (整合各模組 Widget 捷徑區塊)
+│   ├── manual.html                 # 📖 使用教學手冊 (靜態說明文檔)
 │   │
-│   ├── auth/                       # 🔐 認證模組
-│   │   ├── login.html
-│   │   ├── register.html
-│   │   ├── forgot_password.html
-│   │   ├── reset_password.html
-│   │   └── settings.html           # ⚙️ 帳號總設定 (個人資料/通知偏好)
+│   ├── auth/                       # 🔐 認證與帳戶中心
+│   │   ├── login.html              # 登入介面
+│   │   ├── register.html           # 帳戶註冊介面
+│   │   ├── forgot_password.html    # 忘記密碼發信介面
+│   │   ├── reset_password.html     # 密碼重置操作介面
+│   │   └── settings.html           # ⚙️ 帳號全局設定 (個人資料維護 / 總通知偏好切換)
 │   │
-│   ├── expense/                    # 💰 記帳模組
-│   │   ├── today.html              # 本日記帳
-│   │   ├── dashboard.html          # 本週期儀表板
-│   │   ├── history.html            # 歷史記帳查詢
-│   │   └── settings.html           # ⚙️ 記帳設定 (預算/類別/固定支出)
+│   ├── expense/                    # 💰 記帳管理模組
+│   │   ├── today.html              # 本日快速記帳介面
+│   │   ├── dashboard.html          # 本週期智慧儀表板 (預算圓餅圖與趨勢圖表)
+│   │   ├── history.html            # 歷史記帳深度查詢與過濾清單
+│   │   └── settings.html           # ⚙️ 記帳專屬設定 (動態預算 / 自訂分類 / 綁定固定支出)
 │   │
-│   ├── salary/                     # 💼 薪資模組
-│   │   ├── dashboard.html          # 本週排班
-│   │   ├── monthly.html            # 月曆檢視 (國定假日標記 + 手機7欄等寬網格)
-│   │   ├── history.html            # 歷史排班 (此週期匯出 + 匯出全部)
-│   │   └── settings.html           # ⚙️ 薪資設定 (時薪/勞健保)
+│   ├── salary/                     # 💼 薪資小幫手模組
+│   │   ├── dashboard.html          # 本週排班表與本期薪資試算
+│   │   ├── monthly.html            # 月曆檢視模式 (7欄等寬 RWD，支援國定假日標記)
+│   │   ├── history.html            # 歷史排班紀錄 (支援此週期單獨匯出與全部結算匯出)
+│   │   └── settings.html           # ⚙️ 薪資獨立設定 (基礎時薪 / 勞健保扣除額)
 │   │
-│   ├── reminders/                  # 🔔 提醒事項模組
-│   │   └── index.html              # 提醒列表與設定
+│   ├── period/                     # 🩸 生理期追蹤模組
+│   │   ├── dashboard.html          # 週期狀態儀表板 (支援狀態橫幅與 FullCalendar 視覺化預測月曆)
+│   │   └── settings.html           # ⚙️ 生理期追蹤設定 (歷史紀錄管理 / 自動防抖儲存)
 │   │
-│   ├── countdown/                  # ⏳ 倒數與紀念日模組
-│   │   └── index.html              # 倒數列表與專屬自訂相片裁切設定
+│   ├── reminders/                  # 🔔 提醒事項中心
+│   │   └── index.html              # 提醒項目列表與快速開關介面
+│   │
+│   ├── countdown/                  # ⏳ 倒數日與里程碑模組
+│   │   ├── index.html              # 倒數主清單 (Glassmorphism 璃光卡片顯示)
+│   │   └── detail.html             # 獨立倒數事件詳情 (顯示時間軸、下一個目標推算與快速編輯)
 │   │
 │   ├── ntut/                       # 🏫 整合行事曆模組
-│   │   └── calendar.html           # 行事曆 (FullCalendar 多來源 ICS)
+│   │   ├── calendar.html           # 多來源行事曆主介面 (整合 FullCalendar 與假日資料)
+│   │   └── settings.html           # ⚙️ 行事曆通知與來源設定 (ICS 訂閱管理)
 │   │
-│   └── email/                      # 📧 Email 模板
-│       ├── welcome.html
-│       ├── reset_password.html
-│       ├── expense_export.html
-│       ├── salary_export.html
-│       └── test_notification.html
+│   └── email/                      # 📧 系統 Email 版型
+│       ├── welcome.html            # 註冊歡迎信模板
+│       ├── reset_password.html     # 忘記密碼恢復信模板
+│       ├── expense_export.html     # 記帳記錄匯出信件模板
+│       ├── salary_export.html      # 排班記錄匯出信件模板
+│       └── test_notification.html  # 系統通知測試信模板
 │
-├── 🎨 static/ (靜態資源)
-│   ├── css/                        # 樣式表
-│   │   ├── style.css               # 全域樣式
-│   │   ├── expense.css             # 記帳專用樣式
-│   │   ├── salary.css              # 薪資專用樣式
-│   │   └── downloader.css          # 下載器專用樣式
-│   │
-│   ├── js/                         # JavaScript 腳本
-│   │   ├── main.js                 # 全域功能 (Toast, Modal...)
-│   │   ├── expense.js              # 記帳互動邏輯
-│   │   ├── salary.js               # 薪資互動邏輯
-│   │   ├── settings_autosave.js    # 設定自動儲存
-│   │   ├── avatar_cropper.js       # 頭像裁切
-│   │   └── avatar_preview.js       # 頭像預覽
-│   │
-│   └── img/                        # 圖片資源
-│       └── line_qr_code.png        # LINE Bot QR Code
-│
-├── 🛠️ scripts/ (維護腳本)
-│   └── maintenance/                     # 手動執行的一次性遷移腳本（已加中文註解）
-│       ├── init_db.py                   # 全新展開時建立所有資料表
-│       ├── migrate_settings_v1.py       # 新增時薪/預算警戒等基礎欄位
-│       ├── migrate_settings_v2.py       # 新增帳単週期/自訂類別/固定支出
-│       ├── migrate_settings_v3.py       # 新增 quick_shortcuts 欄位
-│       ├── migrate_settings_v4.py       # 新增 monthly_report_day 欄位
-│       ├── migrate_avatar_v6.py         # 新增 avatar_type / avatar_val 欄位
-│       ├── migrate_line_bot_v5.py       # 新增 LINE Bot 綁定相關欄位
-│       ├── migrate_calendar_notify_log.py # 建立 CalendarNotificationLog 資料表
-│       ├── migrate_calendar_settings.py  # 新增行事曆通知設定欄位
-│       ├── migrate_holiday_pay.py        # 补算舊排班國定假日工資加倍 (--apply 實際寫入)
-│       ├── migrate_countdown_v2.py       # 新增倒數圖片欄位及 sqlite 遷移
-│       ├── migrate_repeat_annually.py    # 建立 repeat_annually 全新布林值欄位以支援每年自動重複功能
-│       ├── migrate_user_email_v0.py      # [舊] 新增 user.email 欄位 (初期遷移用)
-│       └── migrate_reminder_weekdays_v0.py # [舊] 新增 reminder.weekdays 欄位 (初期遷移用)
-│
-└── 📦 其他資料檔案
-    └── downloads/                  # 暫存下載檔案
-
----
-
-## 🗺️ Part 2: 功能頁面結構 (Page Structure)
-
-使用者可訪問的頁面與功能導覽：
-
-```
-🏠 首頁 (/)
-│
-├── 💼 薪水小幫手 (/salary)
-│   ├── 本週排班 (dashboard)  — 已移除匯出按鈕
-│   ├── 月曆檢視 (monthly) — 紅色國定假日標籤 + 排班顯示 ×2 + CSS Grid 7欄等寬(手機對齊)
-│   ├── 歷史排班 (history) — 含備註欄（國定假日工資加倍說明）
-│   │   ├── 📅 此週期匯出（只匯出目前選取月份週期）
-│   │   └── 📤 匯出全部（所有歷史資料）
-│   └── ⚙️ 設定 (settings)
-│       ├── 時薪設定
-│       ├── 勞保/健保扣款
-│       └── 通知偏好
-│
-├── 💰 記帳工具 (/expense)
-│   ├── 本日記帳 (today)
-│   ├── 本週期儀表板 (dashboard/index)
-│   ├── 歷史記帳 (history)
-│   │   └── 可依年份 → 月份查詢，點擊每筆資料彈出編輯視窗
-│   └── ⚙️ 設定 (settings)
-│       ├── 每期預算上限
-│       ├── 預算警戒水位
-│       ├── 資料可編輯範圍
-│       ├── 帳單週期起始日
-│       ├── 自訂類別 (emoji + 名稱 + 顏色)
-│       ├── 固定支出 (名稱、金額、日期、類別)
-│       └── 快捷摘要 (emoji + 名稱)
-│
-├── 🩸 生理期追蹤器 (/period)
-│   ├── 儀表板與預測 (dashboard) — v2.6.4: 全新自適應「實體色帶 (Ribbon)」月曆、智慧「遺失紀錄」缺漏偵測 (Gap Detection)
-│   └── ⚙️ 設定 (settings) — 自訂平均週期天數、平均經期長度
-│
-├── ⏳ 倒數與紀念日 (/countdown)
-│   ├── 儀表板 (index) — 顯示所有倒數事件卡片，支援自訂頭像上傳、縮放裁切及點擊圖片預覽
-│   ├── 釘選功能 — 將重要事件釘選顯示於首頁獨立區塊上方
-│   └── 🚀 頂級 VIP 首頁小卡 (v2.6.2) — 採用璃光玻璃化設計 (Glassmorphism)，並具備「下一個目標」智慧偵測里程碑功能。
-│
-├── 📅 整合行事曆 (/ntut/calendar)
-│   ├── 多來源日曆管理 (側邊欄顯示清單)
-│   ├── 支援訂閱 ICS URL (如北科大/台科大校曆)
-│   ├── 支援上傳本地 .ics 實體檔案
-│   ├── 內建 FullCalendar 呈現 (自訂標籤顏色、點擊行程彈出詳細視窗)
-│   ├── 每個日曆小鈴鐺圖示 (🔔 即時靜音切換)
-│   └── ⚙️ 通知設定 (/ntut/calendar/settings)
-│       ├── 開啟/關閉行事曆通知 (Toggle)
-│       ├── 自訂傳送時間 (預設 20:00)
-│       ├── 顯示總設定通知方式 (LINE / Email 彩色標籤)
-│       └── 個別日曆靜音開關
-├── 🔔 提醒事項 (/reminders)
-│   └── 提醒列表與設定 (index)
-│       ├── 新增/編輯提醒
-│       ├── 頻率設定 (單次/每天/每週/每月)
-│       ├── 週間選擇器
-│       └── 通知方式 (LINE/Email)
-│
-├── 📥 影音下載器 (/download)
-│   └── YouTube 下載 (downloader)
-│
-└── ⚙️ 帳號設定 (/auth/settings)
-    ├── 個人設定 (Profile)
-    │   ├── 頭像上傳/裁切
-    │   ├── 使用者名稱
-    │   └── Email
+└── 🎨 static/ (靜態資源 - CSS / JS / 圖片)
+    ├── css/                        # 樣式表 (CSS)
+    │   ├── style.css               # 全域核心樣式 (Root Variables / 共用元件 / RWD 框架)
+    │   ├── expense.css             # 記帳模組專屬樣式 (圖表容器 / 收支卡片樣式)
+    │   ├── expense-modal.css       # 記帳快速彈出視窗獨立樣式 (優化 Z-index 與動畫)
+    │   ├── salary.css              # 薪資模組專屬樣式 (班表清單 / 月曆網格)
+    │   └── downloader.css          # 📥 下載器模組專屬樣式
     │
-    ├── 📱 LINE 官方帳號設定
-    │   ├── 綁定狀態查詢
-    │   └── 驗證碼生成
+    ├── js/                         # JavaScript 邏輯控制
+    │   ├── main.js                 # 全局核心邏輯 (導航互動 / AJAX CSRF / 共用 Alert)
+    │   ├── expense.js              # 記帳模組前端互動 (Chart.js 初始化 / 動態表單計算)
+    │   ├── salary.js               # 排班模組前端互動 (日期檢驗 / 快速快選時間)
+    │   ├── avatar_cropper.js       # 圖片裁切核心引擎 (整合 Cropper.js 處理倒數卡片圖片)
+    │   ├── avatar_preview.js       # 圖片即時預覽與 FileReader 解析
+    │   └── settings_autosave.js    # 全域設定防抖自動儲存引擎 (Auto-Save 機制)
     │
-    ├── 🔔 通知方式偏好
-    │   ├── Email 月報表
-    │   ├── LINE 即時通知
-    │   └── 檔案下載完成通知
-    │
-    └── 🗂️ 資料管理中心
-        ├── 修改密碼
-        ├── 全站資料備份 (Excel)
-        └── ⚠️ 危險區域 (重置薪資/記帳模組)
+    └── img/                        # 系統靜態圖片與圖標
+        └── line_qr_code.png        # LINE Bot 快速綁定 QR Code 資源
 ```
+
+## 🔒 Part 6: 安全性與認證 (Security & Authentication)
+
+專案採用工業標準的安全實踐，保護使用者資料：
+
+### 6.1 密碼安全
+- **加密演算法**：使用 `werkzeug.security.generate_password_hash`。預設採用 **Scrypt** 或 **PBKDF2-SHA256**（取決於系統支援），具備強大的抗暴力破解能力。
+- **雜湊 (Hashing)**：資料庫中僅儲存雜湊值，永不儲存明文密碼。
+
+### 6.2 認證機制
+- **Session 管理**：基於 `Flask-Login`。
+- **Cookie 安全**：`REMEMBER_COOKIE_DURATION` 預設為 30 天，且使用 `SECRET_KEY` 加密簽署。
+- **登入保護**：
+  - 非登入狀態訪問受限頁面將重導向至 `/login`。
+  - 使用 `@login_required` 裝飾器。
+  - 資料存取權限：所有 API 與資料查詢均嚴格驗證 `user_id == current_user.id`。
 
 ---
 
-## 🗄️ Part 3: 資料模型結構 (Database Models)
+## ⏰ Part 7: 通知與排程系統 (Notification & Scheduler System)
 
-所有資料表與關聯設計：
+使用 `Flask-APScheduler` 構建的多層次排程系統：
 
-```
-📊 資料庫 (app.db - SQLite)
-│
-├── User (用戶主表)
-│   ├── id (PK)
-│   ├── username
-│   ├── email
-│   ├── password_hash
-│   ├── avatar_path
-│   └── created_at
-│
-├── UserSettings (用戶設定 - One-to-One with User)
-│   ├── id (PK)
-│   ├── user_id (FK → User)
-│   │
-│   ├── 📧 通知設定
-│   │   ├── line_user_id
-│   │   ├── binding_code, binding_expiry
-│   │   ├── notification_methods (JSON Array)
-│   │   ├── monthly_report_day (Integer)
-│   │   ├── calendar_notify_enabled (行事曆通知開關, Boolean)
-│   │   └── calendar_notify_time    (通知時間 HH:MM, 預設 20:00)
-│   │
-│   ├── 💰 記帳設定
-│   │   ├── monthly_budget (Integer)
-│   │   ├── budget_alert_threshold (Integer)
-│   │   ├── editable_month_range (Integer)
-│   │   ├── billing_cycle_start_day (Integer)
-│   │   ├── custom_categories (JSON Text)
-│   │   │   └── [{ name: "類別", emoji: "🏷️", color: "#a78bfa" }, ...]
-│   │   ├── recurring_expenses (JSON Text)
-│   │   │   └── [{ name: "項目", amount: 390, day: 5, category: "..." }, ...]
-│   │   └── quick_shortcuts (JSON Text)
-│   │       └── [{ name: "快捷名稱", emoji: "⚡" }, ...]
-│   │
-│   └── 💼 薪資設定
-│       ├── hourly_rate (Decimal)
-│       ├── labor_insurance (Decimal)
-│       └── health_insurance (Decimal)
-│
-├── Expense (記帳記錄 - One-to-Many with User)
-│   ├── id (PK)
-│   ├── user_id (FK → User)
-│   ├── date (Date)
-│   ├── amount (Decimal)
-│   ├── category (String)
-│   ├── description (Text)
-│   ├── period_id (String, 例: "2024-02")
-│   └── created_at (DateTime)
-│
-├── Shift (排班記錄 - One-to-Many with User)
-│   ├── id (PK)
-│   ├── user_id (FK → User)
-│   ├── date (Date)
-│   ├── start_time (Time)
-│   ├── end_time (Time)
-│   ├── break_minutes (Integer)
-│   ├── notes (Text)
-│   └── created_at (DateTime)
-│
-├── SalaryPeriod (薪資週期 - One-to-Many with User)
-│   ├── id (PK)
-│   ├── user_id (FK → User)
-│   ├── start_date (Date)
-│   ├── end_date (Date)
-│   ├── total_hours (Decimal)
-│   ├── total_pay (Decimal)
-│   └── created_at (DateTime)
-│
-├── PeriodRecord (生理期紀錄 - One-to-Many with User)
-│   ├── id (PK)
-│   ├── user_id (FK → User)
-│   ├── start_date (Date)
-│   ├── end_date (Date, Nullable)
-│   ├── cycle_length (Integer, Nullable)
-│   ├── exclude_from_avg (Boolean, Default False) — 排除異常週期不計入統計
-│   ├── note (Text)
-│   └── created_at (DateTime)
-│
-├── Countdown (倒數與紀念日事件 - One-to-Many with User)
-│   ├── id (PK)
-│   ├── user_id (FK → User)
-│   ├── title (String)
-│   ├── target_date (Date)
-│   ├── is_anniversary (Boolean)
-│   ├── is_pinned (Boolean)
-│   ├── icon (String)               # 預設 Emoji
-│   ├── image_path (String)         # 自訂上傳相片路徑 (支援裁切)
-│   └── created_at (DateTime)
-│
-├── UserCalendar (使用者 ICS 來源 - One-to-Many with User)
-│   ├── id (PK)
-│   ├── user_id (FK → User)
-│   ├── name           # 日曆名稱
-│   ├── source_type    # 'url' | 'file'
-│   ├── source         # URL 或檔案路徑
-│   ├── color          # 自訂顏色 (hex)
-│   ├── notify_enabled # 是否發送通知 (Boolean, 預設 True)
-│   └── created_at
-│
-└── CalendarNotificationLog (日曆通知發送記錄 - 防重複)
-    ├── id (PK)
-    ├── user_id (FK → User)
-    ├── cal_id         # UserCalendar ID
-    ├── event_key      # "{cal_id}:{start_date}:{title[:100]}"
-    ├── sent_date      # 發送日期 (YYYY-MM-DD)
-    └── created_at
-```
+### 7.1 排程器配置
+- **執行方式**：後端背景線程（BackgroundScheduler）。
+- **輪詢頻率**：全域每 60 秒檢查一次（`interval: 60s`）。
+
+### 7.2 任務詳情
+- **🔔 自訂提醒 (`check_reminders`)**：
+    - 比對目前的「日期 + 時間 (HH:MM)」與 `Reminder` 設定。
+    - 支援「單次、每天、每週、每月」四種頻率。
+- **📅 行事曆通知 (`calendar_notify`)**：
+    - 每日檢查是否有使用者設定的通知時間（如預設 20:00）。
+    - 提前一天發送「明日行程總覽」。
+- **🩸 生理期預測通知 (`period_notify`)**：
+    - 每日檢查通知時間（如預設 08:00）。
+    - 提早 X 天提醒生理期即將到來。
+- **⏳ 倒數里程碑通知 (`countdown_notify`)**：
+    - 每日 09:00 (TW) 檢查是否有釘選的任務達到重要里程碑或目標日期。
+
+### 7.3 防重複機制
+為確保重啟伺服器或多線程情況下不重複發送通知，使用日誌記錄表：
+- `CalendarNotificationLog` & `PeriodNotificationLog`。
+- 檢查 `(user_id, target_date, event_key)` 唯一性後才發送。
 
 ---
 
-## 🔌 Part 4: API 端點結構 (API Endpoints)
+## 🧠 Part 8: 核心算法說明 (Core Logic & Algorithms)
 
-後端 API 設計與用途：
+### 8.1 薪資加倍算法 (Double Salary)
+- **觸發條件**：`services.tw_holidays.is_holiday(date)` 回傳非空名稱。
+- **邏輯**：
+    - 計算時數 `hours` = `end_time - start_time - break_minutes`。
+    - 若為國定假日，金額 = `hours * hourly_rate * 2`。
+    - 自動在備註欄加上 `【國定假日：XXX】工資加倍（...）` 前綴。
 
-```
-/auth/api/ (認證與設定相關 API)
-├── POST /update_email                  # 更新 Email
-├── POST /update_notifications          # 更新通知偏好
-├── POST /update_custom_categories      # 更新自訂類別 ← 嚴格驗證物件結構
-├── POST /update_recurring_expenses     # 更新固定支出 ← 嚴格驗證物件結構
-├── POST /update_quick_shortcuts        # 更新快捷摘要 ← 嚴格驗證物件結構
-├── POST /set_preset_avatar             # 設定預設頭像
-└── POST /test_notification             # 測試通知發送
+### 8.2 生理期預測模型 (Weighted Prediction)
+- **計算平均週期**：
+    - 取最近 **6 個月** 的紀錄。
+    - **權重分配**：最新一筆權重最高 (6)，最遠權重最低 (1)。
+    - **異常值過濾**：排除 < 14 天或 > 60 天的極端週期，若 > 60 天則自動標記為 `exclude_from_avg = True`。
+- **預測點計算**：
+    - `下次開始日` = `本次開始日 + 平均週期`。
+    - `易孕期` = `排卵日 ± X 天`（其中排卵日為 `下次預測開始日 - 14 天`）。
 
-/period/api/ (生理期追蹤 API)
-├── GET  /events                        # 取得 FullCalendar JSON (歷史+未來預測，已移除過期預測)
-├── POST /records                       # 新增紀錄 (支援 exclude_from_avg, 自動偵測 60+天缺漏)
-├── PUT  /records/<id>                  # 更新紀錄 (支援 exclude_from_avg)
-└── DELETE /records/<id>                # 刪除紀錄
-
-/expense/api/ (記帳模組 API)
-├── GET  /settings                      # 讀取記帳設定
-├── POST /settings                      # 更新記帳設定
-├── GET  /expenses                      # 查詢記帳資料 (支援查詢參數)
-├── POST /expenses                      # 新增記帳記錄
-├── PUT  /expenses/<id>                 # 更新記帳記錄
-├── DELETE /expenses/<id>               # 刪除記帳記錄
-└── GET  /period                        # 獲取當前週期資訊
-
-/salary/api/ (薪資模組 API)
-├── GET  /records                       # 查詢排班資料
-├── POST /records                       # 新增排班記錄 (國定假日自動 ×2)
-├── PUT  /records/<id>                   # 更新排班記錄 (國定假日自動 ×2)
-├── DELETE /records/<id>                 # 刪除排班記錄
-├── GET  /api/holidays?year=YYYY        # 取得指定年度國定假日 JSON (從 Google ICS)
-├── GET  /stats                         # 排班統計摘要
-├── GET/POST /settings                  # 薪資設定
-├── POST /actions/copy_week             # 複製上週排班
-├── POST /actions/clear_week            # 清空本週排班
-├── GET  /api/export                    # CSV 導出（全部資料）
-├── GET  /api/export-period?period=YYYY-MM  # CSV 導出（單月週期，e.g. 2026-03）
-├── GET  /api/history/periods           # 帳務週期清單 (依 billing_cycle_start_day 對齊)
-├── GET  /api/history/data?start_date=&end_date=  # 指定區間歷史資料
-└── GET  /api/income-trend              # 全歷史月收入趨勢圖資料
-
-/countdown/api/ (倒數與紀念日 API)
-├── GET  /countdowns                    # 查詢所有事件
-├── POST /countdowns                    # 新增事件 (含自訂圖片 Base64 上傳、儲存與裁切處理)
-├── PUT  /countdowns/<id>               # 更新事件 (含圖片替換與刪除)
-├── DELETE /countdowns/<id>             # 刪除事件 (自動清除實體圖片檔案)
-└── POST /countdowns/<id>/pin           # 切換首頁釘選狀態
-
-/reminders/api/ (提醒事項 API)
-├── GET  /reminders                     # 查詢所有提醒
-├── POST /reminders                     # 新增提醒
-├── PUT  /reminders/<id>                # 更新提醒
-├── DELETE /reminders/<id>              # 刪除提醒
-└── POST /reminders/<id>/toggle         # 切換啟用/停用狀態
-
-/ntut/ (行事曆 API)
-├── GET  /calendar                      # 行事曆頁面
-├── GET  /calendar/settings             # 通知設定頁面
-├── GET  /calendar/settings/api         # 讀取通知設定 (JSON)
-├── POST /calendar/settings/api         # 儲存通知設定
-├── GET  /calendars                     # 列出日曆清單 (含 notify_enabled)
-├── POST /calendars                     # 新增日曆 (URL 或 .ics 檔案)
-├── PUT  /calendars/<id>                # 更新名稱/顏色/notify_enabled
-├── DELETE /calendars/<id>              # 刪除日曆
-└── GET  /calendars/<id>/events         # 取得 FullCalendar JSON 事件
-
-/line/webhook (LINE Bot Webhook)
-└── POST /webhook                       # LINE 平台事件接收
-
-/download/api/ (下載器 API)
-├── POST /download                      # 提交下載任務
-└── GET  /status/<task_id>              # 查詢下載狀態
-```
+### 8.3 記帳週期對齊 (Billing Cycle Alignment)
+- **動態切片**：根據 `billing_cycle_start_day` (如每月 10 日)，將資料動態分組為 `當月 10 日 ~ 下月 9 日`。
+- **預算警戒**：
+    - 計算 `當前週期總支出 / monthly_budget`。
+    - 超過 `budget_alert_threshold` (%) 時，前端圖表轉變為警告色（橘/紅）。
 
 ---
 
-## 🛠️ 核心技術棧 (Tech Stack)
+## 📱 Part 9: 外部整合 (External Integrations)
 
-| 技術層       | 使用技術                          |
-|--------------|-----------------------------------|
-| **後端框架** | Flask 3.x                         |
+### 9.1 LINE Bot 互動流程
+- **綁定流程**：
+    1. 使用者在網頁生成 6 位數「驗證碼」。
+    2. LINE 輸入驗證碼後，後端透過 Webhook 將 `line_user_id` 寫入 `UserSettings`。
+- **主動推送**：整合 `LineService.push_message()`，支援純文字與 Flex Message (彩色訊息卡片)。
+
+### 9.2 影音下載邏輯
+- **支援庫**：`yt-dlp`。
+- **處理流程**：同步請求 -> 後端啟動獨立進程執行 -> 下載至 `/downloads` -> 通知使用者。
+- **清理機制**：定期清除超過 24 小時的暫存檔案。
+**後端框架** | Flask 3.x                         |
 | **資料庫**   | SQLite (本地), PostgreSQL (雲端可選) |
 | **ORM**      | Flask-SQLAlchemy                  |
 | **認證**     | Flask-Login                       |

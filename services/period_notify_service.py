@@ -55,7 +55,7 @@ class PeriodNotifyService:
 
     @staticmethod
     def _process_user(user, settings, today, today_str) -> int:
-        """Process one user. Returns number of notifications sent (0 or 1)."""
+        """Process one user. Returns number of notifications sent (0 to 2)."""
         # Get predictions
         period_service = PeriodService(user.id)
         predictions = period_service.get_predictions(months=1)
@@ -65,68 +65,87 @@ class PeriodNotifyService:
             
         next_pred = predictions[0]
         pred_start_str = next_pred['period_start']
+        ovulation_day_str = next_pred['ovulation_day']
+        
         pred_start_date = datetime.strptime(pred_start_str, '%Y-%m-%d').date()
+        ovulation_date = datetime.strptime(ovulation_day_str, '%Y-%m-%d').date()
         
         # Calculate when to notify
         days_before = settings.period_notify_days_before or 3
-        notify_date = pred_start_date - timedelta(days=days_before)
+        sent_count = 0
         
-        # Is it time to notify?
-        if today != notify_date:
-            return 0
-            
-        # Check if already sent for this predicted date
-        already_sent = PeriodNotificationLog.query.filter_by(
-            user_id=user.id,
-            predicted_start_date=pred_start_str
-        ).first()
-        
-        if already_sent:
-            return 0
-
-        # Send notification
-        try:
-            methods = json.loads(settings.notification_methods)
-        except:
-            methods = ['email']
-            
-        if not methods:
-            return 0
-            
-        msg_text = f"🩸 生理期提醒：預計在 {days_before} 天後 ({pred_start_str}) 開始，請預作準備！"
-        
-        success = False
-        if 'line' in methods and settings.line_user_id:
+        # Helper to actually send the messages
+        def send_notification(msg_text, subject, notify_type):
             try:
-                from services.line_service import LineService
-                if LineService.push_message(settings.line_user_id, msg_text):
-                    print(f"[PeriodNotify] LINE sent to user {user.id}")
+                methods = json.loads(settings.notification_methods)
+            except:
+                methods = ['email']
+                
+            if not methods:
+                return False
+                
+            success = False
+            if 'line' in methods and settings.line_user_id:
+                try:
+                    from services.line_service import LineService
+                    if LineService.push_message(settings.line_user_id, msg_text):
+                        print(f"[PeriodNotify] LINE sent to user {user.id}")
+                        success = True
+                except Exception as e:
+                    print(f"[PeriodNotify] LINE send failed for user {user.id}: {e}")
+
+            if 'email' in methods and user.email:
+                try:
+                    sender = current_app.config.get('MAIL_USERNAME')
+                    msg = Message(
+                        subject=subject,
+                        recipients=[user.email],
+                        body=msg_text,
+                        sender=sender,
+                    )
+                    mail.send(msg)
+                    print(f"[PeriodNotify] Email sent to {user.email}")
                     success = True
-            except Exception as e:
-                print(f"[PeriodNotify] LINE send failed for user {user.id}: {e}")
-
-        if 'email' in methods and user.email:
-            try:
-                sender = current_app.config.get('MAIL_USERNAME')
-                msg = Message(
-                    subject="🩸 生理期提醒",
-                    recipients=[user.email],
-                    body=msg_text,
-                    sender=sender,
+                except Exception as e:
+                    print(f"[PeriodNotify] Email send failed for user {user.id}: {e}")
+                    
+            if success:
+                log = PeriodNotificationLog(
+                    user_id=user.id,
+                    predicted_start_date=pred_start_str,
+                    sent_date=today_str,
+                    notify_type=notify_type
                 )
-                mail.send(msg)
-                print(f"[PeriodNotify] Email sent to {user.email}")
-                success = True
-            except Exception as e:
-                print(f"[PeriodNotify] Email send failed for user {user.id}: {e}")
+                db.session.add(log)
+                return True
+            return False
 
-        if success:
-            log = PeriodNotificationLog(
-                user_id=user.id,
-                predicted_start_date=pred_start_str,
-                sent_date=today_str
-            )
-            db.session.add(log)
-            return 1
-            
-        return 0
+        # 1. Period Notification
+        if settings.period_notify_period:
+            notify_date = pred_start_date - timedelta(days=days_before)
+            if today == notify_date:
+                already_sent = PeriodNotificationLog.query.filter_by(
+                    user_id=user.id,
+                    predicted_start_date=pred_start_str,
+                    notify_type='period'
+                ).first()
+                if not already_sent:
+                    msg_text = f"🩸 生理期提醒：預計在 {days_before} 天後 ({pred_start_str}) 開始，請預作準備！"
+                    if send_notification(msg_text, "🩸 生理期提醒", "period"):
+                        sent_count += 1
+                        
+        # 2. Ovulation Notification
+        if settings.period_notify_ovulation:
+            notify_date = ovulation_date - timedelta(days=days_before)
+            if today == notify_date:
+                already_sent = PeriodNotificationLog.query.filter_by(
+                    user_id=user.id,
+                    predicted_start_date=pred_start_str,
+                    notify_type='ovulation'
+                ).first()
+                if not already_sent:
+                    msg_text = f"🥚 排卵期提醒：預計在 {days_before} 天後 ({ovulation_day_str}) 進入排卵日 (易孕期)！"
+                    if send_notification(msg_text, "🥚 排卵期提醒", "ovulation"):
+                        sent_count += 1
+                        
+        return sent_count

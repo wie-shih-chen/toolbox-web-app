@@ -113,6 +113,8 @@ class UserSettings(db.Model):
     period_notify_enabled = db.Column(db.Boolean, default=True)
     period_notify_time = db.Column(db.String(5), default='08:00')   # HH:MM
     period_notify_days_before = db.Column(db.Integer, default=3)
+    period_notify_period = db.Column(db.Boolean, default=True)      # 🩸 月經前通知
+    period_notify_ovulation = db.Column(db.Boolean, default=False)  # 🥚 排卵期前通知
 
 class PeriodRecord(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -192,6 +194,8 @@ class PeriodNotificationLog(db.Model):
     predicted_start_date = db.Column(db.String(10), nullable=False)
     # The date this notification was sent
     sent_date = db.Column(db.String(10), nullable=False)
+    # The type of notification sent ('period' or 'ovulation')
+    notify_type = db.Column(db.String(20), default='period')
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
 class Countdown(db.Model):
