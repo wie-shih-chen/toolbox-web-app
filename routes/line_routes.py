@@ -47,7 +47,7 @@ def register_line_handlers(handler):
         if msg.isdigit() and len(msg) == 6:
             setting = UserSettings.query.filter_by(binding_code=msg).first()
             if setting:
-                if setting.binding_expiry and setting.binding_expiry > datetime.utcnow() + timedelta(hours=8):
+                if setting.binding_expiry and setting.binding_expiry > datetime.utcnow():
                     # Check if this LINE ID already has a binding
                     existing = LineBinding.query.filter_by(line_user_id=user_id).first()
                     if existing:
