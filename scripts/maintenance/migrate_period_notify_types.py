@@ -4,12 +4,11 @@ import sys
 # Add the project directory to the path so we can import the `app`
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
 
-from app import create_app
+from app import app
 from models import db
 from sqlalchemy import text
 
 def add_columns_to_tables():
-    app = create_app()
     with app.app_context():
         try:
             # Add columns to user_settings
