@@ -63,68 +63,98 @@ def register_line_handlers(handler):
         # Find user if already bound
         setting = UserSettings.query.filter_by(line_user_id=user_id).first()
 
-        # 1. Fast Expense Entry: "記帳 [類別] [金額] [項目名稱(選填)]"
+        # =============== SMART PARSERS =============== #
+        
+        # 1. Expense: 記帳 [名稱] [類別：預設飲食] [金額] [預設時間(本年/本月/本日/現在時間)]
         if msg.startswith("記帳"):
             if not setting:
-                LineService.push_message(user_id, "❌ 請先至系統網站設定頁面，產生並輸入 6 位數驗證碼進行綁定。")
+                LineService.push_message(user_id, "❌ 請先綁定帳號。")
                 return
             
-            parts = [p for p in msg.split() if p.strip()]
-            if len(parts) < 3:
-                LineService.push_message(user_id, "❌ 缺少必填資料！\n格式：記帳 [類別] [金額] [項目名稱(選填)]\n範例：記帳 飲食 150 午餐")
+            parts = [p for p in msg.split() if p.strip()][1:]
+            amount = None
+            date_str = None
+            text_parts = []
+            
+            for p in parts:
+                if amount is None:
+                    try:
+                        val = float(p)
+                        if val > 0:
+                            amount = val
+                            continue
+                    except ValueError: pass
+                # Check for date formats (like 4/18 or 18:00 or 0900)
+                if date_str is None and ('/' in p or ':' in p or '.' in p or (len(p)==4 and p.isdigit())):
+                    date_str = p.replace('.', ':')
+                    continue
+                text_parts.append(p)
+                
+            if amount is None:
+                LineService.push_message(user_id, "❌ 找不到金額！\n最少填寫：記帳 [名稱/備註] [金額]\n💡例如：記帳 午餐 150")
                 return
                 
+            name = text_parts[0] if len(text_parts) > 0 else "隨手記"
+            category = text_parts[1] if len(text_parts) > 1 else "飲食"
+            if len(text_parts) > 2:
+                name = " ".join(text_parts) # combine everything else as name/note if it's super long
+                category = "飲食"
+            
+            # --- Date Parsing Magic ---
+            def parse_date(d_str, default_dt):
+                if not d_str: return default_dt
+                formats = ["%H:%M", "%H%M", "%m/%d/%H:%M", "%m/%d %H:%M", "%Y/%m/%d/%H:%M", "%m/%d"]
+                for f in formats:
+                    try:
+                        pd = datetime.strptime(d_str, f)
+                        res = default_dt
+                        if "%m" in f: res = res.replace(month=pd.month, day=pd.day)
+                        if "%H" in f: res = res.replace(hour=pd.hour, minute=pd.minute, second=0)
+                        if "%Y" in f: res = res.replace(year=pd.year)
+                        if "%H" not in f and "%m" in f: res = res.replace(hour=12, minute=0, second=0)
+                        return res
+                    except ValueError: pass
+                return default_dt
+            
+            now_dt = datetime.now()
+            final_time = parse_date(date_str, now_dt)
+            now_str = final_time.strftime('%Y-%m-%d %H:%M:%S')
+            
             from models import ExpenseRecord
-            category = parts[1]
-            try:
-                amount = float(parts[2])
-                if amount <= 0: raise ValueError
-            except:
-                LineService.push_message(user_id, "❌ 金額格式不正確，請輸入大於 0 的數字。\n範例：記帳 飲食 150")
-                return
-                
-            note = " ".join(parts[3:]) if len(parts) > 3 else ""
-            now_str = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-            
             new_expense = ExpenseRecord(
-                user_id=setting.user_id, timestamp=now_str, category=category, amount=amount, note=note
+                user_id=setting.user_id, timestamp=now_str, category=category, amount=amount, note=name
             )
             db.session.add(new_expense)
             db.session.commit()
             
-            reply = f"✅ 新增支出\n📌 項目名稱：{note if note else '無'}\n💰 金額：${amount:g}\n🏷️ 類別：{category}"
+            reply = f"✅ 新增支出\n📌 名稱：{name}\n💰 金額：${amount:g}\n🏷️ 類別：{category}\n⏰ 時間：{final_time.strftime('%m/%d %H:%M')}"
             LineService.push_message(user_id, reply)
 
-        # 2. Fast Bonus Entry: "獎金 [金額] [時數可有可無] [備註可有可無]"
+        # 2. Bonus: 獎金 [金額] [時數(選填)] [備註(選填)]
         elif msg.startswith("獎金") or msg.startswith("薪水 獎金") or msg.startswith("薪資 獎金"):
             if not setting:
                 LineService.push_message(user_id, "❌ 請先綁定帳號。")
                 return
                 
-            parts = [p for p in msg.split() if p.strip()]
-            val_idx = 2 if "薪" in parts[0] else 1
+            parts = [p for p in msg.split() if p.strip()][1:]
+            if parts and "薪" in parts[0]: parts = parts[1:] # strip 薪水
             
-            if len(parts) <= val_idx:
-                LineService.push_message(user_id, "❌ 缺少必填資料！\n格式：獎金 [金額] [時數(選填)] [備註(選填)]\n範例：獎金 1500 4 專案獎金")
-                return
-                
-            try:
-                amount = int(float(parts[val_idx]))
-                if amount <= 0: raise ValueError
-            except:
-                LineService.push_message(user_id, "❌ 金額格式不正確，請輸入大於 0 的整數。")
-                return
-                
-            hours = 0.0
-            note = ""
-            if len(parts) > val_idx + 1:
+            amounts = []
+            text_parts = []
+            for p in parts:
                 try:
-                    hours = float(parts[val_idx + 1])
-                    if hours < 0: raise ValueError
-                    note = " ".join(parts[val_idx + 2:])
+                    val = float(p)
+                    amounts.append(val)
                 except ValueError:
-                    note = " ".join(parts[val_idx + 1:])
-                    
+                    text_parts.append(p)
+            
+            if not amounts or amounts[0] <= 0:
+                LineService.push_message(user_id, "❌ 找不到金額！\n最少填寫：獎金 [金額]\n💡例如：獎金 1500 三節")
+                return
+                
+            amount = int(amounts[0])
+            hours = amounts[1] if len(amounts) > 1 else 0.0
+            note = " ".join(text_parts)
             now_date = datetime.now().strftime('%Y-%m-%d')
             
             from models import SalaryRecord
@@ -137,35 +167,50 @@ def register_line_handlers(handler):
             reply = f"✅ 新增獎金\n💰 金額：${amount:,}\n⏱️ 時數：{hours:g} 小時\n📝 備註：{note if note else '無'}"
             LineService.push_message(user_id, reply)
 
-        # 3. Fast Shift Entry: "排班 [開始時間] [結束時間] [時薪(選填)]"
+        # 3. Shift: 排班 [開始時間(預設12:00)] [結束時間(預設18:00)] [自訂時薪(預設)] [備註]
         elif msg.startswith("排班") or msg.startswith("打工") or msg.startswith("薪水 排班"):
             if not setting:
                 LineService.push_message(user_id, "❌ 請先綁定帳號。")
                 return
                 
-            parts = [p for p in msg.split() if p.strip()]
-            idx_start = 2 if "薪" in parts[0] else 1
+            parts = [p for p in msg.split() if p.strip()][1:]
+            if parts and "薪" in parts[0]: parts = parts[1:]
             
-            if len(parts) < idx_start + 2:
-                LineService.push_message(user_id, "❌ 缺少起訖時間！\n格式：排班 [開始時間] [結束時間] [時薪(選填)]\n範例：排班 09:00 18:00 200")
+            times = []
+            amounts = []
+            text_parts = []
+            
+            for p in parts:
+                # heuristic for time: contains colon/dot or is 4 plain digits
+                if ':' in p or '.' in p or (len(p)==4 and p.isdigit()):
+                    times.append(p)
+                else:
+                    try:
+                        val = float(p)
+                        amounts.append(val)
+                    except ValueError:
+                        text_parts.append(p)
+            
+            start_str = times[0] if len(times) > 0 else "12:00"
+            end_str = times[1] if len(times) > 1 else "18:00"
+            custom_rate = amounts[0] if len(amounts) > 0 else None
+            note = " ".join(text_parts)
+            
+            # Format validation func
+            def fmt(t_str):
+                import re
+                if len(t_str) == 4 and t_str.isdigit():
+                    t_str = f"{t_str[:2]}:{t_str[2:]}"
+                t_str = t_str.replace('.', ':')
+                if not re.match(r"^([01]?[0-9]|2[0-3]):([0-5][0-9])$", t_str): return None
+                return t_str
+            
+            start_time = fmt(start_str)
+            end_time = fmt(end_str)
+            
+            if not (start_time and end_time):
+                LineService.push_message(user_id, "❌ 時間格式錯誤！請使用 18:00 或 1800。")
                 return
-                
-            start_str = parts[idx_start].replace(".", ":")
-            end_str = parts[idx_start+1].replace(".", ":")
-            
-            # Format validation
-            import re
-            time_pattern = re.compile(r"^([01]?[0-9]|2[0-3]):?([0-5][0-9])$")
-            m_start = time_pattern.match(start_str)
-            m_end = time_pattern.match(end_str)
-            
-            if not (m_start and m_end):
-                LineService.push_message(user_id, "❌ 時間格式錯誤！\n請使用 HH:MM，例如 09:00 或直接輸入 0900")
-                return
-                
-            def fmt(m): return f"{int(m.group(1)):02d}:{m.group(2)}"
-            start_time = fmt(m_start)
-            end_time = fmt(m_end)
             
             # Compute hours
             from datetime import timedelta
@@ -174,18 +219,7 @@ def register_line_handlers(handler):
             if t2 < t1: t2 += timedelta(days=1)
             hours = (t2 - t1).total_seconds() / 3600.0
             
-            # Custom Rate or Default
-            custom_rate = None
-            note = ""
-            if len(parts) > idx_start + 2:
-                try:
-                    custom_rate = float(parts[idx_start + 2])
-                    if custom_rate < 0: raise ValueError
-                    note = " ".join(parts[idx_start + 3:])
-                except ValueError:
-                    note = " ".join(parts[idx_start + 2:])
-                    
-            rate = custom_rate if custom_rate is not None else float(setting.hourly_rate or 183.0)
+            rate = custom_rate if custom_rate is not None else float(setting.hourly_rate or 196.0)
             now_date = datetime.now().strftime('%Y-%m-%d')
             
             from services.salary_service import _apply_holiday_pay
@@ -200,11 +234,9 @@ def register_line_handlers(handler):
             db.session.add(new_salary)
             db.session.commit()
             
-            is_holiday = effective_rate == rate and amount == int(hours * rate * 2) # simplified check
-            holiday_emoji = "🎆 " if is_holiday else ""
+            holiday_emoji = "🎆 " if (effective_rate == rate and amount == int(hours * rate * 2)) else ""
             reply = f"✅ 新增排班紀錄\n⏰ 時間：{start_time} ~ {end_time}\n⏱️ 時數：{hours:.1f} 小時\n💵 時薪：${rate:g}/hr\n{holiday_emoji}💰 金額：${amount:,}"
-            if updated_note:
-                reply += f"\n📝 備註：{updated_note}"
+            if updated_note: reply += f"\n📝 備註：{updated_note}"
             LineService.push_message(user_id, reply)
 
         elif msg == "查詢":
