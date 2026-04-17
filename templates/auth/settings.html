@@ -128,6 +128,29 @@
         text-shadow: 0 0 20px rgba(6, 199, 85, 0.4);
     }
 
+    /* Permission Toggle Badges */
+    .perm-toggle {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        padding: 5px 12px;
+        border-radius: 20px;
+        font-size: 0.82rem;
+        font-weight: 600;
+        cursor: pointer;
+        user-select: none;
+        border: 1px solid rgba(255,255,255,0.12);
+        background: rgba(255,255,255,0.04);
+        color: var(--text-tertiary);
+        transition: all 0.2s ease;
+    }
+    .perm-toggle.active {
+        background: rgba(6,199,85,0.18);
+        border-color: rgba(6,199,85,0.4);
+        color: #06c755;
+    }
+    .perm-toggle:hover { opacity: 0.85; }
+
     /* Checkbox Cards */
     .method-grid {
         display: grid;
@@ -332,77 +355,91 @@
         <!-- 2. LINE Integration Section -->
         <div class="settings-section">
             <div class="section-header">
-                <span>💬</span> LINE 官方帳號設定
+                <span>💬</span> LINE 帳號管理
             </div>
 
             <div style="padding: 10px 0;">
 
-                <!-- Conditional QR Code -->
-                {% if not current_user.settings.line_user_id %}
-                <div
-                    style="text-align: center; margin-bottom: 24px; animation: fadeIn 0.5s ease; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05); border-radius: 16px; padding: 24px;">
+                <!-- QR Code hint (show when no bindings) -->
+                {% if not line_bindings %}
+                <div style="text-align: center; margin-bottom: 24px; animation: fadeIn 0.5s ease; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05); border-radius: 16px; padding: 24px;">
                     <div style="font-size: 1rem; color: var(--text-primary); margin-bottom: 16px; font-weight: 500;">
-                        <span class="material-icons"
-                            style="font-size: 20px; vertical-align: bottom; color: #06c755; margin-right: 4px;">qr_code_2</span>
-                        掃描下方 QR Code 加入好友
+                        <span class="material-icons" style="font-size: 20px; vertical-align: bottom; color: #06c755; margin-right: 4px;">qr_code_2</span>
+                        掃描下方 QR Code 加入好友後再新增綁定
                     </div>
-                    <div
-                        style="background: white; padding: 12px; border-radius: 12px; display: inline-block; box-shadow: 0 4px 20px rgba(0,0,0,0.3);">
-                        <!-- User needs to upload this image to static/img/line_qr_code.png -->
-                        <img src="{{ url_for('static', filename='img/line_qr_code.png') }}" alt="LINE QR Code"
-                            style="width: 200px; height: 200px; display: block;">
+                    <div style="background: white; padding: 12px; border-radius: 12px; display: inline-block; box-shadow: 0 4px 20px rgba(0,0,0,0.3);">
+                        <img src="{{ url_for('static', filename='img/line_qr_code.png') }}" alt="LINE QR Code" style="width: 200px; height: 200px; display: block;">
                     </div>
-                    <div style="margin-top: 12px; font-size: 0.9rem; color: var(--text-tertiary);">
-                        綁定後即可接收即時通知
-                    </div>
+                    <div style="margin-top: 12px; font-size: 0.9rem; color: var(--text-tertiary);">綁定後即可接收即時通知</div>
                 </div>
                 {% endif %}
 
-                <div class="line-status-card">
-                    <div class="line-status-info">
-                        <div class="line-icon"><i class="fab fa-line"></i></div>
-                        <div>
-                            <div style="font-weight: 600;">LINE 綁定狀態</div>
-                            {% if current_user.settings.line_user_id %}
-                            <div style="color: #06c755; font-size: 0.9rem;">● 已連結</div>
-                            {% else %}
-                            <div style="color: var(--text-tertiary); font-size: 0.9rem;">○ 未連結</div>
-                            {% endif %}
+                <!-- Bindings List -->
+                <div id="lineBindingsList" style="margin-bottom: 16px;">
+                    {% for b in line_bindings %}
+                    <div class="line-binding-row" data-bid="{{ b.id }}" style="background: rgba(6,199,85,0.06); border: 1px solid rgba(6,199,85,0.15); border-radius: 14px; padding: 16px 18px; margin-bottom: 12px; display: flex; align-items: center; gap: 14px; flex-wrap: wrap;">
+                        <div class="line-icon" style="flex-shrink: 0;"><i class="fab fa-line"></i></div>
+                        
+                        <!-- Nickname -->
+                        <input type="text" class="nickname-input glass-input" value="{{ b.nickname }}"
+                            style="width: 110px; flex-shrink: 0; font-size: 0.95rem; padding: 8px 12px;"
+                            placeholder="暱稱" title="暱稱">
+                        
+                        <div style="font-size: 0.8rem; color: var(--text-tertiary); flex-shrink: 0;">{{ b.created_at }}</div>
+
+                        <!-- Permission toggles -->
+                        <div style="display: flex; gap: 8px; flex-wrap: wrap; flex: 1;">
+                            <label class="perm-toggle {% if 'expense' in b.permissions %}active{% endif %}" data-perm="expense" title="記帳">
+                                <input type="checkbox" {% if 'expense' in b.permissions %}checked{% endif %} style="display:none;">
+                                📝 記帳
+                            </label>
+                            <label class="perm-toggle {% if 'salary' in b.permissions %}active{% endif %}" data-perm="salary" title="排班/獎金">
+                                <input type="checkbox" {% if 'salary' in b.permissions %}checked{% endif %} style="display:none;">
+                                ⏰ 薪資
+                            </label>
+                            <label class="perm-toggle {% if 'period' in b.permissions %}active{% endif %}" data-perm="period" title="月經紀錄">
+                                <input type="checkbox" {% if 'period' in b.permissions %}checked{% endif %} style="display:none;">
+                                🩸 月經
+                            </label>
+                        </div>
+
+                        <!-- Save + Remove buttons -->
+                        <div style="display: flex; gap: 8px; flex-shrink: 0;">
+                            <button class="btn save-binding-btn" style="background: linear-gradient(135deg, #06c755 0%, #05a044 100%); color: white; padding: 7px 14px; font-size: 0.85rem; border-radius: 8px; border: none; font-weight: 600;">儲存</button>
+                            <button class="btn delete-binding-btn" style="background: rgba(239,68,68,0.15); color: #f87171; border: 1px solid rgba(239,68,68,0.3); padding: 7px 14px; font-size: 0.85rem; border-radius: 8px; font-weight: 600;">移除</button>
                         </div>
                     </div>
+                    {% else %}
+                    <div id="noBindingsHint" style="text-align: center; color: var(--text-tertiary); padding: 16px 0; font-size: 0.95rem;">
+                        ○ 尚未綁定任何 LINE 帳號
+                    </div>
+                    {% endfor %}
+                </div>
 
-                    <div class="line-actions">
-                        {% if current_user.settings.line_user_id %}
-                        <form method="POST" action="{{ url_for('auth.settings') }}" style="margin: 0;">
-                            <input type="hidden" name="action" value="unbind_line">
-                            <button type="submit" class="btn"
-                                style="background: rgba(239, 68, 68, 0.15); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.3); padding: 8px 16px; font-size: 0.9rem; border-radius: 8px; font-weight: 500; transition: all 0.2s;">
-                                解除綁定
-                            </button>
-                        </form>
-                        {% else %}
-                        <form method="POST" action="{{ url_for('auth.settings') }}" style="margin: 0;">
-                            <input type="hidden" name="action" value="generate_binding_code">
-                            <button type="submit" class="btn"
-                                style="background: linear-gradient(135deg, #06c755 0%, #05a044 100%); color: white; padding: 8px 20px; font-size: 0.95rem; font-weight: 600; border-radius: 8px; box-shadow: 0 4px 12px rgba(6, 199, 85, 0.3); border: none; transition: all 0.2s;">
-                                產生驗證碼
-                            </button>
-                        </form>
-                        {% endif %}
+                <!-- Add new binding -->
+                <button id="genBindingCodeBtn" class="btn"
+                    style="width: 100%; background: linear-gradient(135deg, #06c755 0%, #05a044 100%); color: white; padding: 12px; font-size: 1rem; font-weight: 600; border-radius: 10px; border: none; box-shadow: 0 4px 12px rgba(6, 199, 85, 0.3);">
+                    ＋ 新增 LINE 帳號綁定
+                </button>
+
+                <!-- Code display -->
+                <div id="newBindingCodeBox" style="display:none; margin-top: 16px; background: rgba(6,199,85,0.08); border: 1px solid rgba(6,199,85,0.2); border-radius: 14px; padding: 20px; text-align: center;">
+                    <div style="color: var(--text-tertiary); font-size: 0.9rem; margin-bottom: 10px;">
+                        請讓對方在 LINE 機器人輸入以下驗證碼（5 分鐘有效）
+                    </div>
+                    <div id="newBindingCodeDisplay" style="font-size: 2.5rem; font-weight: 800; letter-spacing: 0.3em; color: #06c755; font-family: monospace;"></div>
+                    <div style="margin-top: 8px; font-size: 0.82rem; color: var(--text-tertiary);">
+                        綁定後預設擁有全部權限，您可在上方調整
                     </div>
                 </div>
 
                 {% if current_user.settings.binding_code %}
-                <div class="binding-code-box">
-                    <div style="color: var(--text-tertiary); font-size: 0.9rem; margin-bottom: 8px;">
-                        請在 5 分鐘內傳送此代碼給機器人
-                    </div>
+                <div style="margin-top: 12px; background: rgba(6,199,85,0.08); border: 1px solid rgba(6,199,85,0.2); border-radius: 14px; padding: 20px; text-align: center;">
+                    <div style="color: var(--text-tertiary); font-size: 0.9rem; margin-bottom: 8px;">待驗證碼（5分鐘有效）</div>
                     <div class="binding-code-display">{{ current_user.settings.binding_code }}</div>
-                    <div style="font-size: 0.8rem; color: var(--text-secondary); opacity: 0.7;">
-                        ( 機器人 ID: @MyToolbox )
-                    </div>
                 </div>
                 {% endif %}
+
             </div>
         </div>
 
@@ -751,23 +788,79 @@
 <script src="{{ url_for('static', filename='js/settings_autosave.js') }}"></script>
 <script>
     document.addEventListener('DOMContentLoaded', function () {
-        const bindingCodeBox = document.querySelector('.binding-code-box');
 
-        // Only run polling if the binding code box is present (meaning user is in binding mode)
-        if (bindingCodeBox) {
-            const checkStatus = setInterval(function () {
-                fetch('{{ url_for("auth.check_line_status") }}')
-                    .then(response => response.json())
-                    .then(data => {
-                        if (data.linked) {
-                            clearInterval(checkStatus);
-                            // Reload to show "Linked" status
+        // ======= LINE Binding Management =======
+
+        // Permission toggle click
+        document.querySelectorAll('.perm-toggle').forEach(toggle => {
+            toggle.addEventListener('click', () => {
+                toggle.classList.toggle('active');
+                const cb = toggle.querySelector('input[type=checkbox]');
+                if (cb) cb.checked = toggle.classList.contains('active');
+            });
+        });
+
+        // Generate new binding code
+        const genBtn = document.getElementById('genBindingCodeBtn');
+        if (genBtn) {
+            genBtn.addEventListener('click', async () => {
+                genBtn.disabled = true;
+                genBtn.textContent = '⏳ 產生中...';
+                const res = await fetch('{{ url_for("auth.generate_binding_code") }}', { method: 'POST' });
+                const data = await res.json();
+                if (data.success) {
+                    document.getElementById('newBindingCodeDisplay').textContent = data.code;
+                    document.getElementById('newBindingCodeBox').style.display = 'block';
+                    genBtn.textContent = '✅ 已產生，等待綁定...';
+                    // Poll every 3s to detect when the code is used
+                    const poll = setInterval(async () => {
+                        const r = await fetch('{{ url_for("auth.check_line_status") }}');
+                        const d = await r.json();
+                        if (d.count > document.querySelectorAll('.line-binding-row').length) {
+                            clearInterval(poll);
                             window.location.reload();
                         }
-                    })
-                    .catch(error => console.error('Error checking status:', error));
-            }, 3000); // Check every 3 seconds
+                    }, 3000);
+                }
+            });
         }
+
+        // Save binding (nickname + permissions)
+        document.querySelectorAll('.save-binding-btn').forEach(btn => {
+            btn.addEventListener('click', async () => {
+                const row = btn.closest('.line-binding-row');
+                const bid = row.dataset.bid;
+                const nickname = row.querySelector('.nickname-input').value.trim();
+                const permissions = Array.from(row.querySelectorAll('.perm-toggle.active')).map(t => t.dataset.perm);
+                btn.disabled = true;
+                btn.textContent = '⏳';
+                const res = await fetch(`/auth/api/line-bindings/${bid}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ nickname, permissions })
+                });
+                const data = await res.json();
+                btn.disabled = false;
+                btn.textContent = data.success ? '✅ 已儲存' : '❌ 失敗';
+                setTimeout(() => btn.textContent = '儲存', 2000);
+            });
+        });
+
+        // Delete binding
+        document.querySelectorAll('.delete-binding-btn').forEach(btn => {
+            btn.addEventListener('click', async () => {
+                if (!confirm('確定要移除此 LINE 帳號綁定嗎？')) return;
+                const row = btn.closest('.line-binding-row');
+                const bid = row.dataset.bid;
+                const res = await fetch(`/auth/api/line-bindings/${bid}`, { method: 'DELETE' });
+                const data = await res.json();
+                if (data.success) {
+                    row.style.opacity = '0';
+                    row.style.transition = 'opacity 0.3s';
+                    setTimeout(() => { row.remove(); }, 300);
+                }
+            });
+        });
 
         // Test Notification
         const testBtn = document.getElementById('testLineBtn');

@@ -21,6 +21,7 @@ class User(UserMixin, db.Model):
     period_records = db.relationship('PeriodRecord', backref='user', lazy=True)
     settings = db.relationship('UserSettings', backref='user', uselist=False, lazy=True)
     reminders = db.relationship('Reminder', backref='user', lazy=True)
+    line_bindings = db.relationship('LineBinding', backref='user', lazy=True)
 
     def set_password(self, password):
         self.password_hash = generate_password_hash(password)
@@ -220,4 +221,14 @@ class CountdownSubEvent(db.Model):
     target_date = db.Column(db.String(10), nullable=False)  # YYYY-MM-DD
     icon = db.Column(db.String(10), default='📅')
     repeat_annually = db.Column(db.Boolean, default=False)  # If True, repeat on same month/day every year
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+class LineBinding(db.Model):
+    """A LINE account bound to a web account, with per-binding permission control."""
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    line_user_id = db.Column(db.String(255), unique=True, nullable=False)
+    nickname = db.Column(db.String(50), default='未命名')
+    # JSON list of allowed actions: "expense", "salary", "period"
+    permissions = db.Column(db.Text, default='["expense","salary","period"]')
     created_at = db.Column(db.DateTime, default=datetime.utcnow)

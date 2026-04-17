@@ -1,10 +1,10 @@
 from flask import Blueprint, render_template, redirect, url_for, flash, request, session, jsonify, send_file, current_app
 from werkzeug.utils import secure_filename
 from flask_login import login_user, logout_user, login_required, current_user
-from models import db, User, SalaryRecord, ExpenseRecord, UserSettings
+from models import db, User, SalaryRecord, ExpenseRecord, UserSettings, LineBinding
 from services.email_service import EmailService
 from datetime import datetime
-import json
+import json, random
 import os
 import re
 from config import Config
@@ -157,7 +157,6 @@ def reset_password(token):
 @auth_bp.route('/settings', methods=['GET', 'POST'])
 @login_required
 def settings():
-    import random
     from datetime import timedelta
 
     if request.method == 'POST':
@@ -243,17 +242,83 @@ def settings():
     except:
         quick_shortcuts = []
 
-    return render_template('auth/settings.html', 
+    line_bindings = LineBinding.query.filter_by(user_id=current_user.id).order_by(LineBinding.created_at.asc()).all()
+    line_bindings_data = []
+    for b in line_bindings:
+        try:
+            perms = json.loads(b.permissions or '[]')
+        except Exception:
+            perms = []
+        line_bindings_data.append({'id': b.id, 'nickname': b.nickname, 'permissions': perms,
+                                   'created_at': b.created_at.strftime('%Y/%m/%d') if b.created_at else ''})
+
+    return render_template('auth/settings.html',
                          notification_methods=current_methods,
                          custom_categories=custom_categories,
                          recurring_expenses=recurring_expenses,
-                         quick_shortcuts=quick_shortcuts)
+                         quick_shortcuts=quick_shortcuts,
+                         line_bindings=line_bindings_data)
 
 @auth_bp.route('/check_line_status')
 @login_required
 def check_line_status():
-    is_linked = current_user.settings.line_user_id is not None
-    return jsonify({'linked': is_linked})
+    count = LineBinding.query.filter_by(user_id=current_user.id).count()
+    return jsonify({'linked': count > 0, 'count': count})
+
+# ========== LINE Binding Management API ==========
+
+@auth_bp.route('/api/line-bindings', methods=['GET'])
+@login_required
+def get_line_bindings():
+    bindings = LineBinding.query.filter_by(user_id=current_user.id).order_by(LineBinding.created_at.asc()).all()
+    result = []
+    for b in bindings:
+        try:
+            perms = json.loads(b.permissions or '[]')
+        except Exception:
+            perms = []
+        result.append({'id': b.id, 'nickname': b.nickname, 'permissions': perms,
+                       'created_at': b.created_at.strftime('%Y/%m/%d') if b.created_at else ''})
+    return jsonify({'bindings': result})
+
+@auth_bp.route('/api/line-bindings/generate-code', methods=['POST'])
+@login_required
+def generate_binding_code():
+    """Generate a new binding code (same mechanism as before, LINE bot creates LineBinding on match)."""
+    from datetime import timedelta
+    code = str(random.randint(100000, 999999))
+    current_user.settings.binding_code = code
+    current_user.settings.binding_expiry = datetime.now() + timedelta(minutes=5)
+    db.session.commit()
+    return jsonify({'success': True, 'code': code, 'expires_in': 5})
+
+@auth_bp.route('/api/line-bindings/<int:bid>', methods=['PUT'])
+@login_required
+def update_line_binding(bid):
+    """Update nickname and/or permissions for one binding."""
+    binding = LineBinding.query.filter_by(id=bid, user_id=current_user.id).first()
+    if not binding:
+        return jsonify({'success': False, 'error': 'Not found'}), 404
+    data = request.get_json()
+    if 'nickname' in data:
+        nickname = str(data['nickname']).strip()[:50]
+        binding.nickname = nickname or '未命名'
+    if 'permissions' in data:
+        perms = [p for p in data['permissions'] if p in ['expense', 'salary', 'period']]
+        binding.permissions = json.dumps(perms)
+    db.session.commit()
+    return jsonify({'success': True})
+
+@auth_bp.route('/api/line-bindings/<int:bid>', methods=['DELETE'])
+@login_required
+def delete_line_binding(bid):
+    """Remove a LINE binding."""
+    binding = LineBinding.query.filter_by(id=bid, user_id=current_user.id).first()
+    if not binding:
+        return jsonify({'success': False, 'error': 'Not found'}), 404
+    db.session.delete(binding)
+    db.session.commit()
+    return jsonify({'success': True})
 
 @auth_bp.route('/test_notification', methods=['POST'])
 @login_required

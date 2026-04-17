@@ -3,8 +3,8 @@ from linebot import LineBotApi, WebhookHandler
 from linebot.exceptions import InvalidSignatureError
 from linebot.models import MessageEvent, TextMessage, TextSendMessage
 from services.line_service import LineService
-from models import db, UserSettings
-import os
+from models import db, UserSettings, LineBinding
+import os, json
 from datetime import datetime, timedelta
 
 line_bp = Blueprint('line', __name__)
@@ -45,12 +45,25 @@ def register_line_handlers(handler):
         
         # Check if message is a 6-digit number (Binding Code)
         if msg.isdigit() and len(msg) == 6:
-            # Find user with this valid binding code
             setting = UserSettings.query.filter_by(binding_code=msg).first()
             if setting:
                 if setting.binding_expiry and setting.binding_expiry > datetime.utcnow() + timedelta(hours=8):
+                    # Check if this LINE ID already has a binding
+                    existing = LineBinding.query.filter_by(line_user_id=user_id).first()
+                    if existing:
+                        LineService.push_message(user_id, "⚠️ 此 LINE 帳號已綁定過其他帳號，請先解除舊的綁定。")
+                        return
+                    # Create new LineBinding with full permissions
+                    new_binding = LineBinding(
+                        user_id=setting.user_id,
+                        line_user_id=user_id,
+                        nickname='本人',
+                        permissions=json.dumps(["expense", "salary", "period"])
+                    )
+                    db.session.add(new_binding)
+                    # Also keep backward-compat field updated
                     setting.line_user_id = user_id
-                    setting.binding_code = None 
+                    setting.binding_code = None
                     setting.binding_expiry = None
                     db.session.commit()
                     LineService.push_message(user_id, "✅ 綁定成功！\n您現在可以接收工具箱的通知報告了，也能透過對話快速記帳！\n輸入「說明」可以看快速記帳教學。")
@@ -60,8 +73,32 @@ def register_line_handlers(handler):
                 LineService.push_message(user_id, "❌ 找不到此驗證碼，請確認輸入正確。")
             return
 
-        # Find user if already bound
-        setting = UserSettings.query.filter_by(line_user_id=user_id).first()
+        # Find binding record for this LINE user
+        binding = LineBinding.query.filter_by(line_user_id=user_id).first()
+        # Fallback: support old-style single binding via UserSettings.line_user_id
+        if not binding:
+            old_setting = UserSettings.query.filter_by(line_user_id=user_id).first()
+            if old_setting:
+                # Auto-migrate on-the-fly
+                binding = LineBinding(
+                    user_id=old_setting.user_id,
+                    line_user_id=user_id,
+                    nickname='本人',
+                    permissions=json.dumps(["expense", "salary", "period"])
+                )
+                db.session.add(binding)
+                db.session.commit()
+
+        setting = UserSettings.query.filter_by(user_id=binding.user_id).first() if binding else None
+
+        def has_perm(perm):
+            """Check if this LINE binding has the given permission."""
+            if not binding: return False
+            try:
+                perms = json.loads(binding.permissions or '[]')
+            except Exception:
+                perms = []
+            return perm in perms
 
         # =============== SMART PARSERS =============== #
         
@@ -98,8 +135,11 @@ def register_line_handlers(handler):
 
         # 1. Expense: 記帳 [名稱] [類別：預設飲食] [金額] [預設時間(本年/本月/本日/現在時間)]
         if msg.startswith("記帳"):
-            if not setting:
+            if not binding:
                 LineService.push_message(user_id, "❌ 請先綁定帳號。")
+                return
+            if not has_perm("expense"):
+                LineService.push_message(user_id, "⛔ 此帳號無記帳權限，請聯絡帳號擁有者開啟。")
                 return
             
             parts = [p for p in msg.split() if p.strip()][1:]
@@ -147,8 +187,11 @@ def register_line_handlers(handler):
 
         # 2. Bonus: 獎金 [金額] [時數(選填)] [備註(選填)]
         elif msg.startswith("獎金") or msg.startswith("薪水 獎金") or msg.startswith("薪資 獎金"):
-            if not setting:
+            if not binding:
                 LineService.push_message(user_id, "❌ 請先綁定帳號。")
+                return
+            if not has_perm("salary"):
+                LineService.push_message(user_id, "⛔ 此帳號無薪資管理權限，請聯絡帳號擁有者開啟。")
                 return
                 
             parts = [p for p in msg.split() if p.strip()][1:]
@@ -192,8 +235,11 @@ def register_line_handlers(handler):
 
         # 3. Shift: 排班 [開始時間(預設12:00)] [結束時間(預設18:00)] [自訂時薪(預設)] [備註]
         elif msg.startswith("排班") or msg.startswith("打工") or msg.startswith("薪水 排班"):
-            if not setting:
+            if not binding:
                 LineService.push_message(user_id, "❌ 請先綁定帳號。")
+                return
+            if not has_perm("salary"):
+                LineService.push_message(user_id, "⛔ 此帳號無薪資管理權限，請聯絡帳號擁有者開啟。")
                 return
                 
             parts = [p for p in msg.split() if p.strip()][1:]
@@ -270,8 +316,11 @@ def register_line_handlers(handler):
 
         # 4. Period: 月經 [起] [迄] [備註]  OR  月經 結束 [結束日期]
         elif msg.startswith("月經") or msg.startswith("生理期") or msg.startswith("mc") or msg.startswith("MC"):
-            if not setting:
+            if not binding:
                 LineService.push_message(user_id, "❌ 請先綁定帳號。")
+                return
+            if not has_perm("period"):
+                LineService.push_message(user_id, "⛔ 此帳號無生理期記錄權限，請聯絡帳號擁有者開啟。")
                 return
 
             original_msg = msg
