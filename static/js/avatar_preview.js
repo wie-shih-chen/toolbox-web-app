@@ -22,7 +22,7 @@ document.addEventListener('DOMContentLoaded', function () {
     if (navAvatar) {
         navAvatar.style.cursor = 'pointer';
         navAvatar.style.transition = 'transform 0.2s';
-        navAvatar.addEventListener('click', openAvatarPreview);
+        navAvatar.addEventListener('click', () => openAvatarPreview());
         navAvatar.addEventListener('mouseover', () => navAvatar.style.transform = 'scale(1.1)');
         navAvatar.addEventListener('mouseout', () => navAvatar.style.transform = 'scale(1)');
     }
