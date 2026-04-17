@@ -60,6 +60,9 @@ def register_line_handlers(handler):
                 LineService.push_message(user_id, "❌ 找不到此驗證碼，請確認輸入正確。")
             return
 
+        # Find user if already bound
+        setting = UserSettings.query.filter_by(line_user_id=user_id).first()
+
         # =============== SMART PARSERS =============== #
         
         # --- Common Date Parsing Magic ---
