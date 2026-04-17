@@ -63,7 +63,7 @@ def register_line_handlers(handler):
         # Find user if already bound
         setting = UserSettings.query.filter_by(line_user_id=user_id).first()
 
-        # 1. Fast Expense Entry: "記帳 [類別] [金額] [備註可有可無]"
+        # 1. Fast Expense Entry: "記帳 [類別] [金額] [項目名稱(選填)]"
         if msg.startswith("記帳"):
             if not setting:
                 LineService.push_message(user_id, "❌ 請先至系統網站設定頁面，產生並輸入 6 位數驗證碼進行綁定。")
@@ -71,7 +71,7 @@ def register_line_handlers(handler):
             
             parts = [p for p in msg.split() if p.strip()]
             if len(parts) < 3:
-                LineService.push_message(user_id, "❌ 缺少必填資料！\n格式：記帳 [類別] [金額] [備註(選填)]\n範例：記帳 飲食 150 午餐")
+                LineService.push_message(user_id, "❌ 缺少必填資料！\n格式：記帳 [類別] [金額] [項目名稱(選填)]\n範例：記帳 飲食 150 午餐")
                 return
                 
             from models import ExpenseRecord
@@ -92,21 +92,20 @@ def register_line_handlers(handler):
             db.session.add(new_expense)
             db.session.commit()
             
-            reply = f"✅ 記帳成功\n📌 類別：{category}\n💰 金額：${amount:g}\n📝 備註：{note if note else '無'}"
+            reply = f"✅ 新增支出\n📌 項目名稱：{note if note else '無'}\n💰 金額：${amount:g}\n🏷️ 類別：{category}"
             LineService.push_message(user_id, reply)
 
-        # 2. Fast Bonus Entry: "獎金 [金額] [備註可有可無]"
+        # 2. Fast Bonus Entry: "獎金 [金額] [時數可有可無] [備註可有可無]"
         elif msg.startswith("獎金") or msg.startswith("薪水 獎金") or msg.startswith("薪資 獎金"):
             if not setting:
                 LineService.push_message(user_id, "❌ 請先綁定帳號。")
                 return
                 
             parts = [p for p in msg.split() if p.strip()]
-            # If msg starts with "薪水 獎金", skip first two, else skip first
             val_idx = 2 if "薪" in parts[0] else 1
             
             if len(parts) <= val_idx:
-                LineService.push_message(user_id, "❌ 缺少必填資料！\n格式：獎金 [金額] [備註(選填)]\n範例：獎金 1500 三節獎金")
+                LineService.push_message(user_id, "❌ 缺少必填資料！\n格式：獎金 [金額] [時數(選填)] [備註(選填)]\n範例：獎金 1500 4 專案獎金")
                 return
                 
             try:
@@ -116,20 +115,29 @@ def register_line_handlers(handler):
                 LineService.push_message(user_id, "❌ 金額格式不正確，請輸入大於 0 的整數。")
                 return
                 
-            note = " ".join(parts[val_idx+1:]) if len(parts) > val_idx+1 else ""
+            hours = 0.0
+            note = ""
+            if len(parts) > val_idx + 1:
+                try:
+                    hours = float(parts[val_idx + 1])
+                    if hours < 0: raise ValueError
+                    note = " ".join(parts[val_idx + 2:])
+                except ValueError:
+                    note = " ".join(parts[val_idx + 1:])
+                    
             now_date = datetime.now().strftime('%Y-%m-%d')
             
             from models import SalaryRecord
             new_salary = SalaryRecord(
-                user_id=setting.user_id, date=now_date, type='bonus', amount=amount, note=note
+                user_id=setting.user_id, date=now_date, type='bonus', amount=amount, hours=hours, note=note
             )
             db.session.add(new_salary)
             db.session.commit()
             
-            reply = f"✅ 獎金入帳\n💰 金額：${amount:,}\n📝 備註：{note if note else '無'}"
+            reply = f"✅ 新增獎金\n💰 金額：${amount:,}\n⏱️ 時數：{hours:g} 小時\n📝 備註：{note if note else '無'}"
             LineService.push_message(user_id, reply)
 
-        # 3. Fast Shift Entry: "排班 [開始時間] [結束時間] [備註可有可無]"
+        # 3. Fast Shift Entry: "排班 [開始時間] [結束時間] [時薪(選填)]"
         elif msg.startswith("排班") or msg.startswith("打工") or msg.startswith("薪水 排班"):
             if not setting:
                 LineService.push_message(user_id, "❌ 請先綁定帳號。")
@@ -139,7 +147,7 @@ def register_line_handlers(handler):
             idx_start = 2 if "薪" in parts[0] else 1
             
             if len(parts) < idx_start + 2:
-                LineService.push_message(user_id, "❌ 缺少起訖時間！\n格式：排班 [開始時間] [結束時間] [備註(選填)]\n範例：排班 09:00 18:00")
+                LineService.push_message(user_id, "❌ 缺少起訖時間！\n格式：排班 [開始時間] [結束時間] [時薪(選填)]\n範例：排班 09:00 18:00 200")
                 return
                 
             start_str = parts[idx_start].replace(".", ":")
@@ -166,8 +174,18 @@ def register_line_handlers(handler):
             if t2 < t1: t2 += timedelta(days=1)
             hours = (t2 - t1).total_seconds() / 3600.0
             
-            rate = float(setting.hourly_rate or 183.0)
-            note = " ".join(parts[idx_start+2:]) if len(parts) > idx_start+2 else ""
+            # Custom Rate or Default
+            custom_rate = None
+            note = ""
+            if len(parts) > idx_start + 2:
+                try:
+                    custom_rate = float(parts[idx_start + 2])
+                    if custom_rate < 0: raise ValueError
+                    note = " ".join(parts[idx_start + 3:])
+                except ValueError:
+                    note = " ".join(parts[idx_start + 2:])
+                    
+            rate = custom_rate if custom_rate is not None else float(setting.hourly_rate or 183.0)
             now_date = datetime.now().strftime('%Y-%m-%d')
             
             from services.salary_service import _apply_holiday_pay
@@ -184,7 +202,9 @@ def register_line_handlers(handler):
             
             is_holiday = effective_rate == rate and amount == int(hours * rate * 2) # simplified check
             holiday_emoji = "🎆 " if is_holiday else ""
-            reply = f"✅ 排班記錄成功！\n\n⏰ 時間：{start_time} ~ {end_time}\n⏱️ 時數：{hours:.1f} 小時\n{holiday_emoji}💰 金額：${amount:,}\n📝 備註：{note if note else '無'}"
+            reply = f"✅ 新增排班紀錄\n⏰ 時間：{start_time} ~ {end_time}\n⏱️ 時數：{hours:.1f} 小時\n💵 時薪：${rate:g}/hr\n{holiday_emoji}💰 金額：${amount:,}"
+            if updated_note:
+                reply += f"\n📝 備註：{updated_note}"
             LineService.push_message(user_id, reply)
 
         elif msg == "查詢":
@@ -192,7 +212,7 @@ def register_line_handlers(handler):
              
         else:
             if setting:
-                help_msg = "🤖 嗨！歡迎使用快速紀錄：\n\n📝 【記帳】\n指令：記帳 [類別] [金額] [備註]\n範例：記帳 飲食 150 晚餐\n\n⏰ 【排班】\n指令：排班 [起] [迄] [備註]\n範例：排班 0900 1800 (自動算薪水)\n\n💰 【獎金】\n指令：獎金 [金額] [備註]\n範例：獎金 1500 三節獎金"
+                help_msg = "🤖 嗨！歡迎使用快速紀錄：\n\n📝 【記帳】\n指令：記帳 [類別] [金額] [項目名稱]\n範例：記帳 飲食 150 雞腿便當\n\n⏰ 【排班】\n指令：排班 [起] [迄] [時薪(選填)]\n範例：排班 0900 1800 200\n\n💰 【獎金】\n指令：獎金 [金額] [時數(選填)] [備註]\n範例：獎金 1500 4 三節獎金"
                 LineService.push_message(user_id, help_msg)
             else:
                 LineService.push_message(user_id, "🤖 我是工具箱小幫手。\n請先至系統網站設定頁面產生 6 位數驗證碼，綁定成功後就能用語音或文字快速記帳囉！")
