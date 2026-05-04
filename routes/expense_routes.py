@@ -186,16 +186,43 @@ def export_records():
         from services.line_service import LineService
         summary_data = expense_service.get_summary(start_date, end_date)
         total = summary_data.get('total_amount', 0)
+        
+        # Calculate stats
+        from collections import defaultdict
+        category_stats = defaultdict(lambda: {'count': 0, 'amount': 0, 'emoji': '📦'})
+        
+        records = summary_data.get('records', [])
+        for r in records:
+            cat_full = r.get('category', '其他')
+            parts = cat_full.split(' ')
+            if len(parts) > 1:
+                emoji = parts[0]
+                cat_name = parts[1]
+            else:
+                emoji = '📦' # Fallback emoji if no space
+                cat_name = cat_full
+                
+            category_stats[cat_name]['count'] += 1
+            category_stats[cat_name]['amount'] += int(r['amount'])
+            category_stats[cat_name]['emoji'] = emoji
+
         msg = (
-            f"📉 [記帳匯出通知]\n"
+            f"📉 [記帳匯出通知] {current_user.username}\n"
             f"期間: {start_date} ~ {end_date}\n"
             f"總支出: ${total:,}\n"
             f"匯出時間: {datetime.now().strftime('%Y/%m/%d %H:%M')}\n"
             f"------------------\n"
         )
         
-        # Add details (All records)
-        records = summary_data.get('records', [])
+        # Add Category summary
+        msg += "【各分類統計】\n"
+        for cat_name, stats in sorted(category_stats.items(), key=lambda x: x[1]['amount'], reverse=True):
+            msg += f"{stats['emoji']} {cat_name}: ${stats['amount']:,} ({stats['count']}筆)\n"
+            
+        msg += "------------------\n"
+        
+        # Add details
+        msg += "【明細紀錄】\n"
         detail_lines = []
         for r in records:
             cat = r.get('category', '其他').split(' ')[0] # Get emoji or just first part

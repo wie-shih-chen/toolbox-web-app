@@ -178,15 +178,41 @@ def export_csv():
         from services.line_service import LineService
         records = service.get_all_records()
         total_amount = sum(r.get('amount', 0) for r in records)
+        
+        # Calculate stats
+        from collections import defaultdict
+        type_stats = defaultdict(lambda: {'count': 0, 'amount': 0, 'hours': 0})
+        
+        for r in records:
+            rtype = "排班" if r['type'] == 'shift' else "獎金"
+            if r['type'] != 'shift' and r['type'] != 'bonus':
+                rtype = r['type'] # Fallback
+            type_stats[rtype]['count'] += 1
+            type_stats[rtype]['amount'] += r.get('amount', 0)
+            if r['type'] == 'shift':
+                type_stats[rtype]['hours'] += r.get('hours', 0)
+
         msg = (
-            f"📊 [薪資匯出通知]\n"
-            f"筆數: {len(records)}\n"
+            f"📊 [薪資匯出通知] {current_user.username}\n"
+            f"總筆數: {len(records)}\n"
             f"總金額: ${total_amount:,}\n"
             f"匯出時間: {datetime.now().strftime('%Y/%m/%d %H:%M')}\n"
             f"------------------\n"
         )
         
+        # Add stats
+        msg += "【項目統計】\n"
+        for rtype, stats in type_stats.items():
+            line_stat = f"💰 {rtype}: ${stats['amount']:,} ({stats['count']}筆"
+            if stats['hours'] > 0:
+                line_stat += f", 共{stats['hours']}h"
+            line_stat += ")\n"
+            msg += line_stat
+            
+        msg += "------------------\n"
+        
         # Add details (All records)
+        msg += "【明細紀錄】\n"
         detail_lines = []
         for r in records:
             # Translate type
@@ -296,12 +322,38 @@ def export_period_csv():
     sent_nicknames = []
     if 'line' in methods:
         from services.line_service import LineService
+        # Calculate stats
+        from collections import defaultdict
+        type_stats = defaultdict(lambda: {'count': 0, 'amount': 0, 'hours': 0})
+        
+        for r in records:
+            rtype = '排班' if r['type'] == 'shift' else '獎金'
+            type_stats[rtype]['count'] += 1
+            type_stats[rtype]['amount'] += r.get('amount', 0)
+            if r['type'] == 'shift':
+                type_stats[rtype]['hours'] += r.get('hours', 0)
+
         msg = (
-            f"📊 [薪資匯出] {start_date} ~ {end_date}\n"
+            f"📊 [薪資匯出] {current_user.username}\n"
+            f"期間: {start_date} ~ {end_date}\n"
             f"總金額: ${total_amount:,}\n"
-            f"筆數: {len(records)} 筆\n"
+            f"總筆數: {len(records)} 筆\n"
             f"------------------\n"
         )
+        
+        # Add stats
+        msg += "【項目統計】\n"
+        for rtype, stats in type_stats.items():
+            line_stat = f"💰 {rtype}: ${stats['amount']:,} ({stats['count']}筆"
+            if stats['hours'] > 0:
+                line_stat += f", 共{stats['hours']}h"
+            line_stat += ")\n"
+            msg += line_stat
+            
+        msg += "------------------\n"
+        
+        # Add details
+        msg += "【明細紀錄】\n"
         detail_lines = []
         for r in records:
             rtype = '排班' if r['type'] == 'shift' else '獎金'
