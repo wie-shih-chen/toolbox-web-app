@@ -181,7 +181,8 @@ def export_records():
             print(f"Email Error: {e}")
 
     # 2. LINE
-    if 'line' in methods and current_user.settings.line_user_id:
+    sent_nicknames = []
+    if 'line' in methods:
         from services.line_service import LineService
         summary_data = expense_service.get_summary(start_date, end_date)
         total = summary_data.get('total_amount', 0)
@@ -202,23 +203,26 @@ def export_records():
             
         msg += "\n".join(detail_lines)
             
-        LineService.push_message(current_user.settings.line_user_id, msg)
+        sent_nicknames = LineService.push_to_user(current_user.id, msg, module='expense')
             
-    # 3. Download
+    msg_text = f"報表（{start_date} ~ {end_date}）處理完成！"
+    if sent_nicknames:
+        msg_text += f"\n📲 已發送 LINE 至: {', '.join(sent_nicknames)}"
+    if 'email' in methods and current_user.email:
+        msg_text += f"\n📧 已發送 Email 至: {current_user.email}"
+        
+    response_data = {
+        "success": True, 
+        "message": msg_text
+    }
+    
     if 'download' in methods or not methods:
-        if 'download' in methods:
-            return Response(
-                csv_data,
-                mimetype="text/csv",
-                headers={"Content-disposition": f"attachment; filename={filename}"}
-            )
-        else:
-            return jsonify({
-                "success": True, 
-                "message": "報表已透過已選的管道發送 (Email/LINE)"
-            })
+        response_data["csv_content"] = csv_data
+        response_data["filename"] = filename
+        if not methods:
+            response_data["message"] = "檔案已下載"
 
-    return jsonify({"success": True, "message": "無選取任何管道"})
+    return jsonify(response_data)
 
 @expense_bp.route('/api/expense-trend')
 @login_required

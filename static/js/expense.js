@@ -785,34 +785,24 @@ const expenseApp = {
         try {
             const url = `/expense/api/records/export?start_date=${s}&end_date=${e}`;
             const res = await fetch(url);
-            const contentType = res.headers.get('content-type');
-
-            if (contentType && contentType.includes('application/json')) {
-                const data = await res.json();
-                if (data.success && data.method === 'email') {
-                    alert('✅ ' + data.message);
-                } else {
-                    if (data.error) alert('❌ ' + data.error);
+            const data = await res.json();
+            
+            if (data.success) {
+                if (data.message) alert('✅ ' + data.message);
+                
+                if (data.csv_content) {
+                    const blob = new Blob(['\ufeff' + data.csv_content], { type: 'text/csv;charset=utf-8-sig' });
+                    const downloadUrl = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = downloadUrl;
+                    a.download = data.filename || 'expense_export.csv';
+                    document.body.appendChild(a);
+                    a.click();
+                    a.remove();
+                    window.URL.revokeObjectURL(downloadUrl);
                 }
             } else {
-                const blob = await res.blob();
-                const downloadUrl = window.URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = downloadUrl;
-
-                const disposition = res.headers.get('Content-Disposition');
-                let filename = 'expense_export.csv';
-                if (disposition && disposition.indexOf('filename=') !== -1) {
-                    const matches = /filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/.exec(disposition);
-                    if (matches != null && matches[1]) {
-                        filename = matches[1].replace(/['"]/g, '');
-                    }
-                }
-                a.download = filename;
-                document.body.appendChild(a);
-                a.click();
-                a.remove();
-                window.URL.revokeObjectURL(downloadUrl);
+                if (data.error) alert('❌ ' + data.error);
             }
         } catch (error) {
             alert('匯出失敗：網路錯誤');

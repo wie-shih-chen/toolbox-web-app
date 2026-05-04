@@ -74,6 +74,8 @@ class LineService:
 
         bindings = LineBinding.query.filter_by(user_id=app_user_id).all()
         
+        sent_nicknames = []
+
         if not bindings:
             # Fallback to legacy single binding
             setting = UserSettings.query.filter_by(user_id=app_user_id).first()
@@ -82,7 +84,8 @@ class LineService:
                     cls.push_message(setting.line_user_id, text)
                 if image_url:
                     cls.push_image(setting.line_user_id, image_url, thumbnail_url)
-            return True
+                sent_nicknames.append('預設綁定帳號')
+            return sent_nicknames
 
         for binding in bindings:
             if module:
@@ -98,4 +101,6 @@ class LineService:
             if image_url:
                 cls.push_image(binding.line_user_id, image_url, thumbnail_url)
                 
-        return True
+            sent_nicknames.append(binding.nickname or '未命名')
+                
+        return sent_nicknames

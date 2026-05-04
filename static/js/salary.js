@@ -447,35 +447,24 @@ const salaryApp = {
 
         try {
             const res = await fetch('/salary/api/export');
-            const contentType = res.headers.get('content-type');
-
-            if (contentType && contentType.includes('application/json')) {
-                const data = await res.json();
-                if (data.success && data.method === 'email') {
-                    alert('✅ ' + data.message);
-                } else {
-                    if (data.error) alert('❌ ' + data.error);
+            const data = await res.json();
+            
+            if (data.success) {
+                if (data.message) alert('✅ ' + data.message);
+                
+                if (data.csv_content) {
+                    const blob = new Blob(['\ufeff' + data.csv_content], { type: 'text/csv;charset=utf-8-sig' });
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = data.filename || 'salary_export.csv';
+                    document.body.appendChild(a);
+                    a.click();
+                    a.remove();
+                    window.URL.revokeObjectURL(url);
                 }
             } else {
-                // Blob download
-                const blob = await res.blob();
-                const url = window.URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-
-                const disposition = res.headers.get('Content-Disposition');
-                let filename = 'salary_export.csv';
-                if (disposition && disposition.indexOf('filename=') !== -1) {
-                    const matches = /filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/.exec(disposition);
-                    if (matches != null && matches[1]) {
-                        filename = matches[1].replace(/['"]/g, '');
-                    }
-                }
-                a.download = filename;
-                document.body.appendChild(a);
-                a.click();
-                a.remove();
-                window.URL.revokeObjectURL(url);
+                if (data.error) alert('❌ ' + data.error);
             }
         } catch (error) {
             alert('匯出失敗：網路錯誤');
@@ -499,28 +488,24 @@ const salaryApp = {
 
         try {
             const res = await fetch(`/salary/api/export-period?period=${encodeURIComponent(period)}`);
-            const contentType = res.headers.get('content-type');
+            const data = await res.json();
 
-            if (contentType && contentType.includes('application/json')) {
-                const data = await res.json();
-                if (data.success) alert('✅ ' + data.message);
-                else if (data.error) alert('❌ ' + data.error);
-            } else {
-                const blob = await res.blob();
-                const url = window.URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                const disposition = res.headers.get('Content-Disposition');
-                let filename = `salary_${period}.csv`;
-                if (disposition) {
-                    const m = /filename[^;=\n]*=((['"]).*)?\2|([^;\n]*)/.exec(disposition);
-                    if (m && m[1]) filename = m[1].replace(/['"]/g, '');
+            if (data.success) {
+                if (data.message) alert('✅ ' + data.message);
+                
+                if (data.csv_content) {
+                    const blob = new Blob(['\ufeff' + data.csv_content], { type: 'text/csv;charset=utf-8-sig' });
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = data.filename || `salary_${period}.csv`;
+                    document.body.appendChild(a);
+                    a.click();
+                    a.remove();
+                    window.URL.revokeObjectURL(url);
                 }
-                a.download = filename;
-                document.body.appendChild(a);
-                a.click();
-                a.remove();
-                window.URL.revokeObjectURL(url);
+            } else {
+                if (data.error) alert('❌ ' + data.error);
             }
         } catch (err) {
             alert('匯出失敗：網路錯誤');
