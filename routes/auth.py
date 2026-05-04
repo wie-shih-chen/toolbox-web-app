@@ -331,15 +331,12 @@ def test_notification():
     
     # Test LINE
     if 'line' in methods:
-        if not current_user.settings.line_user_id:
-            results.append("LINE: 未綁定 ⚠️")
-        else:
-            try:
-                msg = "👋 這是來自工具箱的測試訊息！\n恭喜您，LINE 通知功能設定成功！🎉"
-                if LineService.push_message(current_user.settings.line_user_id, msg):
-                    results.append("LINE: 發送成功 ✅")
-                else:
-                    results.append("LINE: 發送失敗 ❌")
+        try:
+            msg = "👋 這是來自工具箱的測試訊息！\n恭喜您，LINE 多帳號通知功能設定成功！🎉"
+            if LineService.push_to_user(current_user.id, msg, module=None):
+                results.append("LINE: 發送成功 ✅")
+            else:
+                results.append("LINE: 發送失敗 ❌ (可能尚未綁定)")
             except Exception as e:
                 results.append(f"LINE: 錯誤 ({str(e)}) ❌")
 
