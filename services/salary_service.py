@@ -415,8 +415,8 @@ class SalaryService:
 
         return periods
 
-    def get_history_summary(self, start_date_str, end_date_str):
-        records = self.get_records_by_range(start_date_str, end_date_str)
+    def get_history_summary(self, start_date_str, end_date_str, user=None):
+        records = self.get_records_by_range(start_date_str, end_date_str, user=user)
         total_hours = sum(r.get('hours', 0) for r in records)
         total_amount = sum(r['amount'] for r in records)
         

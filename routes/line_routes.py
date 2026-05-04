@@ -3,7 +3,7 @@ from linebot import LineBotApi, WebhookHandler
 from linebot.exceptions import InvalidSignatureError
 from linebot.models import MessageEvent, TextMessage, TextSendMessage
 from services.line_service import LineService
-from models import db, UserSettings, LineBinding
+from models import db, UserSettings, LineBinding, User
 import os, json
 from datetime import datetime, timedelta
 
@@ -134,6 +134,149 @@ def register_line_handlers(handler):
                 except ValueError:
                     pass
             return default_dt
+
+        def get_query_month_range(month_str):
+            """Helper to get start_date and end_date for a given month string (e.g. '4月', '11').
+               Defaults to current month if None or invalid."""
+            now = datetime.utcnow() + timedelta(hours=8)
+            year = now.year
+            month = now.month
+            
+            if month_str:
+                import re
+                match = re.search(r'(\d+)', month_str)
+                if match:
+                    parsed_month = int(match.group(1))
+                    if 1 <= parsed_month <= 12:
+                        month = parsed_month
+                        # If user queries a future month (e.g. querying December in Jan), it's probably last year.
+                        if month > now.month:
+                            year -= 1
+            
+            import calendar
+            last_day = calendar.monthrange(year, month)[1]
+            start_date = f"{year}-{month:02d}-01"
+            end_date = f"{year}-{month:02d}-{last_day}"
+            return start_date, end_date
+
+        if msg.startswith("查詢記帳"):
+            if not binding:
+                LineService.push_message(user_id, "❌ 請先綁定帳號。")
+                return
+            if not has_perm("expense"):
+                LineService.push_message(user_id, "⛔ 此帳號無記帳權限，請聯絡帳號擁有者開啟。")
+                return
+                
+            parts = msg.split()
+            month_str = parts[1] if len(parts) > 1 else None
+            start_date, end_date = get_query_month_range(month_str)
+            
+            user_obj = User.query.get(binding.user_id)
+            from services.expense_service import ExpenseService
+            expense_svc = ExpenseService()
+            summary = expense_svc.get_summary(start_date, end_date, user=user_obj)
+            
+            total = summary.get('total_amount', 0)
+            records = summary.get('records', [])
+            
+            # Categories stat
+            from collections import defaultdict
+            category_stats = defaultdict(lambda: {'count': 0, 'amount': 0, 'emoji': '📦'})
+            for r in records:
+                cat_full = r.get('category', '其他')
+                c_parts = cat_full.split(' ')
+                emoji = c_parts[0] if len(c_parts) > 1 else '📦'
+                cat_name = c_parts[1] if len(c_parts) > 1 else cat_full
+                category_stats[cat_name]['count'] += 1
+                category_stats[cat_name]['amount'] += int(r['amount'])
+                category_stats[cat_name]['emoji'] = emoji
+            
+            reply = (
+                f"📊 [記帳總覽] {user_obj.username}\n"
+                f"期間: {start_date} ~ {end_date}\n"
+                f"總支出: ${total:,}\n"
+                f"------------------\n"
+            )
+            
+            if records:
+                reply += "【各分類統計】\n"
+                for cat_name, stats in sorted(category_stats.items(), key=lambda x: x[1]['amount'], reverse=True):
+                    reply += f"{stats['emoji']} {cat_name}: ${stats['amount']:,} ({stats['count']}筆)\n"
+                reply += "------------------\n"
+                reply += "【最近 5 筆紀錄】\n"
+                for r in records[:5]:
+                    cat = r.get('category', '其他').split(' ')[0]
+                    reply += f"{r['timestamp'][5:16]} {cat} ${int(r['amount'])}\n"
+            else:
+                reply += "此期間尚無記帳紀錄。"
+                
+            LineService.push_message(user_id, reply.strip())
+            return
+
+        elif msg.startswith("查詢薪水") or msg.startswith("查詢薪資"):
+            if not binding:
+                LineService.push_message(user_id, "❌ 請先綁定帳號。")
+                return
+            if not has_perm("salary"):
+                LineService.push_message(user_id, "⛔ 此帳號無薪資管理權限，請聯絡帳號擁有者開啟。")
+                return
+                
+            parts = msg.split()
+            month_str = parts[1] if len(parts) > 1 else None
+            start_date, end_date = get_query_month_range(month_str)
+            
+            user_obj = User.query.get(binding.user_id)
+            from services.salary_service import SalaryService
+            salary_svc = SalaryService()
+            summary = salary_svc.get_history_summary(start_date, end_date, user=user_obj)
+            
+            total_amt = summary.get('total_amount', 0)
+            total_hrs = summary.get('total_hours', 0)
+            records = summary.get('records', [])
+            
+            # Type stats
+            from collections import defaultdict
+            type_stats = defaultdict(lambda: {'count': 0, 'amount': 0, 'hours': 0})
+            for r in records:
+                rtype = "排班" if r['type'] == 'shift' else "獎金"
+                if r['type'] != 'shift' and r['type'] != 'bonus': rtype = r['type']
+                type_stats[rtype]['count'] += 1
+                type_stats[rtype]['amount'] += r.get('amount', 0)
+                if r['type'] == 'shift':
+                    type_stats[rtype]['hours'] += r.get('hours', 0)
+                    
+            reply = (
+                f"💰 [薪資總覽] {user_obj.username}\n"
+                f"期間: {start_date} ~ {end_date}\n"
+                f"總金額: ${total_amt:,}\n"
+            )
+            if total_hrs > 0:
+                reply += f"總時數: {total_hrs:g} h\n"
+            reply += "------------------\n"
+            
+            if records:
+                reply += "【項目統計】\n"
+                for rtype, stats in type_stats.items():
+                    line_stat = f"💸 {rtype}: ${stats['amount']:,} ({stats['count']}筆"
+                    if stats['hours'] > 0:
+                        line_stat += f", 共{stats['hours']}h"
+                    line_stat += ")\n"
+                    reply += line_stat
+                reply += "------------------\n"
+                reply += "【最近 5 筆紀錄】\n"
+                # sort records desc by date just in case
+                records_desc = sorted(records, key=lambda x: (x['date'], x.get('start_time', '')), reverse=True)
+                for r in records_desc[:5]:
+                    rtype = "排班" if r['type'] == 'shift' else "獎金"
+                    if r['type'] != 'shift' and r['type'] != 'bonus': rtype = r['type']
+                    r_line = f"{r['date'][5:]} {rtype} ${r['amount']}"
+                    if r['type'] == 'shift': r_line += f" ({r['hours']}h)"
+                    reply += r_line + "\n"
+            else:
+                reply += "此期間尚無薪資紀錄。"
+                
+            LineService.push_message(user_id, reply.strip())
+            return
 
         # 1. Expense: 記帳 [名稱] [類別：預設飲食] [金額] [預設時間(本年/本月/本日/現在時間)]
         if msg.startswith("記帳"):
@@ -395,7 +538,10 @@ def register_line_handlers(handler):
                     "👉 範例1：月經\n"
                     "👉 範例2：月經 4/18 4/22\n"
                     "👉 範例3：月經 結束\n\n"
-                    "💡 小提示：順序可以隨便打，只要有數字和日期（如 4/18），我就會聰明地幫你歸位喔！"
+                    "💡 小提示：順序可以隨便打，只要有數字和日期（如 4/18），我就會聰明地幫你歸位喔！\n\n"
+                    "🔍 【查詢】 查詢記帳 [月份(可省)] 或 查詢薪水 [月份(可省)]\n"
+                    "👉 範例1：查詢記帳\n"
+                    "👉 範例2：查詢薪水 4月"
                 )
                 LineService.push_message(user_id, help_msg)
             else:
