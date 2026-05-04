@@ -337,8 +337,8 @@ def test_notification():
                 results.append("LINE: 發送成功 ✅")
             else:
                 results.append("LINE: 發送失敗 ❌ (可能尚未綁定)")
-            except Exception as e:
-                results.append(f"LINE: 錯誤 ({str(e)}) ❌")
+        except Exception as e:
+            results.append(f"LINE: 錯誤 ({str(e)}) ❌")
 
     # Test Email
     if 'email' in methods:
