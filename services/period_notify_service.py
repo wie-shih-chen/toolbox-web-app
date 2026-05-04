@@ -85,10 +85,10 @@ class PeriodNotifyService:
                 return False
                 
             success = False
-            if 'line' in methods and settings.line_user_id:
+            if 'line' in methods:
                 try:
                     from services.line_service import LineService
-                    if LineService.push_message(settings.line_user_id, msg_text):
+                    if LineService.push_to_user(user.id, msg_text, module='period'):
                         print(f"[PeriodNotify] LINE sent to user {user.id}")
                         success = True
                 except Exception as e:

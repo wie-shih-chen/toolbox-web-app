@@ -62,3 +62,40 @@ class LineService:
         except Exception as e:
             print(f"LINE Push Image Error: {e}")
             return False
+
+    @classmethod
+    def push_to_user(cls, app_user_id, text=None, image_url=None, thumbnail_url=None, module=None):
+        """
+        Sends a LINE message to all bindings of a specific internal user_id,
+        respecting the permissions of each binding.
+        """
+        from models import LineBinding, UserSettings
+        import json
+
+        bindings = LineBinding.query.filter_by(user_id=app_user_id).all()
+        
+        if not bindings:
+            # Fallback to legacy single binding
+            setting = UserSettings.query.filter_by(user_id=app_user_id).first()
+            if setting and setting.line_user_id:
+                if text:
+                    cls.push_message(setting.line_user_id, text)
+                if image_url:
+                    cls.push_image(setting.line_user_id, image_url, thumbnail_url)
+            return True
+
+        for binding in bindings:
+            if module:
+                try:
+                    perms = json.loads(binding.permissions or '[]')
+                    if module not in perms:
+                        continue
+                except Exception:
+                    pass
+            
+            if text:
+                cls.push_message(binding.line_user_id, text)
+            if image_url:
+                cls.push_image(binding.line_user_id, image_url, thumbnail_url)
+                
+        return True

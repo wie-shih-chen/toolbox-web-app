@@ -174,10 +174,10 @@ class CalendarNotifyService:
         """Dispatch notification via LINE and/or Email."""
         msg_text = f"📅 行事曆提醒：明天 {event_title}\n（日曆：{cal_name}）"
 
-        if 'line' in methods and settings.line_user_id:
+        if 'line' in methods:
             try:
                 from services.line_service import LineService
-                LineService.push_message(settings.line_user_id, msg_text)
+                LineService.push_to_user(user.id, msg_text, module=None)
                 print(f"[CalNotify] LINE sent to user {user.id}: {event_title}")
             except Exception as e:
                 print(f"[CalNotify] LINE send failed for user {user.id}: {e}")

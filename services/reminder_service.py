@@ -187,9 +187,9 @@ class ReminderService:
         msg_text = f"🔔 [提醒] {reminder.title}\n\n{reminder.description or ''}\n\n時間: {reminder.remind_time}"
         
         # 1. LINE Notify
-        if 'line' in methods and user_settings and user_settings.line_user_id:
+        if 'line' in methods:
             try:
-                LineService.push_message(user_settings.line_user_id, msg_text)
+                LineService.push_to_user(reminder.user_id, msg_text, module=None)
             except Exception as e:
                 print(f"[Scheduler] Failed to send LINE reminder: {e}")
             

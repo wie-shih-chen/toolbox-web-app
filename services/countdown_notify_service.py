@@ -100,10 +100,10 @@ class CountdownNotifyService:
 
     @staticmethod
     def _send(user, settings, methods, msg_text):
-        if 'line' in methods and settings.line_user_id:
+        if 'line' in methods:
             try:
                 from services.line_service import LineService
-                LineService.push_message(settings.line_user_id, msg_text)
+                LineService.push_to_user(user.id, msg_text, module=None)
                 print(f'[CountdownNotify] LINE sent to user {user.id}: {msg_text[:40]}')
             except Exception as e:
                 print(f'[CountdownNotify] LINE failed: {e}')

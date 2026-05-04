@@ -103,7 +103,7 @@ class ReportService:
                         )
                     
                     # 2. Send LINE
-                    if 'line' in methods and user.settings.line_user_id:
+                    if 'line' in methods:
                         msg = (
                             f"💰 [薪資報表] {start_date} ~ {end_date}\n"
                             f"總金額: ${total_salary:,}\n"
@@ -126,7 +126,7 @@ class ReportService:
                             
                         msg += "\n".join(detail_lines)
                         
-                        LineService.push_message(user.settings.line_user_id, msg)
+                        LineService.push_to_user(user.id, msg, module='salary')
 
                     # Log it
                     db.session.add(ReportLog(
@@ -162,7 +162,7 @@ class ReportService:
                         )
                      
                      # 2. Send LINE
-                     if 'line' in methods and user.settings.line_user_id:
+                     if 'line' in methods:
                         msg = (
                             f"💸 [記帳報表] {start_date} ~ {end_date}\n"
                             f"總支出: ${data.get('total_amount', 0):,}\n"
@@ -177,7 +177,7 @@ class ReportService:
                             
                         msg += "\n".join(detail_lines)
                         
-                        LineService.push_message(user.settings.line_user_id, msg)
+                        LineService.push_to_user(user.id, msg, module='expense')
 
                      db.session.add(ReportLog(
                         user_id=user.id,
