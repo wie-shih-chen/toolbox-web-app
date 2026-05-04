@@ -761,6 +761,7 @@ const expenseApp = {
         const data = await res.json();
         this.records = data.records;
         const ht = document.getElementById('historyTotal'); if (ht) ht.textContent = `$${Math.round(data.total_amount).toLocaleString()}`;
+        const hc = document.getElementById('historyCount'); if (hc) hc.textContent = this.records.length;
         this.renderList('historyExpenseList');
     },
     async downloadCsv() {
