@@ -517,27 +517,38 @@ def register_line_handlers(handler):
                         weekday_map = {1: '一', 2: '二', 3: '三', 4: '四', 5: '五', 6: '六', 7: '日'}
                         weekday = weekday_map[now_dt.isoweekday()]
 
-                        prompt = f"""你是一個智慧記帳與生活管家。現在時間是 {now_str} (星期{weekday})。
+                        prompt = f"""你是一個專門為個人記帳與生活管理服務的智慧助手。現在時間是 {now_str} (星期{weekday})。
 使用者輸入：「{msg}」
 
-請分析使用者的語意，並「只」回傳以下其中一種 JSON 格式（不要有 ```json 標籤）：
+你的任務是「精準判斷」這句話屬於哪種操作，並「只」回傳符合條件的 JSON（不要有 ```json 標籤）。
 
-【情況 1：記帳支出】(花錢)
-{{"action": "expense", "date": "YYYY-MM-DD", "name": "項目名稱", "amount": 數字, "category": "飲食/交通/娛樂/居住/其他"}}
+===【判斷規則】===
 
-【情況 2：排班打工】(上班)
-{{"action": "shift", "date": "YYYY-MM-DD", "start_time": "HH:MM", "end_time": "HH:MM", "note": "備註"}}
+✅ 情況 1：記帳支出（花錢了）
+- 條件：句子中明確包含花錢動詞（花了/買了/付了/消費/支出），且有具體金額數字。
+- 格式：{{"action": "expense", "date": "YYYY-MM-DD", "name": "項目名稱", "amount": 數字, "category": "飲食/交通/娛樂/居住/其他"}}
 
-【情況 3：薪資獎金】(拿到錢)
-{{"action": "bonus", "date": "YYYY-MM-DD", "amount": 數字, "note": "備註"}}
+✅ 情況 2：排班打工（去上班了）
+- 條件：句子中明確提到打工/上班/排班，且有具體的起訖時間。
+- 格式：{{"action": "shift", "date": "YYYY-MM-DD", "start_time": "HH:MM", "end_time": "HH:MM", "note": ""}}
 
-【情況 4：生理期】(月經來或結束)
-{{"action": "period", "type": "start" 或 "end", "date": "YYYY-MM-DD", "note": "備註"}}
+✅ 情況 3：薪資獎金（拿到錢了）
+- 條件：句子中明確提到發薪/發獎金/領錢，且有具體金額。
+- 格式：{{"action": "bonus", "date": "YYYY-MM-DD", "amount": 數字, "note": ""}}
 
-【情況 5：無法辨識】
-{{"action": "unknown"}}
+✅ 情況 4：生理期（月經相關）
+- 條件：句子中明確提到月經/大姨媽/MC/生理期。
+- 格式：{{"action": "period", "type": "start或end", "date": "YYYY-MM-DD", "note": "症狀描述或空字串"}}
 
-請特別注意：如果使用者提到「昨天」、「上週五」、「前天」等時間詞，請利用上方提供的「現在時間」精準推算正確的 YYYY-MM-DD。若無提到時間，預設為今天的日期。
+❌ 情況 5：一律回傳 unknown（寧可保守，不要亂猜）
+- 打招呼、閒聊、感謝、問問題
+- 句子中沒有明確金額或時間段
+- 任何模糊、無法確認的情況
+- 格式：{{"action": "unknown"}}
+
+===【時間推算】===
+若使用者提到「昨天」「上週五」「前天」等，根據現在時間 {now_str} (星期{weekday}) 推算正確日期。若未提到時間，預設今天。
+重要原則：不確定就回傳 unknown，不要亂猜！
 """
                         response = client.models.generate_content(
                             model='gemini-2.5-flash',
