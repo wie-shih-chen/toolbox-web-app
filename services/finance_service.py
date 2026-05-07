@@ -61,7 +61,7 @@ class FinanceService:
         taxable = monthly_income - monthly_threshold
         return round(taxable * 0.05)
 
-    def get_user_finance_summary(self, gross_salary, user=None):
+    def get_user_finance_summary(self, gross_salary, days=30, user=None):
         target_user = user or current_user
         if not target_user or not hasattr(target_user, 'settings'):
             return None
@@ -70,21 +70,40 @@ class FinanceService:
         if not settings or not settings.enable_finance_tracking:
             return None
         
-        insurance_data = self.calculate_taiwan_insurance(
+        # Calculate full monthly insurance
+        monthly_insurance = self.calculate_taiwan_insurance(
             settings.insurance_salary,
             settings.health_insurance_dependents,
             settings.labor_pension_rate
         )
         
-        tax = self.estimate_income_tax(gross_salary - insurance_data['total_deductions'])
+        # Pro-rate deductions if days != 30 (approximate)
+        # However, for tax purposes, we usually look at the monthly equivalent
+        pro_rate_factor = days / 30.0
         
-        net_salary = gross_salary - insurance_data['total_deductions'] - tax
+        pro_rated_deductions = {
+            "labor_insurance": round(monthly_insurance['labor_insurance'] * pro_rate_factor),
+            "health_insurance": round(monthly_insurance['health_insurance'] * pro_rate_factor),
+            "labor_pension": round(monthly_insurance['labor_pension'] * pro_rate_factor),
+            "total_deductions": round(monthly_insurance['total_deductions'] * pro_rate_factor)
+        }
+        
+        # Monthly equivalent for tax estimation
+        monthly_equivalent = gross_salary / pro_rate_factor if pro_rate_factor > 0 else 0
+        monthly_tax = self.estimate_income_tax(monthly_equivalent - monthly_insurance['total_deductions'])
+        
+        # Pro-rate the tax back to the period
+        tax = round(monthly_tax * pro_rate_factor)
+        
+        net_salary = gross_salary - pro_rated_deductions['total_deductions'] - tax
         
         return {
             "gross": gross_salary,
-            "deductions": insurance_data,
+            "deductions": pro_rated_deductions,
             "tax": tax,
             "net": net_salary,
+            "is_pro_rated": days != 30,
+            "days": days,
             "settings": {
                 "insurance_salary": settings.insurance_salary,
                 "dependents": settings.health_insurance_dependents,

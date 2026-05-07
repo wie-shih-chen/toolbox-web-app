@@ -1,630 +1,280 @@
-/* Navigation Styles moved to global */
+/* 
+   Salary Premium Design System 
+   Focus: Glassmorphism, Vibrant Accents, Modern Typography
+*/
 
-.salary-dashboard {
-    height: 100%;
-    display: flex;
-    flex-direction: column;
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap');
+
+:root {
+    --premium-bg: #0f0f12;
+    --premium-card: rgba(28, 28, 30, 0.7);
+    --premium-border: rgba(255, 255, 255, 0.08);
+    --premium-accent: #00f2fe;
+    --premium-accent-gradient: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+    --premium-gold: #f6d365;
+    --premium-gold-gradient: linear-gradient(135deg, #f6d365 0%, #fda085 100%);
+    --premium-pink: #ff0080;
+    --premium-pink-gradient: linear-gradient(135deg, #ff0080 0%, #7928ca 100%);
+    --text-primary: #ffffff;
+    --text-secondary: rgba(255, 255, 255, 0.6);
+    --text-tertiary: rgba(255, 255, 255, 0.4);
 }
 
-.dashboard-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 20px;
-    flex-wrap: wrap;
-    gap: 15px;
-}
-
-.week-nav {
-    display: flex;
-    align-items: center;
-    gap: 15px;
-    background-color: var(--card-bg);
-    padding: 10px 20px;
-    border-radius: 50px;
-}
-
-#currentWeekLabel {
-    font-size: 1.1rem;
-    font-weight: 700;
-    min-width: 200px;
-    text-align: center;
-}
-
-.btn-nav {
-    background: transparent;
-    border: 1px solid var(--border-color);
+body {
+    font-family: 'Outfit', sans-serif;
+    background-color: var(--premium-bg);
     color: var(--text-primary);
-    padding: 5px 10px;
 }
 
-.btn-nav:hover {
-    background-color: #404040;
+.salary-dashboard, .salary-history, .salary-monthly {
+    animation: fade-up 0.6s cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
-.summary-card {
-    position: relative;
-    /* Validation for absolute children */
-    display: flex;
-    gap: 30px;
-    background-color: var(--card-bg);
-    padding: 10px 25px;
-    padding-bottom: 20px;
-    /* Space for date range */
-    border-radius: 12px;
+@keyframes fade-up {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
 }
 
-.range-display {
-    position: absolute;
-    bottom: 4px;
-    right: 12px;
-    font-size: 0.75rem;
-    color: var(--text-secondary);
-    opacity: 0.7;
-    font-weight: 500;
-    letter-spacing: 0.5px;
+/* Premium Card System */
+.premium-card {
+    background: var(--premium-card);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid var(--premium-border);
+    border-radius: 24px;
+    padding: 24px;
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.3);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
 }
 
-.summary-item {
-    display: flex;
-    flex-direction: column;
+.premium-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
+    border-color: rgba(255, 255, 255, 0.15);
 }
 
-.summary-item .label {
-    font-size: 0.8rem;
-    color: var(--text-secondary);
-    white-space: nowrap;
-    /* Prevent wrapping */
-}
-
-.summary-item .value {
-    font-size: 1.5rem;
-    font-weight: 700;
-}
-
-.summary-item .value.highlight {
-    color: var(--accent-color);
-}
-
-/* Weekly Grid */
-.weekly-grid {
+/* Summary Grid */
+.summary-stats {
     display: grid;
-    grid-template-columns: repeat(7, 1fr);
-    gap: 10px;
-    height: auto;
-    max-height: 650px;
-    margin-bottom: 20px;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 20px;
+    margin-bottom: 30px;
 }
 
-.day-column {
-    background-color: var(--card-bg);
-    border-radius: 8px;
+.stat-box {
     display: flex;
     flex-direction: column;
-    overflow: hidden;
-    min-height: 300px;
+    justify-content: space-between;
+    min-height: 140px;
 }
 
-.day-header {
-    background-color: #333;
-    padding: 10px;
-    text-align: center;
-    border-bottom: 1px solid var(--border-color);
-}
-
-.day-name {
-    display: block;
-    font-weight: 700;
-    margin-bottom: 4px;
-}
-
-.day-date {
-    font-size: 0.85rem;
+.stat-label {
+    font-size: 0.9rem;
+    font-weight: 500;
     color: var(--text-secondary);
-}
-
-.day-column.today .day-header {
-    background-color: rgba(78, 205, 196, 0.2);
-    color: var(--accent-color);
-}
-
-.shifts-container {
-    flex: 1;
-    padding: 10px;
-    overflow-y: auto;
     display: flex;
-    flex-direction: column;
+    align-items: center;
     gap: 8px;
 }
 
-.shift-card {
-    background-color: #404040;
-    padding: 10px;
-    border-radius: 6px;
-    cursor: pointer;
-    transition: background-color 0.2s;
-    border-left: 3px solid var(--accent-color);
+.stat-value {
+    font-size: 2.2rem;
+    font-weight: 700;
+    margin-top: auto;
+    letter-spacing: -1px;
 }
 
-.shift-card:hover {
-    background-color: #505050;
+.stat-value.accent {
+    background: var(--premium-accent-gradient);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
 }
 
-.shift-card.bonus {
-    border-left-color: #ffd700;
+.stat-value.gold {
+    background: var(--premium-gold-gradient);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
 }
 
-.shift-time {
-    font-weight: 600;
-    font-size: 0.95rem;
-    margin-bottom: 4px;
+/* Finance Breakdown Panels */
+.finance-breakdown {
+    display: grid;
+    grid-template-columns: 1.5fr 1fr;
+    gap: 24px;
+    margin-top: 30px;
 }
 
-.shift-info {
-    font-size: 0.85rem;
-    color: var(--text-secondary);
-    display: flex;
-    justify-content: space-between;
+@media (max-width: 992px) {
+    .finance-breakdown { grid-template-columns: 1fr; }
 }
 
-.btn-add-shift {
-    width: 100%;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    background: transparent;
-    border: none;
-    border-top: 1px solid var(--border-color);
-    padding: 12px;
-    color: var(--text-secondary);
-    font-size: 1.5rem;
-    cursor: pointer;
-    transition: all 0.2s;
-}
-
-.btn-add-shift span {
-    line-height: 1;
-}
-
-.btn-add-shift:hover {
-    background-color: rgba(255, 255, 255, 0.05);
-    color: var(--accent-color);
-}
-
-
-/* Hidden Helper */
-.hidden {
-    display: none !important;
-}
-
-/* History Page */
-.salary-history {
+.deduction-list {
     display: flex;
     flex-direction: column;
-    gap: 20px;
+    gap: 12px;
 }
 
-.history-controls {
-    padding: 20px;
+.deduction-item {
     display: flex;
+    justify-content: space-between;
     align-items: center;
-    gap: 15px;
+    padding: 12px 16px;
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: 12px;
+    font-size: 0.95rem;
 }
 
-.history-summary {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: 20px;
-}
+.deduction-label { color: var(--text-secondary); }
+.deduction-value { font-weight: 600; color: #ff6b6b; }
 
-.summary-box {
-    padding: 20px;
+.net-pay-card {
+    background: linear-gradient(135deg, rgba(79, 172, 254, 0.1) 0%, rgba(0, 242, 254, 0.1) 100%);
+    border: 1px solid rgba(0, 242, 254, 0.2);
     text-align: center;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    padding: 40px;
 }
 
-.summary-box h3 {
-    font-size: 1rem;
-    color: var(--text-secondary);
+.net-label {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--premium-accent);
     margin-bottom: 10px;
 }
 
-.summary-box .value {
-    font-size: 2rem;
-    font-weight: 700;
-}
-
-.summary-box .value.highlight {
-    color: var(--accent-color);
-}
-
-.history-list {
-    padding: 20px;
-    overflow-x: auto;
-}
-
-.table {
-    width: 100%;
-    border-collapse: collapse;
-    margin-top: 15px;
-}
-
-.table th,
-.table td {
-    padding: 12px 15px;
-    text-align: left;
-    border-bottom: 1px solid var(--border-color);
-}
-
-.table th {
-    color: var(--text-secondary);
-    font-weight: 600;
-}
-
-.table tr:hover {
-    background-color: #383838;
-}
-
-/* Monthly Calendar */
-.calendar-grid {
-    background-color: var(--card-bg);
-    border-radius: 12px;
-    overflow: hidden;
-    display: flex;
-    flex-direction: column;
-    height: 100%;
-}
-
-.calendar-header {
-    display: grid;
-    grid-template-columns: repeat(7, 1fr);
-    background-color: #333;
-    text-align: center;
-    padding: 10px 0;
-    border-bottom: 1px solid var(--border-color);
-    font-weight: 700;
-}
-
-.calendar-body {
-    display: grid;
-    grid-template-columns: repeat(7, 1fr);
-    /* grid-auto-rows: minmax(100px, 1fr); */
-    flex: 1;
-    overflow-y: auto;
-}
-
-.calendar-day {
-    border-right: 1px solid var(--border-color);
-    border-bottom: 1px solid var(--border-color);
-    min-height: 100px;
-    padding: 5px;
-    cursor: pointer;
-    transition: background 0.2s;
-    display: flex;
-    flex-direction: column;
-}
-
-.calendar-day:hover {
-    background-color: #404040;
-}
-
-.calendar-day.other-month {
-    opacity: 0.3;
-    background-color: #222;
-}
-
-.calendar-day.today {
-    background-color: rgba(78, 205, 196, 0.1);
-}
-
-.cal-day-header {
-    text-align: right;
-    font-size: 0.9rem;
-    color: var(--text-secondary);
+.net-value {
+    font-size: 3.5rem;
+    font-weight: 800;
     margin-bottom: 5px;
 }
 
-.cal-day-content {
-    flex: 1;
+.net-hint {
+    font-size: 0.85rem;
+    color: var(--text-tertiary);
+}
+
+/* Table Enhancements */
+.premium-table-container {
+    overflow-x: auto;
+    margin-top: 20px;
+}
+
+.premium-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0 8px;
+}
+
+.premium-table th {
+    padding: 15px;
+    text-align: left;
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--text-tertiary);
+}
+
+.premium-table tr {
+    transition: transform 0.2s;
+}
+
+.premium-table td {
+    padding: 20px 15px;
+    background: rgba(255, 255, 255, 0.02);
+    border-top: 1px solid var(--premium-border);
+    border-bottom: 1px solid var(--premium-border);
+}
+
+.premium-table td:first-child {
+    border-left: 1px solid var(--premium-border);
+    border-radius: 16px 0 0 16px;
+}
+
+.premium-table td:last-child {
+    border-right: 1px solid var(--premium-border);
+    border-radius: 0 16px 16px 0;
+}
+
+.premium-table tr:hover td {
+    background: rgba(255, 255, 255, 0.05);
+    border-color: rgba(255, 255, 255, 0.15);
+}
+
+/* Control Elements */
+.premium-select, .premium-btn {
+    font-family: 'Outfit', sans-serif;
+    border-radius: 14px;
+    padding: 12px 20px;
+    border: 1px solid var(--premium-border);
+    background: rgba(255, 255, 255, 0.05);
+    color: white;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.premium-btn-primary {
+    background: var(--premium-accent-gradient);
+    color: #000;
+    font-weight: 700;
+    border: none;
+}
+
+.premium-btn-primary:hover {
+    box-shadow: 0 0 20px rgba(0, 242, 254, 0.4);
+    transform: scale(1.02);
+}
+
+/* Dashboard Specific */
+.weekly-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 15px;
+    margin-top: 20px;
+}
+
+.day-column {
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid var(--premium-border);
+    border-radius: 20px;
+    min-height: 400px;
     display: flex;
     flex-direction: column;
-    gap: 2px;
 }
 
-.cal-item {
-    font-size: 0.75rem;
-    background-color: #505050;
-    padding: 2px 4px;
-    border-radius: 3px;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+.day-header {
+    padding: 15px;
+    text-align: center;
+    border-bottom: 1px solid var(--premium-border);
 }
 
-/* Salary Tool Mobile Responsiveness */
-@media (max-width: 768px) {
+.day-name { font-weight: 700; font-size: 1.1rem; }
+.day-date { color: var(--text-tertiary); font-size: 0.85rem; }
 
-
-    .dashboard-header {
-        flex-direction: column;
-        align-items: stretch;
-        gap: 15px;
-    }
-
-    .week-nav {
-        justify-content: space-between;
-        padding: 8px 15px;
-    }
-
-    #currentWeekLabel {
-        min-width: unset;
-        font-size: 0.95rem;
-    }
-
-    .summary-card {
-        justify-content: space-around;
-        padding: 15px;
-    }
-
-    .weekly-grid {
-        grid-template-columns: 1fr;
-        max-height: none;
-        gap: 15px;
-    }
-
-    .day-column {
-        min-height: unset;
-        border: 1px solid var(--border-color);
-    }
-
-    .day-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        padding: 12px 15px;
-        background: rgba(255, 255, 255, 0.03);
-    }
-
-    .day-name {
-        margin-bottom: 0;
-    }
-
-    .btn-add-shift {
-        padding: 18px;
-        font-size: 1.8rem;
-    }
-
-
-    .actions-container {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 10px;
-    }
-
-    .actions-container a.btn {
-        grid-column: span 2;
-    }
-
-    .modal-content {
-        max-width: 100%;
-        max-height: 85vh;
-        margin: 0;
-        border-radius: 24px 24px 0 0;
-        overflow-y: auto;
-        padding-bottom: calc(85px + env(safe-area-inset-bottom));
-    }
-
+.today {
+    background: rgba(0, 242, 254, 0.05);
+    border-color: var(--premium-accent);
 }
 
-/* Tab & Segmented Control System */
-.tabs {
-    display: flex;
-    background: rgba(0, 0, 0, 0.2);
-    padding: 3px;
-    border-radius: 10px;
-    margin-bottom: 25px;
-    gap: 2px;
-}
-
-.tab-btn {
-    flex: 1;
-    padding: 10px;
-    border: none;
-    background: transparent;
-    color: var(--text-secondary);
-    font-weight: 600;
-    font-size: 0.9rem;
+/* Badge System */
+.badge {
+    padding: 4px 10px;
     border-radius: 8px;
-    cursor: pointer;
-    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.tab-btn.active {
-    background: #636366;
-    color: white;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
-}
-
-.tab-content {
-    display: none;
-    animation: fade-in 0.3s ease-out;
-}
-
-.tab-content.active {
-    display: block;
-}
-
-@keyframes fade-in {
-    from {
-        opacity: 0;
-        transform: translateY(5px);
-    }
-
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
-}
-
-/* Glass Premium Modal */
-.modal-content {
-    background: rgba(25, 25, 25, 0.6);
-    backdrop-filter: blur(30px);
-    -webkit-backdrop-filter: blur(30px);
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
-    border-radius: 24px;
-}
-
-.modal-header {
-    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-}
-
-.modal-body {
-    padding: 25px;
-}
-
-/* Fix for History Controls on Mobile */
-@media (max-width: 768px) {
-    .history-controls {
-        flex-direction: column;
-        align-items: stretch;
-        gap: 15px;
-    }
-
-    .history-controls label {
-        margin-bottom: 5px;
-    }
-
-    .history-controls>div {
-        max-width: none !important;
-        width: 100%;
-    }
-
-    #exportSalaryBtn {
-        margin-left: 0 !important;
-        width: auto !important;
-        align-self: flex-start;
-        margin-top: 10px;
-        padding: 8px 16px;
-        /* Ensure good touch target but compact */
-    }
-}
-
-/* Glass Theme Classes (imported from Expense) */
-.glass {
-    background: rgba(30, 30, 30, 0.6);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
-    border-radius: 18px;
-}
-
-.setting-card {
-    background: transparent;
-    /* Override default card */
-    box-shadow: none;
-    padding: 0;
-}
-
-.settings-container {
-    max-width: 600px;
-    margin: 0 auto;
-    padding-bottom: 80px;
-}
-
-.settings-section-title {
-    font-size: 1.1rem;
+    font-size: 0.75rem;
     font-weight: 600;
-    color: var(--text-primary);
-    margin-bottom: 15px;
-    display: flex;
-    align-items: center;
-    gap: 8px;
+    text-transform: uppercase;
 }
 
-.settings-form-group {
-    margin-bottom: 20px;
-}
+.badge-success { background: rgba(46, 213, 115, 0.15); color: #2ed573; }
+.badge-secondary { background: rgba(255, 255, 255, 0.1); color: var(--text-secondary); }
 
-.settings-form-group label {
-    display: block;
-    margin-bottom: 8px;
-    color: var(--text-secondary);
-    font-size: 0.95rem;
-}
+/* Hidden Helper */
+.hidden { display: none !important; }
 
-.settings-input-wrapper {
-    position: relative;
-    display: flex;
-    align-items: center;
-}
-
-.settings-input {
-    width: 100%;
-    background: rgba(0, 0, 0, 0.2);
-    border: 1px solid var(--border-color);
-    border-radius: 12px;
-    padding: 12px 15px;
-    color: white;
-    font-size: 1rem;
-    transition: border-color 0.2s;
-}
-
-.settings-input:focus {
-    border-color: var(--accent-color);
-    outline: none;
-}
-
-.settings-unit {
-    position: absolute;
-    right: 15px;
-    color: var(--text-secondary);
-    pointer-events: none;
-}
-
-.settings-help-text {
-    font-size: 0.85rem;
-    color: var(--text-secondary);
-    margin-top: 6px;
-    line-height: 1.4;
-}
-
-/* Switch Toggle */
-.switch-group {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 5px 0;
-}
-
-/* Select styling */
-select.settings-input {
-    appearance: none;
-    cursor: pointer;
-    background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
-    background-repeat: no-repeat;
-    background-position: right 15px center;
-    background-size: 16px;
-    padding-right: 40px;
-}
-
+/* Responsive Overrides */
 @media (max-width: 768px) {
-    .salary-nav {
-        gap: 6px;
-        padding-bottom: 5px;
-        margin-bottom: 10px;
-        flex-wrap: nowrap;
-        overflow-x: auto;
-        -webkit-overflow-scrolling: touch;
-        padding-left: 2px;
-        padding-right: 2px;
-    }
-
-    .salary-nav-item {
-        padding: 5px 12px;
-        font-size: 0.8rem;
-        flex: 0 0 auto;
-        white-space: nowrap;
-    }
+    .weekly-grid { grid-template-columns: 1fr; }
+    .summary-stats { grid-template-columns: 1fr; }
 }
