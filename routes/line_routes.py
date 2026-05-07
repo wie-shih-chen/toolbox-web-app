@@ -544,9 +544,8 @@ def register_line_handlers(handler):
                 gemini_key = current_app.config.get('GEMINI_API_KEY')
                 if gemini_key and len(msg) < 200:
                     try:
-                        import google.generativeai as genai
-                        genai.configure(api_key=gemini_key)
-                        model = genai.GenerativeModel('gemini-1.5-flash')
+                        from google import genai
+                        client = genai.Client(api_key=gemini_key)
                         
                         prompt = f"""你是一個記帳管家。使用者輸入了一句話：「{msg}」
 請判斷這句話是否為一筆「記帳支出紀錄」。
@@ -555,7 +554,10 @@ def register_line_handlers(handler):
 如果不是記帳：{{"is_expense": false}}
 如果是記帳：{{"is_expense": true, "name": "便當", "amount": 100, "category": "飲食"}}
 """
-                        response = model.generate_content(prompt)
+                        response = client.models.generate_content(
+                            model='gemini-1.5-flash',
+                            contents=prompt
+                        )
                         res_text = response.text.strip()
                         if res_text.startswith("```json"):
                             res_text = res_text[7:]
