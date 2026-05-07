@@ -514,7 +514,11 @@ def register_line_handlers(handler):
                 end_dt = parse_date(end_str, now_dt)
                 end_date_fmt = end_dt.strftime('%Y-%m-%d')
             
-            period_svc.add_record(start_date=start_date_fmt, end_date=end_date_fmt, note=note if note else None)
+            result = period_svc.add_record(start_date=start_date_fmt, end_date=end_date_fmt, note=note if note else None)
+            
+            if not result.get("success"):
+                LineService.push_message(user_id, f"❌ {result.get('error', '新增失敗')}")
+                return
             
             reply = f"🩸 新增生理期紀錄\n📅 開始：{start_dt.strftime('%m/%d')}"
             if end_date_fmt: reply += f"\n📅 結束：{end_dt.strftime('%m/%d')}"

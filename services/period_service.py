@@ -29,6 +29,11 @@ class PeriodService:
         ]
 
     def add_record(self, start_date, end_date=None, note=None, exclude_from_avg=False):
+        # Check if there's an ongoing period record
+        latest_record = PeriodRecord.query.filter_by(user_id=self.user_id).order_by(PeriodRecord.start_date.desc()).first()
+        if latest_record and not latest_record.end_date:
+            return {"success": False, "error": "上一次生理期尚未結束，無法新增！請先設定結束日期。"}
+
         # Calculate cycle length if there's a previous record
         prev_record = PeriodRecord.query.filter(
             PeriodRecord.user_id == self.user_id,
