@@ -286,6 +286,16 @@ def register_line_handlers(handler):
             if not has_perm("expense"):
                 LineService.push_message(user_id, "⛔ 此帳號無記帳權限，請聯絡帳號擁有者開啟。")
                 return
+                
+            if msg.strip() == "記帳":
+                help_msg = (
+                    "✏️ 準備記帳了嗎？請直接輸入您花費的項目與金額：\n\n"
+                    "👉 例如：記帳 午餐 150\n"
+                    "👉 例如：記帳 咖啡 飲食 65\n\n"
+                    "💡 或者點選單右下角「開啟網站」，在網頁版上記帳更直覺喔！"
+                )
+                LineService.push_message(user_id, help_msg)
+                return
             
             parts = [p for p in msg.split() if p.strip()][1:]
             amount = None
