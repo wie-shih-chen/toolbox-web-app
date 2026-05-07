@@ -191,26 +191,12 @@ def register_line_handlers(handler):
                 category_stats[cat_name]['amount'] += int(r['amount'])
                 category_stats[cat_name]['emoji'] = emoji
             
-            reply = (
-                f"📊 [記帳總覽] {user_obj.username}\n"
-                f"期間: {start_date} ~ {end_date}\n"
-                f"總支出: ${total:,}\n"
-                f"------------------\n"
+            from services.flex_message_service import FlexMessageService
+            flex = FlexMessageService.build_expense_summary(
+                username=user_obj.username, start_date=start_date, end_date=end_date,
+                total=total, category_stats=category_stats, records=records
             )
-            
-            if records:
-                reply += "【各分類統計】\n"
-                for cat_name, stats in sorted(category_stats.items(), key=lambda x: x[1]['amount'], reverse=True):
-                    reply += f"{stats['emoji']} {cat_name}: ${stats['amount']:,} ({stats['count']}筆)\n"
-                reply += "------------------\n"
-                reply += "【最近 5 筆紀錄】\n"
-                for r in records[:5]:
-                    cat = r.get('category', '其他').split(' ')[0]
-                    reply += f"{r['timestamp'][5:16]} {cat} ${int(r['amount'])}\n"
-            else:
-                reply += "此期間尚無記帳紀錄。"
-                
-            LineService.push_message(user_id, reply.strip())
+            LineService.push_flex(user_id, f"{start_date[5:7]}月份記帳總覽", flex)
             return
 
         elif msg.startswith("查詢薪水") or msg.startswith("查詢薪資"):
@@ -245,37 +231,12 @@ def register_line_handlers(handler):
                 if r['type'] == 'shift':
                     type_stats[rtype]['hours'] += r.get('hours', 0)
                     
-            reply = (
-                f"💰 [薪資總覽] {user_obj.username}\n"
-                f"期間: {start_date} ~ {end_date}\n"
-                f"總金額: ${total_amt:,}\n"
+            from services.flex_message_service import FlexMessageService
+            flex = FlexMessageService.build_salary_summary(
+                username=user_obj.username, start_date=start_date, end_date=end_date,
+                total_amt=total_amt, total_hrs=total_hrs, type_stats=type_stats, records=records
             )
-            if total_hrs > 0:
-                reply += f"總時數: {total_hrs:g} h\n"
-            reply += "------------------\n"
-            
-            if records:
-                reply += "【項目統計】\n"
-                for rtype, stats in type_stats.items():
-                    line_stat = f"💸 {rtype}: ${stats['amount']:,} ({stats['count']}筆"
-                    if stats['hours'] > 0:
-                        line_stat += f", 共{stats['hours']}h"
-                    line_stat += ")\n"
-                    reply += line_stat
-                reply += "------------------\n"
-                reply += "【最近 5 筆紀錄】\n"
-                # sort records desc by date just in case
-                records_desc = sorted(records, key=lambda x: (x['date'], x.get('start_time', '')), reverse=True)
-                for r in records_desc[:5]:
-                    rtype = "排班" if r['type'] == 'shift' else "獎金"
-                    if r['type'] != 'shift' and r['type'] != 'bonus': rtype = r['type']
-                    r_line = f"{r['date'][5:]} {rtype} ${r['amount']}"
-                    if r['type'] == 'shift': r_line += f" ({r['hours']}h)"
-                    reply += r_line + "\n"
-            else:
-                reply += "此期間尚無薪資紀錄。"
-                
-            LineService.push_message(user_id, reply.strip())
+            LineService.push_flex(user_id, f"{start_date[5:7]}月份薪資總覽", flex)
             return
 
         # 1. Expense: 記帳 [名稱] [類別：預設飲食] [金額] [預設時間(本年/本月/本日/現在時間)]
@@ -337,8 +298,9 @@ def register_line_handlers(handler):
             db.session.add(new_expense)
             db.session.commit()
             
-            reply = f"✅ 新增支出\n📌 名稱：{name}\n💰 金額：${amount:g}\n🏷️ 類別：{category}\n⏰ 時間：{final_time.strftime('%m/%d %H:%M')}"
-            LineService.push_message(user_id, reply)
+            from services.flex_message_service import FlexMessageService
+            flex = FlexMessageService.build_expense_confirm(name=name, amount=amount, category=category, timestamp=now_str)
+            LineService.push_flex(user_id, f"支出記錄成功：{name} ${amount:g}", flex)
 
         # 2. Bonus: 獎金 [金額] [時數(選填)] [備註(選填)]
         elif msg.startswith("獎金") or msg.startswith("薪水 獎金") or msg.startswith("薪資 獎金"):
@@ -385,8 +347,9 @@ def register_line_handlers(handler):
             db.session.add(new_salary)
             db.session.commit()
             
-            reply = f"✅ 新增獎金\n💰 金額：${amount:,}\n⏱️ 時數：{hours:g} 小時\n📝 備註：{note if note else '無'}"
-            LineService.push_message(user_id, reply)
+            from services.flex_message_service import FlexMessageService
+            flex = FlexMessageService.build_salary_confirm(record_type='bonus', date=now_date, amount=amount, hours=hours, note=note)
+            LineService.push_flex(user_id, f"獎金記錄成功：${amount:,}", flex)
 
         # 3. Shift: 排班 [開始時間(預設12:00)] [結束時間(預設18:00)] [自訂時薪(預設)] [備註]
         elif msg.startswith("排班") or msg.startswith("打工") or msg.startswith("薪水 排班"):
@@ -464,10 +427,12 @@ def register_line_handlers(handler):
             db.session.add(new_salary)
             db.session.commit()
             
-            holiday_emoji = "🎆 " if (effective_rate == rate and amount == int(hours * rate * 2)) else ""
-            reply = f"✅ 新增排班紀錄\n📅 日期：{final_time.strftime('%m/%d')}\n⏰ 時間：{start_time} ~ {end_time}\n⏱️ 時數：{hours:.1f} 小時\n💵 時薪：${rate:g}/hr\n{holiday_emoji}💰 金額：${amount:,}"
-            if updated_note: reply += f"\n📝 備註：{updated_note}"
-            LineService.push_message(user_id, reply)
+            from services.flex_message_service import FlexMessageService
+            flex = FlexMessageService.build_salary_confirm(
+                record_type='shift', date=now_date, amount=amount, hours=hours,
+                start_time=start_time, end_time=end_time, note=updated_note
+            )
+            LineService.push_flex(user_id, f"排班記錄成功：{now_date} {start_time}~{end_time}", flex)
 
         # 4. Period: 月經 [起] [迄] [備註]  OR  月經 結束 [結束日期]
         elif msg.startswith("月經") or msg.startswith("生理期") or msg.startswith("mc") or msg.startswith("MC"):
@@ -606,8 +571,9 @@ def register_line_handlers(handler):
                             db.session.add(new_expense)
                             db.session.commit()
                             
-                            reply = f"✨ 新增支出 (AI)\n📌 名稱：{name}\n💰 金額：${amount:g}\n🏷️ 類別：{category}\n📅 日期：{date_str}"
-                            LineService.push_message(user_id, reply)
+                            from services.flex_message_service import FlexMessageService
+                            flex = FlexMessageService.build_expense_confirm(name=name, amount=amount, category=category, timestamp=record_time, ai=True)
+                            LineService.push_flex(user_id, f"AI 自動記帳：{name} ${amount:g}", flex)
                             return
                             
                         elif action == "shift":
@@ -633,8 +599,12 @@ def register_line_handlers(handler):
                             )
                             db.session.add(new_salary)
                             db.session.commit()
-                            reply = f"✨ 新增排班 (AI)\n📅 日期：{date_str}\n⏱️ 時間：{start_time}~{end_time} ({hours:g}h)\n💰 預估：${amount:,.0f}"
-                            LineService.push_message(user_id, reply)
+                            from services.flex_message_service import FlexMessageService
+                            flex = FlexMessageService.build_salary_confirm(
+                                record_type='shift', date=date_str, amount=amount, hours=hours,
+                                start_time=start_time, end_time=end_time, note=note, ai=True
+                            )
+                            LineService.push_flex(user_id, f"AI 自動排班：{date_str} {start_time}~{end_time}", flex)
                             return
                             
                         elif action == "bonus":
@@ -651,8 +621,9 @@ def register_line_handlers(handler):
                             )
                             db.session.add(new_salary)
                             db.session.commit()
-                            reply = f"✨ 新增獎金 (AI)\n📅 日期：{date_str}\n💰 金額：${amount:,}\n📝 備註：{note}"
-                            LineService.push_message(user_id, reply)
+                            from services.flex_message_service import FlexMessageService
+                            flex = FlexMessageService.build_salary_confirm(record_type='bonus', date=date_str, amount=amount, note=note, ai=True)
+                            LineService.push_flex(user_id, f"AI 自動獎金：${amount:,}", flex)
                             return
                             
                         elif action == "period":
@@ -674,7 +645,7 @@ def register_line_handlers(handler):
                                     LineService.push_message(user_id, "❌ 目前沒有進行中的生理期可以結束喔！")
                                     return
                                 period_svc.update_record(latest['id'], start_date=latest['start_date'], end_date=date_str, note=latest['note'])
-                                reply = f"✨ 結束生理期 (AI)\n📅 結束日期：{date_str}"
+                                LineService.push_message(user_id, f"✨ 生理期結束 (AI)\n📅 結束日期：{date_str}")
                             else:
                                 result = period_svc.add_record(start_date=date_str, end_date=None, note=note)
                                 if not result.get("success"):
@@ -682,8 +653,7 @@ def register_line_handlers(handler):
                                     return
                                 reply = f"✨ 新增生理期 (AI)\n📅 開始日期：{date_str}"
                                 if note: reply += f"\n📝 備註：{note}"
-                                
-                            LineService.push_message(user_id, reply)
+                                LineService.push_message(user_id, reply)
                             return
                     except Exception as e:
                         current_app.logger.error(f"Gemini AI Error: {str(e)}")

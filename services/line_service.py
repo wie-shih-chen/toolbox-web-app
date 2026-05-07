@@ -1,6 +1,6 @@
 from linebot import LineBotApi, WebhookHandler
 from linebot.exceptions import InvalidSignatureError
-from linebot.models import TextSendMessage, ImageSendMessage
+from linebot.models import TextSendMessage, ImageSendMessage, FlexSendMessage, BubbleContainer
 from flask import current_app
 import os
 
@@ -43,6 +43,20 @@ class LineService:
             return True
         except Exception as e:
             print(f"LINE Push Error: {e}")
+            return False
+
+    @classmethod
+    def push_flex(cls, user_id, alt_text, flex_contents):
+        """Send a Flex Message card. flex_contents is a dict (bubble/carousel)"""
+        if not cls._line_bot_api:
+            return False
+        try:
+            from linebot.models import FlexSendMessage
+            message = FlexSendMessage(alt_text=alt_text, contents=flex_contents)
+            cls._line_bot_api.push_message(user_id, message)
+            return True
+        except Exception as e:
+            print(f"LINE Push Flex Error: {e}")
             return False
 
     @classmethod
