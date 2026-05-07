@@ -60,9 +60,6 @@ with app.app_context():
     from routes.countdown_routes import countdown_bp
     app.register_blueprint(countdown_bp)
 
-    from routes.finance_routes import finance_bp
-    app.register_blueprint(finance_bp, url_prefix='/finance')
-
     # Initialize Scheduler
     try:
         from flask_apscheduler import APScheduler

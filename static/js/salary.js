@@ -783,31 +783,8 @@ const salaryApp = {
             const data = await res.json();
 
             document.getElementById('historyHours').textContent = `${data.total_hours.toFixed(1)}h`;
-            document.getElementById('historyAmount').textContent = `$${Math.round(data.total_amount).toLocaleString()}`;
+            document.getElementById('historyAmount').textContent = `$${Math.round(data.total_amount)}`;
             document.getElementById('historyCount').textContent = data.record_count;
-
-            // Handle Finance Breakdown
-            const financeContainer = document.getElementById('financeBreakdownContainer');
-            if (data.finance && financeContainer) {
-                financeContainer.style.display = 'block';
-                const f = data.finance;
-                document.getElementById('historyLabor').textContent = `-$${f.deductions.labor_insurance.toLocaleString()}`;
-                document.getElementById('historyHealth').textContent = `-$${f.deductions.health_insurance.toLocaleString()}`;
-                document.getElementById('historyTax').textContent = `-$${f.tax.toLocaleString()}`;
-                document.getElementById('historyNet').textContent = `$${f.net.toLocaleString()}`;
-                document.getElementById('displayInsuranceSalary').textContent = f.insurance_salary.toLocaleString();
-                
-                const pensionEl = document.getElementById('historyPension');
-                const pensionRow = document.getElementById('pensionRow');
-                if (f.deductions.labor_pension > 0) {
-                    pensionRow.style.display = 'block';
-                    pensionEl.textContent = `-$${f.deductions.labor_pension.toLocaleString()}`;
-                } else {
-                    pensionRow.style.display = 'none';
-                }
-            } else if (financeContainer) {
-                financeContainer.style.display = 'none';
-            }
 
             this.updateTargetProgress(data.total_amount);
 
@@ -850,15 +827,7 @@ const salaryApp = {
         // --- Core save function ---
         const doSave = async () => {
             setStatus('saving');
-            
-            // Collect form data, including unchecked checkboxes
-            const formData = new FormData(form);
-            const data = Object.fromEntries(formData.entries());
-            
-            // Explicitly handle checkboxes that are NOT in formData
-            form.querySelectorAll('input[type="checkbox"]').forEach(cb => {
-                data[cb.name] = cb.checked;
-            });
+            const data = Object.fromEntries(new FormData(form).entries());
             try {
                 const res = await fetch('/salary/api/settings', {
                     method: 'POST',
@@ -890,15 +859,6 @@ const salaryApp = {
             // For select/time: also use 'change' (fires immediately on pick)
             el.addEventListener('change', debouncedSave);
         });
-
-        // Toggle finance settings group visibility
-        const financeToggle = form.querySelector('input[name="enable_finance_tracking"]');
-        const financeGroup = document.getElementById('finance-settings-group');
-        if (financeToggle && financeGroup) {
-            financeToggle.addEventListener('change', (e) => {
-                financeGroup.style.display = e.target.checked ? 'block' : 'none';
-            });
-        }
 
         // --- Keep submit button for explicit save (no page reload) ---
         form.addEventListener('submit', async (e) => {

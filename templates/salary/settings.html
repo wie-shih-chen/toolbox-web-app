@@ -60,9 +60,6 @@
         class="salary-nav-item {% if request.endpoint == 'salary.settings' %}active{% endif %}">
         ⚙️ 設定
     </a>
-    <a href="{{ url_for('finance.savings_page') }}" class="salary-nav-item">
-        💰 儲蓄目標
-    </a>
 </div>
 
 <div class="settings-container">
@@ -130,66 +127,6 @@
                     </select>
                 </div>
                 <p class="settings-help-text">防止誤觸更早之前的歷史紀錄。</p>
-            </div>
-
-            <div class="divider" style="margin: 30px 0;"></div>
-
-            <h3 class="settings-section-title">
-                <span class="material-icons" style="color: #60a5fa">account_balance_wallet</span>
-                薪資財務進階功能 (勞健保估算)
-            </h3>
-
-            <div class="settings-form-group">
-                <div style="display: flex; align-items: center; justify-content: space-between;">
-                    <label>啟用勞健保與稅務估算</label>
-                    <label class="switch">
-                        <input type="checkbox" name="enable_finance_tracking" {% if settings.enable_finance_tracking %}checked{% endif %}>
-                        <span class="slider round"></span>
-                    </label>
-                </div>
-                <p class="settings-help-text">開啟後，系統將根據以下參數估算你的「實領薪資」。</p>
-                
-                <div style="margin-top: 15px; background: rgba(0, 242, 254, 0.1); padding: 15px; border-radius: 12px; border: 1px solid rgba(0, 242, 254, 0.2);">
-                    <div style="display: flex; align-items: center; justify-content: space-between;">
-                        <div style="display: flex; align-items: center; gap: 10px;">
-                            <span class="material-icons" style="color: #00f2fe;">savings</span>
-                            <div style="font-size: 0.95rem; font-weight: 500;">儲蓄目標管理</div>
-                        </div>
-                        <a href="{{ url_for('finance.savings_page') }}" class="btn btn-sm" style="background: var(--accent-color); color: #000; font-weight: 600;">前往設定</a>
-                    </div>
-                </div>
-            </div>
-
-            <div id="finance-settings-group" style="{% if not settings.enable_finance_tracking %}display: none;{% endif %}">
-                <div class="settings-form-group">
-                    <label>投保薪資 (月)</label>
-                    <div class="settings-input-wrapper">
-                        <input type="number" name="insurance_salary" class="settings-input"
-                            value="{{ settings.insurance_salary }}">
-                        <span class="settings-unit">元</span>
-                    </div>
-                    <p class="settings-help-text">依照勞保投保薪資分級表填寫，用以計算勞保與健保費。</p>
-                </div>
-
-                <div class="settings-form-group">
-                    <label>健保眷屬數</label>
-                    <div class="settings-input-wrapper">
-                        <input type="number" name="health_insurance_dependents" class="settings-input"
-                            value="{{ settings.health_insurance_dependents }}" min="0" max="3">
-                        <span class="settings-unit">人</span>
-                    </div>
-                    <p class="settings-help-text">包含本人，最多計入 3 位眷屬（總共 4 口）。</p>
-                </div>
-
-                <div class="settings-form-group">
-                    <label>勞退自提率</label>
-                    <div class="settings-input-wrapper">
-                        <input type="number" name="labor_pension_rate" class="settings-input"
-                            value="{{ (settings.labor_pension_rate * 100) | round(1) }}" step="0.1" min="0" max="6">
-                        <span class="settings-unit">%</span>
-                    </div>
-                    <p class="settings-help-text">個人選擇額外提繳的比例（0% ~ 6%）。</p>
-                </div>
             </div>
 
             <div class="settings-save-row">

@@ -2,7 +2,6 @@ from models import db, SalaryRecord, UserSettings
 from flask_login import current_user
 from datetime import datetime, timedelta
 from sqlalchemy import func
-from services.finance_service import FinanceService
 
 def _apply_holiday_pay(date_str: str, rate: float, hours: float, note: str | None) -> tuple[float, float, str | None]:
     """
@@ -214,11 +213,7 @@ class SalaryService:
             "target_income": settings.target_income,
             "billing_cycle_start_day": settings.billing_cycle_start_day,
             "custom_categories": settings.custom_categories,
-            "recurring_expenses": settings.recurring_expenses,
-            "enable_finance_tracking": settings.enable_finance_tracking,
-            "insurance_salary": settings.insurance_salary,
-            "health_insurance_dependents": settings.health_insurance_dependents,
-            "labor_pension_rate": settings.labor_pension_rate
+            "recurring_expenses": settings.recurring_expenses
         }
 
     def update_settings(self, settings_data):
@@ -256,21 +251,6 @@ class SalaryService:
             
         if 'recurring_expenses' in settings_data:
             current_user.settings.recurring_expenses = settings_data['recurring_expenses']
-            
-        if 'enable_finance_tracking' in settings_data:
-            current_user.settings.enable_finance_tracking = bool(settings_data['enable_finance_tracking'])
-            
-        if 'insurance_salary' in settings_data:
-            try: current_user.settings.insurance_salary = float(settings_data['insurance_salary'])
-            except: pass
-            
-        if 'health_insurance_dependents' in settings_data:
-            try: current_user.settings.health_insurance_dependents = int(settings_data['health_insurance_dependents'])
-            except: pass
-            
-        if 'labor_pension_rate' in settings_data:
-            try: current_user.settings.labor_pension_rate = float(settings_data['labor_pension_rate']) / 100.0
-            except: pass
             
         try:
             db.session.commit()
@@ -440,21 +420,12 @@ class SalaryService:
         total_hours = sum(r.get('hours', 0) for r in records)
         total_amount = sum(r['amount'] for r in records)
         
-        summary = {
+        return {
             "records": records,
             "total_hours": total_hours,
             "total_amount": total_amount,
             "record_count": len(records)
         }
-
-        # Add finance summary if enabled
-        if hasattr(current_user, 'settings') and current_user.settings.enable_finance_tracking:
-            finance_svc = FinanceService()
-            finance_summary = finance_svc.get_user_finance_summary(total_amount)
-            if finance_summary:
-                summary['finance'] = finance_summary
-                
-        return summary
 
     def _to_dict(self, record):
         return {

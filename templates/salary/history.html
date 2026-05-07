@@ -26,9 +26,6 @@
         class="salary-nav-item {% if request.endpoint == 'salary.settings' %}active{% endif %}">
         ⚙️ 設定
     </a>
-    <a href="{{ url_for('finance.savings_page') }}" class="salary-nav-item">
-        💰 儲蓄目標
-    </a>
 </div>
 
 <div class="salary-history">
@@ -57,47 +54,12 @@
             <p class="value" id="historyHours">0h</p>
         </div>
         <div class="card summary-box">
-            <h3>毛薪資 (總計)</h3>
+            <h3>總薪資</h3>
             <p class="value highlight" id="historyAmount">$0</p>
         </div>
         <div class="card summary-box">
             <h3>紀錄筆數</h3>
             <p class="value" id="historyCount">0</p>
-        </div>
-    </div>
-
-    <!-- Finance Breakdown (Deductions & Net Pay) -->
-    <div id="financeBreakdownContainer" style="display: none; margin-bottom: 20px;">
-        <div class="card" style="padding: 20px; background: linear-gradient(135deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.1) 100%);">
-            <h3 style="margin-bottom: 15px; color: #4ade80; display: flex; align-items: center; gap: 8px;">
-                <span class="material-icons">account_balance</span>
-                實領薪資預估 (勞健保扣除)
-            </h3>
-            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 15px;">
-                <div class="summary-item">
-                    <div style="color: var(--text-tertiary); font-size: 0.85rem;">勞保費用</div>
-                    <div id="historyLabor" style="font-weight: 600; font-size: 1.1rem; color: #f87171;">-$0</div>
-                </div>
-                <div class="summary-item">
-                    <div style="color: var(--text-tertiary); font-size: 0.85rem;">健保費用</div>
-                    <div id="historyHealth" style="font-weight: 600; font-size: 1.1rem; color: #f87171;">-$0</div>
-                </div>
-                <div class="summary-item" id="pensionRow">
-                    <div style="color: var(--text-tertiary); font-size: 0.85rem;">勞退自提</div>
-                    <div id="historyPension" style="font-weight: 600; font-size: 1.1rem; color: #f87171;">-$0</div>
-                </div>
-                <div class="summary-item">
-                    <div style="color: var(--text-tertiary); font-size: 0.85rem;">預估所得稅</div>
-                    <div id="historyTax" style="font-weight: 600; font-size: 1.1rem; color: #f87171;">-$0</div>
-                </div>
-                <div class="summary-item" style="border-left: 1px solid rgba(255,255,255,0.1); padding-left: 15px;">
-                    <div style="color: #4ade80; font-size: 0.85rem; font-weight: 600;">預估實領</div>
-                    <div id="historyNet" style="font-weight: 700; font-size: 1.3rem; color: #4ade80;">$0</div>
-                </div>
-            </div>
-            <p style="margin-top: 15px; font-size: 0.8rem; color: var(--text-tertiary); font-style: italic;">
-                * 估算結果僅供參考，實際金額以薪資單為準。計算基準：投保薪資 <span id="displayInsuranceSalary"></span> 元
-            </p>
         </div>
     </div>
 
