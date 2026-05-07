@@ -138,6 +138,9 @@
         class="salary-nav-item {% if request.endpoint == 'salary.settings' %}active{% endif %}">
         ⚙️ 設定
     </a>
+    <a href="{{ url_for('finance.savings_page') }}" class="salary-nav-item">
+        💰 儲蓄目標
+    </a>
 </div>
 
 <div class="salary-monthly" data-current-month="{{ current_month }}">

@@ -1,0 +1,394 @@
+{% extends "base.html" %}
+
+{% block title %}儲蓄目標 - 財務管家{% endblock %}
+{% block page_title %}儲蓄目標{% endblock %}
+
+{% block extra_css %}
+<style>
+    .savings-container {
+        max-width: 800px;
+        margin: 0 auto;
+        padding-bottom: 40px;
+    }
+
+    .goal-card {
+        margin-bottom: 20px;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .goal-header {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        margin-bottom: 15px;
+    }
+
+    .goal-icon {
+        width: 48px;
+        height: 48px;
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 24px;
+    }
+
+    .goal-info {
+        flex: 1;
+    }
+
+    .goal-title {
+        font-size: 1.2rem;
+        font-weight: 600;
+        margin-bottom: 4px;
+    }
+
+    .goal-target {
+        font-size: 0.9rem;
+        color: var(--text-secondary);
+    }
+
+    .progress-section {
+        margin-top: 20px;
+    }
+
+    .progress-stats {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 8px;
+        font-size: 0.9rem;
+    }
+
+    .progress-bar-container {
+        height: 12px;
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 6px;
+        overflow: hidden;
+    }
+
+    .progress-bar-fill {
+        height: 100%;
+        background: linear-gradient(90deg, #4facfe 0%, #00f2fe 100%);
+        border-radius: 6px;
+        transition: width 1s ease-out;
+    }
+
+    .goal-meta {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        gap: 15px;
+        margin-top: 20px;
+        padding-top: 15px;
+        border-top: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .meta-item {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .meta-label {
+        font-size: 0.75rem;
+        color: var(--text-tertiary);
+        margin-bottom: 2px;
+    }
+
+    .meta-value {
+        font-size: 0.95rem;
+        font-weight: 500;
+    }
+
+    .add-goal-btn {
+        position: fixed;
+        bottom: 30px;
+        right: 30px;
+        width: 60px;
+        height: 60px;
+        border-radius: 30px;
+        background: var(--accent-color);
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+        cursor: pointer;
+        z-index: 100;
+    }
+
+    /* Modal Styles */
+    .icon-selector {
+        display: grid;
+        grid-template-columns: repeat(6, 1fr);
+        gap: 10px;
+        margin-top: 10px;
+    }
+
+    .icon-option {
+        width: 40px;
+        height: 40px;
+        border-radius: 8px;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        font-size: 20px;
+    }
+
+    .icon-option.selected {
+        border-color: var(--accent-color);
+        background: rgba(255, 214, 10, 0.1);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="savings-container">
+    <div id="goalsList">
+        <!-- Goals will be loaded here -->
+        <div class="glass" style="text-align: center; padding: 40px;">
+            <p style="color: var(--text-secondary)">正在載入目標...</p>
+        </div>
+    </div>
+</div>
+
+<div class="add-goal-btn" onclick="openGoalModal()">
+    <span class="material-icons">add</span>
+</div>
+
+<!-- Goal Modal -->
+<div id="goalModal" class="modal">
+    <div class="modal-content glass">
+        <div class="modal-header">
+            <h3 id="modalTitle">新增儲蓄目標</h3>
+            <span class="close-modal material-icons">close</span>
+        </div>
+        <form id="goalForm">
+            <input type="hidden" name="id" id="goalId">
+            
+            <div class="form-group">
+                <label>目標名稱</label>
+                <input type="text" name="title" id="goalTitle" class="form-control" placeholder="例如：日本旅遊、買相機" required>
+            </div>
+
+            <div class="form-group">
+                <label>目標金額</label>
+                <input type="number" name="target_amount" id="goalTargetAmount" class="form-control" placeholder="0" required>
+            </div>
+
+            <div class="form-group">
+                <label>已存金額 (手動調整)</label>
+                <input type="number" name="current_amount" id="goalCurrentAmount" class="form-control" value="0">
+                <p class="settings-help-text">除了每月的結餘外，你也可以手動填寫已有的存款。</p>
+            </div>
+
+            <div class="form-group">
+                <label>預計達成日期</label>
+                <input type="date" name="target_date" id="goalTargetDate" class="form-control">
+            </div>
+
+            <div class="form-group">
+                <label>選擇圖示</label>
+                <input type="hidden" name="icon" id="goalIcon" value="💰">
+                <div class="icon-selector" id="iconSelector">
+                    <div class="icon-option selected" onclick="selectIcon('💰')">💰</div>
+                    <div class="icon-option" onclick="selectIcon('✈️')">✈️</div>
+                    <div class="icon-option" onclick="selectIcon('🏠')">🏠</div>
+                    <div class="icon-option" onclick="selectIcon('🚗')">🚗</div>
+                    <div class="icon-option" onclick="selectIcon('💻')">💻</div>
+                    <div class="icon-option" onclick="selectIcon('🎁')">🎁</div>
+                </div>
+            </div>
+
+            <div style="margin-top: 25px; display: flex; gap: 10px;">
+                <button type="submit" class="btn btn-primary" style="flex: 1">儲存</button>
+                <button type="button" id="deleteGoalBtn" class="btn btn-danger hidden" onclick="deleteGoal()">刪除</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    const savingsApp = {
+        goals: [],
+        
+        async init() {
+            this.bindEvents();
+            await this.loadGoals();
+        },
+
+        bindEvents() {
+            document.querySelector('.close-modal').onclick = () => this.closeModal();
+            document.getElementById('goalForm').onsubmit = (e) => this.handleSubmit(e);
+            
+            window.onclick = (e) => {
+                if (e.target.classList.contains('modal')) this.closeModal();
+            };
+        },
+
+        async loadGoals() {
+            try {
+                const res = await fetch('/finance/api/savings/goals');
+                this.goals = await res.json();
+                this.renderGoals();
+            } catch (e) {
+                console.error(e);
+            }
+        },
+
+        async renderGoals() {
+            const list = document.getElementById('goalsList');
+            if (this.goals.length === 0) {
+                list.innerHTML = `
+                    <div class="glass" style="text-align: center; padding: 60px;">
+                        <span class="material-icons" style="font-size: 48px; color: var(--text-tertiary); margin-bottom: 15px;">account_balance</span>
+                        <p style="color: var(--text-secondary)">目前還沒有儲蓄目標</p>
+                        <button class="btn btn-primary" onclick="openGoalModal()" style="margin-top: 20px;">建立第一個目標</button>
+                    </div>
+                `;
+                return;
+            }
+
+            list.innerHTML = '';
+            for (const goal of this.goals) {
+                const progressRes = await fetch(`/finance/api/savings/progress/${goal.id}`);
+                const data = await progressRes.json();
+                
+                const card = document.createElement('div');
+                card.className = 'goal-card glass';
+                card.onclick = () => this.openEditModal(goal);
+                
+                card.innerHTML = `
+                    <div class="goal-header">
+                        <div class="goal-icon">${goal.icon}</div>
+                        <div class="goal-info">
+                            <div class="goal-title">${goal.title}</div>
+                            <div class="goal-target">目標: NT$ ${goal.target_amount.toLocaleString()}</div>
+                        </div>
+                        <div class="goal-status">
+                            <span class="badge ${goal.is_active ? 'badge-success' : 'badge-secondary'}">
+                                ${goal.is_active ? '進行中' : '已暫停'}
+                            </span>
+                        </div>
+                    </div>
+                    
+                    <div class="progress-section">
+                        <div class="progress-stats">
+                            <span>已達成 ${data.percent}%</span>
+                            <span>$${goal.current_amount.toLocaleString()} / $${goal.target_amount.toLocaleString()}</span>
+                        </div>
+                        <div class="progress-bar-container">
+                            <div class="progress-bar-fill" style="width: ${data.percent}%"></div>
+                        </div>
+                    </div>
+                    
+                    <div class="goal-meta">
+                        <div class="meta-item">
+                            <span class="meta-label">預計達成</span>
+                            <span class="meta-value">${data.projected_completion}</span>
+                        </div>
+                        <div class="meta-item">
+                            <span class="meta-label">剩餘金額</span>
+                            <span class="meta-value">$${data.remaining.toLocaleString()}</span>
+                        </div>
+                        <div class="meta-item">
+                            <span class="meta-label">月平均結餘</span>
+                            <span class="meta-value">$${data.avg_monthly_surplus.toLocaleString()}</span>
+                        </div>
+                    </div>
+                `;
+                list.appendChild(card);
+            }
+        },
+
+        closeModal() {
+            document.getElementById('goalModal').classList.remove('show');
+        },
+
+        async handleSubmit(e) {
+            e.preventDefault();
+            const formData = new FormData(e.target);
+            const data = Object.fromEntries(formData.entries());
+            
+            const id = data.id;
+            const method = id ? 'PUT' : 'POST';
+            const url = id ? `/finance/api/savings/goals/${id}` : '/finance/api/savings/goals';
+            
+            try {
+                const res = await fetch(url, {
+                    method,
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+                
+                if (res.ok) {
+                    this.closeModal();
+                    this.loadGoals();
+                }
+            } catch (e) {
+                alert('儲存失敗');
+            }
+        },
+
+        openEditModal(goal) {
+            document.getElementById('goalId').value = goal.id;
+            document.getElementById('goalTitle').value = goal.title;
+            document.getElementById('goalTargetAmount').value = goal.target_amount;
+            document.getElementById('goalCurrentAmount').value = goal.current_amount;
+            document.getElementById('goalTargetDate').value = goal.target_date || '';
+            document.getElementById('goalIcon').value = goal.icon;
+            
+            document.getElementById('modalTitle').textContent = '編輯目標';
+            document.getElementById('deleteGoalBtn').classList.remove('hidden');
+            
+            this.selectIconInSelector(goal.icon);
+            document.getElementById('goalModal').classList.add('show');
+        },
+
+        selectIconInSelector(icon) {
+            document.querySelectorAll('.icon-option').forEach(opt => {
+                if (opt.textContent === icon) opt.classList.add('selected');
+                else opt.classList.remove('selected');
+            });
+        }
+    };
+
+    function openGoalModal() {
+        document.getElementById('goalForm').reset();
+        document.getElementById('goalId').value = '';
+        document.getElementById('modalTitle').textContent = '新增目標';
+        document.getElementById('deleteGoalBtn').classList.add('hidden');
+        document.getElementById('goalModal').classList.add('show');
+        selectIcon('💰');
+    }
+
+    function selectIcon(icon) {
+        document.getElementById('goalIcon').value = icon;
+        document.querySelectorAll('.icon-option').forEach(opt => {
+            if (opt.textContent === icon) opt.classList.add('selected');
+            else opt.classList.remove('selected');
+        });
+    }
+
+    async function deleteGoal() {
+        const id = document.getElementById('goalId').value;
+        if (!id || !confirm('確定要刪除這個目標嗎？')) return;
+        
+        try {
+            const res = await fetch(`/finance/api/savings/goals/${id}`, { method: 'DELETE' });
+            if (res.ok) {
+                document.getElementById('goalModal').classList.remove('show');
+                savingsApp.loadGoals();
+            }
+        } catch (e) {
+            console.error(e);
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', () => savingsApp.init());
+</script>
+{% endblock %}

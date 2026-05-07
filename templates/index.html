@@ -88,7 +88,27 @@
 </style>
 {% endif %}
 
+<div id="financeSnapshotContainer"></div>
+
 <div class="dashboard-grid ios-widgets">
+    <!-- Savings Goal Widget (New) -->
+    <a href="{{ url_for('finance.savings_page') }}" class="tool-card glass widget-large">
+        <div class="widget-icon" style="background: linear-gradient(135deg, #00f2fe 0%, #4facfe 100%);">
+            <span class="material-icons">savings</span>
+        </div>
+        <div class="widget-content">
+            <h3>儲蓄目標</h3>
+            <p id="topGoalStatus">設定並追蹤你的夢想基金</p>
+            <div id="topGoalProgress" style="display: none; margin-top: 8px;">
+                <div style="height: 6px; background: rgba(255,255,255,0.2); border-radius: 3px; overflow: hidden;">
+                    <div id="topGoalProgressBar" style="height: 100%; background: #fff; width: 0%;"></div>
+                </div>
+            </div>
+        </div>
+        <div class="widget-chevron">
+            <span class="material-icons">chevron_right</span>
+        </div>
+    </a>
     <!-- Salary Widget -->
     <a href="{{ url_for('salary.index') }}" class="tool-card glass widget-large">
         <div class="widget-icon" style="background: linear-gradient(135deg, #FFD60A 0%, #FF9F0A 100%);">
@@ -177,4 +197,56 @@
 {% endblock %}
 
 {% block extra_js %}
+<script>
+    async function loadFinanceSnapshot() {
+        try {
+            const res = await fetch('/finance/api/finance/overview');
+            const data = await res.json();
+            
+            if (data.finance_summary) {
+                const snapshot = document.getElementById('financeSnapshotContainer');
+                const fs = data.finance_summary;
+                snapshot.innerHTML = `
+                    <div class="glass" style="margin-bottom: 24px; padding: 20px; border-radius: 24px; background: linear-gradient(110deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.1) 100%);">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                            <div style="display: flex; align-items: center; gap: 10px;">
+                                <span class="material-icons" style="color: #4ade80">account_balance</span>
+                                <h4 style="margin: 0; font-size: 1rem;">本月財務快照 (${data.period ? data.period.label : ''})</h4>
+                            </div>
+                            <span class="badge badge-success" style="background: #4ade80; color: #000; font-weight: 700; padding: 4px 12px; border-radius: 12px;">實領 NT$ ${fs.net.toLocaleString()}</span>
+                        </div>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; font-size: 0.85rem;">
+                            <div style="background: rgba(255,255,255,0.05); padding: 10px; border-radius: 12px;">
+                                <div style="color: var(--text-tertiary); margin-bottom: 2px;">毛收入</div>
+                                <div style="font-weight: 600;">$${fs.gross.toLocaleString()}</div>
+                            </div>
+                            <div style="background: rgba(255,255,255,0.05); padding: 10px; border-radius: 12px;">
+                                <div style="color: var(--text-tertiary); margin-bottom: 2px;">勞健保扣除</div>
+                                <div style="font-weight: 600; color: #f87171;">-$${fs.deductions.total_deductions.toLocaleString()}</div>
+                            </div>
+                            <div style="background: rgba(255,255,255,0.05); padding: 10px; border-radius: 12px;">
+                                <div style="color: var(--text-tertiary); margin-bottom: 2px;">預估所得稅</div>
+                                <div style="font-weight: 600; color: #f87171;">-$${fs.tax.toLocaleString()}</div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+
+            if (data.top_goal) {
+                const status = document.getElementById('topGoalStatus');
+                const progress = document.getElementById('topGoalProgress');
+                const bar = document.getElementById('topGoalProgressBar');
+                
+                status.textContent = `${data.top_goal.goal.title}: 已完成 ${data.top_goal.percent}%`;
+                progress.style.display = 'block';
+                bar.style.width = `${data.top_goal.percent}%`;
+            }
+        } catch (e) {
+            console.error('Failed to load finance snapshot', e);
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', loadFinanceSnapshot);
+</script>
 {% endblock %}

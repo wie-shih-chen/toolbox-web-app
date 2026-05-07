@@ -117,6 +117,12 @@ class UserSettings(db.Model):
     period_notify_period = db.Column(db.Boolean, default=True)      # 🩸 月經前通知
     period_notify_ovulation = db.Column(db.Boolean, default=False)  # 🥚 排卵期前通知
 
+    # Finance Tracking Settings
+    enable_finance_tracking = db.Column(db.Boolean, default=False)
+    insurance_salary = db.Column(db.Float, default=0.0)             # 投保薪資
+    health_insurance_dependents = db.Column(db.Integer, default=0) # 健保眷屬數
+    labor_pension_rate = db.Column(db.Float, default=0.0)           # 勞退自提率 (0.0-0.06)
+
 class PeriodRecord(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
@@ -231,4 +237,16 @@ class LineBinding(db.Model):
     nickname = db.Column(db.String(50), default='未命名')
     # JSON list of allowed actions: "expense", "salary", "period"
     permissions = db.Column(db.Text, default='["expense","salary","period"]')
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+class SavingsGoal(db.Model):
+    """Financial savings goals for the user."""
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    title = db.Column(db.String(100), nullable=False)
+    target_amount = db.Column(db.Float, nullable=False)
+    current_amount = db.Column(db.Float, default=0.0) # For manual adjustments
+    target_date = db.Column(db.String(10), nullable=True) # YYYY-MM-DD
+    icon = db.Column(db.String(10), default='💰')
+    is_active = db.Column(db.Boolean, default=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
