@@ -540,6 +540,55 @@ def register_line_handlers(handler):
              
         else:
             if setting:
+                # Try Gemini NLP parsing first if API key is set
+                gemini_key = current_app.config.get('GEMINI_API_KEY')
+                if gemini_key and len(msg) < 200:
+                    try:
+                        import google.generativeai as genai
+                        genai.configure(api_key=gemini_key)
+                        model = genai.GenerativeModel('gemini-1.5-flash')
+                        
+                        prompt = f"""你是一個記帳管家。使用者輸入了一句話：「{msg}」
+請判斷這句話是否為一筆「記帳支出紀錄」。
+如果是記帳，請幫我萃取出名稱(name)、金額(amount, 純數字)與類別(category，分類請從「飲食, 交通, 娛樂, 居住, 其他」中選擇最適合的)。
+請「只」回傳一個 JSON 格式字串，不要有任何其他對話或 Markdown 標記 (不要有 ```json 標籤)：
+如果不是記帳：{{"is_expense": false}}
+如果是記帳：{{"is_expense": true, "name": "便當", "amount": 100, "category": "飲食"}}
+"""
+                        response = model.generate_content(prompt)
+                        res_text = response.text.strip()
+                        if res_text.startswith("```json"):
+                            res_text = res_text[7:]
+                        if res_text.endswith("```"):
+                            res_text = res_text[:-3]
+                            
+                        import json
+                        ai_data = json.loads(res_text.strip())
+                        
+                        if ai_data.get("is_expense"):
+                            if not has_perm("expense"):
+                                LineService.push_message(user_id, "⛔ 此帳號無記帳權限，無法新增。")
+                                return
+                                
+                            name = ai_data.get("name", "隨手記")
+                            amount = ai_data.get("amount", 0)
+                            category = ai_data.get("category", "其他")
+                            
+                            now_str = (datetime.utcnow() + timedelta(hours=8)).strftime('%Y-%m-%d %H:%M:%S')
+                            from models import ExpenseRecord
+                            new_expense = ExpenseRecord(
+                                user_id=setting.user_id, timestamp=now_str, category=category, amount=amount, note=name
+                            )
+                            db.session.add(new_expense)
+                            db.session.commit()
+                            
+                            reply = f"✨ 新增支出 (AI 辨識)\n📌 名稱：{name}\n💰 金額：${amount:g}\n🏷️ 類別：{category}"
+                            LineService.push_message(user_id, reply)
+                            return
+                    except Exception as e:
+                        current_app.logger.error(f"Gemini AI Error: {str(e)}")
+                        # Fallback to help message if AI fails
+
                 help_msg = (
                     "🤖 嗨！我聽不太懂，但你可以用以下格式快速帶入資料：\n\n"
                     "📝 【記帳】 記帳 [名稱] [類別(預設飲食)] [金額] [日期時間(可省)]\n"

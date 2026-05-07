@@ -2,6 +2,7 @@ import os
 
 class Config:
     SECRET_KEY = os.environ.get('SECRET_KEY') or 'dev-secret-key-change-in-production'
+    GEMINI_API_KEY = os.environ.get('GEMINI_API_KEY')
     # Salary Data File
     BASE_DIR = os.path.dirname(os.path.abspath(__file__))
     SALARY_DATA_FILE = os.path.join(BASE_DIR, 'salary_data.json')
