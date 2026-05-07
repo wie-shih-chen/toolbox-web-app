@@ -549,7 +549,6 @@ def register_line_handlers(handler):
                         if res_text.endswith("```"):
                             res_text = res_text[:-3]
                             
-                        import json
                         ai_data = json.loads(res_text.strip())
                         action = ai_data.get("action", "unknown")
                         
