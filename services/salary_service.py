@@ -440,27 +440,17 @@ class SalaryService:
         total_hours = sum(r.get('hours', 0) for r in records)
         total_amount = sum(r['amount'] for r in records)
         
-        # Calculate days in range
-        try:
-            d1 = datetime.strptime(start_date_str, '%Y-%m-%d')
-            d2 = datetime.strptime(end_date_str, '%Y-%m-%d')
-            days = (d2 - d1).days + 1
-            if days <= 0: days = 30
-        except:
-            days = 30
-            
         summary = {
             "records": records,
             "total_hours": total_hours,
             "total_amount": total_amount,
-            "record_count": len(records),
-            "days": days
+            "record_count": len(records)
         }
 
         # Add finance summary if enabled
         if hasattr(current_user, 'settings') and current_user.settings.enable_finance_tracking:
             finance_svc = FinanceService()
-            finance_summary = finance_svc.get_user_finance_summary(total_amount, days=days)
+            finance_summary = finance_svc.get_user_finance_summary(total_amount)
             if finance_summary:
                 summary['finance'] = finance_summary
                 

@@ -33,122 +33,107 @@
 
 <div class="salary-history">
     <!-- Period Selector -->
-    <div class="premium-card history-controls" style="margin-bottom: 25px;">
-        <div class="control-group">
-            <label for="periodSelect">選擇週期</label>
-            <div class="period-picker">
-                <button class="premium-btn" id="prevPeriodBtn">◀</button>
-                <select id="periodSelect" class="premium-select">
-                    <option value="">載入中...</option>
-                </select>
-                <button class="premium-btn" id="nextPeriodBtn">▶</button>
-            </div>
+    <div class="history-controls card">
+        <label for="periodSelect" style="white-space: nowrap; margin-right: 10px;">選擇區間：</label>
+
+        <div style="display: flex; align-items: center; gap: 5px; flex-grow: 1; max-width: 400px;">
+            <button class="btn btn-secondary btn-sm" id="prevPeriodBtn" title="上一期">◀</button>
+            <select id="periodSelect" class="form-control" style="flex-grow: 1; text-align: center;">
+                <option value="">載入中...</option>
+            </select>
+            <button class="btn btn-secondary btn-sm" id="nextPeriodBtn" title="下一期">▶</button>
         </div>
 
-        <div class="action-group">
-            <button type="button" class="premium-btn" id="exportPeriodBtn">📅 本期匯出</button>
-            <button type="button" class="premium-btn premium-btn-primary" id="exportSalaryBtn">📤 匯出全部</button>
+        <div style="display: flex; gap: 8px; margin-left: auto;">
+            <button type="button" class="btn btn-secondary btn-sm" id="exportPeriodBtn" title="只匯出此週期">📅 此週期匯出</button>
+            <button type="button" class="btn btn-primary btn-sm" id="exportSalaryBtn" title="匯出全部紀錄">📤 匯出全部</button>
         </div>
     </div>
 
-    <!-- Summary Stats Grid -->
-    <div class="summary-stats">
-        <div class="premium-card stat-box">
-            <div class="stat-label">
-                <span class="material-icons" style="color: var(--premium-accent)">schedule</span>
-                總時數
-            </div>
-            <div class="stat-value" id="historyHours">0h</div>
+    <!-- Summary Stats -->
+    <div class="history-summary">
+        <div class="card summary-box">
+            <h3>總時數</h3>
+            <p class="value" id="historyHours">0h</p>
         </div>
-        <div class="premium-card stat-box">
-            <div class="stat-label">
-                <span class="material-icons" style="color: var(--premium-gold)">payments</span>
-                毛薪資 (未扣除)
-            </div>
-            <div class="stat-value gold" id="historyAmount">$0</div>
+        <div class="card summary-box">
+            <h3>毛薪資 (總計)</h3>
+            <p class="value highlight" id="historyAmount">$0</p>
         </div>
-        <div class="premium-card stat-box">
-            <div class="stat-label">
-                <span class="material-icons" style="color: var(--premium-pink)">receipt_long</span>
-                紀錄筆數
-            </div>
-            <div class="stat-value" id="historyCount">0</div>
+        <div class="card summary-box">
+            <h3>紀錄筆數</h3>
+            <p class="value" id="historyCount">0</p>
         </div>
     </div>
 
-    <!-- Finance Insights Panel -->
-    <div id="financeBreakdownContainer" class="premium-card" style="display: none; margin-bottom: 30px;">
-        <div class="finance-breakdown">
-            <div class="deduction-side">
-                <h3 style="font-size: 1.2rem; margin-bottom: 20px; display: flex; align-items: center; gap: 10px;">
-                    <span class="material-icons" style="color: #ff6b6b">analytics</span>
-                    稅務與勞健保分析
-                </h3>
-                <div class="deduction-list">
-                    <div class="deduction-item">
-                        <span class="deduction-label">勞保費用</span>
-                        <span class="deduction-value" id="historyLabor">-$0</span>
-                    </div>
-                    <div class="deduction-item">
-                        <span class="deduction-label">健保費用</span>
-                        <span class="deduction-value" id="historyHealth">-$0</span>
-                    </div>
-                    <div class="deduction-item" id="pensionRow">
-                        <span class="deduction-label">勞退自提</span>
-                        <span class="deduction-value" id="historyPension">-$0</span>
-                    </div>
-                    <div class="deduction-item">
-                        <span class="deduction-label">預估所得稅</span>
-                        <span class="deduction-value" id="historyTax">-$0</span>
-                    </div>
-                </div>
-                <div style="margin-top: 15px; padding: 12px; background: rgba(255,255,255,0.02); border-radius: 12px; border: 1px dashed rgba(255,255,255,0.1);">
-                    <p style="font-size: 0.8rem; color: var(--text-tertiary); line-height: 1.5;">
-                        💡 計算週期：<span id="displayDays" style="color: var(--text-secondary)">30</span> 天 (已按比例估算) <br>
-                        基於投保薪資：<span id="displayInsuranceSalary" style="color: var(--text-secondary)">0</span> 元
-                    </p>
-                </div>
-            </div>
-            <div class="premium-card net-pay-card">
-                <div class="net-label">預估實領金額</div>
-                <div class="net-value accent" id="historyNet">$0</div>
-                <div class="net-hint">Net Pay Estimate</div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Progress & Charts Section -->
-    <div style="display: grid; grid-template-columns: 1fr 1.5fr; gap: 24px; margin-bottom: 30px;">
-        <div id="targetIncomeContainer" class="premium-card" style="display: none;">
-            <h3 style="font-size: 1.1rem; margin-bottom: 20px;">目標達成進度</h3>
-            <div style="display: flex; flex-direction: column; height: 100%; justify-content: center;">
-                <div style="display: flex; justify-content: space-between; margin-bottom: 12px;">
-                    <span style="font-size: 0.9rem; color: var(--text-secondary);">達成率</span>
-                    <span id="targetIncomePercent" style="font-weight: 700; color: var(--premium-accent);">0%</span>
-                </div>
-                <div style="height: 12px; background: rgba(255,255,255,0.1); border-radius: 6px; overflow: hidden;">
-                    <div id="targetIncomeBar" style="width: 0%; height: 100%; background: var(--premium-accent-gradient); transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1);"></div>
-                </div>
-            </div>
-        </div>
-
-        <div class="premium-card">
-            <h3 style="font-size: 1.1rem; margin-bottom: 20px; display: flex; align-items: center; gap: 8px;">
-                <span class="material-icons">trending_up</span>
-                歷史收入趨勢 (全年度)
+    <!-- Finance Breakdown (Deductions & Net Pay) -->
+    <div id="financeBreakdownContainer" style="display: none; margin-bottom: 20px;">
+        <div class="card" style="padding: 20px; background: linear-gradient(135deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.1) 100%);">
+            <h3 style="margin-bottom: 15px; color: #4ade80; display: flex; align-items: center; gap: 8px;">
+                <span class="material-icons">account_balance</span>
+                實領薪資預估 (勞健保扣除)
             </h3>
-            <canvas id="salaryTrendChart" style="max-height: 180px;"></canvas>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 15px;">
+                <div class="summary-item">
+                    <div style="color: var(--text-tertiary); font-size: 0.85rem;">勞保費用</div>
+                    <div id="historyLabor" style="font-weight: 600; font-size: 1.1rem; color: #f87171;">-$0</div>
+                </div>
+                <div class="summary-item">
+                    <div style="color: var(--text-tertiary); font-size: 0.85rem;">健保費用</div>
+                    <div id="historyHealth" style="font-weight: 600; font-size: 1.1rem; color: #f87171;">-$0</div>
+                </div>
+                <div class="summary-item" id="pensionRow">
+                    <div style="color: var(--text-tertiary); font-size: 0.85rem;">勞退自提</div>
+                    <div id="historyPension" style="font-weight: 600; font-size: 1.1rem; color: #f87171;">-$0</div>
+                </div>
+                <div class="summary-item">
+                    <div style="color: var(--text-tertiary); font-size: 0.85rem;">預估所得稅</div>
+                    <div id="historyTax" style="font-weight: 600; font-size: 1.1rem; color: #f87171;">-$0</div>
+                </div>
+                <div class="summary-item" style="border-left: 1px solid rgba(255,255,255,0.1); padding-left: 15px;">
+                    <div style="color: #4ade80; font-size: 0.85rem; font-weight: 600;">預估實領</div>
+                    <div id="historyNet" style="font-weight: 700; font-size: 1.3rem; color: #4ade80;">$0</div>
+                </div>
+            </div>
+            <p style="margin-top: 15px; font-size: 0.8rem; color: var(--text-tertiary); font-style: italic;">
+                * 估算結果僅供參考，實際金額以薪資單為準。計算基準：投保薪資 <span id="displayInsuranceSalary"></span> 元
+            </p>
         </div>
+    </div>
+
+
+    <!-- Target Income Progress (Hidden by default) -->
+    <div id="targetIncomeContainer" class="card"
+        style="display: none; width: 100%; margin-bottom: 20px; padding: 15px;">
+        <div
+            style="display: flex; justify-content: space-between; font-size: 0.9rem; color: var(--text-secondary); margin-bottom: 8px;">
+            <span>區間目標達成率 (僅供參考)</span>
+            <span id="targetIncomePercent">0%</span>
+        </div>
+        <div
+            style="width: 100%; height: 10px; background: rgba(255,255,255,0.1); border-radius: 5px; overflow: hidden;">
+            <div id="targetIncomeBar"
+                style="width: 0%; height: 100%; background: var(--accent-color); transition: width 0.5s;"></div>
+        </div>
+    </div>
+
+    <!-- 收入趨勢圖 -->
+    <div class="card" style="margin-bottom: 20px; padding: 25px;">
+        <h3 style="margin-bottom: 15px; display: flex; align-items: center; gap: 10px;">
+            <span style="font-size: 1.5rem;">📈</span>
+            歷史收入趨勢（全部資料）
+        </h3>
+        <p style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 15px;">
+            📊 此圖表顯示所有歷史數據，不受下方區間選擇器影響
+        </p>
+        <canvas id="salaryTrendChart" style="max-height: 300px;"></canvas>
     </div>
 
     <!-- Detailed List -->
-    <div class="premium-card">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-            <h3 style="font-size: 1.2rem;">詳細明細</h3>
-            <span style="font-size: 0.85rem; color: var(--text-tertiary);" id="listCountHint">共 0 筆紀錄</span>
-        </div>
-        <div class="premium-table-container">
-            <table class="premium-table">
+    <div class="history-list card">
+        <h3>詳細紀錄</h3>
+        <div class="table-responsive">
+            <table class="table">
                 <thead>
                     <tr>
                         <th>日期</th>
@@ -165,26 +150,6 @@
             </table>
         </div>
     </div>
-</div>
-
-<style>
-    .history-controls {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        gap: 20px;
-    }
-    .control-group { display: flex; flex-direction: column; gap: 8px; flex: 1; }
-    .control-group label { font-size: 0.8rem; font-weight: 600; color: var(--text-tertiary); text-transform: uppercase; }
-    .period-picker { display: flex; align-items: center; gap: 8px; }
-    .action-group { display: flex; gap: 10px; align-self: flex-end; }
-    
-    @media (max-width: 768px) {
-        .history-controls { flex-direction: column; align-items: stretch; }
-        .action-group { align-self: stretch; margin-top: 10px; }
-        .action-group button { flex: 1; }
-    }
-</style>
 </div>
 
 <!-- Add/Edit Modal -->

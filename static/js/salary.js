@@ -785,9 +785,6 @@ const salaryApp = {
             document.getElementById('historyHours').textContent = `${data.total_hours.toFixed(1)}h`;
             document.getElementById('historyAmount').textContent = `$${Math.round(data.total_amount).toLocaleString()}`;
             document.getElementById('historyCount').textContent = data.record_count;
-            if (document.getElementById('listCountHint')) {
-                document.getElementById('listCountHint').textContent = `共 ${data.record_count} 筆紀錄`;
-            }
 
             // Handle Finance Breakdown
             const financeContainer = document.getElementById('financeBreakdownContainer');
@@ -797,19 +794,13 @@ const salaryApp = {
                 document.getElementById('historyLabor').textContent = `-$${f.deductions.labor_insurance.toLocaleString()}`;
                 document.getElementById('historyHealth').textContent = `-$${f.deductions.health_insurance.toLocaleString()}`;
                 document.getElementById('historyTax').textContent = `-$${f.tax.toLocaleString()}`;
-                document.getElementById('historyNet').textContent = `$${Math.round(f.net).toLocaleString()}`;
-                
-                if (document.getElementById('displayInsuranceSalary')) {
-                    document.getElementById('displayInsuranceSalary').textContent = f.settings.insurance_salary.toLocaleString();
-                }
-                if (document.getElementById('displayDays')) {
-                    document.getElementById('displayDays').textContent = f.days;
-                }
+                document.getElementById('historyNet').textContent = `$${f.net.toLocaleString()}`;
+                document.getElementById('displayInsuranceSalary').textContent = f.insurance_salary.toLocaleString();
                 
                 const pensionEl = document.getElementById('historyPension');
                 const pensionRow = document.getElementById('pensionRow');
                 if (f.deductions.labor_pension > 0) {
-                    pensionRow.style.display = 'flex'; // Changed to flex for deduction-item
+                    pensionRow.style.display = 'block';
                     pensionEl.textContent = `-$${f.deductions.labor_pension.toLocaleString()}`;
                 } else {
                     pensionRow.style.display = 'none';
@@ -822,37 +813,20 @@ const salaryApp = {
 
             const tbody = document.getElementById('historyTableBody');
             tbody.innerHTML = '';
-            // Sort by date descending
-            const sortedRecords = [...data.records].sort((a, b) => a.date < b.date ? 1 : -1);
+            data.records.sort((a, b) => a.date < b.date ? 1 : -1);
 
-            sortedRecords.forEach(r => {
+            data.records.forEach(r => {
                 const tr = document.createElement('tr');
+                tr.style.cursor = 'pointer';
                 tr.onclick = () => this.openEditModal(r);
-                
-                if (r.type === 'shift') {
-                    tr.innerHTML = `
-                        <td><div style="font-weight:600">${r.date}</div></td>
-                        <td><span class="badge badge-secondary">排班</span></td>
-                        <td style="color:var(--text-secondary)">${r.start_time} - ${r.end_time}</td>
-                        <td>${r.hours}</td>
-                        <td style="font-weight:600; color:var(--premium-accent)">$${Math.round(r.amount).toLocaleString()}</td>
-                        <td style="font-size:0.85rem; color:var(--text-tertiary)">${r.note || ''}</td>
-                    `;
-                } else {
-                    tr.innerHTML = `
-                        <td><div style="font-weight:600">${r.date}</div></td>
-                        <td><span class="badge" style="background:rgba(246, 211, 101, 0.15); color:#f6d365">獎金</span></td>
-                        <td></td>
-                        <td>${r.hours || ''}</td>
-                        <td style="font-weight:600; color:var(--premium-gold)">$${Math.round(r.amount).toLocaleString()}</td>
-                        <td style="font-size:0.85rem; color:var(--text-tertiary)">${r.note || ''}</td>
-                    `;
-                }
+                tr.innerHTML = r.type === 'shift' ? `
+                    <td>${r.date}</td><td>排班</td><td>${r.start_time} - ${r.end_time}</td><td>${r.hours}</td><td>${r.rate}/hr -> $${Math.round(r.amount)}</td><td>${r.note || ''}</td>
+                ` : `
+                    <td>${r.date}</td><td style="color:#ffd700">獎金</td><td></td><td>${r.hours || ''}</td><td>$${r.amount}</td><td>${r.note || ''}</td>
+                `;
                 tbody.appendChild(tr);
             });
-        } catch (error) { 
-            console.error("Load history error:", error);
-        }
+        } catch (error) { }
     },
 
     initSettings() {
