@@ -547,12 +547,32 @@ def register_line_handlers(handler):
                         from google import genai
                         client = genai.Client(api_key=gemini_key)
                         
-                        prompt = f"""你是一個記帳管家。使用者輸入了一句話：「{msg}」
-請判斷這句話是否為一筆「記帳支出紀錄」。
-如果是記帳，請幫我萃取出名稱(name)、金額(amount, 純數字)與類別(category，分類請從「飲食, 交通, 娛樂, 居住, 其他」中選擇最適合的)。
-請「只」回傳一個 JSON 格式字串，不要有任何其他對話或 Markdown 標記 (不要有 ```json 標籤)：
-如果不是記帳：{{"is_expense": false}}
-如果是記帳：{{"is_expense": true, "name": "便當", "amount": 100, "category": "飲食"}}
+                        now_dt = datetime.utcnow() + timedelta(hours=8)
+                        now_str = now_dt.strftime('%Y-%m-%d %H:%M')
+                        weekday_map = {1: '一', 2: '二', 3: '三', 4: '四', 5: '五', 6: '六', 7: '日'}
+                        weekday = weekday_map[now_dt.isoweekday()]
+
+                        prompt = f"""你是一個智慧記帳與生活管家。現在時間是 {now_str} (星期{weekday})。
+使用者輸入：「{msg}」
+
+請分析使用者的語意，並「只」回傳以下其中一種 JSON 格式（不要有 ```json 標籤）：
+
+【情況 1：記帳支出】(花錢)
+{{"action": "expense", "date": "YYYY-MM-DD", "name": "項目名稱", "amount": 數字, "category": "飲食/交通/娛樂/居住/其他"}}
+
+【情況 2：排班打工】(上班)
+{{"action": "shift", "date": "YYYY-MM-DD", "start_time": "HH:MM", "end_time": "HH:MM", "note": "備註"}}
+
+【情況 3：薪資獎金】(拿到錢)
+{{"action": "bonus", "date": "YYYY-MM-DD", "amount": 數字, "note": "備註"}}
+
+【情況 4：生理期】(月經來或結束)
+{{"action": "period", "type": "start" 或 "end", "date": "YYYY-MM-DD", "note": "備註"}}
+
+【情況 5：無法辨識】
+{{"action": "unknown"}}
+
+請特別注意：如果使用者提到「昨天」、「上週五」、「前天」等時間詞，請利用上方提供的「現在時間」精準推算正確的 YYYY-MM-DD。若無提到時間，預設為今天的日期。
 """
                         response = client.models.generate_content(
                             model='gemini-2.5-flash',
@@ -566,8 +586,9 @@ def register_line_handlers(handler):
                             
                         import json
                         ai_data = json.loads(res_text.strip())
+                        action = ai_data.get("action", "unknown")
                         
-                        if ai_data.get("is_expense"):
+                        if action == "expense":
                             if not has_perm("expense"):
                                 LineService.push_message(user_id, "⛔ 此帳號無記帳權限，無法新增。")
                                 return
@@ -575,16 +596,93 @@ def register_line_handlers(handler):
                             name = ai_data.get("name", "隨手記")
                             amount = ai_data.get("amount", 0)
                             category = ai_data.get("category", "其他")
+                            date_str = ai_data.get("date", now_dt.strftime('%Y-%m-%d'))
+                            record_time = f"{date_str} {now_dt.strftime('%H:%M:%S')}"
                             
-                            now_str = (datetime.utcnow() + timedelta(hours=8)).strftime('%Y-%m-%d %H:%M:%S')
                             from models import ExpenseRecord
                             new_expense = ExpenseRecord(
-                                user_id=setting.user_id, timestamp=now_str, category=category, amount=amount, note=name
+                                user_id=setting.user_id, timestamp=record_time, category=category, amount=amount, note=name
                             )
                             db.session.add(new_expense)
                             db.session.commit()
                             
-                            reply = f"✨ 新增支出 (AI 辨識)\n📌 名稱：{name}\n💰 金額：${amount:g}\n🏷️ 類別：{category}"
+                            reply = f"✨ 新增支出 (AI)\n📌 名稱：{name}\n💰 金額：${amount:g}\n🏷️ 類別：{category}\n📅 日期：{date_str}"
+                            LineService.push_message(user_id, reply)
+                            return
+                            
+                        elif action == "shift":
+                            if not has_perm("salary"):
+                                LineService.push_message(user_id, "⛔ 此帳號無薪資管理權限，無法新增。")
+                                return
+                            date_str = ai_data.get("date", now_dt.strftime('%Y-%m-%d'))
+                            start_time = ai_data.get("start_time", "12:00")
+                            end_time = ai_data.get("end_time", "18:00")
+                            note = ai_data.get("note", "")
+                            
+                            t1 = datetime.strptime(start_time, "%H:%M")
+                            t2 = datetime.strptime(end_time, "%H:%M")
+                            if t2 < t1: t2 += timedelta(days=1)
+                            hours = (t2 - t1).total_seconds() / 3600.0
+                            
+                            rate = float(setting.hourly_rate or 196.0)
+                            amount = hours * rate
+                            
+                            from models import SalaryRecord
+                            new_salary = SalaryRecord(
+                                user_id=setting.user_id, date=date_str, type='shift', amount=amount, hours=hours, note=note
+                            )
+                            db.session.add(new_salary)
+                            db.session.commit()
+                            reply = f"✨ 新增排班 (AI)\n📅 日期：{date_str}\n⏱️ 時間：{start_time}~{end_time} ({hours:g}h)\n💰 預估：${amount:,.0f}"
+                            LineService.push_message(user_id, reply)
+                            return
+                            
+                        elif action == "bonus":
+                            if not has_perm("salary"):
+                                LineService.push_message(user_id, "⛔ 此帳號無薪資管理權限，無法新增。")
+                                return
+                            date_str = ai_data.get("date", now_dt.strftime('%Y-%m-%d'))
+                            amount = ai_data.get("amount", 0)
+                            note = ai_data.get("note", "")
+                            
+                            from models import SalaryRecord
+                            new_salary = SalaryRecord(
+                                user_id=setting.user_id, date=date_str, type='bonus', amount=amount, hours=0, note=note
+                            )
+                            db.session.add(new_salary)
+                            db.session.commit()
+                            reply = f"✨ 新增獎金 (AI)\n📅 日期：{date_str}\n💰 金額：${amount:,}\n📝 備註：{note}"
+                            LineService.push_message(user_id, reply)
+                            return
+                            
+                        elif action == "period":
+                            if not has_perm("period"):
+                                LineService.push_message(user_id, "⛔ 此帳號無月經紀錄權限，無法新增。")
+                                return
+                                
+                            ptype = ai_data.get("type", "start")
+                            date_str = ai_data.get("date", now_dt.strftime('%Y-%m-%d'))
+                            note = ai_data.get("note", "")
+                            
+                            from services.period_service import PeriodService
+                            period_svc = PeriodService(setting.user_id)
+                            
+                            if ptype == "end":
+                                history = period_svc.get_history()
+                                latest = history[0] if history else None
+                                if not latest or latest['end_date']:
+                                    LineService.push_message(user_id, "❌ 目前沒有進行中的生理期可以結束喔！")
+                                    return
+                                period_svc.update_record(latest['id'], start_date=latest['start_date'], end_date=date_str, note=latest['note'])
+                                reply = f"✨ 結束生理期 (AI)\n📅 結束日期：{date_str}"
+                            else:
+                                result = period_svc.add_record(start_date=date_str, end_date=None, note=note)
+                                if not result.get("success"):
+                                    LineService.push_message(user_id, f"❌ {result.get('error')}")
+                                    return
+                                reply = f"✨ 新增生理期 (AI)\n📅 開始日期：{date_str}"
+                                if note: reply += f"\n📝 備註：{note}"
+                                
                             LineService.push_message(user_id, reply)
                             return
                     except Exception as e:
