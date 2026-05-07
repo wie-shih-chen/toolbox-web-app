@@ -1,6 +1,6 @@
 # 📊 工具箱 Web App - 完整架構總覽
 
-> **最後更新**：2026-05-04 | **版本**：v3.1（多帳號通知精準分流 + 智慧匯出與報表優化）  
+> **最後更新**：2026-05-07 | **版本**：v3.2（AI 智慧管家 + Flex Message 視覺化 UI 升級）  
 > 這份文件整合了所有專案架構資訊，閱讀順序建議：Part 1 → Part 2 → Part 3 → Part 4
 
 ---
@@ -45,7 +45,8 @@ web_app/
 │   ├── calendar_notify_service.py  # 📅 行事曆自動通知 (APScheduler 每日掃描 ICS)
 │   ├── report_service.py           # 報表生成 (Excel / CSV 格式化輸出)
 │   ├── email_service.py            # Email 遞送 (SMTP + HTML 模板渲染)
-│   ├── line_service.py             # LINE 訊息互動 (推播 Flex Message & 純文字)
+│   ├── line_service.py             # LINE 訊息互動 (封裝 push_message 與 push_flex)
+│   ├── flex_message_service.py     # 🎨 Flex UI 引擎 (建構收據、報表、說明 Carousel 等 JSON)
 │   └── period_notify_service.py    # 🩸 生理期預測通知 (APScheduler 每日檢查 & 提前提醒)
 │
 ├── 🎨 templates/ (前端頁面 - Jinja2)
@@ -237,15 +238,27 @@ web_app/
                                 ↓
                          line_routes.py
                                 ↓
-                     ┌─────────────────────┐
-                     │  LineBinding 查找   │ ← 取代舊的 UserSettings.line_user_id
-                     │  + 權限驗證         │
-                     └─────────────────────┘
+             ┌───────────────────────────────────┐
+             │ 1. 權限驗證 (LineBinding + perms)  │
+             └───────────────────────────────────┘
                                 ↓
-          ┌──────────┬──────────┬──────────┬──────────┐
-          │ 記帳      │  薪資    │  月經    │  其他    │
-          │(expense) │(salary)  │(period)  │(fallback)│
-          └──────────┴──────────┴──────────┴──────────┘
+             ┌───────────────────────────────────┐
+             │ 2. 指令分流 (Regex / Startswith)   │
+             └──────┬────────────────────┬───────┘
+                    │命中固定指令          │未命中 (Fallback)
+                    ↓                    ↓
+             ┌───────────────┐    ┌──────────────────────────┐
+             │ 系統直接處理  │    │ 🧠 Gemini AI 語意解析     │
+             │ (Fast & Free) │    │ (Temporal Awareness)     │
+             └──────┬────────┘    └──────────┬───────────────┘
+                    │                        │解析出 Action
+                    └──────────┬─────────────┘
+                               ↓
+             ┌───────────────────────────────────┐
+             │ 3. UI 渲染 (FlexMessageService)    │
+             └───────────────────────────────────┘
+                               ↓
+             使用者收到精美卡片 (Green/Blue/Dark UI)
 ```
 
 ### 3.2 LINE 多帳號綁定流程（v3.0）
@@ -284,7 +297,11 @@ if not has_perm("expense"):
 | `月經 4/15` | `月經 4/15` | 指定日期開始 |
 | `月經 4/15 4/19` | `月經 4/15 4/19` | 指定區間 |
 | `月經 結束` | `月經 結束` | 今日結束 |
-| 其他/無法辨識 | 任意文字 | 回傳完整懶人包教學 |
+| `說明` | `說明` / `help` | 顯示 **Flex Carousel 說明卡片** (6張循環) |
+| **自由口語 (AI)** | `昨天買咖啡85元` | 自動識別為 **expense** (AI 推算日期) |
+| **自由口語 (AI)** | `下午2到6點打工` | 自動識別為 **shift** (AI 解析時間段) |
+| **自由口語 (AI)** | `月經來了肚子痛` | 自動識別為 **period** (AI 識別狀態) |
+| 其他/無法辨識 | 任意文字 | 若 AI 也無法確定則回傳 **Flex Carousel 教學** |
 
 ### 3.5 管理 API（auth.py）
 
@@ -419,6 +436,12 @@ python scripts/maintenance/init_db.py  # 建立所有資料表
 ---
 
 ## 📋 Part 9: 版本更新記錄 (Changelog)
+
+### v3.2（2026-05-07）AI 智慧管家 + Flex Message 視覺化 UI 升級
+- **Gemini AI 全面接管**：整合 Google Gemini 2.0 Flash 進行自然語言解析。AI 具備「時間感知 (Temporal Awareness)」，能精準推算「昨天」、「上週五」等相對日期，並處理記帳、排班、獎金與生理期四類口語記錄。
+- **Flex Message UI 2.0**：新增 `FlexMessageService` 專職負責建構高品質 UI。所有成功回饋（記帳、薪資）與查詢總覽（月度報告）全面從純文字升級為「收據風格」與「深色主題」的 Flex 卡片。
+- **互動式教學卡片**：將原本雜亂的純文字說明升級為「多張滑動 Carousel 說明卡片」，並包含 AI 功能導覽。
+- **穩定性優化**：修復了因內部函式重複 import 導致的 `UnboundLocalError`，並移除不相容的 LINE SDK 頂層引用。
 
 ### v3.1（2026-05-04）多帳號通知精準分流 + 智慧匯出與報表優化
 - **通知底層重構**：`line_service.py` 實作 `push_to_user(user_id, msg, module)` 核心廣播方法，能依據每個綁定帳號的 `permissions` (如 `salary`, `expense`, `period`) 決定是否派發通知，並向下相容舊版 `UserSettings`。
