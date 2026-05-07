@@ -145,6 +145,26 @@
 {% endblock %}
 
 {% block content %}
+<!-- Horizontal Navigation Bar -->
+<div class="salary-nav">
+    <a href="{{ url_for('salary.index') }}" class="salary-nav-item">
+        📅 本週排班
+    </a>
+    <a href="{{ url_for('salary.monthly') }}" class="salary-nav-item">
+        🗓️ 月曆檢視
+    </a>
+    <a href="{{ url_for('salary.history') }}" class="salary-nav-item">
+        📜 歷史排班
+    </a>
+    <a href="{{ url_for('finance.savings_page') }}" 
+        class="salary-nav-item {% if request.endpoint == 'finance.savings_page' %}active{% endif %}">
+        💰 儲蓄目標
+    </a>
+    <a href="{{ url_for('salary.settings') }}" class="salary-nav-item">
+        ⚙️ 設定
+    </a>
+</div>
+
 <div class="savings-container">
     <div id="goalsList">
         <!-- Goals will be loaded here -->

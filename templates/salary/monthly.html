@@ -134,12 +134,12 @@
         class="salary-nav-item {% if request.endpoint == 'salary.history' %}active{% endif %}">
         📜 歷史排班
     </a>
+    <a href="{{ url_for('finance.savings_page') }}" class="salary-nav-item">
+        💰 儲蓄目標
+    </a>
     <a href="{{ url_for('salary.settings') }}"
         class="salary-nav-item {% if request.endpoint == 'salary.settings' %}active{% endif %}">
         ⚙️ 設定
-    </a>
-    <a href="{{ url_for('finance.savings_page') }}" class="salary-nav-item">
-        💰 儲蓄目標
     </a>
 </div>
 
