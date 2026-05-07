@@ -629,7 +629,7 @@ def register_line_handlers(handler):
                             
                             from models import SalaryRecord
                             new_salary = SalaryRecord(
-                                user_id=setting.user_id, date=date_str, type='shift', amount=amount, hours=hours, note=note
+                                user_id=setting.user_id, date=date_str, type='shift', amount=amount, hours=hours, note=note, start_time=start_time, end_time=end_time, rate=rate
                             )
                             db.session.add(new_salary)
                             db.session.commit()
