@@ -800,7 +800,18 @@ const salaryApp = {
                 document.getElementById('historyNet').textContent = `$${Math.round(f.net).toLocaleString()}`;
                 
                 if (document.getElementById('displayInsuranceSalary')) {
-                    document.getElementById('displayInsuranceSalary').textContent = f.settings.insurance_salary.toLocaleString();
+                    const insSalary = f.settings.insurance_salary;
+                    document.getElementById('displayInsuranceSalary').textContent = insSalary.toLocaleString();
+                    
+                    // Show warning if 0
+                    const noSettings = document.getElementById('noFinanceSettings');
+                    if (insSalary === 0 && noSettings) {
+                        noSettings.style.display = 'block';
+                        document.getElementById('financeHintText').style.display = 'none';
+                    } else if (noSettings) {
+                        noSettings.style.display = 'none';
+                        document.getElementById('financeHintText').style.display = 'block';
+                    }
                 }
                 if (document.getElementById('displayDays')) {
                     document.getElementById('displayDays').textContent = f.days;
@@ -809,7 +820,7 @@ const salaryApp = {
                 const pensionEl = document.getElementById('historyPension');
                 const pensionRow = document.getElementById('pensionRow');
                 if (f.deductions.labor_pension > 0) {
-                    pensionRow.style.display = 'flex'; // Changed to flex for deduction-item
+                    pensionRow.style.display = 'flex';
                     pensionEl.textContent = `-$${f.deductions.labor_pension.toLocaleString()}`;
                 } else {
                     pensionRow.style.display = 'none';
