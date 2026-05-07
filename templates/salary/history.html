@@ -4,7 +4,7 @@
 {% block page_title %}歷史排班{% endblock %}
 
 {% block extra_css %}
-<link rel="stylesheet" href="{{ url_for('static', filename='css/salary.css') }}?v=2.1">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/salary.css') }}">
 {% endblock %}
 
 {% block content %}
@@ -12,27 +12,22 @@
 <div class="salary-nav">
     <a href="{{ url_for('salary.index') }}"
         class="salary-nav-item {% if request.endpoint == 'salary.index' %}active{% endif %}">
-        <span class="material-icons">dashboard</span>
-        本週排班
+        📅 本週排班
     </a>
     <a href="{{ url_for('salary.monthly') }}"
         class="salary-nav-item {% if request.endpoint == 'salary.monthly' %}active{% endif %}">
-        <span class="material-icons">calendar_month</span>
-        月曆檢視
+        🗓️ 月曆檢視
     </a>
     <a href="{{ url_for('salary.history') }}"
         class="salary-nav-item {% if request.endpoint == 'salary.history' %}active{% endif %}">
-        <span class="material-icons">history</span>
-        歷史排班
+        📜 歷史排班
     </a>
     <a href="{{ url_for('finance.savings_page') }}" class="salary-nav-item">
-        <span class="material-icons">savings</span>
-        儲蓄目標
+        💰 儲蓄目標
     </a>
     <a href="{{ url_for('salary.settings') }}"
         class="salary-nav-item {% if request.endpoint == 'salary.settings' %}active{% endif %}">
-        <span class="material-icons">settings</span>
-        設定
+        ⚙️ 設定
     </a>
 </div>
 
@@ -108,15 +103,10 @@
                     </div>
                 </div>
                 <div style="margin-top: 15px; padding: 12px; background: rgba(255,255,255,0.02); border-radius: 12px; border: 1px dashed rgba(255,255,255,0.1);">
-                    <p style="font-size: 0.85rem; color: var(--text-tertiary); line-height: 1.5;" id="financeHintText">
+                    <p style="font-size: 0.8rem; color: var(--text-tertiary); line-height: 1.5;">
                         💡 計算週期：<span id="displayDays" style="color: var(--text-secondary)">30</span> 天 (已按比例估算) <br>
                         基於投保薪資：<span id="displayInsuranceSalary" style="color: var(--text-secondary)">0</span> 元
                     </p>
-                    <div id="noFinanceSettings" style="display: none; margin-top: 5px;">
-                        <a href="{{ url_for('salary.settings') }}" style="color: var(--premium-accent); text-decoration: none; font-weight: 600;">
-                            👉 點此前往「設定」填入投保薪資，以啟用精確計算
-                        </a>
-                    </div>
                 </div>
             </div>
             <div class="premium-card net-pay-card">
