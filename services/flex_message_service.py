@@ -348,3 +348,128 @@ class FlexMessageService:
                 ]
             }
         }
+
+    # ─────────────────────────────────────────────
+    # CARD 5: Help Carousel (6 topic cards)
+    # ─────────────────────────────────────────────
+    @staticmethod
+    def build_help_carousel():
+        def _card(bg_header, emoji, title, subtitle, rows, tip=None):
+            body_items = []
+            for row in rows:
+                body_items.append({
+                    "type": "box", "layout": "horizontal", "spacing": "sm",
+                    "contents": [
+                        {"type": "text", "text": row[0], "color": "#aaaaaa", "size": "xs", "flex": 3, "wrap": True},
+                        {"type": "text", "text": row[1], "color": "#ffffff", "size": "xs", "flex": 4, "wrap": True, "align": "end"}
+                    ]
+                })
+            if tip:
+                body_items += [
+                    {"type": "separator", "color": "#333355", "margin": "md"},
+                    {"type": "text", "text": tip, "color": "#aaaaaa", "size": "xxs", "wrap": True, "margin": "sm"}
+                ]
+            return {
+                "type": "bubble",
+                "size": "kilo",
+                "header": {
+                    "type": "box", "layout": "vertical",
+                    "backgroundColor": bg_header, "paddingAll": "14px",
+                    "contents": [
+                        {"type": "text", "text": f"{emoji} {title}", "color": "#FFFFFF", "size": "md", "weight": "bold"},
+                        {"type": "text", "text": subtitle, "color": "#ccccff", "size": "xs", "margin": "xs"}
+                    ]
+                },
+                "body": {
+                    "type": "box", "layout": "vertical",
+                    "backgroundColor": "#1a1a2e", "paddingAll": "14px", "spacing": "sm",
+                    "contents": body_items
+                }
+            }
+
+        card_ai = {
+            "type": "bubble", "size": "kilo",
+            "header": {
+                "type": "box", "layout": "vertical",
+                "backgroundColor": "#2d1b69", "paddingAll": "16px",
+                "contents": [
+                    {"type": "text", "text": "🤖 AI 智慧助手", "color": "#FFFFFF", "size": "md", "weight": "bold"},
+                    {"type": "text", "text": "直接說話就能記錄！", "color": "#bb99ff", "size": "xs", "margin": "xs"}
+                ]
+            },
+            "body": {
+                "type": "box", "layout": "vertical",
+                "backgroundColor": "#1a1a2e", "paddingAll": "14px", "spacing": "sm",
+                "contents": [
+                    {"type": "text", "text": "不需要記格式，直接用口語說：", "color": "#cccccc", "size": "xs", "wrap": True},
+                    {"type": "separator", "color": "#333355"},
+                    {"type": "text", "text": "「昨天買珍奶花了65」", "color": "#bb99ff", "size": "sm", "wrap": True},
+                    {"type": "text", "text": "「今天下午2到6點打工」", "color": "#bb99ff", "size": "sm", "wrap": True},
+                    {"type": "text", "text": "「老闆發了1500獎金」", "color": "#bb99ff", "size": "sm", "wrap": True},
+                    {"type": "text", "text": "「大姨媽來了肚子有點痛」", "color": "#bb99ff", "size": "sm", "wrap": True},
+                    {"type": "separator", "color": "#333355"},
+                    {"type": "text", "text": "AI 會自動幫你歸類並記錄，也聽得懂「昨天」「上週五」等時間詞！", "color": "#888888", "size": "xxs", "wrap": True}
+                ]
+            }
+        }
+
+        card_expense = _card(
+            "#1a4a2e", "📝", "記帳", "記錄每一筆支出",
+            [
+                ("指令格式", "記帳 [名稱] [類別] [金額]"),
+                ("類別選項", "飲食/交通/娛樂/居住/其他"),
+                ("範例 1", "記帳 午餐 150"),
+                ("範例 2", "記帳 便當 飲食 80 4/18"),
+                ("查詢指令", "查詢記帳 [月份(可省)]"),
+            ],
+            tip="💡 類別和日期可省略，金額一定要有數字"
+        )
+
+        card_shift = _card(
+            "#1a3a6a", "⏰", "排班", "記錄打工上班時段",
+            [
+                ("指令格式", "排班 [開始時間] [結束時間]"),
+                ("範例 1", "排班 1300 1800"),
+                ("範例 2", "排班 4/18 1200 1800"),
+                ("查詢指令", "查詢薪水 [月份(可省)]"),
+            ],
+            tip="💡 時間可用 1300 或 13:00 格式"
+        )
+
+        card_bonus = _card(
+            "#4a3a1a", "💰", "獎金", "記錄額外薪資收入",
+            [
+                ("指令格式", "獎金 [金額] [備註(可省)]"),
+                ("範例 1", "獎金 1500"),
+                ("範例 2", "獎金 2000 4/18 端午禮金"),
+                ("查詢指令", "查詢薪水"),
+            ],
+            tip="💡 日期和備註可省略"
+        )
+
+        card_period = _card(
+            "#4a1a2e", "🩸", "生理期", "記錄月經週期",
+            [
+                ("指令格式", "月經 [開始日(可省)] [結束日(可省)]"),
+                ("開始記錄", "月經"),
+                ("指定日期", "月經 4/18 4/22"),
+                ("結束紀錄", "月經 結束"),
+            ],
+            tip="💡 直接輸入「月經」會以今天為開始日"
+        )
+
+        card_query = _card(
+            "#2a2a2a", "🔍", "查詢", "查看本月統計報告",
+            [
+                ("記帳總覽", "查詢記帳"),
+                ("指定月份", "查詢記帳 4月"),
+                ("薪資總覽", "查詢薪水"),
+                ("指定月份", "查詢薪水 4月"),
+            ],
+            tip="💡 不指定月份預設查詢本月"
+        )
+
+        return {
+            "type": "carousel",
+            "contents": [card_ai, card_expense, card_shift, card_bonus, card_period, card_query]
+        }

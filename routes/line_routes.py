@@ -159,6 +159,12 @@ def register_line_handlers(handler):
             end_date = f"{year}-{month:02d}-{last_day}"
             return start_date, end_date
 
+        if msg in ("說明", "help", "Help", "HELP", "指令", "功能"):
+            from services.flex_message_service import FlexMessageService
+            flex = FlexMessageService.build_help_carousel()
+            LineService.push_flex(user_id, "工具箱說明 — 左右滑動查看所有功能", flex)
+            return
+
         if msg.startswith("查詢記帳"):
             if not binding:
                 LineService.push_message(user_id, "❌ 請先綁定帳號。")
@@ -669,24 +675,9 @@ def register_line_handlers(handler):
                         current_app.logger.error(f"Gemini AI Error: {str(e)}")
                         # Fallback to help message if AI fails
 
-                help_msg = (
-                    "🤖 嗨！我聽不太懂，但你可以用以下格式快速帶入資料：\n\n"
-                    "📝 【記帳】 記帳 [名稱] [類別(預設飲食)] [金額] [日期時間(可省)]\n"
-                    "👉 範例：記帳 午餐 150 4/18\n\n"
-                    "⏰ 【排班】 排班 [起] [迄] [時薪(可省)] [日期(可省)] [備註]\n"
-                    "👉 範例：排班 4/18 1200 1800\n\n"
-                    "💰 【獎金】 獎金 [金額] [日期(可省)] [時數(可省)] [備註]\n"
-                    "👉 範例：獎金 1500 4/18 三節發放\n\n"
-                    "🩸 【月經】 月經 [開始(可省)] [結束(可省)] [備註]\n"
-                    "👉 範例1：月經\n"
-                    "👉 範例2：月經 4/18 4/22\n"
-                    "👉 範例3：月經 結束\n\n"
-                    "💡 小提示：順序可以隨便打，只要有數字和日期（如 4/18），我就會聰明地幫你歸位喔！\n\n"
-                    "🔍 【查詢】 查詢記帳 [月份(可省)] 或 查詢薪水 [月份(可省)]\n"
-                    "👉 範例1：查詢記帳\n"
-                    "👉 範例2：查詢薪水 4月"
-                )
-                LineService.push_message(user_id, help_msg)
+                from services.flex_message_service import FlexMessageService
+                flex = FlexMessageService.build_help_carousel()
+                LineService.push_flex(user_id, "工具箱說明 — 左右滑動查看所有功能", flex)
             else:
                 LineService.push_message(user_id, "🤖 我是工具箱小幫手。\n請先至系統網站設定頁面產生 6 位數驗證碼，綁定成功後就能用語音或文字快速記帳囉！")
 
