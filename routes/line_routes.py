@@ -555,7 +555,7 @@ def register_line_handlers(handler):
 如果是記帳：{{"is_expense": true, "name": "便當", "amount": 100, "category": "飲食"}}
 """
                         response = client.models.generate_content(
-                            model='gemini-1.5-flash',
+                            model='gemini-2.5-flash',
                             contents=prompt
                         )
                         res_text = response.text.strip()
