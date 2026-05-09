@@ -171,7 +171,7 @@ def analyze_intent(msg, collected_data, perms, gemini_key, current_intent=None):
         return json.loads(res_text.strip())
     except Exception as e:
         current_app.logger.error(f"[AIChatService] Gemini 分析失敗: {e}")
-        return {"action": "unknown"}
+        return {"action": "error", "reply": "❌ AI 服務暫時無回應或解析失敗，請稍後再試。"}
 
 
 # ─────────────────────────────────────────────────────────────

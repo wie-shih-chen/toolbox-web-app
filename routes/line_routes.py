@@ -180,8 +180,13 @@ def register_line_handlers(handler):
                 from services.ai_chat_service import analyze_intent, get_missing_fields, build_question, execute_write
                 ai_result = analyze_intent(msg, collected, get_perms(), gemini_key, current_intent=intent)
 
+                action = ai_result.get('action', 'unknown').lower()
+                if action == 'error':
+                    LineService.push_message(user_id, ai_result.get('reply', '❌ AI 發生錯誤，請稍後再試。'))
+                    return
+
                 # 取消意圖
-                if ai_result.get('action') == 'cancel':
+                if action == 'cancel':
                     _reset_session()
                     LineService.push_message(user_id, "✅ 已取消，隨時可以重新開始！")
                     return
@@ -428,12 +433,15 @@ def register_line_handlers(handler):
             ai_result = analyze_intent(msg, {}, get_perms(), gemini_key)
         except Exception as e:
             current_app.logger.error(f"[line_routes] AI 分析例外: {e}")
-            from services.flex_message_service import FlexMessageService
-            LineService.push_flex(user_id, "工具箱說明", FlexMessageService.build_help_carousel())
+            LineService.push_message(user_id, "❌ 系統發生預期外的錯誤，請稍後再試。")
             return
 
-        action = ai_result.get('action', 'unknown')
+        action = ai_result.get('action', 'unknown').lower()
         data   = ai_result.get('data', {})
+
+        if action == 'error':
+            LineService.push_message(user_id, ai_result.get('reply', '❌ AI 發生錯誤，請稍後再試。'))
+            return
 
         # 7a. 查詢類 intent：直接讀取 DB 回傳
         if action in ('query_expense', 'query_salary', 'query_period', 'query_balance', 'query_countdown'):
