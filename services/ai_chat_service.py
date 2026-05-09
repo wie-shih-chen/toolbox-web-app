@@ -39,29 +39,36 @@ FIELD_QUESTIONS = {
 # ─────────────────────────────────────────────────────────────
 # 月份範圍輔助函式（複製自 line_routes，避免循環引用）
 # ─────────────────────────────────────────────────────────────
-def _get_month_range(month=None, year=None):
-    """根據月份數字取得 start_date / end_date 字串。
-    month=None 表示本月。
-    """
+def _get_date_range(data):
+    """從 AI 資料中計算正確的日期範圍（支援單月、多月範圍）。"""
     now = datetime.utcnow() + timedelta(hours=8)
-    y = year or now.year
+    y = data.get('year') or now.year
     
-    # 處理 AI 可能回傳 list (例如 [2,5]) 或字串的情況
-    m = month
-    if isinstance(m, list) and len(m) > 0:
-        m = m[0]  # 取第一個月份
+    start_m = data.get('start_month') or data.get('month')
+    end_m = data.get('end_month') or data.get('month')
+    
+    # 若皆無，預設本月
+    if start_m is None: start_m = now.month
+    if end_m is None: end_m = now.month
+    
+    # 處理 list 情況
+    if isinstance(start_m, list): start_m = start_m[0]
+    if isinstance(end_m, list): end_m = end_m[-1]
     
     try:
-        m = int(m) if m is not None else now.month
-    except (ValueError, TypeError):
-        m = now.month
+        start_m = int(start_m)
+        end_m = int(end_m)
+    except:
+        start_m = end_m = now.month
 
-    # 若使用者查詢的月份數字大於現在月份，且沒指定年份，視為去年（例如 12月在 1月查詢時）
-    if m > now.month and year is None:
+    # 跨年邏輯：如果查詢月份 > 現在月份，視為去年
+    if start_m > now.month and data.get('year') is None:
         y -= 1
         
-    last_day = cal_module.monthrange(y, m)[1]
-    return f"{y}-{m:02d}-01", f"{y}-{m:02d}-{last_day}"
+    last_day = cal_module.monthrange(y, end_m)[1]
+    
+    label = f"{start_m}月" if start_m == end_m else f"{start_m}月 ~ {end_m}月"
+    return f"{y}-{start_m:02d}-01", f"{y}-{end_m:02d}-{last_day}", label
 
 
 # ─────────────────────────────────────────────────────────────
@@ -94,8 +101,11 @@ def analyze_intent(msg, collected_data, perms, gemini_key):
 你的任務：分析這句話，判斷是「寫入」還是「查詢」，或是「取消」。
 
 ===【查詢類（直接回傳資料，不需追問）】===
-- query_expense：查詢記帳總覽（可解析 month 欄位，如「上個月」→ month=上月數字；「本月」→ month 不填）
-- query_salary：查詢薪資總覽（可解析 month）
+- query_expense：查詢記帳總覽。
+  - 欄位：month (單月), start_month, end_month (範圍), year
+  - 範例：「上個月」→ month=上月數字；「2到5月」→ start_month=2, end_month=5
+- query_salary：查詢薪資總覽。
+  - 欄位：month, start_month, end_month, year
 - query_period：查詢生理期預測（下次日期、排卵期等）
 - query_balance：查詢本週期剩餘預算
 
@@ -310,9 +320,7 @@ def execute_query(action, data, user_obj, setting, has_perm_fn):
     from services.flex_message_service import FlexMessageService
     from collections import defaultdict
 
-    month = data.get('month')  # int or None（None = 本月）
-    start_date, end_date = _get_month_range(month)
-    month_label = f"{int(start_date[5:7])}月"
+    start_date, end_date, month_label = _get_date_range(data)
 
     if action == 'query_expense':
         if not has_perm_fn('expense'):
