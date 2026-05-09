@@ -439,7 +439,7 @@ def register_line_handlers(handler):
         data   = ai_result.get('data', {})
 
         # 7a. 查詢類 intent：直接讀取 DB 回傳
-        if action in ('query_expense', 'query_salary', 'query_period', 'query_balance'):
+        if action in ('query_expense', 'query_salary', 'query_period', 'query_balance', 'query_countdown'):
             result = execute_query(action, data, user_obj, setting, has_perm)
             _push_result(result)
             return
@@ -464,7 +464,13 @@ def register_line_handlers(handler):
                 LineService.push_message(user_id, f"好的，我來幫你記錄{intent_names.get(action, '')}！\n{build_question(missing[0])}")
             return
 
-        # 7d. unknown → 說明 Carousel
+        # 7d. chat 自然語言回覆
+        if action == 'chat':
+            reply = ai_result.get('reply', '這個我還不太懂，你可以直接輸入「說明」查看我能做什麼喔！')
+            LineService.push_message(user_id, reply)
+            return
+
+        # 7e. unknown → 說明 Carousel
         from services.flex_message_service import FlexMessageService
         LineService.push_flex(user_id, "工具箱說明 — 左右滑動查看所有功能", FlexMessageService.build_help_carousel())
 

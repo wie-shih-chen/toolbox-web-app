@@ -98,7 +98,7 @@ def analyze_intent(msg, collected_data, perms, gemini_key):
 對話上下文（已收集的資料）：{collected_json}
 使用者的功能權限：{perms_str}
 
-你的任務：分析這句話，判斷是「寫入」還是「查詢」，或是「取消」。
+你的任務：分析這句話，判斷是「寫入」還是「查詢」，或是「取消」，或是需要自由「閒聊/問答」。
 
 ===【查詢類（直接回傳資料，不需追問）】===
 - query_expense：查詢記帳總覽。
@@ -108,6 +108,7 @@ def analyze_intent(msg, collected_data, perms, gemini_key):
   - 欄位：month, start_month, end_month, year
 - query_period：查詢生理期預測（下次日期、排卵期等）
 - query_balance：查詢本週期剩餘預算
+- query_countdown：查詢即將到來的倒數日與紀念日
 
 ===【寫入類（可能需要追問缺少欄位）】===
 ✅ expense（支出記帳）：
@@ -128,7 +129,7 @@ def analyze_intent(msg, collected_data, perms, gemini_key):
 
 ===【特殊情況】===
 - cancel：使用者說「取消」「算了」「不用了」→ 中止對話
-- unknown：無法判斷、閒聊、打招呼 → 回傳 unknown（寧可保守，不要亂猜）
+- chat：無法明確歸類於上述查詢/寫入意圖，或是使用者只是在閒聊、提問（例如「我要記帳」卻沒給任何資訊時，可以直接回覆引導他）。請將你貼心、口語化的回覆放在 "reply" 欄位，並將 action 設為 "chat"。
 
 ===【時間推算】===
 若提到「昨天」「上週五」「前天」，根據現在時間 {now_str}（星期{weekday}）推算正確的 YYYY-MM-DD。
@@ -139,7 +140,8 @@ def analyze_intent(msg, collected_data, perms, gemini_key):
   "action": "...",
   "data": {{ ...已知欄位... }},
   "missing_fields": [...尚缺的必填欄位名稱...],
-  "confidence": "high|medium|low"
+  "confidence": "high|medium|low",
+  "reply": "給使用者的自然語言回覆（僅當 action 為 chat 時提供）"
 }}"""
 
     try:
@@ -511,6 +513,29 @@ def execute_query(action, data, user_obj, setting, has_perm_fn):
             f'剩餘：${remaining:,.0f}'
         )
         return ('text', reply, None)
+
+    elif action == 'query_countdown':
+        from services.countdown_service import CountdownService
+        svc = CountdownService(user_obj.id)
+        items = svc.get_all()
+        if not items:
+            return ('text', '📅 目前沒有設定任何倒數日或紀念日喔！', None)
+        
+        # 取得即將到來的日子
+        upcoming = [i for i in items if not i['is_past'] or i['days_diff'] == 0]
+        # Sort by days_diff ascending
+        upcoming = sorted(upcoming, key=lambda x: x['days_diff'])
+        
+        if not upcoming:
+            return ('text', '📅 目前沒有即將到來的倒數日或紀念日！', None)
+            
+        reply_lines = ["✨ 即將到來的日子 ✨"]
+        for item in upcoming[:5]:  # 只顯示前 5 筆
+            icon = item['icon'] or '📅'
+            date_str = item['target_date'][5:].replace('-', '/')
+            reply_lines.append(f"{icon} {item['title']}：{item['display_text']} ({date_str})")
+            
+        return ('text', "\n".join(reply_lines), None)
 
     return ('error', '❌ 無法執行此查詢。', None)
 
