@@ -383,10 +383,10 @@ def execute_query(action, data, user_obj, setting, has_perm_fn):
             return ('text', f'📅 {range_label} 沒有找到任何記帳紀錄喔！', None)
         
         if len(bubbles) == 1:
-            return ('flex', {"type": "flex", "altText": f"{range_label}記帳總覽", "contents": bubbles[0]}, f"{range_label}記帳總覽")
+            return ('flex', bubbles[0], f"{range_label}記帳總覽")
         else:
             carousel = {"type": "carousel", "contents": bubbles[:10]} # LINE 限制最多 10 個
-            return ('flex', {"type": "flex", "altText": f"{range_label}記帳總覽", "contents": carousel}, f"{range_label}記帳總覽")
+            return ('flex', carousel, f"{range_label}記帳總覽")
 
     # ── 處理薪資查詢 ───────────────────────────────────────────
     elif action == 'query_salary':
@@ -430,10 +430,10 @@ def execute_query(action, data, user_obj, setting, has_perm_fn):
             return ('text', f'📅 {range_label} 沒有找到任何薪資紀錄喔！', None)
 
         if len(bubbles) == 1:
-            return ('flex', {"type": "flex", "altText": f"{range_label}薪資總覽", "contents": bubbles[0]}, f"{range_label}薪資總覽")
+            return ('flex', bubbles[0], f"{range_label}薪資總覽")
         else:
             carousel = {"type": "carousel", "contents": bubbles[:10]}
-            return ('flex', {"type": "flex", "altText": f"{range_label}薪資總覽", "contents": carousel}, f"{range_label}薪資總覽")
+            return ('flex', carousel, f"{range_label}薪資總覽")
 
     # ── 其他查詢（文字類） ───────────────────────────────────────
     elif action == 'query_period':
