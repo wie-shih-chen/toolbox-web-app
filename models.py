@@ -232,3 +232,21 @@ class LineBinding(db.Model):
     # JSON list of allowed actions: "expense", "salary", "period"
     permissions = db.Column(db.Text, default='["expense","salary","period"]')
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+class LineConversationSession(db.Model):
+    """
+    儲存每位 LINE 用戶的多輪對話狀態。
+    - state: IDLE（空閒）or COLLECTING（AI 正在收集資料中）
+    - intent: 本輪對話的意圖（expense / shift / bonus / period）
+    - collected_data: JSON，已收集到的欄位值
+    - pending_fields: JSON list，尚待追問的必填欄位
+    - updated_at: 自動更新，超過 30 分鐘視為過期並重置
+    """
+    __tablename__ = 'line_conversation_sessions'
+    id = db.Column(db.Integer, primary_key=True)
+    line_user_id = db.Column(db.String(255), unique=True, nullable=False, index=True)
+    state = db.Column(db.String(20), default='IDLE')           # IDLE / COLLECTING
+    intent = db.Column(db.String(50), nullable=True)            # expense / shift / bonus / period
+    collected_data = db.Column(db.Text, default='{}')           # JSON: 已收集欄位
+    pending_fields = db.Column(db.Text, default='[]')           # JSON list: 待追問欄位
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)

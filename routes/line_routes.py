@@ -42,28 +42,24 @@ def register_line_handlers(handler):
     def handle_message(event):
         msg = event.message.text.strip()
         user_id = event.source.user_id
-        
-        # Check if message is a 6-digit number (Binding Code)
+
+        # ── 0. 6 位數字 → 綁定流程（保留原有邏輯）──────────────────────
         if msg.isdigit() and len(msg) == 6:
             setting = UserSettings.query.filter_by(binding_code=msg).first()
             if setting:
                 if setting.binding_expiry and setting.binding_expiry > datetime.utcnow():
-                    # Check if this LINE ID already has a binding
                     existing = LineBinding.query.filter_by(line_user_id=user_id).first()
                     if existing:
                         LineService.push_message(user_id, "⚠️ 此 LINE 帳號已綁定過其他帳號，請先解除舊的綁定。")
                         return
-                    # Create new LineBinding with full permissions
                     existing_count = LineBinding.query.filter_by(user_id=setting.user_id).count()
                     auto_nickname = f'使用者 {existing_count + 1}'
                     new_binding = LineBinding(
-                        user_id=setting.user_id,
-                        line_user_id=user_id,
+                        user_id=setting.user_id, line_user_id=user_id,
                         nickname=auto_nickname,
                         permissions=json.dumps(["expense", "salary", "period"])
                     )
                     db.session.add(new_binding)
-                    # Also keep backward-compat field updated
                     setting.line_user_id = user_id
                     setting.binding_code = None
                     setting.binding_expiry = None
@@ -75,51 +71,155 @@ def register_line_handlers(handler):
                 LineService.push_message(user_id, "❌ 找不到此驗證碼，請確認輸入正確。")
             return
 
-        # Find binding record for this LINE user
+        # ── 1. 說明 / help ───────────────────────────────────────────────
+        if msg in ("說明", "help", "Help", "HELP", "指令", "功能"):
+            from services.flex_message_service import FlexMessageService
+            flex = FlexMessageService.build_help_carousel()
+            LineService.push_flex(user_id, "工具箱說明 — 左右滑動查看所有功能", flex)
+            return
+
+        # ── 2. 取得綁定資訊 ─────────────────────────────────────────────
         binding = LineBinding.query.filter_by(line_user_id=user_id).first()
-        # Fallback: support old-style single binding via UserSettings.line_user_id
         if not binding:
             old_setting = UserSettings.query.filter_by(line_user_id=user_id).first()
             if old_setting:
-                # Auto-migrate on-the-fly
                 binding = LineBinding(
-                    user_id=old_setting.user_id,
-                    line_user_id=user_id,
-                    nickname='本人',
-                    permissions=json.dumps(["expense", "salary", "period"])
+                    user_id=old_setting.user_id, line_user_id=user_id,
+                    nickname='本人', permissions=json.dumps(["expense", "salary", "period"])
                 )
                 db.session.add(binding)
                 db.session.commit()
 
-        setting = UserSettings.query.filter_by(user_id=binding.user_id).first() if binding else None
+        if not binding:
+            LineService.push_message(user_id, "🤖 我是工具箱小幫手。\n請先至系統網站設定頁面產生 6 位數驗證碼，綁定成功後就能用語音或文字快速記帳囉！")
+            return
+
+        setting = UserSettings.query.filter_by(user_id=binding.user_id).first()
+        user_obj = User.query.get(binding.user_id)
 
         def has_perm(perm):
-            """Check if this LINE binding has the given permission."""
-            if not binding: return False
             try:
                 perms = json.loads(binding.permissions or '[]')
             except Exception:
                 perms = []
             return perm in perms
 
-        # =============== SMART PARSERS =============== #
-        
-        # --- Common Date Parsing Helper ---
+        def get_perms():
+            try:
+                return json.loads(binding.permissions or '[]')
+            except Exception:
+                return []
+
+        gemini_key = current_app.config.get('GEMINI_API_KEY')
+
+        # ── 3. 取得或建立對話 session ────────────────────────────────────
+        from models import LineConversationSession
+        SESSION_TIMEOUT_MINUTES = 30
+
+        session = LineConversationSession.query.filter_by(line_user_id=user_id).first()
+        if not session:
+            session = LineConversationSession(line_user_id=user_id)
+            db.session.add(session)
+            db.session.commit()
+
+        # 逾時重置
+        if session.updated_at:
+            elapsed = (datetime.utcnow() - session.updated_at).total_seconds() / 60
+            if elapsed > SESSION_TIMEOUT_MINUTES and session.state != 'IDLE':
+                session.state = 'IDLE'
+                session.intent = None
+                session.collected_data = '{}'
+                session.pending_fields = '[]'
+                db.session.commit()
+
+        def _reset_session():
+            session.state = 'IDLE'
+            session.intent = None
+            session.collected_data = '{}'
+            session.pending_fields = '[]'
+            session.updated_at = datetime.utcnow()
+            db.session.commit()
+
+        def _save_session(state, intent, collected, pending):
+            session.state = state
+            session.intent = intent
+            session.collected_data = json.dumps(collected, ensure_ascii=False)
+            session.pending_fields = json.dumps(pending, ensure_ascii=False)
+            session.updated_at = datetime.utcnow()
+            db.session.commit()
+
+        def _push_result(result):
+            """統一處理 execute_write / execute_query 的回傳結果。"""
+            rtype, payload, alt = result
+            if rtype == 'error':
+                LineService.push_message(user_id, payload)
+            elif rtype == 'flex':
+                LineService.push_flex(user_id, alt or '工具箱通知', payload)
+            else:
+                LineService.push_message(user_id, payload)
+
+        # ── 4. 取消指令：清除 session ────────────────────────────────────
+        if msg in ("取消", "算了", "不用了", "cancel", "Cancel"):
+            if session.state == 'COLLECTING':
+                _reset_session()
+                LineService.push_message(user_id, "✅ 已取消，隨時可以重新開始！")
+            else:
+                LineService.push_message(user_id, "💡 目前沒有進行中的操作喔！")
+            return
+
+        # ── 5. COLLECTING 狀態：AI 繼續填入欄位 ─────────────────────────
+        if session.state == 'COLLECTING' and session.intent:
+            intent = session.intent
+            try:
+                collected = json.loads(session.collected_data or '{}')
+                pending   = json.loads(session.pending_fields or '[]')
+            except Exception:
+                collected, pending = {}, []
+
+            if gemini_key and len(msg) < 300:
+                from services.ai_chat_service import analyze_intent, get_missing_fields, build_question, execute_write
+                ai_result = analyze_intent(msg, collected, get_perms(), gemini_key)
+
+                # 取消意圖
+                if ai_result.get('action') == 'cancel':
+                    _reset_session()
+                    LineService.push_message(user_id, "✅ 已取消，隨時可以重新開始！")
+                    return
+
+                # 合併新提取的欄位到 collected
+                new_data = ai_result.get('data', {})
+                collected.update({k: v for k, v in new_data.items() if v is not None and v != ''})
+            else:
+                # 無 AI key：把整段訊息塞進第一個 pending 欄位
+                if pending:
+                    collected[pending[0]] = msg
+
+            # 重新計算缺少欄位
+            from services.ai_chat_service import get_missing_fields, build_question, execute_write
+            still_missing = get_missing_fields(intent, collected)
+
+            if still_missing:
+                _save_session('COLLECTING', intent, collected, still_missing)
+                LineService.push_message(user_id, build_question(still_missing[0]))
+            else:
+                # 資料齊全，執行寫入
+                _reset_session()
+                result = execute_write(intent, collected, user_obj, setting, has_perm)
+                _push_result(result)
+            return
+
+        # ── 6. IDLE 狀態：先試固定指令快速通道 ──────────────────────────
+        now_dt = datetime.utcnow() + timedelta(hours=8)
+
         def parse_date(d_str, default_dt):
-            """Parse a flexible date/time string, always anchored to default_dt's year."""
             if not d_str:
                 return default_dt
             current_year = default_dt.year
-            # Inject year into month/day-only strings so strptime doesn't pick ambiguous year
-            enriched = d_str
             import re as _re
-            if _re.match(r'^\d{1,2}/\d{1,2}$', d_str):
-                enriched = f"{current_year}/{d_str}"
+            enriched = f"{current_year}/{d_str}" if _re.match(r'^\d{1,2}/\d{1,2}$', d_str) else d_str
             formats = [
-                ("%Y/%m/%d/%H:%M", True, True, True),
-                ("%Y/%m/%d", True, True, False),
-                ("%m/%d/%H:%M", False, True, True),
-                ("%H:%M", False, False, True),
+                ("%Y/%m/%d/%H:%M", True, True, True), ("%Y/%m/%d", True, True, False),
+                ("%m/%d/%H:%M", False, True, True),   ("%H:%M", False, False, True),
                 ("%H%M", False, False, True),
             ]
             for fmt, has_year, has_date, has_time in formats:
@@ -136,550 +236,239 @@ def register_line_handlers(handler):
             return default_dt
 
         def get_query_month_range(month_str):
-            """Helper to get start_date and end_date for a given month string (e.g. '4月', '11').
-               Defaults to current month if None or invalid."""
+            import re, calendar
             now = datetime.utcnow() + timedelta(hours=8)
-            year = now.year
-            month = now.month
-            
+            year, month = now.year, now.month
             if month_str:
-                import re
                 match = re.search(r'(\d+)', month_str)
                 if match:
                     parsed_month = int(match.group(1))
                     if 1 <= parsed_month <= 12:
                         month = parsed_month
-                        # If user queries a future month (e.g. querying December in Jan), it's probably last year.
                         if month > now.month:
                             year -= 1
-            
-            import calendar
             last_day = calendar.monthrange(year, month)[1]
-            start_date = f"{year}-{month:02d}-01"
-            end_date = f"{year}-{month:02d}-{last_day}"
-            return start_date, end_date
+            return f"{year}-{month:02d}-01", f"{year}-{month:02d}-{last_day}"
 
-        if msg in ("說明", "help", "Help", "HELP", "指令", "功能"):
-            from services.flex_message_service import FlexMessageService
-            flex = FlexMessageService.build_help_carousel()
-            LineService.push_flex(user_id, "工具箱說明 — 左右滑動查看所有功能", flex)
-            return
+        handled = False
 
-        if msg.startswith("查詢記帳"):
-            if not binding:
-                LineService.push_message(user_id, "❌ 請先綁定帳號。")
-                return
-            if not has_perm("expense"):
-                LineService.push_message(user_id, "⛔ 此帳號無記帳權限，請聯絡帳號擁有者開啟。")
-                return
-                
+        # 6a. 查詢記帳 / 查詢薪水（固定格式快速通道）
+        if msg.startswith("查詢記帳") or msg.startswith("查詢薪水") or msg.startswith("查詢薪資"):
             parts = msg.split()
             month_str = parts[1] if len(parts) > 1 else None
             start_date, end_date = get_query_month_range(month_str)
-            
-            user_obj = User.query.get(binding.user_id)
-            from services.expense_service import ExpenseService
-            expense_svc = ExpenseService()
-            summary = expense_svc.get_summary(start_date, end_date, user=user_obj)
-            
-            total = summary.get('total_amount', 0)
-            records = summary.get('records', [])
-            
-            # Categories stat
-            from collections import defaultdict
-            category_stats = defaultdict(lambda: {'count': 0, 'amount': 0, 'emoji': '📦'})
-            for r in records:
-                cat_full = r.get('category', '其他')
-                c_parts = cat_full.split(' ')
-                emoji = c_parts[0] if len(c_parts) > 1 else '📦'
-                cat_name = c_parts[1] if len(c_parts) > 1 else cat_full
-                category_stats[cat_name]['count'] += 1
-                category_stats[cat_name]['amount'] += int(r['amount'])
-                category_stats[cat_name]['emoji'] = emoji
-            
-            from services.flex_message_service import FlexMessageService
-            flex = FlexMessageService.build_expense_summary(
-                username=user_obj.username, start_date=start_date, end_date=end_date,
-                total=total, category_stats=category_stats, records=records
-            )
-            LineService.push_flex(user_id, f"{start_date[5:7]}月份記帳總覽", flex)
+            if msg.startswith("查詢記帳"):
+                if not has_perm("expense"):
+                    LineService.push_message(user_id, "⛔ 此帳號無記帳權限，請聯絡帳號擁有者開啟。")
+                    return
+                from services.ai_chat_service import execute_query
+                result = execute_query('query_expense', {'month': int(start_date[5:7])}, user_obj, setting, has_perm)
+            else:
+                if not has_perm("salary"):
+                    LineService.push_message(user_id, "⛔ 此帳號無薪資管理權限，請聯絡帳號擁有者開啟。")
+                    return
+                from services.ai_chat_service import execute_query
+                result = execute_query('query_salary', {'month': int(start_date[5:7])}, user_obj, setting, has_perm)
+            _push_result(result)
             return
 
-        elif msg.startswith("查詢薪水") or msg.startswith("查詢薪資"):
-            if not binding:
-                LineService.push_message(user_id, "❌ 請先綁定帳號。")
-                return
-            if not has_perm("salary"):
-                LineService.push_message(user_id, "⛔ 此帳號無薪資管理權限，請聯絡帳號擁有者開啟。")
-                return
-                
-            parts = msg.split()
-            month_str = parts[1] if len(parts) > 1 else None
-            start_date, end_date = get_query_month_range(month_str)
-            
-            user_obj = User.query.get(binding.user_id)
-            from services.salary_service import SalaryService
-            salary_svc = SalaryService()
-            summary = salary_svc.get_history_summary(start_date, end_date, user=user_obj)
-            
-            total_amt = summary.get('total_amount', 0)
-            total_hrs = summary.get('total_hours', 0)
-            records = summary.get('records', [])
-            
-            # Type stats
-            from collections import defaultdict
-            type_stats = defaultdict(lambda: {'count': 0, 'amount': 0, 'hours': 0})
-            for r in records:
-                rtype = "排班" if r['type'] == 'shift' else "獎金"
-                if r['type'] != 'shift' and r['type'] != 'bonus': rtype = r['type']
-                type_stats[rtype]['count'] += 1
-                type_stats[rtype]['amount'] += r.get('amount', 0)
-                if r['type'] == 'shift':
-                    type_stats[rtype]['hours'] += r.get('hours', 0)
-                    
-            from services.flex_message_service import FlexMessageService
-            flex = FlexMessageService.build_salary_summary(
-                username=user_obj.username, start_date=start_date, end_date=end_date,
-                total_amt=total_amt, total_hrs=total_hrs, type_stats=type_stats, records=records
-            )
-            LineService.push_flex(user_id, f"{start_date[5:7]}月份薪資總覽", flex)
-            return
-
-        # 1. Expense: 記帳 [名稱] [類別：預設飲食] [金額] [預設時間(本年/本月/本日/現在時間)]
+        # 6b. 記帳（固定格式快速通道）
         if msg.startswith("記帳"):
-            if not binding:
-                LineService.push_message(user_id, "❌ 請先綁定帳號。")
-                return
             if not has_perm("expense"):
                 LineService.push_message(user_id, "⛔ 此帳號無記帳權限，請聯絡帳號擁有者開啟。")
                 return
-                
             if msg.strip() == "記帳":
-                help_msg = (
-                    "✏️ 準備記帳了嗎？請直接輸入您花費的項目與金額：\n\n"
-                    "👉 例如：記帳 午餐 150\n"
-                    "👉 例如：記帳 咖啡 飲食 65\n\n"
-                    "💡 或者點選單右下角「開啟網站」，在網頁版上記帳更直覺喔！"
-                )
-                LineService.push_message(user_id, help_msg)
+                LineService.push_message(user_id, "✏️ 準備記帳了嗎？請直接輸入您花費的項目與金額：\n\n👉 例如：記帳 午餐 150\n👉 例如：記帳 咖啡 飲食 65\n\n💡 或者直接口語說，AI 會幫你自動記錄！")
                 return
-            
             parts = [p for p in msg.split() if p.strip()][1:]
-            amount = None
-            date_str = None
-            text_parts = []
-            
+            amount, date_str, text_parts = None, None, []
             for p in parts:
                 if amount is None:
                     try:
                         val = float(p)
-                        if val > 0:
-                            amount = val
-                            continue
+                        if val > 0: amount = val; continue
                     except ValueError: pass
-                # Check for date formats (like 4/18 or 18:00 or 0900)
-                if date_str is None and ('/' in p or ':' in p or '.' in p or (len(p)==4 and p.isdigit())):
-                    date_str = p.replace('.', ':')
-                    continue
+                if date_str is None and ('/' in p or ':' in p or (len(p)==4 and p.isdigit())):
+                    date_str = p.replace('.', ':'); continue
                 text_parts.append(p)
-                
             if amount is None:
-                LineService.push_message(user_id, "❌ 找不到金額！\n最少填寫：記帳 [名稱/備註] [金額]\n💡例如：記帳 午餐 150")
+                LineService.push_message(user_id, "❌ 找不到金額！\n例如：記帳 午餐 150")
                 return
-                
-            name = text_parts[0] if len(text_parts) > 0 else "隨手記"
+            name     = text_parts[0] if text_parts else "隨手記"
             category = text_parts[1] if len(text_parts) > 1 else "飲食"
-            if len(text_parts) > 2:
-                name = " ".join(text_parts) # combine everything else as name/note if it's super long
-                category = "飲食"
-            
-            now_dt = datetime.utcnow() + timedelta(hours=8)
-            final_time = parse_date(date_str, now_dt)
-            now_str = final_time.strftime('%Y-%m-%d %H:%M:%S')
-            
+            final_dt = parse_date(date_str, now_dt)
+            now_str  = final_dt.strftime('%Y-%m-%d %H:%M:%S')
             from models import ExpenseRecord
-            new_expense = ExpenseRecord(
-                user_id=setting.user_id, timestamp=now_str, category=category, amount=amount, note=name
-            )
-            db.session.add(new_expense)
+            db.session.add(ExpenseRecord(user_id=setting.user_id, timestamp=now_str, category=category, amount=amount, note=name))
             db.session.commit()
-            
             from services.flex_message_service import FlexMessageService
             flex = FlexMessageService.build_expense_confirm(name=name, amount=amount, category=category, timestamp=now_str)
             LineService.push_flex(user_id, f"支出記錄成功：{name} ${amount:g}", flex)
+            return
 
-        # 2. Bonus: 獎金 [金額] [時數(選填)] [備註(選填)]
-        elif msg.startswith("獎金") or msg.startswith("薪水 獎金") or msg.startswith("薪資 獎金"):
-            if not binding:
-                LineService.push_message(user_id, "❌ 請先綁定帳號。")
-                return
+        # 6c. 獎金（固定格式快速通道）
+        if msg.startswith("獎金"):
             if not has_perm("salary"):
                 LineService.push_message(user_id, "⛔ 此帳號無薪資管理權限，請聯絡帳號擁有者開啟。")
                 return
-                
             parts = [p for p in msg.split() if p.strip()][1:]
-            if parts and "薪" in parts[0]: parts = parts[1:] # strip 薪水
-            
-            amounts = []
-            text_parts = []
-            date_str = None
-            
+            amounts, text_parts, date_str = [], [], None
             for p in parts:
-                if date_str is None and '/' in p:
-                    date_str = p
-                    continue
-                try:
-                    val = float(p)
-                    amounts.append(val)
-                except ValueError:
-                    text_parts.append(p)
-            
+                if date_str is None and '/' in p: date_str = p; continue
+                try: amounts.append(float(p))
+                except ValueError: text_parts.append(p)
             if not amounts or amounts[0] <= 0:
-                LineService.push_message(user_id, "❌ 找不到金額！\n最少填寫：獎金 [金額]\n💡例如：獎金 1500 三節")
+                LineService.push_message(user_id, "❌ 找不到金額！例如：獎金 1500 三節")
                 return
-                
-            amount = int(amounts[0])
-            hours = amounts[1] if len(amounts) > 1 else 0.0
-            note = " ".join(text_parts)
-            
-            now_dt = datetime.utcnow() + timedelta(hours=8)
-            final_time = parse_date(date_str, now_dt)
-            now_date = final_time.strftime('%Y-%m-%d')
-            
+            amount   = int(amounts[0])
+            hours    = amounts[1] if len(amounts) > 1 else 0.0
+            note     = " ".join(text_parts)
+            final_dt = parse_date(date_str, now_dt)
+            now_date = final_dt.strftime('%Y-%m-%d')
             from models import SalaryRecord
-            new_salary = SalaryRecord(
-                user_id=setting.user_id, date=now_date, type='bonus', amount=amount, hours=hours, note=note
-            )
-            db.session.add(new_salary)
+            db.session.add(SalaryRecord(user_id=setting.user_id, date=now_date, type='bonus', amount=amount, hours=hours, note=note))
             db.session.commit()
-            
             from services.flex_message_service import FlexMessageService
             flex = FlexMessageService.build_salary_confirm(record_type='bonus', date=now_date, amount=amount, hours=hours, note=note)
             LineService.push_flex(user_id, f"獎金記錄成功：${amount:,}", flex)
+            return
 
-        # 3. Shift: 排班 [開始時間(預設12:00)] [結束時間(預設18:00)] [自訂時薪(預設)] [備註]
-        elif msg.startswith("排班") or msg.startswith("打工") or msg.startswith("薪水 排班"):
-            if not binding:
-                LineService.push_message(user_id, "❌ 請先綁定帳號。")
-                return
+        # 6d. 排班（固定格式快速通道）
+        if msg.startswith("排班") or msg.startswith("打工"):
             if not has_perm("salary"):
                 LineService.push_message(user_id, "⛔ 此帳號無薪資管理權限，請聯絡帳號擁有者開啟。")
                 return
-                
             parts = [p for p in msg.split() if p.strip()][1:]
-            if parts and "薪" in parts[0]: parts = parts[1:]
-            
-            times = []
-            amounts = []
-            text_parts = []
-            date_str = None
-            
+            times, amounts, text_parts, date_str = [], [], [], None
             for p in parts:
-                if date_str is None and '/' in p:
-                    date_str = p
-                    continue
-                # heuristic for time: contains colon/dot or is 4 plain digits
-                if ':' in p or '.' in p or (len(p)==4 and p.isdigit()):
-                    times.append(p)
+                if date_str is None and '/' in p: date_str = p; continue
+                if ':' in p or '.' in p or (len(p)==4 and p.isdigit()): times.append(p)
                 else:
-                    try:
-                        val = float(p)
-                        amounts.append(val)
-                    except ValueError:
-                        text_parts.append(p)
-            
-            start_str = times[0] if len(times) > 0 else "12:00"
-            end_str = times[1] if len(times) > 1 else "18:00"
-            custom_rate = amounts[0] if len(amounts) > 0 else None
-            note = " ".join(text_parts)
-            
-            # Format validation func
-            def fmt(t_str):
-                import re
-                if len(t_str) == 4 and t_str.isdigit():
-                    t_str = f"{t_str[:2]}:{t_str[2:]}"
-                t_str = t_str.replace('.', ':')
-                if not re.match(r"^([01]?[0-9]|2[0-3]):([0-5][0-9])$", t_str): return None
-                return t_str
-            
+                    try: amounts.append(float(p))
+                    except ValueError: text_parts.append(p)
+            start_str = times[0] if times else "12:00"
+            end_str   = times[1] if len(times) > 1 else "18:00"
+            import re
+            def fmt(t):
+                if len(t)==4 and t.isdigit(): t = f"{t[:2]}:{t[2:]}"
+                t = t.replace('.', ':')
+                return t if re.match(r'^([01]?\d|2[0-3]):([0-5]\d)$', t) else None
             start_time = fmt(start_str)
-            end_time = fmt(end_str)
-            
+            end_time   = fmt(end_str)
             if not (start_time and end_time):
                 LineService.push_message(user_id, "❌ 時間格式錯誤！請使用 18:00 或 1800。")
                 return
-            
-            # Compute hours
             t1 = datetime.strptime(start_time, "%H:%M")
-            t2 = datetime.strptime(end_time, "%H:%M")
+            t2 = datetime.strptime(end_time,   "%H:%M")
             if t2 < t1: t2 += timedelta(days=1)
             hours = (t2 - t1).total_seconds() / 3600.0
-            
-            rate = custom_rate if custom_rate is not None else float(setting.hourly_rate or 196.0)
-            
-            now_dt = datetime.utcnow() + timedelta(hours=8)
-            final_time = parse_date(date_str, now_dt)
-            now_date = final_time.strftime('%Y-%m-%d')
-            
+            custom_rate = amounts[0] if amounts else None
+            note        = " ".join(text_parts)
+            rate        = custom_rate if custom_rate is not None else float(setting.hourly_rate or 196.0)
+            final_dt    = parse_date(date_str, now_dt)
+            now_date    = final_dt.strftime('%Y-%m-%d')
             from services.salary_service import _apply_holiday_pay
             effective_rate, amount, updated_note = _apply_holiday_pay(now_date, rate, hours, note)
-            
             from models import SalaryRecord
-            new_salary = SalaryRecord(
-                user_id=setting.user_id, date=now_date, type='shift',
-                start_time=start_time, end_time=end_time, hours=hours,
-                rate=effective_rate, amount=amount, note=updated_note
-            )
-            db.session.add(new_salary)
+            db.session.add(SalaryRecord(user_id=setting.user_id, date=now_date, type='shift',
+                start_time=start_time, end_time=end_time, hours=hours, rate=effective_rate, amount=amount, note=updated_note))
             db.session.commit()
-            
             from services.flex_message_service import FlexMessageService
-            flex = FlexMessageService.build_salary_confirm(
-                record_type='shift', date=now_date, amount=amount, hours=hours,
-                start_time=start_time, end_time=end_time, note=updated_note
-            )
+            flex = FlexMessageService.build_salary_confirm(record_type='shift', date=now_date, amount=amount, hours=hours, start_time=start_time, end_time=end_time, note=updated_note)
             LineService.push_flex(user_id, f"排班記錄成功：{now_date} {start_time}~{end_time}", flex)
+            return
 
-        # 4. Period: 月經 [起] [迄] [備註]  OR  月經 結束 [結束日期]
-        elif msg.startswith("月經") or msg.startswith("生理期") or msg.startswith("mc") or msg.startswith("MC"):
-            if not binding:
-                LineService.push_message(user_id, "❌ 請先綁定帳號。")
-                return
+        # 6e. 月經（固定格式快速通道）
+        if msg.startswith("月經") or msg.startswith("生理期") or msg.lower().startswith("mc"):
             if not has_perm("period"):
                 LineService.push_message(user_id, "⛔ 此帳號無生理期記錄權限，請聯絡帳號擁有者開啟。")
                 return
-
-            original_msg = msg
-            if msg.lower().startswith("mc"): original_msg = original_msg[2:]
-            else: original_msg = original_msg[2:] # 月經 or 生理期(3 but we just split so doesn't matter)
-            # Actually just split msg
             parts = [p for p in msg.split() if p.strip()][1:]
-            
-            dates = []
-            text_parts = []
-            for p in parts:
-                if '/' in p:
-                    dates.append(p)
-                else:
-                    text_parts.append(p)
-            
+            dates = [p for p in parts if '/' in p]
+            text_parts = [p for p in parts if '/' not in p]
             note = " ".join(text_parts).strip()
-            now_dt = datetime.utcnow() + timedelta(hours=8)
-            
             from services.period_service import PeriodService
             period_svc = PeriodService(setting.user_id)
-            history = period_svc.get_history()
-            latest = history[0] if history else None
-            
+            history    = period_svc.get_history()
+            latest     = history[0] if history else None
             if "結束" in note:
                 if not latest or latest['end_date']:
                     LineService.push_message(user_id, "❌ 目前沒有進行中的生理期可以結束喔！")
                     return
-                end_str = dates[0] if len(dates) > 0 else None
-                end_dt = parse_date(end_str, now_dt)
-                end_date_fmt = end_dt.strftime('%Y-%m-%d')
-                
-                period_svc.update_record(latest['id'], start_date=latest['start_date'], end_date=end_date_fmt, note=latest['note'])
+                end_dt = parse_date(dates[0] if dates else None, now_dt)
+                period_svc.update_record(latest['id'], start_date=latest['start_date'], end_date=end_dt.strftime('%Y-%m-%d'), note=latest['note'])
                 LineService.push_message(user_id, f"🩸 結束生理期紀錄\n📅 開始：{latest['start_date'][5:].replace('-', '/')}\n📅 結束：{end_dt.strftime('%m/%d')}")
                 return
-            
-            # Start a new period
-            start_str = dates[0] if len(dates) > 0 else None
-            end_str = dates[1] if len(dates) > 1 else None
-            
-            start_dt = parse_date(start_str, now_dt)
-            start_date_fmt = start_dt.strftime('%Y-%m-%d')
-            
-            end_date_fmt = None
-            if end_str:
-                end_dt = parse_date(end_str, now_dt)
-                end_date_fmt = end_dt.strftime('%Y-%m-%d')
-            
-            result = period_svc.add_record(start_date=start_date_fmt, end_date=end_date_fmt, note=note if note else None)
-            
+            start_dt = parse_date(dates[0] if dates else None, now_dt)
+            end_dt2  = parse_date(dates[1], now_dt) if len(dates) > 1 else None
+            result   = period_svc.add_record(start_date=start_dt.strftime('%Y-%m-%d'), end_date=end_dt2.strftime('%Y-%m-%d') if end_dt2 else None, note=note or None)
             if not result.get("success"):
                 LineService.push_message(user_id, f"❌ {result.get('error', '新增失敗')}")
                 return
-            
             reply = f"🩸 新增生理期紀錄\n📅 開始：{start_dt.strftime('%m/%d')}"
-            if end_date_fmt: reply += f"\n📅 結束：{end_dt.strftime('%m/%d')}"
-            if note: reply += f"\n📝 備註：{note}"
+            if end_dt2: reply += f"\n📅 結束：{end_dt2.strftime('%m/%d')}"
+            if note:    reply += f"\n📝 備註：{note}"
             LineService.push_message(user_id, reply)
+            return
 
-        elif msg == "查詢":
-             LineService.push_message(user_id, f"您的 LINE User ID: {user_id}")
-             
-        else:
-            if setting:
-                # Try Gemini NLP parsing first if API key is set
-                gemini_key = current_app.config.get('GEMINI_API_KEY')
-                if gemini_key and len(msg) < 200:
-                    try:
-                        from google import genai
-                        client = genai.Client(api_key=gemini_key)
-                        
-                        now_dt = datetime.utcnow() + timedelta(hours=8)
-                        now_str = now_dt.strftime('%Y-%m-%d %H:%M')
-                        weekday_map = {1: '一', 2: '二', 3: '三', 4: '四', 5: '五', 6: '六', 7: '日'}
-                        weekday = weekday_map[now_dt.isoweekday()]
+        # 6f. 查詢 LINE ID
+        if msg == "查詢":
+            LineService.push_message(user_id, f"您的 LINE User ID: {user_id}")
+            return
 
-                        prompt = f"""你是一個專門為個人記帳與生活管理服務的智慧助手。現在時間是 {now_str} (星期{weekday})。
-使用者輸入：「{msg}」
+        # ── 7. AI 意圖分析（IDLE fallback）──────────────────────────────
+        if not gemini_key or len(msg) >= 300:
+            from services.flex_message_service import FlexMessageService
+            LineService.push_flex(user_id, "工具箱說明 — 左右滑動查看所有功能", FlexMessageService.build_help_carousel())
+            return
 
-你的任務是「精準判斷」這句話屬於哪種操作，並「只」回傳符合條件的 JSON（不要有 ```json 標籤）。
+        from services.ai_chat_service import (
+            analyze_intent, get_missing_fields, build_question,
+            execute_write, execute_query
+        )
 
-===【判斷規則】===
+        try:
+            ai_result = analyze_intent(msg, {}, get_perms(), gemini_key)
+        except Exception as e:
+            current_app.logger.error(f"[line_routes] AI 分析例外: {e}")
+            from services.flex_message_service import FlexMessageService
+            LineService.push_flex(user_id, "工具箱說明", FlexMessageService.build_help_carousel())
+            return
 
-✅ 情況 1：記帳支出（花錢了）
-- 條件：句子中明確包含花錢動詞（花了/買了/付了/消費/支出），且有具體金額數字。
-- 格式：{{"action": "expense", "date": "YYYY-MM-DD", "name": "項目名稱", "amount": 數字, "category": "飲食/交通/娛樂/居住/其他"}}
+        action = ai_result.get('action', 'unknown')
+        data   = ai_result.get('data', {})
 
-✅ 情況 2：排班打工（去上班了）
-- 條件：句子中明確提到打工/上班/排班，且有具體的起訖時間。
-- 格式：{{"action": "shift", "date": "YYYY-MM-DD", "start_time": "HH:MM", "end_time": "HH:MM", "note": ""}}
+        # 7a. 查詢類 intent：直接讀取 DB 回傳
+        if action in ('query_expense', 'query_salary', 'query_period', 'query_balance'):
+            result = execute_query(action, data, user_obj, setting, has_perm)
+            _push_result(result)
+            return
 
-✅ 情況 3：薪資獎金（拿到錢了）
-- 條件：句子中明確提到發薪/發獎金/領錢，且有具體金額。
-- 格式：{{"action": "bonus", "date": "YYYY-MM-DD", "amount": 數字, "note": ""}}
+        # 7b. 取消
+        if action == 'cancel':
+            LineService.push_message(user_id, "💡 目前沒有進行中的操作喔！")
+            return
 
-✅ 情況 4：生理期（月經相關）
-- 條件：句子中明確提到月經/大姨媽/MC/生理期。
-- 格式：{{"action": "period", "type": "start或end", "date": "YYYY-MM-DD", "note": "症狀描述或空字串"}}
-
-❌ 情況 5：一律回傳 unknown（寧可保守，不要亂猜）
-- 打招呼、閒聊、感謝、問問題
-- 句子中沒有明確金額或時間段
-- 任何模糊、無法確認的情況
-- 格式：{{"action": "unknown"}}
-
-===【時間推算】===
-若使用者提到「昨天」「上週五」「前天」等，根據現在時間 {now_str} (星期{weekday}) 推算正確日期。若未提到時間，預設今天。
-重要原則：不確定就回傳 unknown，不要亂猜！
-"""
-                        response = client.models.generate_content(
-                            model='gemini-2.5-flash',
-                            contents=prompt
-                        )
-                        res_text = response.text.strip()
-                        if res_text.startswith("```json"):
-                            res_text = res_text[7:]
-                        if res_text.endswith("```"):
-                            res_text = res_text[:-3]
-                            
-                        ai_data = json.loads(res_text.strip())
-                        action = ai_data.get("action", "unknown")
-                        
-                        if action == "expense":
-                            if not has_perm("expense"):
-                                LineService.push_message(user_id, "⛔ 此帳號無記帳權限，無法新增。")
-                                return
-                                
-                            name = ai_data.get("name", "隨手記")
-                            amount = ai_data.get("amount", 0)
-                            category = ai_data.get("category", "其他")
-                            date_str = ai_data.get("date", now_dt.strftime('%Y-%m-%d'))
-                            record_time = f"{date_str} {now_dt.strftime('%H:%M:%S')}"
-                            
-                            from models import ExpenseRecord
-                            new_expense = ExpenseRecord(
-                                user_id=setting.user_id, timestamp=record_time, category=category, amount=amount, note=name
-                            )
-                            db.session.add(new_expense)
-                            db.session.commit()
-                            
-                            from services.flex_message_service import FlexMessageService
-                            flex = FlexMessageService.build_expense_confirm(name=name, amount=amount, category=category, timestamp=record_time, ai=True)
-                            LineService.push_flex(user_id, f"AI 自動記帳：{name} ${amount:g}", flex)
-                            return
-                            
-                        elif action == "shift":
-                            if not has_perm("salary"):
-                                LineService.push_message(user_id, "⛔ 此帳號無薪資管理權限，無法新增。")
-                                return
-                            date_str = ai_data.get("date", now_dt.strftime('%Y-%m-%d'))
-                            start_time = ai_data.get("start_time", "12:00")
-                            end_time = ai_data.get("end_time", "18:00")
-                            note = ai_data.get("note", "")
-                            
-                            t1 = datetime.strptime(start_time, "%H:%M")
-                            t2 = datetime.strptime(end_time, "%H:%M")
-                            if t2 < t1: t2 += timedelta(days=1)
-                            hours = (t2 - t1).total_seconds() / 3600.0
-                            
-                            rate = float(setting.hourly_rate or 196.0)
-                            amount = hours * rate
-                            
-                            from models import SalaryRecord
-                            new_salary = SalaryRecord(
-                                user_id=setting.user_id, date=date_str, type='shift', amount=amount, hours=hours, note=note, start_time=start_time, end_time=end_time, rate=rate
-                            )
-                            db.session.add(new_salary)
-                            db.session.commit()
-                            from services.flex_message_service import FlexMessageService
-                            flex = FlexMessageService.build_salary_confirm(
-                                record_type='shift', date=date_str, amount=amount, hours=hours,
-                                start_time=start_time, end_time=end_time, note=note, ai=True
-                            )
-                            LineService.push_flex(user_id, f"AI 自動排班：{date_str} {start_time}~{end_time}", flex)
-                            return
-                            
-                        elif action == "bonus":
-                            if not has_perm("salary"):
-                                LineService.push_message(user_id, "⛔ 此帳號無薪資管理權限，無法新增。")
-                                return
-                            date_str = ai_data.get("date", now_dt.strftime('%Y-%m-%d'))
-                            amount = ai_data.get("amount", 0)
-                            note = ai_data.get("note", "")
-                            
-                            from models import SalaryRecord
-                            new_salary = SalaryRecord(
-                                user_id=setting.user_id, date=date_str, type='bonus', amount=amount, hours=0, note=note
-                            )
-                            db.session.add(new_salary)
-                            db.session.commit()
-                            from services.flex_message_service import FlexMessageService
-                            flex = FlexMessageService.build_salary_confirm(record_type='bonus', date=date_str, amount=amount, note=note, ai=True)
-                            LineService.push_flex(user_id, f"AI 自動獎金：${amount:,}", flex)
-                            return
-                            
-                        elif action == "period":
-                            if not has_perm("period"):
-                                LineService.push_message(user_id, "⛔ 此帳號無月經紀錄權限，無法新增。")
-                                return
-                                
-                            ptype = ai_data.get("type", "start")
-                            date_str = ai_data.get("date", now_dt.strftime('%Y-%m-%d'))
-                            note = ai_data.get("note", "")
-                            
-                            from services.period_service import PeriodService
-                            period_svc = PeriodService(setting.user_id)
-                            
-                            if ptype == "end":
-                                history = period_svc.get_history()
-                                latest = history[0] if history else None
-                                if not latest or latest['end_date']:
-                                    LineService.push_message(user_id, "❌ 目前沒有進行中的生理期可以結束喔！")
-                                    return
-                                period_svc.update_record(latest['id'], start_date=latest['start_date'], end_date=date_str, note=latest['note'])
-                                LineService.push_message(user_id, f"✨ 生理期結束 (AI)\n📅 結束日期：{date_str}")
-                            else:
-                                result = period_svc.add_record(start_date=date_str, end_date=None, note=note)
-                                if not result.get("success"):
-                                    LineService.push_message(user_id, f"❌ {result.get('error')}")
-                                    return
-                                reply = f"✨ 新增生理期 (AI)\n📅 開始日期：{date_str}"
-                                if note: reply += f"\n📝 備註：{note}"
-                                LineService.push_message(user_id, reply)
-                            return
-                    except Exception as e:
-                        current_app.logger.error(f"Gemini AI Error: {str(e)}")
-                        # Fallback to help message if AI fails
-
-                from services.flex_message_service import FlexMessageService
-                flex = FlexMessageService.build_help_carousel()
-                LineService.push_flex(user_id, "工具箱說明 — 左右滑動查看所有功能", flex)
+        # 7c. 寫入類 intent
+        if action in ('expense', 'shift', 'bonus', 'period'):
+            missing = get_missing_fields(action, data)
+            if not missing:
+                # 資料齊全，直接寫入
+                result = execute_write(action, data, user_obj, setting, has_perm)
+                _push_result(result)
             else:
-                LineService.push_message(user_id, "🤖 我是工具箱小幫手。\n請先至系統網站設定頁面產生 6 位數驗證碼，綁定成功後就能用語音或文字快速記帳囉！")
+                # 資料不足，建立 session 開始追問
+                _save_session('COLLECTING', action, data, missing)
+                # 先回覆確認意圖 + 問第一個欄位
+                intent_names = {'expense': '記帳', 'shift': '排班', 'bonus': '獎金', 'period': '生理期'}
+                LineService.push_message(user_id, f"好的，我來幫你記錄{intent_names.get(action, '')}！\n{build_question(missing[0])}")
+            return
+
+        # 7d. unknown → 說明 Carousel
+        from services.flex_message_service import FlexMessageService
+        LineService.push_flex(user_id, "工具箱說明 — 左右滑動查看所有功能", FlexMessageService.build_help_carousel())
 
 # Hacky way to register handlers on import or first request?
 # Better: In app factory, call a setup function.
+
+
