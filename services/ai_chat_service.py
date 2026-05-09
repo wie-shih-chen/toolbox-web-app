@@ -23,6 +23,7 @@ REQUIRED_FIELDS = {
     'shift':   ['start_time', 'end_time'],
     'bonus':   ['amount'],
     'period':  ['type'],  # type = 'start' or 'end'
+    'countdown': ['title', 'target_date'],
 }
 
 # 每個欄位對應的追問問題（繁體中文，口語化）
@@ -33,6 +34,8 @@ FIELD_QUESTIONS = {
     'start_time': '幾點開始上班呢？（例如：14:00 或 1400）',
     'end_time':   '幾點下班呢？（例如：19:00 或 1900）',
     'type':       '是月經開始還是結束呢？\n請回覆「開始」或「結束」',
+    'title':      '這個日子的名稱是什麼呢？（例如：在一起、出國玩）',
+    'target_date':'目標日期是哪一天呢？（例如：2026-05-20 或 下個月五號）',
 }
 
 
@@ -126,6 +129,10 @@ def analyze_intent(msg, collected_data, perms, gemini_key):
 ✅ period（生理期）：
   - 必填：type（"start" 或 "end"）
   - 選填：date（YYYY-MM-DD，預設今天）、note
+
+✅ countdown（倒數日/紀念日）：
+  - 必填：title（事件名稱）、target_date（YYYY-MM-DD 目標日期）
+  - 選填：is_anniversary（若事件在過去發生則為 true，否則為 false，預設 false）
 
 ===【特殊情況】===
 - cancel：使用者說「取消」「算了」「不用了」→ 中止對話
@@ -307,6 +314,29 @@ def execute_write(intent, data, user_obj, setting, has_perm_fn):
             if note:
                 msg += f'\n📝 備註：{note}'
             return ('text', msg, None)
+
+    elif intent == 'countdown':
+        title = data.get('title', '新日子')
+        target_date = data.get('target_date')
+        if not target_date:
+            return ('error', '❌ 請提供完整的日期喔！', None)
+        is_anniversary = str(data.get('is_anniversary', False)).lower() == 'true'
+        
+        from services.countdown_service import CountdownService
+        svc = CountdownService(user_obj.id)
+        svc.add_event({
+            'title': title,
+            'target_date': target_date,
+            'is_anniversary': is_anniversary,
+            'icon': '📅',
+            'pinned': False,
+            'notify_enabled': True,
+            'repeat_annually': is_anniversary
+        })
+        
+        type_str = "紀念日" if is_anniversary else "倒數日"
+        reply = f"✨ 成功新增{type_str}！\n📌 名稱：{title}\n📅 日期：{target_date}"
+        return ('text', reply, None)
 
     return ('error', '❌ 無法識別的操作類型。', None)
 

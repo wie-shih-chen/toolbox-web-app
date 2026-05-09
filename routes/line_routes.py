@@ -273,12 +273,9 @@ def register_line_handlers(handler):
             return
 
         # 6b. 記帳（固定格式快速通道）
-        if msg.startswith("記帳"):
+        if msg.startswith("記帳") and len(msg.strip()) > 2:
             if not has_perm("expense"):
                 LineService.push_message(user_id, "⛔ 此帳號無記帳權限，請聯絡帳號擁有者開啟。")
-                return
-            if msg.strip() == "記帳":
-                LineService.push_message(user_id, "✏️ 準備記帳了嗎？請直接輸入您花費的項目與金額：\n\n👉 例如：記帳 午餐 150\n👉 例如：記帳 咖啡 飲食 65\n\n💡 或者直接口語說，AI 會幫你自動記錄！")
                 return
             parts = [p for p in msg.split() if p.strip()][1:]
             amount, date_str, text_parts = None, None, []
@@ -307,7 +304,7 @@ def register_line_handlers(handler):
             return
 
         # 6c. 獎金（固定格式快速通道）
-        if msg.startswith("獎金"):
+        if msg.startswith("獎金") and len(msg.strip()) > 2:
             if not has_perm("salary"):
                 LineService.push_message(user_id, "⛔ 此帳號無薪資管理權限，請聯絡帳號擁有者開啟。")
                 return
@@ -334,7 +331,7 @@ def register_line_handlers(handler):
             return
 
         # 6d. 排班（固定格式快速通道）
-        if msg.startswith("排班") or msg.startswith("打工"):
+        if (msg.startswith("排班") or msg.startswith("打工")) and len(msg.strip()) > 2:
             if not has_perm("salary"):
                 LineService.push_message(user_id, "⛔ 此帳號無薪資管理權限，請聯絡帳號擁有者開啟。")
                 return
@@ -379,7 +376,7 @@ def register_line_handlers(handler):
             return
 
         # 6e. 月經（固定格式快速通道）
-        if msg.startswith("月經") or msg.startswith("生理期") or msg.lower().startswith("mc"):
+        if (msg.startswith("月經") or msg.startswith("生理期") or msg.lower().startswith("mc")) and len(msg.strip()) > 3:
             if not has_perm("period"):
                 LineService.push_message(user_id, "⛔ 此帳號無生理期記錄權限，請聯絡帳號擁有者開啟。")
                 return
@@ -450,7 +447,7 @@ def register_line_handlers(handler):
             return
 
         # 7c. 寫入類 intent
-        if action in ('expense', 'shift', 'bonus', 'period'):
+        if action in ('expense', 'shift', 'bonus', 'period', 'countdown'):
             missing = get_missing_fields(action, data)
             if not missing:
                 # 資料齊全，直接寫入
@@ -460,7 +457,7 @@ def register_line_handlers(handler):
                 # 資料不足，建立 session 開始追問
                 _save_session('COLLECTING', action, data, missing)
                 # 先回覆確認意圖 + 問第一個欄位
-                intent_names = {'expense': '記帳', 'shift': '排班', 'bonus': '獎金', 'period': '生理期'}
+                intent_names = {'expense': '記帳', 'shift': '排班', 'bonus': '獎金', 'period': '生理期', 'countdown': '倒數/紀念日'}
                 LineService.push_message(user_id, f"好的，我來幫你記錄{intent_names.get(action, '')}！\n{build_question(missing[0])}")
             return
 
