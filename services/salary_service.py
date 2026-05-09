@@ -359,8 +359,7 @@ class SalaryService:
         if not current_user.is_authenticated:
             return []
 
-        # Read billing cycle start day (default 10)
-        start_day = getattr(current_user.settings, 'billing_cycle_start_day', 10) or 10
+        import calendar
 
         # Find min and max record dates
         result = db.session.query(
@@ -377,42 +376,36 @@ class SalaryService:
             max_date = datetime.strptime(result[1], '%Y-%m-%d')
 
         def period_start_for(d):
-            """Return the billing cycle start date that contains date d."""
-            if d.day >= start_day:
-                return d.replace(day=start_day)
-            else:
-                # Period started in the previous month
-                if d.month == 1:
-                    return datetime(d.year - 1, 12, start_day)
-                else:
-                    return datetime(d.year, d.month - 1, start_day)
+            return d.replace(day=1)
 
         def next_period_start(p_start):
-            """Advance one billing cycle (one month)."""
             if p_start.month == 12:
-                return datetime(p_start.year + 1, 1, start_day)
+                return datetime(p_start.year + 1, 1, 1)
             else:
-                return datetime(p_start.year, p_start.month + 1, start_day)
+                return datetime(p_start.year, p_start.month + 1, 1)
 
-        # Start one period before the earliest record to make sure it's covered
-        current = period_start_for(min_date - timedelta(days=start_day))
+        # Start one period before the earliest record
+        current = period_start_for(min_date)
         now = datetime.now()
-        final_limit = max_date + timedelta(days=40)
+        final_limit = period_start_for(max_date) + timedelta(days=40)
         if final_limit < now:
             final_limit = now
 
         periods = []
         while current <= final_limit:
-            p_end_dt = next_period_start(current) - timedelta(days=1)
-            p_start = current.strftime('%Y-%m-%d')
-            p_end = p_end_dt.strftime('%Y-%m-%d')
+            last_day = calendar.monthrange(current.year, current.month)[1]
+            p_start = f"{current.year:04d}-{current.month:02d}-01"
+            p_end = f"{current.year:04d}-{current.month:02d}-{last_day:02d}"
+            
             periods.append({
-                'label': f"{p_start} ~ {p_end}",
+                'label': f"{current.year}年{current.month}月",
                 'start': p_start,
                 'end': p_end
             })
             current = next_period_start(current)
 
+        # 反轉列表讓最新月份在最上面
+        periods.reverse()
         return periods
 
     def get_history_summary(self, start_date_str, end_date_str, user=None):
