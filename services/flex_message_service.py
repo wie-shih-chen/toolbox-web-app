@@ -52,6 +52,64 @@ class FlexMessageService:
         return {"type": "carousel", "contents": bubbles}
 
     @staticmethod
+    def build_trend_bubble(title, labels, values, color="#03a9f4", unit="元"):
+        """使用 QuickChart API 建立趨勢圖卡片"""
+        # 建構 QuickChart URL
+        import urllib.parse
+        chart_config = {
+            "type": "line",
+            "data": {
+                "labels": labels,
+                "datasets": [{
+                    "label": title,
+                    "data": values,
+                    "fill": True,
+                    "backgroundColor": "rgba(3, 169, 244, 0.1)",
+                    "borderColor": color,
+                    "pointBackgroundColor": color,
+                    "borderWidth": 3,
+                    "lineTension": 0.4
+                }]
+            },
+            "options": {
+                "legend": {"display": False},
+                "scales": {
+                    "yAxes": [{"ticks": {"beginAtZero": True, "fontColor": "#8b949e"}}],
+                    "xAxes": [{"ticks": {"fontColor": "#8b949e"}}]
+                }
+            }
+        }
+        
+        config_str = str(chart_config).replace("True", "true").replace("False", "false")
+        encoded_config = urllib.parse.quote(config_str)
+        chart_url = f"https://quickchart.io/chart?bkg=transparent&c={encoded_config}&w=500&h=300"
+
+        return {
+            "type": "bubble", "size": "mega",
+            "styles": {"body": {"backgroundColor": "#121d2b"}},
+            "body": {
+                "type": "box", "layout": "vertical",
+                "contents": [
+                    {"type": "text", "text": f"📈 {title}趨勢分析", "weight": "bold", "color": "#ffffff", "size": "xl"},
+                    {"type": "box", "layout": "vertical", "margin": "lg", "contents": [
+                        {"type": "image", "url": chart_url, "size": "full", "aspectRatio": "1.6:1", "aspectMode": "fit"}
+                    ]},
+                    {"type": "separator", "margin": "xl", "color": "#2c3e50"},
+                    {"type": "box", "layout": "vertical", "margin": "lg", "spacing": "sm", "contents": [
+                        {"type": "text", "text": "數據總覽", "color": "#8b949e", "size": "xs", "weight": "bold"}
+                    ] + [
+                        {
+                            "type": "box", "layout": "horizontal", "contents": [
+                                {"type": "text", "text": label, "size": "xs", "color": "#ffffff"},
+                                {"type": "text", "text": f"${val:,.0f}{unit}", "size": "xs", "color": "#ffffff", "align": "end"}
+                            ]
+                        } for label, val in zip(labels, values)
+                    ]}
+                ]
+            }
+        }
+
+    @staticmethod
     def build_expense_confirm(name, amount, category, timestamp, ai=False):
         """建立記帳成功的確認卡片"""
         return {

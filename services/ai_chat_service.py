@@ -347,10 +347,11 @@ def execute_query(action, data, user_obj, setting, has_perm_fn):
 
         from services.expense_service import ExpenseService
         bubbles = []
+        trend_labels = []
+        trend_values = []
         
         for m in months_to_query:
-            # 計算該月範圍
-            m_year = year if m >= start_m else year + 1 # 簡單處理跨年
+            m_year = year if m >= start_m else year + 1
             last_day = calendar.monthrange(m_year, m)[1]
             m_start = f"{m_year}-{m:02d}-01"
             m_end = f"{m_year}-{m:02d}-{last_day}"
@@ -359,8 +360,11 @@ def execute_query(action, data, user_obj, setting, has_perm_fn):
             total = summary.get('total_amount', 0)
             records = summary.get('records', [])
             
-            if not records and len(months_to_query) > 1: continue # 範圍查詢時跳過無資料月份
+            if not records and len(months_to_query) > 1: continue 
             
+            trend_labels.append(f"{m}月")
+            trend_values.append(total)
+
             category_stats = defaultdict(lambda: {'count': 0, 'amount': 0, 'emoji': '📦'})
             EMOJI_MAP = {'飲食': '🍔', '交通': '🚌', '娛樂': '🎮', '居住': '🏠', '其他': '📦'}
             for r in records:
@@ -382,10 +386,15 @@ def execute_query(action, data, user_obj, setting, has_perm_fn):
         if not bubbles:
             return ('text', f'📅 {range_label} 沒有找到任何記帳紀錄喔！', None)
         
+        # 如果有多個月份，追加趨勢圖卡片
+        if len(bubbles) > 1:
+            trend_bubble = FlexMessageService.build_trend_bubble("支出", trend_labels, trend_values, color="#e91e63")
+            bubbles.append(trend_bubble)
+
         if len(bubbles) == 1:
             return ('flex', bubbles[0], f"{range_label}記帳總覽")
         else:
-            carousel = {"type": "carousel", "contents": bubbles[:10]} # LINE 限制最多 10 個
+            carousel = {"type": "carousel", "contents": bubbles[:10]}
             return ('flex', carousel, f"{range_label}記帳總覽")
 
     # ── 處理薪資查詢 ───────────────────────────────────────────
@@ -396,6 +405,8 @@ def execute_query(action, data, user_obj, setting, has_perm_fn):
         from services.salary_service import SalaryService
         salary_svc = SalaryService()
         bubbles = []
+        trend_labels = []
+        trend_values = []
 
         for m in months_to_query:
             m_year = year if m >= start_m else year + 1
@@ -409,6 +420,9 @@ def execute_query(action, data, user_obj, setting, has_perm_fn):
             records = summary.get('records', [])
 
             if not records and len(months_to_query) > 1: continue
+
+            trend_labels.append(f"{m}月")
+            trend_values.append(total_amt)
 
             type_stats = defaultdict(lambda: {'count': 0, 'amount': 0, 'hours': 0})
             for r in records:
@@ -428,6 +442,11 @@ def execute_query(action, data, user_obj, setting, has_perm_fn):
 
         if not bubbles:
             return ('text', f'📅 {range_label} 沒有找到任何薪資紀錄喔！', None)
+
+        # 如果有多個月份，追加趨勢圖卡片
+        if len(bubbles) > 1:
+            trend_bubble = FlexMessageService.build_trend_bubble("薪資", trend_labels, trend_values, color="#03a9f4")
+            bubbles.append(trend_bubble)
 
         if len(bubbles) == 1:
             return ('flex', bubbles[0], f"{range_label}薪資總覽")
