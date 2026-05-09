@@ -159,7 +159,7 @@ def analyze_intent(msg, collected_data, perms, gemini_key, current_intent=None):
         from google import genai
         client = genai.Client(api_key=gemini_key)
         response = client.models.generate_content(
-            model='gemini-1.5-flash',
+            model='gemini-2.0-flash',
             contents=prompt
         )
         res_text = response.text.strip()
