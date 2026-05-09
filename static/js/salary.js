@@ -724,8 +724,9 @@ const salaryApp = {
             // Period navigation
             const prevBtn = document.getElementById('prevPeriodBtn');
             const nextBtn = document.getElementById('nextPeriodBtn');
-            if (prevBtn) prevBtn.addEventListener('click', () => this.changeHistoryPeriod(-1));
-            if (nextBtn) nextBtn.addEventListener('click', () => this.changeHistoryPeriod(1));
+            // 因為後端反轉了列表（最新在 index 0），所以「上一期」是往舊的找（index + 1），「下一期」是往新的找（index - 1）
+            if (prevBtn) prevBtn.addEventListener('click', () => this.changeHistoryPeriod(1));
+            if (nextBtn) nextBtn.addEventListener('click', () => this.changeHistoryPeriod(-1));
 
             // Period export
             const exportPeriodBtn = document.getElementById('exportPeriodBtn');
