@@ -182,8 +182,9 @@ def register_line_handlers(handler):
 
                 action = ai_result.get('action', 'unknown').lower()
                 if action == 'error':
-                    LineService.push_message(user_id, ai_result.get('reply', '❌ AI 發生錯誤，請稍後再試。'))
-                    return
+                    from services.ai_chat_service import fallback_extract
+                    ai_result = fallback_extract(intent, msg, collected)
+                    action = ai_result.get('action', 'unknown').lower()
 
                 # 取消意圖
                 if action == 'cancel':

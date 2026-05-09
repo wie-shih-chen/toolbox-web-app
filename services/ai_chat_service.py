@@ -184,6 +184,87 @@ def get_missing_fields(intent, collected_data):
     required = REQUIRED_FIELDS.get(intent, [])
     return [f for f in required if not collected_data.get(f)]
 
+def fallback_extract(intent, msg, collected_data):
+    """
+    當 AI 解析失敗或 Rate Limit 時的本地規則提取降級方案。
+    """
+    data = {}
+    parts = [p for p in msg.split() if p.strip()]
+    
+    if intent == 'expense':
+        amount = None
+        text_parts = []
+        for p in parts:
+            if amount is None:
+                try:
+                    val = float(p)
+                    if val > 0: amount = val; continue
+                except ValueError:
+                    pass
+            text_parts.append(p)
+        if text_parts:
+            data['name'] = " ".join(text_parts)
+        if amount is not None:
+            data['amount'] = amount
+            
+    elif intent == 'shift':
+        times = []
+        import re
+        for p in parts:
+            p2 = p.replace('.', ':')
+            if len(p2)==4 and p2.isdigit(): p2 = f"{p2[:2]}:{p2[2:]}"
+            if re.match(r'^([01]?\d|2[0-3]):([0-5]\d)$', p2):
+                times.append(p2)
+        if len(times) >= 1:
+            data['start_time'] = times[0]
+        if len(times) >= 2:
+            data['end_time'] = times[1]
+            
+    elif intent == 'bonus':
+        amount = None
+        for p in parts:
+            try:
+                val = float(p)
+                if val > 0: amount = val; break
+            except ValueError:
+                pass
+        if amount is not None:
+            data['amount'] = amount
+            
+    elif intent == 'period':
+        if '開始' in msg: data['type'] = 'start'
+        elif '結束' in msg: data['type'] = 'end'
+        
+    elif intent == 'countdown':
+        date_str = None
+        text_parts = []
+        for p in parts:
+            if '/' in p or '-' in p:
+                date_str = p.replace('/', '-')
+            else:
+                text_parts.append(p)
+        if text_parts:
+            data['title'] = " ".join(text_parts)
+        if date_str:
+            data['target_date'] = date_str
+
+    if not data:
+        # 真的什麼都解析不出來，把整段字串塞給第一個 missing 欄位
+        missing = get_missing_fields(intent, collected_data)
+        if missing:
+            field = missing[0]
+            if field == 'amount':
+                try: data['amount'] = float(msg)
+                except: pass
+            else:
+                data[field] = msg
+                
+    return {
+        "action": intent,
+        "data": data,
+        "missing_fields": [],
+    }
+
 
 # ─────────────────────────────────────────────────────────────
 # 3. 生成追問訊息
