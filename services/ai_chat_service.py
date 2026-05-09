@@ -45,10 +45,21 @@ def _get_month_range(month=None, year=None):
     """
     now = datetime.utcnow() + timedelta(hours=8)
     y = year or now.year
-    m = month or now.month
-    # 若使用者查詢的月份還沒到（未來月），視為上一年
-    if month and month > now.month and year is None:
+    
+    # 處理 AI 可能回傳 list (例如 [2,5]) 或字串的情況
+    m = month
+    if isinstance(m, list) and len(m) > 0:
+        m = m[0]  # 取第一個月份
+    
+    try:
+        m = int(m) if m is not None else now.month
+    except (ValueError, TypeError):
+        m = now.month
+
+    # 若使用者查詢的月份數字大於現在月份，且沒指定年份，視為去年（例如 12月在 1月查詢時）
+    if m > now.month and year is None:
         y -= 1
+        
     last_day = cal_module.monthrange(y, m)[1]
     return f"{y}-{m:02d}-01", f"{y}-{m:02d}-{last_day}"
 
