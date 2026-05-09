@@ -598,12 +598,14 @@
 
 <div class="add-subevent-form" id="addForm">
     <div class="add-form-card">
-        <div class="add-form-title">✨ 新增里程碑</div>
+        <div class="add-form-title" id="addFormTitle">✨ 新增里程碑</div>
+        <input type="hidden" id="subId">
         <div class="form-row">
             <div class="emoji-btn" id="emojiPicker" onclick="toggleEmojiPanel()">📅</div>
             <input type="text" class="form-input" id="subTitle" placeholder="例：第一次旅行 🌏" maxlength="50">
             <input type="date" class="form-input" id="subDate" style="max-width:160px;">
             <button class="form-save-btn" onclick="submitSubEvent()">儲存</button>
+            <button class="form-save-btn" id="subDeleteBtn" style="background: linear-gradient(135deg, #ff416c, #ff4b2b); display: none;" onclick="deleteSubEventFromForm()">刪除</button>
         </div>
         <div style="margin-top: 14px; margin-left: 58px;">
             <label style="display:inline-flex; align-items:center; gap:8px; color:rgba(255,255,255,0.7); font-size:0.85rem; cursor:pointer;">
@@ -632,16 +634,14 @@
                 <div class="timeline-dot {{ m.type }} {% if is_past %}past{% endif %}">{{ m.icon }}</div>
                 <div class="timeline-line"></div>
             </div>
-            <div class="timeline-card {% if is_past %}past{% endif %} {% if is_today %}today{% elif is_upcoming %}upcoming{% endif %}">
+            <div class="timeline-card {% if is_past %}past{% endif %} {% if is_today %}today{% elif is_upcoming %}upcoming{% endif %}" {% if m.type == 'custom' %}style="cursor: pointer;" onclick='openSubEventEditForm({{ m | tojson | safe }})'{% endif %}>
                 <div class="timeline-card-header">
                     <div>
                         <div class="milestone-label">{{ m.title }}</div>
                         <div class="milestone-date">{{ m.target_date }}</div>
                     </div>
                     {% if m.type == 'custom' %}
-                    <button class="milestone-delete" onclick="deleteSubEvent({{ m.id }}, this)" title="刪除">
-                        <span class="material-icons">close</span>
-                    </button>
+                    <span class="material-icons" style="color: rgba(255,255,255,0.2); font-size: 1.1rem;">edit</span>
                     {% endif %}
                 </div>
                 {% if is_today %}
@@ -795,7 +795,35 @@ function toggleAddForm() {
     const bar  = document.getElementById('addBar');
     const open = form.classList.toggle('open');
     bar.style.display = open ? 'none' : 'flex';
-    if (open) document.getElementById('subTitle').focus();
+    if (open) {
+        document.getElementById('addFormTitle').textContent = '✨ 新增里程碑';
+        document.getElementById('subId').value = '';
+        document.getElementById('subTitle').value = '';
+        document.getElementById('subDate').value = '';
+        document.getElementById('subRepeat').checked = false;
+        document.getElementById('subDeleteBtn').style.display = 'none';
+        selectEmoji('📅');
+        document.getElementById('subTitle').focus();
+    }
+}
+
+function openSubEventEditForm(item) {
+    const form = document.getElementById('addForm');
+    const bar  = document.getElementById('addBar');
+    
+    form.classList.add('open');
+    bar.style.display = 'none';
+    
+    document.getElementById('addFormTitle').textContent = '✏️ 編輯里程碑';
+    document.getElementById('subId').value = item.sub_id;
+    document.getElementById('subTitle').value = item.title;
+    document.getElementById('subDate').value = item.target_date.substring(0, 10);
+    document.getElementById('subRepeat').checked = item.repeat_annually;
+    selectEmoji(item.icon || '📅');
+    
+    document.getElementById('subDeleteBtn').style.display = 'inline-block';
+    
+    form.scrollIntoView({ behavior: 'smooth', block: 'center' });
 }
 
 function toggleEmojiPanel() {
@@ -812,24 +840,31 @@ async function submitSubEvent() {
     const title = document.getElementById('subTitle').value.trim();
     const date  = document.getElementById('subDate').value;
     const repeat = document.getElementById('subRepeat').checked;
+    const subId = document.getElementById('subId').value;
+    
     if (!title || !date) { alert('請填寫名稱和日期！'); return; }
-    const res = await fetch(`/countdown/api/events/${ITEM_ID}/sub-events`, {
-        method: 'POST',
+    
+    let url = `/countdown/api/events/${ITEM_ID}/sub-events`;
+    let method = 'POST';
+    if (subId) {
+        url = `/countdown/api/events/${ITEM_ID}/sub-events/${subId}`;
+        method = 'PUT';
+    }
+    
+    const res = await fetch(url, {
+        method: method,
         headers: {'Content-Type':'application/json'},
         body: JSON.stringify({title, target_date: date, icon: selectedEmoji, repeat_annually: repeat})
     });
     if ((await res.json()).success) location.reload();
 }
 
-async function deleteSubEvent(subId, btn) {
+async function deleteSubEventFromForm() {
+    const subId = document.getElementById('subId').value;
+    if (!subId) return;
     if (!confirm('確定刪除這個里程碑？')) return;
     const res = await fetch(`/countdown/api/events/${ITEM_ID}/sub-events/${subId}`, {method:'DELETE'});
-    if ((await res.json()).success) {
-        const item = btn.closest('.timeline-item');
-        item.style.transition = 'opacity 0.3s, transform 0.3s';
-        item.style.opacity = '0'; item.style.transform = 'translateX(30px)';
-        setTimeout(() => item.remove(), 310);
-    }
+    if ((await res.json()).success) location.reload();
 }
 
 // Notify toggle

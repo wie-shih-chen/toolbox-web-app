@@ -353,6 +353,23 @@ class CountdownService:
         db.session.commit()
         return {"success": True, "id": se.id}
 
+    def update_sub_event(self, item_id, sub_id, data):
+        """Update a custom sub-event."""
+        se = CountdownSubEvent.query.filter_by(
+            id=sub_id, countdown_id=item_id
+        ).first()
+        if not se:
+            return {"success": False, "error": "Sub-event not found"}
+            
+        se.title = data.get('title', se.title)
+        se.target_date = data.get('target_date', se.target_date)
+        se.icon = data.get('icon', se.icon)
+        if 'repeat_annually' in data:
+            se.repeat_annually = bool(data.get('repeat_annually'))
+            
+        db.session.commit()
+        return {"success": True}
+
     def delete_sub_event(self, item_id, sub_id):
         """Delete a custom sub-event."""
         se = CountdownSubEvent.query.filter_by(

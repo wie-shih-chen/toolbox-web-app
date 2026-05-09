@@ -69,6 +69,11 @@ def add_sub_event(item_id):
     service = CountdownService(current_user.id)
     return jsonify(service.add_sub_event(item_id, request.json))
 
+@countdown_bp.route('/api/events/<int:item_id>/sub-events/<int:sub_id>', methods=['PUT'])
+def update_sub_event(item_id, sub_id):
+    service = CountdownService(current_user.id)
+    return jsonify(service.update_sub_event(item_id, sub_id, request.json))
+
 @countdown_bp.route('/api/events/<int:item_id>/sub-events/<int:sub_id>', methods=['DELETE'])
 def delete_sub_event(item_id, sub_id):
     service = CountdownService(current_user.id)
