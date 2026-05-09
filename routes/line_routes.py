@@ -278,9 +278,14 @@ def register_line_handlers(handler):
             return
 
         # 6b. 記帳（固定格式快速通道）
-        if msg.startswith("記帳") and len(msg.strip()) > 2:
+        if msg.startswith("記帳"):
             if not has_perm("expense"):
                 LineService.push_message(user_id, "⛔ 此帳號無記帳權限，請聯絡帳號擁有者開啟。")
+                return
+            if msg.strip() == "記帳":
+                _save_session('COLLECTING', 'expense', {}, ['name', 'amount'])
+                from services.ai_chat_service import build_question
+                LineService.push_message(user_id, f"好的，我來幫你記錄記帳！\n{build_question('name')}")
                 return
             parts = [p for p in msg.split() if p.strip()][1:]
             amount, date_str, text_parts = None, None, []
@@ -309,9 +314,14 @@ def register_line_handlers(handler):
             return
 
         # 6c. 獎金（固定格式快速通道）
-        if msg.startswith("獎金") and len(msg.strip()) > 2:
+        if msg.startswith("獎金"):
             if not has_perm("salary"):
                 LineService.push_message(user_id, "⛔ 此帳號無薪資管理權限，請聯絡帳號擁有者開啟。")
+                return
+            if msg.strip() == "獎金":
+                _save_session('COLLECTING', 'bonus', {}, ['amount'])
+                from services.ai_chat_service import build_question
+                LineService.push_message(user_id, f"好的，我來幫你記錄獎金！\n{build_question('amount')}")
                 return
             parts = [p for p in msg.split() if p.strip()][1:]
             amounts, text_parts, date_str = [], [], None
@@ -336,9 +346,14 @@ def register_line_handlers(handler):
             return
 
         # 6d. 排班（固定格式快速通道）
-        if (msg.startswith("排班") or msg.startswith("打工")) and len(msg.strip()) > 2:
+        if msg.startswith("排班") or msg.startswith("打工"):
             if not has_perm("salary"):
                 LineService.push_message(user_id, "⛔ 此帳號無薪資管理權限，請聯絡帳號擁有者開啟。")
+                return
+            if msg.strip() in ("排班", "打工"):
+                _save_session('COLLECTING', 'shift', {}, ['start_time', 'end_time'])
+                from services.ai_chat_service import build_question
+                LineService.push_message(user_id, f"好的，我來幫你記錄排班！\n{build_question('start_time')}")
                 return
             parts = [p for p in msg.split() if p.strip()][1:]
             times, amounts, text_parts, date_str = [], [], [], None
@@ -381,9 +396,14 @@ def register_line_handlers(handler):
             return
 
         # 6e. 月經（固定格式快速通道）
-        if (msg.startswith("月經") or msg.startswith("生理期") or msg.lower().startswith("mc")) and len(msg.strip()) > 3:
+        if msg.startswith("月經") or msg.startswith("生理期") or msg.lower().startswith("mc"):
             if not has_perm("period"):
                 LineService.push_message(user_id, "⛔ 此帳號無生理期記錄權限，請聯絡帳號擁有者開啟。")
+                return
+            if msg.strip() in ("月經", "生理期", "mc", "MC", "Mc", "mC"):
+                _save_session('COLLECTING', 'period', {}, ['type'])
+                from services.ai_chat_service import build_question
+                LineService.push_message(user_id, f"好的，我來幫你記錄生理期！\n{build_question('type')}")
                 return
             parts = [p for p in msg.split() if p.strip()][1:]
             dates = [p for p in parts if '/' in p]
@@ -416,6 +436,13 @@ def register_line_handlers(handler):
         # 6f. 查詢 LINE ID
         if msg == "查詢":
             LineService.push_message(user_id, f"您的 LINE User ID: {user_id}")
+            return
+            
+        # 6g. 新增倒數/紀念日（繞過 AI 初始判斷直接進入追問）
+        if msg.strip() in ("倒數", "紀念日", "新增倒數", "新增紀念日", "新增倒數日"):
+            _save_session('COLLECTING', 'countdown', {}, ['title', 'target_date'])
+            from services.ai_chat_service import build_question
+            LineService.push_message(user_id, f"好的，我來幫你記錄倒數/紀念日！\n{build_question('title')}")
             return
 
         # ── 7. AI 意圖分析（IDLE fallback）──────────────────────────────
