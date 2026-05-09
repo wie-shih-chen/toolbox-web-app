@@ -1,6 +1,6 @@
 # 📊 工具箱 Web App - 完整架構總覽
 
-> **最後更新**：2026-05-07 | **版本**：v3.2（AI 智慧管家 + Flex Message 視覺化 UI 升級）  
+> **最後更新**：2026-05-10 | **版本**：v4.0（AI 對話管家 2.0：引導式填寫 + 多輪對話 + 趨勢分析圖表）  
 > 這份文件整合了所有專案架構資訊，閱讀順序建議：Part 1 → Part 2 → Part 3 → Part 4
 
 ---
@@ -35,6 +35,7 @@ web_app/
 │   └── settings_api.py             # ⚙️ 設定專用 API (AJAX 非同步儲存)
 │
 ├── 🧠 services/ (服務層 - 商業邏輯)
+│   ├── ai_chat_service.py          # ⭐ AI 核心服務 (Gemini 整合 / 意圖分析 / 狀態機邏輯)
 │   ├── data_service.py             # 通用工具函數 (日期轉換、文字過濾)
 │   ├── expense_service.py          # 記帳深度邏輯 (聚合統計 / 圖表計算 / 跨期帳務)
 │   ├── salary_service.py           # 薪資邏輯 (時數精算 / 國定假日偵測 / 工資加倍)
@@ -46,7 +47,7 @@ web_app/
 │   ├── report_service.py           # 報表生成 (Excel / CSV 格式化輸出)
 │   ├── email_service.py            # Email 遞送 (SMTP + HTML 模板渲染)
 │   ├── line_service.py             # LINE 訊息互動 (封裝 push_message 與 push_flex)
-│   ├── flex_message_service.py     # 🎨 Flex UI 引擎 (建構收據、報表、說明 Carousel 等 JSON)
+│   ├── flex_message_service.py     # 🎨 Flex UI 引擎 (新增 Carousel 輪播與 QuickChart 整合)
 │   └── period_notify_service.py    # 🩸 生理期預測通知 (APScheduler 每日檢查 & 提前提醒)
 │
 ├── 🎨 templates/ (前端頁面 - Jinja2)
@@ -116,6 +117,7 @@ web_app/
 │
 └── 🔧 scripts/maintenance/ (維護腳本)
     ├── init_db.py                  # ⭐ 初始化所有資料表 (首次部署必跑)
+    ├── migrate_ai_session.py       # ⭐ v4.0 遷移：建立對話 Session 資料表
     ├── migrate_line_bindings.py    # v3.0 遷移：UserSettings.line_user_id → LineBinding
     ├── migrate_period_notify_types.py
     ├── migrate_settings_v1~v4.py   # 歷代設定欄位遷移
@@ -227,41 +229,50 @@ web_app/
 | `Countdown` | 倒數/週年紀念事件（支援每年自動重複） |
 | `CountdownSubEvent` | 倒數事件的子里程碑 |
 
+
+### 2.8 LineConversationSession（對話狀態 Session）⭐ v4.0 新增
+| 欄位 | 型態 | 說明 |
+|------|------|------|
+| `id` | Integer PK | |
+| `line_user_id` | String(255) | 唯一索引，與 LINE 使用者綁定 |
+| `state` | String(20) | `'IDLE'` (閒置) 或 `'COLLECTING'` (引導填寫中) |
+| `intent` | String(50) | 當前任務，如 `'expense'`, `'shift'` |
+| `collected_data` | Text (JSON) | 已收集的欄位資料 |
+| `pending_fields` | Text (JSON) | 尚未填寫的欄位清單 |
+| `last_activity` | DateTime | 用於 30 分鐘逾時自動重置 |
+
 ---
 
 ## 📱 Part 3: LINE Bot 系統 (LINE Bot System)
 
-### 3.1 整體架構
+### 3.1 AI 處理流程 (7-Step State Machine) ⭐ v4.0 重構
 
-```
-使用者 LINE → LINE Server → /line/callback (Webhook)
-                                ↓
-                         line_routes.py
-                                ↓
-             ┌───────────────────────────────────┐
-             │ 1. 權限驗證 (LineBinding + perms)  │
-             └───────────────────────────────────┘
-                                ↓
-             ┌───────────────────────────────────┐
-             │ 2. 指令分流 (Regex / Startswith)   │
-             └──────┬────────────────────┬───────┘
-                    │命中固定指令          │未命中 (Fallback)
-                    ↓                    ↓
-             ┌───────────────┐    ┌──────────────────────────┐
-             │ 系統直接處理  │    │ 🧠 Gemini AI 語意解析     │
-             │ (Fast & Free) │    │ (Temporal Awareness)     │
-             └──────┬────────┘    └──────────┬───────────────┘
-                    │                        │解析出 Action
-                    └──────────┬─────────────┘
-                               ↓
-             ┌───────────────────────────────────┐
-             │ 3. UI 渲染 (FlexMessageService)    │
-             └───────────────────────────────────┘
-                               ↓
-             使用者收到精美卡片 (Green/Blue/Dark UI)
-```
+當 LINE 收到訊息時，會進入以下狀態機流程：
 
-### 3.2 LINE 多帳號綁定流程（v3.0）
+1.  **身分識別**：根據 `line_user_id` 查找 `LineBinding` 與 `LineConversationSession`。
+2.  **指令預處理**：
+    *   若輸入「取消」→ 清除 Session，回到 IDLE。
+    *   若符合「固定格式指令」（如 `記帳 午餐 120`）→ 直接執行，不進 AI。
+3.  **狀態分流**：
+    *   **IDLE 模式**：呼叫 Gemini 進行「意圖分析 (Intent Analysis)」。
+        *   若是「查詢類」→ 呼叫 `execute_query` 並回傳 Flex 卡片。
+        *   若是「寫入類」且資料齊全 → 直接寫入 DB。
+        *   若是「寫入類」但缺資料 → 切換至 **COLLECTING** 模式，開始引導。
+    *   **COLLECTING 模式**：將輸入視為對「缺失欄位」的補充。
+        *   更新 `collected_data`。
+        *   若資料補齊 → 寫入 DB 並回到 IDLE。
+        *   若仍缺資料 → 繼續追問下一筆。
+
+### 3.2 多月份範圍查詢與圖表分析 (Trend Analysis) ⭐ v4.0 新增
+
+當使用者詢問範圍（如「2到5月的薪水」）時：
+1.  **AI 解析**：Gemini 將口語解析為時間範圍（如 `start_month=2, end_month=5`）。
+2.  **資料聚合**：`execute_query` 循環查詢各月統計。
+3.  **UI 渲染**：
+    *   使用 **Carousel (輪播)** 呈現：每個月一張獨立的精緻卡片。
+    *   **趨勢圖卡片**：在輪播最後追加一張使用 **QuickChart API** 生成的折線圖，視覺化波動走勢。
+
+### 3.3 LINE 多帳號綁定流程（v3.0）
 
 1. 帳號擁有者在設定頁按「＋ 新增 LINE 帳號綁定」
 2. 前端呼叫 `POST /auth/api/line-bindings/generate-code` → 回傳 6 位驗證碼（存於 `UserSettings.binding_code`，5 分鐘有效）
@@ -270,7 +281,7 @@ web_app/
 5. 驗證通過 → 建立 `LineBinding` 記錄，預設 nickname `使用者 N`，全權限
 6. 設定頁輪詢（每 3 秒）偵測到新增 → 自動重整顯示
 
-### 3.3 權限系統
+### 3.4 權限系統
 
 ```python
 def has_perm(perm):
@@ -283,7 +294,7 @@ if not has_perm("expense"):
     return
 ```
 
-### 3.4 智慧語意解析（Smart Parser）
+### 3.5 智慧語意解析（Smart Parser）
 
 | 格式 | 範例 | 對應功能 |
 |------|------|----------|
@@ -303,7 +314,7 @@ if not has_perm("expense"):
 | **自由口語 (AI)** | `月經來了肚子痛` | 自動識別為 **period** (AI 識別狀態) |
 | 其他/無法辨識 | 任意文字 | 若 AI 也無法確定則回傳 **Flex Carousel 教學** |
 
-### 3.5 管理 API（auth.py）
+### 3.6 管理 API（auth.py）
 
 | Method | URL | 功能 |
 |--------|-----|------|
@@ -435,7 +446,28 @@ python scripts/maintenance/init_db.py  # 建立所有資料表
 
 ---
 
-## 📋 Part 9: 版本更新記錄 (Changelog)
+## 🎨 Part 10: Flex UI 與外部整合
+
+### 10.1 QuickChart 整合規範
+- **用途**：用於生成 LINE 卡片內的統計趨勢圖表。
+- **URL 格式**：`https://quickchart.io/chart?bkg=transparent&c={CONFIG}`
+- **安全建議**：圖表不包含敏感個資，僅顯示月份標籤與金額數值。
+
+---
+
+## 📋 Part 11: 版本更新記錄 (Changelog)
+
+### v4.0（2026-05-10）AI 對話管家 2.0：引導式填寫 + 多輪對話 + 趨勢分析
+- **多輪對話狀態機**：引入 `LineConversationSession`，支援資料缺漏時 AI 主動引導填寫，不再因為一句話沒說清楚而失敗。
+- **時間範圍查詢**：支援跨月份查詢（例如「前三個月的記帳」），自動解析起始與結束時間。
+- **視覺化趨勢分析**：
+  - 整合 **QuickChart API** 生成折線圖。
+  - 多月份查詢自動回傳 **Carousel 輪播卡片**。
+  - 薪資（藍色趨勢）與支出（粉色趨勢）配色區分。
+- **底層優化**：
+  - 修正了 `_get_date_range` 在跨年與 list 格式下的解析穩定性。
+  - 解決了 Flex 訊息 JSON 包裝過深導致的 `OSError: write error` 問題。
+  - 增加 30 分鐘會話逾時機制。
 
 ### v3.2（2026-05-07）AI 智慧管家 + Flex Message 視覺化 UI 升級
 - **Gemini AI 全面接管**：整合 Google Gemini 2.0 Flash 進行自然語言解析。AI 具備「時間感知 (Temporal Awareness)」，能精準推算「昨天」、「上週五」等相對日期，並處理記帳、排班、獎金與生理期四類口語記錄。
