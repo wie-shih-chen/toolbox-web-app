@@ -319,63 +319,123 @@ def execute_query(action, data, user_obj, setting, has_perm_fn):
     """
     from services.flex_message_service import FlexMessageService
     from collections import defaultdict
+    import calendar
 
-    start_date, end_date, month_label = _get_date_range(data)
+    # 取得總體範圍（用於標題或單月判斷）
+    start_date, end_date, range_label = _get_date_range(data)
+    
+    # 解析出所有需要查詢的月份
+    start_m = int(start_date[5:7])
+    end_m = int(end_date[5:7])
+    year = int(start_date[:4])
+    
+    # 如果是跨月查詢（例如 2 到 5 月），我們建立一個卡片列表
+    months_to_query = []
+    if start_m != end_m:
+        curr_m = start_m
+        while True:
+            months_to_query.append(curr_m)
+            if curr_m == end_m: break
+            curr_m = curr_m + 1 if curr_m < 12 else 1
+    else:
+        months_to_query = [start_m]
 
+    # ── 處理記帳查詢 ───────────────────────────────────────────
     if action == 'query_expense':
         if not has_perm_fn('expense'):
             return ('error', '⛔ 此帳號無記帳查看權限，請聯絡帳號擁有者開啟。', None)
 
         from services.expense_service import ExpenseService
-        summary = ExpenseService().get_summary(start_date, end_date, user=user_obj)
-        total = summary.get('total_amount', 0)
-        records = summary.get('records', [])
+        bubbles = []
+        
+        for m in months_to_query:
+            # 計算該月範圍
+            m_year = year if m >= start_m else year + 1 # 簡單處理跨年
+            last_day = calendar.monthrange(m_year, m)[1]
+            m_start = f"{m_year}-{m:02d}-01"
+            m_end = f"{m_year}-{m:02d}-{last_day}"
+            
+            summary = ExpenseService().get_summary(m_start, m_end, user=user_obj)
+            total = summary.get('total_amount', 0)
+            records = summary.get('records', [])
+            
+            if not records and len(months_to_query) > 1: continue # 範圍查詢時跳過無資料月份
+            
+            category_stats = defaultdict(lambda: {'count': 0, 'amount': 0, 'emoji': '📦'})
+            EMOJI_MAP = {'飲食': '🍔', '交通': '🚌', '娛樂': '🎮', '居住': '🏠', '其他': '📦'}
+            for r in records:
+                cat_raw = r.get('category', '其他')
+                parts = cat_raw.split(' ')
+                emoji = parts[0] if len(parts) > 1 and len(parts[0]) <= 3 else EMOJI_MAP.get(cat_raw, '📦')
+                cat_name = parts[1] if len(parts) > 1 else cat_raw
+                category_stats[cat_name]['count'] += 1
+                category_stats[cat_name]['amount'] += int(r['amount'])
+                category_stats[cat_name]['emoji'] = emoji
 
-        category_stats = defaultdict(lambda: {'count': 0, 'amount': 0, 'emoji': '📦'})
-        EMOJI_MAP = {'飲食': '🍔', '交通': '🚌', '娛樂': '🎮', '居住': '🏠', '其他': '📦'}
-        for r in records:
-            cat_raw = r.get('category', '其他')
-            parts = cat_raw.split(' ')
-            emoji = parts[0] if len(parts) > 1 and len(parts[0]) <= 3 else EMOJI_MAP.get(cat_raw, '📦')
-            cat_name = parts[1] if len(parts) > 1 else cat_raw
-            category_stats[cat_name]['count'] += 1
-            category_stats[cat_name]['amount'] += int(r['amount'])
-            category_stats[cat_name]['emoji'] = emoji
+            bubble = FlexMessageService.build_expense_summary_bubble(
+                username=user_obj.username,
+                start_date=m_start, end_date=m_end,
+                total=total, category_stats=category_stats, records=records[:5]
+            )
+            bubbles.append(bubble)
 
-        flex = FlexMessageService.build_expense_summary(
-            username=user_obj.username,
-            start_date=start_date, end_date=end_date,
-            total=total, category_stats=category_stats, records=records
-        )
-        return ('flex', flex, f'{month_label}份記帳總覽')
+        if not bubbles:
+            return ('text', f'📅 {range_label} 沒有找到任何記帳紀錄喔！', None)
+        
+        if len(bubbles) == 1:
+            return ('flex', {"type": "flex", "altText": f"{range_label}記帳總覽", "contents": bubbles[0]}, f"{range_label}記帳總覽")
+        else:
+            carousel = {"type": "carousel", "contents": bubbles[:10]} # LINE 限制最多 10 個
+            return ('flex', {"type": "flex", "altText": f"{range_label}記帳總覽", "contents": carousel}, f"{range_label}記帳總覽")
 
+    # ── 處理薪資查詢 ───────────────────────────────────────────
     elif action == 'query_salary':
         if not has_perm_fn('salary'):
             return ('error', '⛔ 此帳號無薪資查看權限，請聯絡帳號擁有者開啟。', None)
 
         from services.salary_service import SalaryService
         salary_svc = SalaryService()
-        summary = salary_svc.get_history_summary(start_date, end_date, user=user_obj)
-        total_amt = summary.get('total_amount', 0)
-        total_hrs = summary.get('total_hours', 0)
-        records = summary.get('records', [])
+        bubbles = []
 
-        type_stats = defaultdict(lambda: {'count': 0, 'amount': 0, 'hours': 0})
-        for r in records:
-            rtype = '排班' if r['type'] == 'shift' else '獎金'
-            type_stats[rtype]['count'] += 1
-            type_stats[rtype]['amount'] += r.get('amount', 0)
-            if r['type'] == 'shift':
-                type_stats[rtype]['hours'] += r.get('hours', 0)
+        for m in months_to_query:
+            m_year = year if m >= start_m else year + 1
+            last_day = calendar.monthrange(m_year, m)[1]
+            m_start = f"{m_year}-{m:02d}-01"
+            m_end = f"{m_year}-{m:02d}-{last_day}"
+            
+            summary = salary_svc.get_history_summary(m_start, m_end, user=user_obj)
+            total_amt = summary.get('total_amount', 0)
+            total_hrs = summary.get('total_hours', 0)
+            records = summary.get('records', [])
 
-        flex = FlexMessageService.build_salary_summary(
-            username=user_obj.username,
-            start_date=start_date, end_date=end_date,
-            total_amt=total_amt, total_hrs=total_hrs,
-            type_stats=type_stats, records=records
-        )
-        return ('flex', flex, f'{month_label}份薪資總覽')
+            if not records and len(months_to_query) > 1: continue
 
+            type_stats = defaultdict(lambda: {'count': 0, 'amount': 0, 'hours': 0})
+            for r in records:
+                rtype = '排班' if r['type'] == 'shift' else '獎金'
+                type_stats[rtype]['count'] += 1
+                type_stats[rtype]['amount'] += r.get('amount', 0)
+                if r['type'] == 'shift':
+                    type_stats[rtype]['hours'] += r.get('hours', 0)
+
+            bubble = FlexMessageService.build_salary_summary_bubble(
+                username=user_obj.username,
+                start_date=m_start, end_date=m_end,
+                total_amt=total_amt, total_hrs=total_hrs,
+                type_stats=type_stats, records=records[:5]
+            )
+            bubbles.append(bubble)
+
+        if not bubbles:
+            return ('text', f'📅 {range_label} 沒有找到任何薪資紀錄喔！', None)
+
+        if len(bubbles) == 1:
+            return ('flex', {"type": "flex", "altText": f"{range_label}薪資總覽", "contents": bubbles[0]}, f"{range_label}薪資總覽")
+        else:
+            carousel = {"type": "carousel", "contents": bubbles[:10]}
+            return ('flex', {"type": "flex", "altText": f"{range_label}薪資總覽", "contents": carousel}, f"{range_label}薪資總覽")
+
+    # ── 其他查詢（文字類） ───────────────────────────────────────
     elif action == 'query_period':
         if not has_perm_fn('period'):
             return ('error', '⛔ 此帳號無生理期查看權限，請聯絡帳號擁有者開啟。', None)
@@ -392,25 +452,15 @@ def execute_query(action, data, user_obj, setting, has_perm_fn):
         next_start = datetime.strptime(p['period_start'], '%Y-%m-%d')
         days_left = (next_start - now_dt.replace(hour=0, minute=0, second=0, microsecond=0)).days
 
-        fertile_start = p['fertile_window_start'][5:].replace('-', '/')
-        fertile_end   = p['fertile_window_end'][5:].replace('-', '/')
-        ovulation     = p['ovulation_day'][5:].replace('-', '/')
         period_start  = p['period_start'][5:].replace('-', '/')
-        avg_cycle     = period_svc.settings.avg_period_cycle or 28
-
-        if days_left > 0:
-            days_msg = f'（還有 {days_left} 天）'
-        elif days_left == 0:
-            days_msg = '（預計今天）'
-        else:
-            days_msg = f'（已過 {abs(days_left)} 天，可能延遲中）'
+        days_msg = f'（還有 {days_left} 天）' if days_left > 0 else ('（預計今天）' if days_left == 0 else f'（已過 {abs(days_left)} 天）')
 
         reply = (
             f'🩸 下次生理期預測\n'
             f'📅 預測開始：{period_start} {days_msg}\n'
-            f'🥚 排卵日：{ovulation}\n'
-            f'💚 易孕期：{fertile_start} ～ {fertile_end}\n'
-            f'📊 平均週期：{avg_cycle} 天'
+            f'🥚 排卵日：{p["ovulation_day"][5:].replace("-", "/")}\n'
+            f'💚 易孕期：{p["fertile_window_start"][5:].replace("-", "/")} ～ {p["fertile_window_end"][5:].replace("-", "/")}\n'
+            f'📊 平均週期：{period_svc.settings.avg_period_cycle or 28} 天'
         )
         return ('text', reply, None)
 
@@ -419,21 +469,15 @@ def execute_query(action, data, user_obj, setting, has_perm_fn):
             return ('error', '⛔ 此帳號無記帳查看權限，請聯絡帳號擁有者開啟。', None)
 
         from services.expense_service import ExpenseService
-        # 依帳單週期計算（billing_cycle_start_day）
         now_dt = datetime.utcnow() + timedelta(hours=8)
         cycle_day = setting.billing_cycle_start_day or 10
         if now_dt.day >= cycle_day:
-            cycle_start = now_dt.replace(day=cycle_day, hour=0, minute=0, second=0)
+            cycle_start = now_dt.replace(day=cycle_day)
         else:
-            # 上個月的 cycle_day
-            first_of_month = now_dt.replace(day=1)
-            prev_month = first_of_month - timedelta(days=1)
-            cycle_start = prev_month.replace(day=cycle_day, hour=0, minute=0, second=0)
+            prev_month = (now_dt.replace(day=1) - timedelta(days=1))
+            cycle_start = prev_month.replace(day=cycle_day)
 
-        start_str = cycle_start.strftime('%Y-%m-%d')
-        end_str = now_dt.strftime('%Y-%m-%d')
-
-        summary = ExpenseService().get_summary(start_str, end_str, user=user_obj)
+        summary = ExpenseService().get_summary(cycle_start.strftime('%Y-%m-%d'), now_dt.strftime('%Y-%m-%d'), user=user_obj)
         spent = summary.get('total_amount', 0)
         budget = setting.monthly_budget or 10000
         remaining = budget - spent
@@ -442,12 +486,14 @@ def execute_query(action, data, user_obj, setting, has_perm_fn):
 
         reply = (
             f'💰 本週期預算狀況 {status}\n'
-            f'週期：{start_str[5:]} ～ {end_str[5:]}\n'
+            f'週期：{cycle_start.strftime("%m/%d")} ～ {now_dt.strftime("%m/%d")}\n'
             f'預算：${budget:,.0f}\n'
             f'已支出：${spent:,.0f}（{pct}%）\n'
             f'剩餘：${remaining:,.0f}'
         )
         return ('text', reply, None)
+
+    return ('error', '❌ 無法執行此查詢。', None)
 
     return ('error', '❌ 無法執行此查詢。', None)
 
