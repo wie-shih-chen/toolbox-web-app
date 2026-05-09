@@ -77,7 +77,7 @@ def _get_date_range(data):
 # ─────────────────────────────────────────────────────────────
 # 1. 意圖分析（呼叫 Gemini）
 # ─────────────────────────────────────────────────────────────
-def analyze_intent(msg, collected_data, perms, gemini_key):
+def analyze_intent(msg, collected_data, perms, gemini_key, current_intent=None):
     """
     呼叫 Gemini API 分析使用者輸入，回傳：
     {
@@ -94,12 +94,16 @@ def analyze_intent(msg, collected_data, perms, gemini_key):
     weekday = weekday_map[now_dt.isoweekday()]
     collected_json = json.dumps(collected_data, ensure_ascii=False) if collected_data else '{}'
     perms_str = '、'.join(perms) if perms else '（無）'
+    
+    intent_context = ""
+    if current_intent:
+        intent_context = f"\n⚠️ 重要提示：目前使用者正在進行「{current_intent}」的操作，他現在的回覆很大機率是為了補充該操作所缺少的欄位。請務必優先將解析出的資料歸類到 {current_intent} 的欄位中，並將 action 設為 '{current_intent}'。\n"
 
     prompt = f"""你是個人工具箱的 AI 助手，能提取使用者說話中包含的資料。
 現在時間：{now_str}（星期{weekday}）
 使用者說：「{msg}」
 對話上下文（已收集的資料）：{collected_json}
-使用者的功能權限：{perms_str}
+使用者的功能權限：{perms_str}{intent_context}
 
 你的任務：分析這句話，判斷是「寫入」還是「查詢」，或是「取消」，或是需要自由「閒聊/問答」。
 

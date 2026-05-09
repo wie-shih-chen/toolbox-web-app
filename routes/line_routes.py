@@ -178,7 +178,7 @@ def register_line_handlers(handler):
 
             if gemini_key and len(msg) < 300:
                 from services.ai_chat_service import analyze_intent, get_missing_fields, build_question, execute_write
-                ai_result = analyze_intent(msg, collected, get_perms(), gemini_key)
+                ai_result = analyze_intent(msg, collected, get_perms(), gemini_key, current_intent=intent)
 
                 # 取消意圖
                 if ai_result.get('action') == 'cancel':
