@@ -8,7 +8,7 @@ import os
 from datetime import datetime
 
 # 基礎 URL，用於按鈕連結
-WEB_BASE = os.environ.get('WEB_BASE', 'https://line.me')
+WEB_BASE = os.environ.get('WEB_BASE', 'https://weishihchen.pythonanywhere.com')
 
 class FlexMessageService:
 
