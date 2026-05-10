@@ -1,6 +1,6 @@
 # 📊 工具箱 Web App - 完整架構總覽
 
-> **最後更新**：2026-05-10 | **版本**：v4.0（AI 對話管家 2.0：引導式填寫 + 多輪對話 + 趨勢分析圖表）  
+> **最後更新**：2026-05-10 | **版本**：v4.1（AI 全接管架構：移除手動快速通道、規則降級備援、Flex 卡片優化）  
 > 這份文件整合了所有專案架構資訊，閱讀順序建議：Part 1 → Part 2 → Part 3 → Part 4
 
 ---
@@ -47,7 +47,7 @@ web_app/
 │   ├── report_service.py           # 報表生成 (Excel / CSV 格式化輸出)
 │   ├── email_service.py            # Email 遞送 (SMTP + HTML 模板渲染)
 │   ├── line_service.py             # LINE 訊息互動 (封裝 push_message 與 push_flex)
-│   ├── flex_message_service.py     # 🎨 Flex UI 引擎 (新增 Carousel 輪播與 QuickChart 整合)
+│   ├── flex_message_service.py     # 🎨 Flex UI 引擎（Carousel 輪播、QuickChart 趨勢圖、最近10筆記錄）
 │   └── period_notify_service.py    # 🩸 生理期預測通知 (APScheduler 每日檢查 & 提前提醒)
 │
 ├── 🎨 templates/ (前端頁面 - Jinja2)
@@ -245,23 +245,28 @@ web_app/
 
 ## 📱 Part 3: LINE Bot 系統 (LINE Bot System)
 
-### 3.1 AI 處理流程 (7-Step State Machine) ⭐ v4.0 重構
+### 3.1 AI 處理流程 (7-Step State Machine) ⭐ v4.1 重構
 
-當 LINE 收到訊息時，會進入以下狀態機流程：
+當 LINE 收到訊息時，會進入以下狀態機流程（**已全面由 AI 接管，移除所有手動快速通道**）：
 
-1.  **身分識別**：根據 `line_user_id` 查找 `LineBinding` 與 `LineConversationSession`。
-2.  **指令預處理**：
-    *   若輸入「取消」→ 清除 Session，回到 IDLE。
-    *   若符合「固定格式指令」（如 `記帳 午餐 120`）→ 直接執行，不進 AI。
-3.  **狀態分流**：
-    *   **IDLE 模式**：呼叫 Gemini 進行「意圖分析 (Intent Analysis)」。
-        *   若是「查詢類」→ 呼叫 `execute_query` 並回傳 Flex 卡片。
-        *   若是「寫入類」且資料齊全 → 直接寫入 DB。
-        *   若是「寫入類」但缺資料 → 切換至 **COLLECTING** 模式，開始引導。
-    *   **COLLECTING 模式**：將輸入視為對「缺失欄位」的補充。
-        *   更新 `collected_data`。
-        *   若資料補齊 → 寫入 DB 並回到 IDLE。
-        *   若仍缺資料 → 繼續追問下一筆。
+1. **身分識別**：根據 `line_user_id` 查找 `LineBinding` 與 `LineConversationSession`。
+2. **指令預處理**：
+   - 若輸入「取消/算了/不用了」→ 清除 Session，回到 IDLE。
+3. **狀態分流**：
+   - **COLLECTING 模式**（正在填寫中）：
+     - 先呼叫 Gemini AI 分析輸入（附帶 `current_intent` 上下文提示）
+     - 若 AI 返回 `error`（如 Rate Limit）→ 啟動 **`fallback_extract`** 本地規則引擎降級解析
+     - 更新 `collected_data`，若齊全 → 寫入 DB，若仍缺 → 繼續追問
+   - **IDLE 模式**：
+     - 僅保留兩條非 AI 快速通道（節省 API 額度）：
+       - `查詢記帳 / 查詢薪水`（固定格式查詢）
+       - `查詢`（顯示 LINE User ID）
+     - 其餘所有輸入全部送交 Gemini AI 分析（`analyze_intent`）
+       - 查詢類 → 呼叫 `execute_query` 回傳 Flex 卡片
+       - 寫入類 + 資料齊全 → 直接寫入 DB
+       - 寫入類 + 缺資料 → 切換至 **COLLECTING** 模式，開始引導追問
+       - `chat` 類 → 回傳 AI 自然語言回覆
+       - `unknown` → 回傳 Flex Carousel 說明卡片
 
 ### 3.2 多月份範圍查詢與圖表分析 (Trend Analysis) ⭐ v4.0 新增
 
@@ -298,21 +303,17 @@ if not has_perm("expense"):
 
 | 格式 | 範例 | 對應功能 |
 |------|------|----------|
-| `記帳 [名稱] [金額]` | `記帳 午餐 120` | 新增支出，支援溯及日期如 `記帳 昨天 午餐 120` |
-| `記帳 [名稱] [類別] [金額]` | `記帳 咖啡 飲食 55` | 指定類別 |
-| `獎金 [金額] [時數?] [備註?]` | `獎金 5000 8 業績` | 新增獎金記錄 |
-| `排班 [開始] [結束] [日期?]` | `排班 09:00 18:00 4/20` | 新增班表 |
-| `查詢記帳 [月份?]` | `查詢記帳 4月` | 查詢並回傳當月（或指定月）總支出、分類統計與最新明細 |
-| `查詢薪水 [月份?]` | `查詢薪水 4月` | 查詢並回傳當月（或指定月）總金額、時數與最新明細 |
-| `月經` | `月經` | 今日開始 |
-| `月經 4/15` | `月經 4/15` | 指定日期開始 |
-| `月經 4/15 4/19` | `月經 4/15 4/19` | 指定區間 |
-| `月經 結束` | `月經 結束` | 今日結束 |
-| `說明` | `說明` / `help` | 顯示 **Flex Carousel 說明卡片** (6張循環) |
-| **自由口語 (AI)** | `昨天買咖啡85元` | 自動識別為 **expense** (AI 推算日期) |
-| **自由口語 (AI)** | `下午2到6點打工` | 自動識別為 **shift** (AI 解析時間段) |
-| **自由口語 (AI)** | `月經來了肚子痛` | 自動識別為 **period** (AI 識別狀態) |
-| 其他/無法辨識 | 任意文字 | 若 AI 也無法確定則回傳 **Flex Carousel 教學** |
+| **AI 全接管** | `記帳` | AI 引導追問「項目名稱」→「金額」→ 存入 DB |
+| **AI 全接管** | `我要記帳` | AI 辨識意圖為 expense，開始引導填寫 |
+| **AI 全接管** | `昨天買咖啡85元` | AI 自動識別 expense，推算日期，直接寫入 |
+| **AI 全接管** | `排班` | AI 引導追問「上班時間」→「下班時間」→ 存入 DB |
+| **AI 全接管** | `下午2到6點打工` | AI 識別為 shift，解析時間段 |
+| **AI 全接管** | `月經來了肚子痛` | AI 識別為 period start，記錄今日 |
+| **AI 全接管** | `幫我記一個倒數到聖誕節` | AI 識別為 countdown，引導填寫名稱/日期 |
+| **AI 全接管** | `2到5月的薪水` | AI 識別為 query_salary，回傳多月份輪播卡片 |
+| `查詢記帳 [月份?]` | `查詢記帳 4月` | 固定格式快速查詢，不耗費 AI 額度 |
+| `查詢薪水 [月份?]` | `查詢薪水 4月` | 固定格式快速查詢，不耗費 AI 額度 |
+| 其他/無法辨識 | 任意文字 | AI 閒聊回覆，若實在無法處理才顯示說明卡片 |
 
 ### 3.6 管理 API（auth.py）
 
@@ -456,6 +457,15 @@ python scripts/maintenance/init_db.py  # 建立所有資料表
 ---
 
 ## 📋 Part 11: 版本更新記錄 (Changelog)
+
+### v4.1（2026-05-10）AI 全接管架構：移除手動快速通道 + 規則降級備援 + Flex 卡片優化
+- **AI 全面接管**：移除所有手動快速通道（記帳/排班/獎金/月經/倒數等關鍵字的 if/else 規則），現在所有訊息一律透過 Gemini AI 進行意圖分析，讓互動更自然靈活。
+- **當前意圖上下文注入**：`analyze_intent` 新增 `current_intent` 參數，在 COLLECTING 狀態下會強制告知 AI 當前正在進行的操作（如 `expense`），避免 AI 遺忘上下文導致重複追問相同欄位。
+- **`fallback_extract` 降級備援**：新增本地規則引擎，當 Gemini API Rate Limit 或網路錯誤時，系統不再顯示錯誤訊息，而是自動用本地規則從使用者輸入中提取關鍵欄位（支援 expense / shift / bonus / period / countdown），確保 COLLECTING 狀態下永遠不會被卡死。
+- **Gemini 模型選用**：當前使用 `gemini-2.5-flash`（Free Tier 5 RPM / 20 RPD），視帳號情況可更換。建議開啟付費方案（Pay As You Go）以解除每日 20 次限制。
+- **Flex 卡片優化**：
+  - 記帳/薪資查詢卡片從「最近 5 筆」升級為「最近 10 筆」
+  - 修正「查看全部記錄 →」按鈕的 404 錯誤（URL 補上尾部斜線 `/expense/` / `/salary/`）
 
 ### v4.0（2026-05-10）AI 對話管家 2.0：引導式填寫 + 多輪對話 + 趨勢分析
 - **多輪對話狀態機**：引入 `LineConversationSession`，支援資料缺漏時 AI 主動引導填寫，不再因為一句話沒說清楚而失敗。
