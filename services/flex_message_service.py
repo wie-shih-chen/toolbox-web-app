@@ -214,10 +214,10 @@ class FlexMessageService:
                     {"type": "text", "text": "分類統計", "weight": "bold", "color": "#8b949e", "size": "sm", "margin": "lg"},
                     {"type": "box", "layout": "vertical", "margin": "md", "contents": category_rows or [{"type":"text","text":"暫無資料","color":"#555555"}]},
                     {"type": "separator", "margin": "xl", "color": "#2c3e50"},
-                    {"type": "text", "text": "最近紀錄", "weight": "bold", "color": "#8b949e", "size": "sm", "margin": "lg"},
+                    {"type": "text", "text": "最近 10 筆", "weight": "bold", "color": "#8b949e", "size": "sm", "margin": "lg"},
                     {"type": "box", "layout": "vertical", "margin": "md", "contents": record_rows or [{"type":"text","text":"暫無資料","color":"#555555"}]},
                     {"type": "box", "layout": "vertical", "margin": "xl", "contents": [
-                        {"type": "button", "action": {"type": "uri", "label": "查看詳細紀錄 →", "uri": f"{WEB_BASE}/expense"}, "style": "primary", "color": "#03a9f4", "height": "sm"}
+                        {"type": "button", "action": {"type": "uri", "label": "查看全部記錄 →", "uri": f"{WEB_BASE}/expense/"}, "style": "primary", "color": "#03a9f4", "height": "sm"}
                     ]}
                 ]
             }
@@ -278,10 +278,10 @@ class FlexMessageService:
                     {"type": "text", "text": "項目統計", "weight": "bold", "color": "#8b949e", "size": "sm", "margin": "lg"},
                     {"type": "box", "layout": "vertical", "margin": "md", "contents": stat_rows or [{"type":"text","text":"暫無資料","color":"#555555"}]},
                     {"type": "separator", "margin": "xl", "color": "#2c3e50"},
-                    {"type": "text", "text": "最近 5 筆", "weight": "bold", "color": "#8b949e", "size": "sm", "margin": "lg"},
+                    {"type": "text", "text": "最近 10 筆", "weight": "bold", "color": "#8b949e", "size": "sm", "margin": "lg"},
                     {"type": "box", "layout": "vertical", "margin": "md", "contents": record_rows or [{"type":"text","text":"暫無資料","color":"#555555"}]},
                     {"type": "box", "layout": "vertical", "margin": "xl", "contents": [
-                        {"type": "button", "action": {"type": "uri", "label": "查看詳細薪資記錄 →", "uri": f"{WEB_BASE}/salary"}, "style": "primary", "color": "#03a9f4", "height": "sm"}
+                        {"type": "button", "action": {"type": "uri", "label": "查看全部薪資記錄 →", "uri": f"{WEB_BASE}/salary/"}, "style": "primary", "color": "#03a9f4", "height": "sm"}
                     ]}
                 ]
             }

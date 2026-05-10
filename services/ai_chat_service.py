@@ -496,7 +496,7 @@ def execute_query(action, data, user_obj, setting, has_perm_fn):
             bubble = FlexMessageService.build_expense_summary_bubble(
                 username=user_obj.username,
                 start_date=m_start, end_date=m_end,
-                total=total, category_stats=category_stats, records=records[:5]
+                total=total, category_stats=category_stats, records=records[:10]
             )
             bubbles.append(bubble)
 
@@ -553,7 +553,7 @@ def execute_query(action, data, user_obj, setting, has_perm_fn):
                 username=user_obj.username,
                 start_date=m_start, end_date=m_end,
                 total_amt=total_amt, total_hrs=total_hrs,
-                type_stats=type_stats, records=records[:5]
+                type_stats=type_stats, records=records[:10]
             )
             bubbles.append(bubble)
 
