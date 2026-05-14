@@ -250,7 +250,114 @@ def register_line_handlers(handler):
             _push_result(result)
             return
 
-        # 6b. 查詢 LINE ID（特殊指令，不需要 AI）
+        # 6b. 查詢類快速通道：預算 / 生理期 / 倒數 / 紀念日（零 token）
+        QUERY_SHORTCUTS = {
+            '查詢預算':   'query_balance',
+            '查詢生理期': 'query_period',
+            '查詢倒數':   'query_countdown',
+            '查詢紀念日': 'query_anniversary',
+        }
+        if msg in QUERY_SHORTCUTS:
+            from services.ai_chat_service import execute_query
+            result = execute_query(QUERY_SHORTCUTS[msg], {}, user_obj, setting, has_perm)
+            _push_result(result)
+            return
+
+        # 6c. 快速記帳：記帳 <金額> <項目> [類別]
+        import re as _re
+        _time_re = _re.compile(r'^([01]?\d|2[0-3]):([0-5]\d)$')
+
+        if msg.startswith('記帳 '):
+            parts = msg.split()
+            _expense_fmt = '❌ 格式錯誤！\n正確格式：記帳 <金額> <項目> [類別]\n\n範例：\n記帳 85 午餐\n記帳 120 咖啡 飲食'
+            if len(parts) >= 2:
+                try:
+                    amount = float(parts[1])
+                    if amount <= 0:
+                        raise ValueError
+                    name = parts[2] if len(parts) >= 3 else None
+                    category = parts[3] if len(parts) >= 4 else '飲食'
+                    if not name:
+                        if not has_perm('expense'):
+                            LineService.push_message(user_id, '⛔ 此帳號無記帳權限，請聯絡帳號擁有者開啟。')
+                            return
+                        from services.ai_chat_service import build_question
+                        _save_session('COLLECTING', 'expense',
+                                      {'amount': amount, 'category': category}, ['name'])
+                        LineService.push_message(user_id,
+                            f'⚠️ 記帳項目名稱是必填的！\n\n{build_question("name")}')
+                    else:
+                        from services.ai_chat_service import execute_write
+                        result = execute_write('expense',
+                            {'amount': amount, 'name': name, 'category': category},
+                            user_obj, setting, has_perm)
+                        _push_result(result)
+                except ValueError:
+                    LineService.push_message(user_id, _expense_fmt)
+            else:
+                LineService.push_message(user_id, _expense_fmt)
+            return
+
+        # 6d. 快速排班：排班 <開始> <結束> [YYYY-MM-DD]
+        if msg.startswith('排班 '):
+            def _parse_shift_time(s):
+                s = s.strip().replace('.', ':')
+                if len(s) == 4 and s.isdigit():
+                    s = f'{s[:2]}:{s[2:]}'
+                return s if _time_re.match(s) else None
+
+            parts = msg.split()
+            times, date_str = [], None
+            for p in parts[1:]:
+                if _re.match(r'^\d{4}-\d{2}-\d{2}$', p):
+                    date_str = p
+                else:
+                    t = _parse_shift_time(p)
+                    if t:
+                        times.append(t)
+
+            if len(times) >= 2:
+                from services.ai_chat_service import execute_write
+                data = {'start_time': times[0], 'end_time': times[1]}
+                if date_str:
+                    data['date'] = date_str
+                result = execute_write('shift', data, user_obj, setting, has_perm)
+                _push_result(result)
+            else:
+                LineService.push_message(user_id,
+                    '❌ 格式錯誤！\n正確格式：排班 <開始> <結束> [日期]\n\n範例：\n排班 14:00 21:00\n排班 1400 2100 2026-05-15')
+            return
+
+        # 6e. 快速獎金：獎金 <金額> [備註]
+        if msg.startswith('獎金 '):
+            parts = msg.split(maxsplit=2)
+            try:
+                amount = float(parts[1])
+                if amount <= 0:
+                    raise ValueError
+                note = parts[2] if len(parts) >= 3 else ''
+                from services.ai_chat_service import execute_write
+                result = execute_write('bonus', {'amount': amount, 'note': note},
+                                       user_obj, setting, has_perm)
+                _push_result(result)
+            except (ValueError, IndexError):
+                LineService.push_message(user_id,
+                    '❌ 格式錯誤！\n正確格式：獎金 <金額> [備註]\n\n範例：\n獎金 500\n獎金 1000 全勤獎金')
+            return
+
+        # 6f. 快速生理期：精確比對關鍵字
+        if msg in ('生理期開始', '月經來了', '月經開始'):
+            from services.ai_chat_service import execute_write
+            result = execute_write('period', {'type': 'start'}, user_obj, setting, has_perm)
+            _push_result(result)
+            return
+        if msg in ('生理期結束', '月經結束'):
+            from services.ai_chat_service import execute_write
+            result = execute_write('period', {'type': 'end'}, user_obj, setting, has_perm)
+            _push_result(result)
+            return
+
+        # 6g. 查詢 LINE ID（特殊指令，不需要 AI）
         if msg.strip() == "查詢":
             LineService.push_message(user_id, f"您的 LINE User ID: {user_id}")
             return

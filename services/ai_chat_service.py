@@ -652,7 +652,29 @@ def execute_query(action, data, user_obj, setting, has_perm_fn):
             
         return ('text', "\n".join(reply_lines), None)
 
-    return ('error', '❌ 無法執行此查詢。', None)
+    elif action == 'query_anniversary':
+        from services.countdown_service import CountdownService
+        svc = CountdownService(user_obj.id)
+        items = svc.get_all()
+        anniversaries = [i for i in items if i['is_anniversary']]
+
+        if not anniversaries:
+            return ('text', '💑 目前沒有設定任何紀念日喔！\n可以到工具笱網站的「倒數」功能新增紀念日。', None)
+
+        # 已開始的紀念日（天數多的排前面），尚未開始的接後
+        past     = sorted([i for i in anniversaries if i['is_past']],  key=lambda x: -x['days_diff'])
+        upcoming = sorted([i for i in anniversaries if not i['is_past']], key=lambda x: x['days_diff'])
+
+        lines = ['✨ 紀念日天數']
+        for item in (past + upcoming):
+            icon   = item['icon'] or '💑'
+            if item['is_past']:
+                detail = f"{item['display_text']}（共 {item['days_diff']} 天）"
+            else:
+                detail = item['display_text']  # e.g. "還有 N 天開始"
+            lines.append(f"\n{icon} {item['title']}：{detail}\n   📅 {item['target_date']}")
+
+        return ('text', '\n'.join(lines), None)
 
     return ('error', '❌ 無法執行此查詢。', None)
 
