@@ -1303,17 +1303,26 @@
         document.getElementById('builtin-edit-error').style.display = 'none';
 
         // 載入目前設定
+        const defaultMap = {
+            salary: { name: '🏷 班表',   color: '#6366f1' },
+            period: { name: '🩸 週期追蹤', color: '#ff4d4f' },
+        };
         try {
             const res  = await fetch(`/ntut/internal/${type}/settings`);
             const data = await res.json();
-            document.getElementById('builtin-edit-name').value = data.name || '';
-            builtinEditSelectedColor = data.color || COLORS[0];
+            document.getElementById('builtin-edit-name').value = data.name || defaultMap[type]?.name || '';
+            builtinEditSelectedColor = data.color || defaultMap[type]?.color || COLORS[0];
             // 選中對應顏色色塊
             document.querySelectorAll('#builtin-edit-color-row .color-swatch').forEach(el => {
                 el.classList.toggle('selected', el.title === builtinEditSelectedColor);
             });
         } catch {
-            document.getElementById('builtin-edit-name').value = '';
+            const def = defaultMap[type] || {};
+            document.getElementById('builtin-edit-name').value = def.name || '';
+            builtinEditSelectedColor = def.color || COLORS[0];
+            document.querySelectorAll('#builtin-edit-color-row .color-swatch').forEach(el => {
+                el.classList.toggle('selected', el.title === builtinEditSelectedColor);
+            });
         }
 
         document.getElementById('builtinEditModal').style.display = 'flex';

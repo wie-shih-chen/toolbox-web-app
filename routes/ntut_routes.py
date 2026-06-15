@@ -259,8 +259,8 @@ def get_builtin_settings(type):
     cfg = _BUILTIN_TYPES[type]
     s   = _get_or_create_settings(current_user.id)
     return jsonify({
-        'name':  getattr(s, cfg['name_field'],  cfg['default_name']),
-        'color': getattr(s, cfg['color_field'], cfg['default_color']),
+        'name':  getattr(s, cfg['name_field'],  None) or cfg['default_name'],
+        'color': getattr(s, cfg['color_field'], None) or cfg['default_color'],
     })
 
 
@@ -282,8 +282,8 @@ def update_builtin_settings(type):
 
     db.session.commit()
     return jsonify({
-        'name':  getattr(s, cfg['name_field'],  cfg['default_name']),
-        'color': getattr(s, cfg['color_field'], cfg['default_color']),
+        'name':  getattr(s, cfg['name_field'],  None) or cfg['default_name'],
+        'color': getattr(s, cfg['color_field'], None) or cfg['default_color'],
     })
 
 
