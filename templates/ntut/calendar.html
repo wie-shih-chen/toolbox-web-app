@@ -523,6 +523,210 @@
             font-size: 0.85rem !important;
         }
     }
+    /* ── Built-in Calendar Items ───────────────────── */
+    .sidebar-section {
+        margin-bottom: 4px;
+    }
+
+    .sidebar-section-label {
+        font-size: 0.72rem;
+        font-weight: 700;
+        color: var(--text-tertiary);
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        padding: 6px 4px 4px;
+    }
+
+    .builtin-cal-item {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 10px;
+        border-radius: 10px;
+        background: rgba(255, 255, 255, 0.04);
+        border: 1px solid rgba(255, 255, 255, 0.06);
+        margin-bottom: 4px;
+        transition: background .2s;
+    }
+
+    .builtin-cal-item:hover {
+        background: rgba(255, 255, 255, 0.08);
+    }
+
+    .builtin-cal-name {
+        flex: 1;
+        font-size: 0.88rem;
+        color: var(--text-primary);
+    }
+
+    /* Toggle switch */
+    .toggle-switch {
+        position: relative;
+        width: 34px;
+        height: 18px;
+        flex-shrink: 0;
+    }
+
+    .toggle-switch input {
+        opacity: 0;
+        width: 0;
+        height: 0;
+    }
+
+    .toggle-slider {
+        position: absolute;
+        cursor: pointer;
+        inset: 0;
+        background: rgba(255,255,255,0.15);
+        border-radius: 18px;
+        transition: background .25s;
+    }
+
+    .toggle-slider:before {
+        content: '';
+        position: absolute;
+        width: 12px;
+        height: 12px;
+        left: 3px;
+        top: 3px;
+        background: white;
+        border-radius: 50%;
+        transition: transform .25s;
+    }
+
+    input:checked + .toggle-slider {
+        background: rgba(99, 102, 241, 0.7);
+    }
+
+    input:checked + .toggle-slider:before {
+        transform: translateX(16px);
+    }
+
+    /* ── iCal Export Modal ─────────────────────────── */
+    .ical-option {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 12px 14px;
+        background: rgba(255,255,255,0.05);
+        border: 1px solid rgba(255,255,255,0.08);
+        border-radius: 12px;
+        margin-bottom: 10px;
+        cursor: pointer;
+        transition: background .2s, border-color .2s;
+        user-select: none;
+    }
+
+    .ical-option:hover {
+        background: rgba(255,255,255,0.09);
+    }
+
+    .ical-option input[type=checkbox] {
+        width: 18px;
+        height: 18px;
+        accent-color: #6366f1;
+        cursor: pointer;
+        flex-shrink: 0;
+    }
+
+    .ical-option-text {
+        flex: 1;
+    }
+
+    .ical-option-title {
+        font-size: 0.92rem;
+        font-weight: 600;
+        color: var(--text-primary);
+        margin-bottom: 2px;
+    }
+
+    .ical-option-desc {
+        font-size: 0.78rem;
+        color: var(--text-tertiary);
+    }
+
+    .ical-url-box {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+        background: rgba(0,0,0,0.25);
+        border: 1px solid rgba(255,255,255,0.1);
+        border-radius: 10px;
+        padding: 10px 14px;
+        margin-top: 4px;
+        margin-bottom: 14px;
+        word-break: break-all;
+        font-size: 0.78rem;
+        color: var(--text-secondary);
+        min-height: 48px;
+    }
+
+    .ical-url-text {
+        flex: 1;
+        line-height: 1.4;
+    }
+
+    .btn-copy-url {
+        background: rgba(255,255,255,0.1);
+        border: none;
+        color: var(--text-primary);
+        padding: 6px 10px;
+        border-radius: 8px;
+        cursor: pointer;
+        font-size: 0.8rem;
+        white-space: nowrap;
+        transition: background .2s;
+        flex-shrink: 0;
+    }
+
+    .btn-copy-url:hover {
+        background: rgba(255,255,255,0.2);
+    }
+
+    .ical-hint {
+        font-size: 0.78rem;
+        color: var(--text-tertiary);
+        line-height: 1.5;
+        margin-top: 8px;
+    }
+
+    .ical-hint strong {
+        color: var(--text-secondary);
+    }
+
+    /* Readonly event modal extra info */
+    .event-readonly-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        font-size: 0.75rem;
+        background: rgba(255,255,255,0.08);
+        color: var(--text-tertiary);
+        padding: 3px 8px;
+        border-radius: 6px;
+        margin-bottom: 12px;
+    }
+
+    .btn-goto-source {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        width: 100%;
+        padding: 10px 14px;
+        background: rgba(99, 102, 241, 0.12);
+        border: 1px solid rgba(99, 102, 241, 0.25);
+        border-radius: 12px;
+        color: #a5b4fc;
+        font-size: 0.9rem;
+        cursor: pointer;
+        margin-top: 16px;
+        text-decoration: none;
+        transition: background .2s;
+    }
+
+    .btn-goto-source:hover {
+        background: rgba(99, 102, 241, 0.22);
+    }
 </style>
 {% endblock %}
 
@@ -531,20 +735,50 @@
 
     <!-- ── Sidebar ── -->
     <aside class="cal-sidebar" id="cal-sidebar">
-        <div class="sidebar-header">
-            <h4>我的日曆</h4>
-            <div style="display:flex;gap:4px;">
-                <a href="{{ url_for('ntut.calendar_settings') }}" class="btn-add-cal" title="通知設定"
-                    style="text-decoration:none;">
-                    <span class="material-icons">notifications_none</span>
-                </a>
-                <button class="btn-add-cal" onclick="openAddModal()" title="新增日曆">
-                    <span class="material-icons">add</span>
-                </button>
+        <!-- Built-in calendars section -->
+        <div class="sidebar-section">
+            <div class="sidebar-header">
+                <h4>我的日曆</h4>
+                <div style="display:flex;gap:4px;">
+                    <button class="btn-add-cal" onclick="openIcalModal()" title="匯出到手機">
+                        <span class="material-icons" style="font-size:16px;">ios_share</span>
+                    </button>
+                    <a href="{{ url_for('ntut.calendar_settings') }}" class="btn-add-cal" title="通知設定"
+                        style="text-decoration:none;">
+                        <span class="material-icons">notifications_none</span>
+                    </a>
+                    <button class="btn-add-cal" onclick="openAddModal()" title="新增日曆">
+                        <span class="material-icons">add</span>
+                    </button>
+                </div>
             </div>
+
+            <!-- Built-in: Salary Shifts -->
+            <div class="builtin-cal-item">
+                <span class="cal-dot" style="background:#6366f1;"></span>
+                <span class="builtin-cal-name">🏷 班表</span>
+                <label class="toggle-switch" title="顯示/隱藏班表">
+                    <input type="checkbox" id="toggle-salary" checked onchange="toggleBuiltinSource('salary', this.checked)">
+                    <span class="toggle-slider"></span>
+                </label>
+            </div>
+
+            <!-- Built-in: Period Tracking -->
+            <div class="builtin-cal-item">
+                <span class="cal-dot" style="background:#ff4d4f;"></span>
+                <span class="builtin-cal-name">🩸 週期追蹤</span>
+                <label class="toggle-switch" title="顯示/隱藏週期追蹤">
+                    <input type="checkbox" id="toggle-period" checked onchange="toggleBuiltinSource('period', this.checked)">
+                    <span class="toggle-slider"></span>
+                </label>
+            </div>
+
+            <div style="height:8px;"></div>
+            <div class="sidebar-section-label">訂閱日曆</div>
         </div>
+
         <div id="cal-list">
-            <p class="cal-empty" id="cal-empty-hint">還沒有日曆<br>點 + 新增</p>
+            <p class="cal-empty" id="cal-empty-hint">還沒有訂閱日曆<br>點 + 新增</p>
         </div>
     </aside>
 
@@ -624,6 +858,12 @@
             <button class="btn-close-modal" onclick="closeEventModal()">✕</button>
         </div>
 
+        <!-- Readonly badge (shown for built-in sources) -->
+        <div id="event-readonly-badge" class="event-readonly-badge" style="display:none;">
+            <span class="material-icons" style="font-size:13px;">lock</span>
+            <span id="event-readonly-label">唯讀</span>
+        </div>
+
         <div style="margin-bottom: 20px;">
             <div style="display:flex; align-items:center; gap: 8px; margin-bottom: 12px;">
                 <span id="event-color-dot" class="cal-dot"></span>
@@ -641,11 +881,61 @@
                     <span class="material-icons" style="font-size: 18px; color: var(--text-tertiary);">source</span>
                     <span id="event-source-name"></span>
                 </div>
+                <!-- Extra info for readonly events -->
+                <div id="event-extra-info" style="display:none; flex-direction:column; gap:6px;"></div>
             </div>
+        </div>
+
+        <!-- Go-to-source button (only for readonly events) -->
+        <a id="event-goto-btn" href="#" class="btn-goto-source" style="display:none;">
+            <span class="material-icons" style="font-size:18px;">open_in_new</span>
+            <span id="event-goto-label">前往編輯</span>
+        </a>
+    </div>
+</div>
+
+<!-- ── iCal Export Modal ── -->
+<div id="icalModal" class="modal-overlay" style="display:none" onclick="handleIcalOverlayClick(event)">
+    <div class="modal-box">
+        <div class="modal-header">
+            <h3>📲 匯出到手機日曆</h3>
+            <button class="btn-close-modal" onclick="closeIcalModal()">✕</button>
+        </div>
+
+        <p style="font-size:0.85rem; color:var(--text-secondary); margin-bottom:16px;">
+            選擇要匯出的資料，複製連結後加入手機日曆即可自動同步。
+        </p>
+
+        <!-- 選擇資料類型 -->
+        <label class="ical-option" for="ical-chk-salary">
+            <input type="checkbox" id="ical-chk-salary" checked onchange="updateIcalUrl()">
+            <div class="ical-option-text">
+                <div class="ical-option-title">🏷 班表</div>
+                <div class="ical-option-desc">排班記錄（上班時間、工時）</div>
+            </div>
+        </label>
+
+        <label class="ical-option" for="ical-chk-period">
+            <input type="checkbox" id="ical-chk-period" checked onchange="updateIcalUrl()">
+            <div class="ical-option-text">
+                <div class="ical-option-title">🩸 週期追蹤</div>
+                <div class="ical-option-desc">經期歷史、預測經期、排卵日、易孕期</div>
+            </div>
+        </label>
+
+        <div style="font-size:0.82rem; color:var(--text-tertiary); margin-bottom:6px;">訂閱連結</div>
+        <div class="ical-url-box">
+            <span class="ical-url-text" id="ical-url-display">載入中…</span>
+            <button class="btn-copy-url" onclick="copyIcalUrl()" id="btn-copy-ical">複製</button>
+        </div>
+
+        <div class="ical-hint">
+            <strong>📱 iPhone：</strong>設定 → 日曆 → 帳號 → 加入帳號 → 其他 → 加入訂閱的日曆 → 貼上連結<br>
+            <strong>🤖 Android：</strong>Google 日曆 → 其他日曆 → 透過 URL 新增<br>
+            <strong>🔄 自動同步：</strong>訂閱後手機會自動更新，無需重新匯入。
         </div>
     </div>
 </div>
-{% endblock %}
 
 {% block extra_js %}
 <!-- FullCalendar -->
@@ -660,6 +950,7 @@
     let currentTab = 'url';
     let editSelectedColor = COLORS[0];
     let fcCalendar = null;  // FullCalendar instance
+    let icsToken = null;    // iCal export token
 
     /* ─────────────────────────────────────────────
        FullCalendar Init
@@ -681,7 +972,7 @@
             },
             buttonText: { today: '今天', month: '月', list: '列表' },
             height: '100%',
-            contentHeight: isMobile ? 'auto' : undefined, /* Better scrolling on mobile list view */
+            contentHeight: isMobile ? 'auto' : undefined,
             eventSources: [],
             noEventsContent: '沒有活動',
             eventClick: function (info) {
@@ -689,6 +980,18 @@
             }
         });
         fcCalendar.render();
+
+        // 加入內建事件源
+        fcCalendar.addEventSource({
+            id: 'builtin-salary',
+            url: '/ntut/internal/salary-events',
+            failure: () => console.warn('班表載入失敗'),
+        });
+        fcCalendar.addEventSource({
+            id: 'builtin-period',
+            url: '/ntut/internal/period-events',
+            failure: () => console.warn('週期追蹤載入失敗'),
+        });
 
         await loadCalendars();
     });
@@ -819,7 +1122,8 @@
         document.getElementById('event-title').textContent = event.title || '（無標題）';
 
         // color dot
-        document.getElementById('event-color-dot').style.background = event.backgroundColor;
+        document.getElementById('event-color-dot').style.background =
+            event.backgroundColor || '#6366f1';
 
         // time formatting
         const start = event.start;
@@ -829,14 +1133,13 @@
         let timeStr = '';
         if (event.allDay) {
             timeStr = start.toLocaleDateString('zh-TW', { month: '2-digit', day: '2-digit' }) + ' (整天)';
-            if (end > new Date(start.getTime() + 86400000)) { // handles multi-day allDay events
-                const endDisplay = new Date(end.getTime() - 86400000); // end date is exclusive in fullcalendar array
+            if (end > new Date(start.getTime() + 86400000)) {
+                const endDisplay = new Date(end.getTime() - 86400000);
                 timeStr += ' ~ ' + endDisplay.toLocaleDateString('zh-TW', { month: '2-digit', day: '2-digit' });
             }
         } else {
             timeStr = start.toLocaleString('zh-TW', opts);
             if (end.getTime() !== start.getTime()) {
-                // If same day, just show end time
                 if (start.toDateString() === end.toDateString()) {
                     timeStr += ' ~ ' + end.toLocaleTimeString('zh-TW', { hour: '2-digit', minute: '2-digit' });
                 } else {
@@ -846,13 +1149,67 @@
         }
         document.getElementById('event-time').textContent = timeStr;
 
-        // get calendar name by extracting from the sidebar list using the event's source ID mapped to the html list
-        try {
-            const calId = event.source.id;
-            const calName = document.querySelector(`#cal-item-${calId} .cal-item-name`)?.textContent || '未知日曆';
-            document.getElementById('event-source-name').textContent = `來自日曆: ${calName}`;
-        } catch {
-            document.getElementById('event-source-name').textContent = '';
+        const props = event.extendedProps || {};
+        const isReadonly = props.readonly === true;
+        const badgeEl   = document.getElementById('event-readonly-badge');
+        const extraEl   = document.getElementById('event-extra-info');
+        const gotoBtn   = document.getElementById('event-goto-btn');
+        const gotoLabel = document.getElementById('event-goto-label');
+
+        // Reset
+        extraEl.innerHTML = '';
+        extraEl.style.display = 'none';
+        badgeEl.style.display = 'none';
+        gotoBtn.style.display = 'none';
+
+        if (isReadonly) {
+            // Show lock badge
+            badgeEl.style.display = 'inline-flex';
+            document.getElementById('event-readonly-label').textContent =
+                `唯讀 · 來自${props.source_label || '內建日曆'}`;
+
+            // Source label for header
+            document.getElementById('event-source-name').textContent =
+                `來自：${props.source_label || '內建日曆'}`;
+
+            // Extra info rows
+            const rows = [];
+            if (props.source_type === 'salary') {
+                if (props.hours)  rows.push(`⏱ 工時：${props.hours.toFixed(1)} 小時`);
+                if (props.rate)   rows.push(`💰 時薪：$${props.rate}`);
+                if (props.amount) rows.push(`💵 薪資：$${props.amount.toLocaleString()}`);
+                if (props.note)   rows.push(`📝 備註：${props.note}`);
+            }
+            if (rows.length) {
+                extraEl.style.display = 'flex';
+                rows.forEach(text => {
+                    const div = document.createElement('div');
+                    div.style.cssText = 'display:flex;gap:8px;align-items:flex-start;';
+                    div.innerHTML = `<span style="font-size:0.9rem;">${text}</span>`;
+                    extraEl.appendChild(div);
+                });
+            }
+
+            // Goto source button
+            const gotoMap = {
+                salary: { label: '前往班表編輯', href: '/salary' },
+                period: { label: '前往週期追蹤', href: '/period/dashboard' },
+            };
+            const gotoInfo = gotoMap[props.source_type];
+            if (gotoInfo) {
+                gotoLabel.textContent = gotoInfo.label;
+                gotoBtn.href = gotoInfo.href;
+                gotoBtn.style.display = 'flex';
+            }
+        } else {
+            // ICS calendar: show source name from sidebar
+            try {
+                const calId = event.source.id;
+                const calName = document.querySelector(`#cal-item-${calId} .cal-item-name`)?.textContent || '未知日曆';
+                document.getElementById('event-source-name').textContent = `來自日曆: ${calName}`;
+            } catch {
+                document.getElementById('event-source-name').textContent = '';
+            }
         }
     }
 
@@ -870,6 +1227,82 @@
 
     function handleEventOverlayClick(e) {
         if (e.target === document.getElementById('eventModal')) closeEventModal();
+    }
+
+    function handleIcalOverlayClick(e) {
+        if (e.target === document.getElementById('icalModal')) closeIcalModal();
+    }
+
+    /* ─────────────────────────────────────────────
+       Built-in Source Toggle
+    ───────────────────────────────────────────── */
+    function toggleBuiltinSource(type, visible) {
+        const srcId = type === 'salary' ? 'builtin-salary' : 'builtin-period';
+        const src = fcCalendar.getEventSourceById(srcId);
+        if (!src) return;
+        if (visible) {
+            src.refetch();
+            // Re-add if removed — simpler: just re-add
+            // FullCalendar 6: sources can't be paused easily, so we remove/re-add
+        }
+        // Toggle via CSS: hide all events from this source
+        fcCalendar.getEvents().forEach(ev => {
+            if (ev.source && ev.source.id === srcId) {
+                // FullCalendar doesn't support per-event visibility directly;
+                // use display property
+                ev.setProp('display', visible ? 'auto' : 'none');
+            }
+        });
+    }
+
+    /* ─────────────────────────────────────────────
+       iCal Export Modal
+    ───────────────────────────────────────────── */
+    async function openIcalModal() {
+        document.getElementById('icalModal').style.display = 'flex';
+        if (!icsToken) {
+            try {
+                const res  = await fetch('/ntut/export/ics-token');
+                const data = await res.json();
+                icsToken = data.token;
+            } catch {
+                document.getElementById('ical-url-display').textContent = '載入失敗，請重新整頁';
+                return;
+            }
+        }
+        updateIcalUrl();
+    }
+
+    function closeIcalModal() {
+        document.getElementById('icalModal').style.display = 'none';
+    }
+
+    function updateIcalUrl() {
+        if (!icsToken) return;
+        const parts = [];
+        if (document.getElementById('ical-chk-salary').checked) parts.push('salary');
+        if (document.getElementById('ical-chk-period').checked) parts.push('period');
+        const include = parts.join(',') || 'none';
+        const url = `${location.origin}/ntut/export/ics?token=${icsToken}&include=${include}`;
+        document.getElementById('ical-url-display').textContent = url;
+    }
+
+    async function copyIcalUrl() {
+        const url = document.getElementById('ical-url-display').textContent;
+        if (!url || url === '載入中…') return;
+        try {
+            await navigator.clipboard.writeText(url);
+            const btn = document.getElementById('btn-copy-ical');
+            btn.textContent = '已複製 ✓';
+            setTimeout(() => { btn.textContent = '複製'; }, 2000);
+        } catch {
+            // Fallback
+            const el = document.getElementById('ical-url-display');
+            const range = document.createRange();
+            range.selectNode(el);
+            window.getSelection().removeAllRanges();
+            window.getSelection().addRange(range);
+        }
     }
 
     function switchTab(tab) {

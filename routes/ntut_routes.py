@@ -1,8 +1,8 @@
-from flask import Blueprint, render_template, request, jsonify, current_app
+from flask import Blueprint, render_template, request, jsonify, current_app, Response
 from flask_login import login_required, current_user
-from models import db, UserCalendar, UserSettings
-from datetime import datetime, date
-import os, uuid, requests as http_req
+from models import db, UserCalendar, UserSettings, SalaryRecord, PeriodRecord
+from datetime import datetime, date, timedelta
+import os, uuid, requests as http_req, secrets, hashlib
 
 ntut_bp = Blueprint('ntut', __name__, url_prefix='/ntut')
 
@@ -231,3 +231,189 @@ def get_events(cal_id):
         return jsonify(_parse_ics(content, cal.color))
     except Exception as e:
         return jsonify({'error': str(e)}), 500
+
+
+# ── Internal Event Sources (Read-Only) ────────────────────────────────────────
+
+@ntut_bp.route('/internal/salary-events', methods=['GET'])
+@login_required
+def internal_salary_events():
+    """回傳當前使用者的排班記錄，格式符合 FullCalendar。唯讀。"""
+    records = SalaryRecord.query.filter_by(
+        user_id=current_user.id, type='shift'
+    ).order_by(SalaryRecord.date.asc()).all()
+
+    events = []
+    for r in records:
+        title = f'🏷 {r.start_time}–{r.end_time}'
+        if r.hours:
+            title += f' ({r.hours:.1f}h)'
+        events.append({
+            'id': f'salary_{r.id}',
+            'title': title,
+            'start': f'{r.date}T{r.start_time}:00' if r.start_time else r.date,
+            'end':   f'{r.date}T{r.end_time}:00'   if r.end_time   else r.date,
+            'backgroundColor': '#6366f1',
+            'borderColor':     '#6366f1',
+            'textColor':       'white',
+            'extendedProps': {
+                'readonly':    True,
+                'source_type': 'salary',
+                'source_label': '班表',
+                'hours':       r.hours,
+                'rate':        r.rate,
+                'amount':      r.amount,
+                'note':        r.note or '',
+                'record_id':   r.id,
+            }
+        })
+    return jsonify(events)
+
+
+@ntut_bp.route('/internal/period-events', methods=['GET'])
+@login_required
+def internal_period_events():
+    """回傳當前使用者的月經歷史+預測，格式符合 FullCalendar。唯讀。"""
+    from services.period_service import PeriodService
+    svc = PeriodService(current_user.id)
+    # get_calendar_events accepts (year, month) but we pass current for convenience
+    now = datetime.now()
+    events = svc.get_calendar_events(now.year, now.month)
+    # Mark all as readonly
+    for e in events:
+        if 'extendedProps' not in e:
+            e['extendedProps'] = {}
+        e['extendedProps']['readonly']     = True
+        e['extendedProps']['source_type']  = 'period'
+        e['extendedProps']['source_label'] = '週期追蹤'
+    return jsonify(events)
+
+
+# ── iCal Export ───────────────────────────────────────────────────────────────
+
+def _generate_ics_token(user_id: int) -> str:
+    """Generate a deterministic per-user token for iCal URL."""
+    secret = current_app.config.get('SECRET_KEY', 'fallback-secret')
+    raw    = f'ics-export:{user_id}:{secret}'
+    return hashlib.sha256(raw.encode()).hexdigest()[:40]
+
+
+@ntut_bp.route('/export/ics-token', methods=['GET'])
+@login_required
+def get_ics_token():
+    """回傳當前使用者的 iCal 訂閱 token 與範例連結。"""
+    token = _generate_ics_token(current_user.id)
+    base  = request.host_url.rstrip('/')
+    return jsonify({
+        'token': token,
+        'base_url': base,
+        'example_url': f'{base}/ntut/export/ics?token={token}&include=salary,period'
+    })
+
+
+@ntut_bp.route('/export/ics', methods=['GET'])
+def export_ics():
+    """產生並回傳 iCal 格式的日曆檔案。使用 token 驗證，不需登入。"""
+    token   = request.args.get('token', '')
+    include = request.args.get('include', 'salary,period')  # comma-separated
+    include_set = {x.strip() for x in include.split(',')}
+
+    # --- Token 驗證：找到對應的 user ---
+    matched_user_id = None
+    from models import User
+    for user in User.query.all():
+        if _generate_ics_token(user.id) == token:
+            matched_user_id = user.id
+            break
+
+    if matched_user_id is None:
+        return Response('Unauthorized', status=401, mimetype='text/plain')
+
+    # --- 產生 iCal 內容 ---
+    try:
+        from icalendar import Calendar, Event as ICSEvent, vText, vDatetime, vDate
+    except ImportError:
+        return Response('需要安裝 icalendar 套件', status=500, mimetype='text/plain')
+
+    cal = Calendar()
+    cal.add('prodid', '-//Toolbox Web App//ZH')
+    cal.add('version', '2.0')
+    cal.add('calscale', 'GREGORIAN')
+    cal.add('method', 'PUBLISH')
+    cal.add('x-wr-calname', '工具箱日曆')
+    cal.add('x-wr-timezone', 'Asia/Taipei')
+    cal.add('refresh-interval;value=duration', 'PT6H')
+
+    now_dt = datetime.utcnow()
+
+    # --- 排班 ---
+    if 'salary' in include_set:
+        records = SalaryRecord.query.filter_by(
+            user_id=matched_user_id, type='shift'
+        ).all()
+        for r in records:
+            ev = ICSEvent()
+            ev.add('uid', f'salary-{r.id}@toolbox')
+            title = f'🏷 上班'
+            if r.hours:
+                title += f' ({r.hours:.1f}h)'
+            ev.add('summary', title)
+            ev.add('dtstamp', now_dt)
+
+            if r.start_time and r.end_time:
+                from datetime import datetime as _dt, timezone as _tz
+                TW_TZ = _tz(timedelta(hours=8))  # Asia/Taipei = UTC+8
+                st = _dt.strptime(f'{r.date} {r.start_time}', '%Y-%m-%d %H:%M').replace(tzinfo=TW_TZ)
+                et = _dt.strptime(f'{r.date} {r.end_time}',   '%Y-%m-%d %H:%M').replace(tzinfo=TW_TZ)
+                if et <= st:
+                    et += timedelta(days=1)
+                ev.add('dtstart', st)
+                ev.add('dtend',   et)
+            else:
+                ev.add('dtstart', date.fromisoformat(r.date))
+                ev.add('dtend',   date.fromisoformat(r.date) + timedelta(days=1))
+
+            desc_parts = []
+            if r.hours:   desc_parts.append(f'工時：{r.hours:.1f} 小時')
+            if r.rate:    desc_parts.append(f'時薪：${r.rate:.0f}')
+            if r.amount:  desc_parts.append(f'薪資：${r.amount:,}')
+            if r.note:    desc_parts.append(f'備註：{r.note}')
+            if desc_parts:
+                ev.add('description', '\n'.join(desc_parts))
+
+            ev.add('categories', ['班表'])
+            cal.add_component(ev)
+
+    # --- 月經（歷史 + 預測）---
+    if 'period' in include_set:
+        from services.period_service import PeriodService
+        svc = PeriodService(matched_user_id)
+        now = datetime.now()
+        period_events = svc.get_calendar_events(now.year, now.month)
+
+        for pe in period_events:
+            ev = ICSEvent()
+            uid_raw  = pe.get('id', f'period-{pe["title"]}-{pe["start"]}')
+            ev.add('uid', f'{uid_raw}@toolbox')
+            ev.add('summary', pe['title'])
+            ev.add('dtstamp', now_dt)
+
+            start_str = pe['start']
+            end_str   = pe.get('end', start_str)
+            ev.add('dtstart', date.fromisoformat(start_str[:10]))
+            ev.add('dtend',   date.fromisoformat(end_str[:10]))
+
+            ev.add('categories', ['週期追蹤'])
+            cal.add_component(ev)
+
+    ics_content = cal.to_ical()
+    filename    = f'toolbox_{matched_user_id}.ics'
+    return Response(
+        ics_content,
+        status=200,
+        mimetype='text/calendar; charset=utf-8',
+        headers={
+            'Content-Disposition': f'inline; filename="{filename}"',
+            'Cache-Control': 'no-cache, no-store',
+        }
+    )
