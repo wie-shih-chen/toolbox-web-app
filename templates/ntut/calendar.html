@@ -740,6 +740,9 @@
             <div class="sidebar-header">
                 <h4>我的日曆</h4>
                 <div style="display:flex;gap:4px;">
+                    <button class="btn-add-cal" onclick="testBuiltinAPIs()" title="測試資料載入" id="btn-api-test">
+                        <span class="material-icons" style="font-size:16px;">bug_report</span>
+                    </button>
                     <button class="btn-add-cal" onclick="openIcalModal()" title="匯出到手機">
                         <span class="material-icons" style="font-size:16px;">ios_share</span>
                     </button>
@@ -754,23 +757,33 @@
             </div>
 
             <!-- Built-in: Salary Shifts -->
-            <div class="builtin-cal-item">
-                <span class="cal-dot" style="background:#6366f1;"></span>
-                <span class="builtin-cal-name">🏷 班表</span>
-                <label class="toggle-switch" title="顯示/隱藏班表">
-                    <input type="checkbox" id="toggle-salary" checked onchange="toggleBuiltinSource('salary', this.checked)">
-                    <span class="toggle-slider"></span>
-                </label>
+            <div class="cal-item" id="builtin-cal-item-salary">
+                <span class="cal-dot" id="builtin-dot-salary" style="background:#6366f1;"></span>
+                <span class="cal-item-name" id="builtin-name-salary">🏷 班表</span>
+                <div class="cal-item-actions">
+                    <button class="btn-edit-cal btn-mute-cal" id="mute-btn-salary"
+                        onclick="toggleBuiltinMute('salary')" title="關閉通知" style="opacity:0.4;">
+                        <span class="material-icons" id="mute-icon-salary">notifications</span>
+                    </button>
+                    <button class="btn-edit-cal" onclick="openBuiltinEditModal('salary')" title="編輯">
+                        <span class="material-icons">edit</span>
+                    </button>
+                </div>
             </div>
 
             <!-- Built-in: Period Tracking -->
-            <div class="builtin-cal-item">
-                <span class="cal-dot" style="background:#ff4d4f;"></span>
-                <span class="builtin-cal-name">🩸 週期追蹤</span>
-                <label class="toggle-switch" title="顯示/隱藏週期追蹤">
-                    <input type="checkbox" id="toggle-period" checked onchange="toggleBuiltinSource('period', this.checked)">
-                    <span class="toggle-slider"></span>
-                </label>
+            <div class="cal-item" id="builtin-cal-item-period">
+                <span class="cal-dot" id="builtin-dot-period" style="background:#ff4d4f;"></span>
+                <span class="cal-item-name" id="builtin-name-period">🩸 週期追蹤</span>
+                <div class="cal-item-actions">
+                    <button class="btn-edit-cal btn-mute-cal" id="mute-btn-period"
+                        onclick="toggleBuiltinMute('period')" title="關閉通知" style="opacity:0.4;">
+                        <span class="material-icons" id="mute-icon-period">notifications</span>
+                    </button>
+                    <button class="btn-edit-cal" onclick="openBuiltinEditModal('period')" title="編輯">
+                        <span class="material-icons">edit</span>
+                    </button>
+                </div>
             </div>
 
             <div style="height:8px;"></div>
