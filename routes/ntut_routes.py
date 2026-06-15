@@ -314,6 +314,7 @@ def internal_salary_events():
             'backgroundColor': color,
             'borderColor':     color,
             'textColor':       'white',
+            'display':         'block',   # 強制月視圖顯示為彩色方塊（有時間的事件預設為點）
             'extendedProps': {
                 'readonly':     True,
                 'source_type':  'salary',
