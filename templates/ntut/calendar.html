@@ -1359,29 +1359,25 @@
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ name, color }),
             });
-            if (!res.ok) throw new Error();
+            if (!res.ok) {
+                const text = await res.text();
+                console.error('Save failed:', res.status, text);
+                throw new Error(`HTTP ${res.status}`);
+            }
             const data = await res.json();
 
             // 更新側邊欄 UI
             document.getElementById(`builtin-name-${type}`).textContent = data.name;
             document.getElementById(`builtin-dot-${type}`).style.background = data.color;
 
-            // 更新 FullCalendar EventSource 顏色
+            // 重新抓取事件（後端 endpoint 直接讀 DB 顏色，refetch 即可）
             const srcId = `builtin-${type}`;
             const src   = fcCalendar.getEventSourceById(srcId);
-            if (src) {
-                src.remove();
-                fcCalendar.addEventSource({
-                    id:   srcId,
-                    url:  `/ntut/internal/${type}-events`,
-                    color: data.color,
-                    failure: () => console.warn(`${type} 載入失敗`),
-                });
-            }
+            if (src) src.refetch();
 
             closeBuiltinEditModal();
-        } catch {
-            errEl.textContent = '儲存失敗，請重試';
+        } catch (e) {
+            errEl.textContent = `儲存失敗：${e.message || '請重試'}`;
             errEl.style.display = 'block';
         } finally {
             btn.disabled = false;

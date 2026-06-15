@@ -293,13 +293,17 @@ def update_builtin_settings(type):
 @login_required
 def internal_salary_events():
     """回傳當前使用者的排班記錄，格式符合 FullCalendar。唯讀。"""
+    s     = _get_or_create_settings(current_user.id)
+    color = (s.builtin_salary_color or '#6366f1') if s else '#6366f1'
+    label = (s.builtin_salary_name  or '🏷 班表')  if s else '🏷 班表'
+
     records = SalaryRecord.query.filter_by(
         user_id=current_user.id, type='shift'
     ).order_by(SalaryRecord.date.asc()).all()
 
     events = []
     for r in records:
-        title = f'🏷 {r.start_time}–{r.end_time}'
+        title = f'{label} {r.start_time}–{r.end_time}'
         if r.hours:
             title += f' ({r.hours:.1f}h)'
         events.append({
@@ -307,18 +311,18 @@ def internal_salary_events():
             'title': title,
             'start': f'{r.date}T{r.start_time}:00' if r.start_time else r.date,
             'end':   f'{r.date}T{r.end_time}:00'   if r.end_time   else r.date,
-            'backgroundColor': '#6366f1',
-            'borderColor':     '#6366f1',
+            'backgroundColor': color,
+            'borderColor':     color,
             'textColor':       'white',
             'extendedProps': {
-                'readonly':    True,
-                'source_type': 'salary',
-                'source_label': '班表',
-                'hours':       r.hours,
-                'rate':        r.rate,
-                'amount':      r.amount,
-                'note':        r.note or '',
-                'record_id':   r.id,
+                'readonly':     True,
+                'source_type':  'salary',
+                'source_label': label,
+                'hours':        r.hours,
+                'rate':         r.rate,
+                'amount':       r.amount,
+                'note':         r.note or '',
+                'record_id':    r.id,
             }
         })
     return jsonify(events)
@@ -328,18 +332,25 @@ def internal_salary_events():
 @login_required
 def internal_period_events():
     """回傳當前使用者的月經歷史+預測，格式符合 FullCalendar。唯讀。"""
+    s     = _get_or_create_settings(current_user.id)
+    color = (s.builtin_period_color or '#ff4d4f') if s else '#ff4d4f'
+    label = (s.builtin_period_name  or '🩸 週期追蹤') if s else '🩸 週期追蹤'
+
     from services.period_service import PeriodService
     svc = PeriodService(current_user.id)
-    # get_calendar_events accepts (year, month) but we pass current for convenience
     now = datetime.now()
     events = svc.get_calendar_events(now.year, now.month)
-    # Mark all as readonly
+
     for e in events:
         if 'extendedProps' not in e:
             e['extendedProps'] = {}
         e['extendedProps']['readonly']     = True
         e['extendedProps']['source_type']  = 'period'
-        e['extendedProps']['source_label'] = '週期追蹤'
+        e['extendedProps']['source_label'] = label
+        # 套用使用者自訂顏色（只在事件本身沒有指定顏色時覆蓋）
+        if 'backgroundColor' not in e:
+            e['backgroundColor'] = color
+            e['borderColor']     = color
     return jsonify(events)
 
 
