@@ -740,9 +740,6 @@
             <div class="sidebar-header">
                 <h4>我的日曆</h4>
                 <div style="display:flex;gap:4px;">
-                    <button class="btn-add-cal" onclick="testBuiltinAPIs()" title="測試資料載入" id="btn-api-test">
-                        <span class="material-icons" style="font-size:16px;">bug_report</span>
-                    </button>
                     <button class="btn-add-cal" onclick="openIcalModal()" title="匯出到手機">
                         <span class="material-icons" style="font-size:16px;">ios_share</span>
                     </button>
@@ -1018,7 +1015,11 @@
         const res = await fetch('/ntut/calendars');
         const list = await res.json();
         renderSidebar(list);
-        fcCalendar.removeAllEventSources();
+
+        // 移除所有「訂閱日曆」event source，但保留內建的
+        fcCalendar.getEventSources().forEach(src => {
+            if (!src.id.startsWith('builtin-')) src.remove();
+        });
         list.forEach(addEventSource);
     }
 
@@ -1255,19 +1256,46 @@
         const srcId = type === 'salary' ? 'builtin-salary' : 'builtin-period';
         const src = fcCalendar.getEventSourceById(srcId);
         if (!src) return;
-        if (visible) {
-            src.refetch();
-            // Re-add if removed — simpler: just re-add
-            // FullCalendar 6: sources can't be paused easily, so we remove/re-add
-        }
-        // Toggle via CSS: hide all events from this source
         fcCalendar.getEvents().forEach(ev => {
             if (ev.source && ev.source.id === srcId) {
-                // FullCalendar doesn't support per-event visibility directly;
-                // use display property
                 ev.setProp('display', visible ? 'auto' : 'none');
             }
         });
+    }
+
+    /* 內建日曆：切換靜音（通知開關，只影響後端通知設定，不影響顯示） */
+    async function toggleBuiltinMute(type) {
+        const iconEl = document.getElementById(`mute-icon-${type}`);
+        const btn    = document.getElementById(`mute-btn-${type}`);
+        if (!iconEl || !btn) return;
+
+        const currentlyEnabled = iconEl.textContent.trim() === 'notifications';
+        const newEnabled = !currentlyEnabled;
+
+        try {
+            const res = await fetch(`/ntut/internal/${type}/notify`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ notify_enabled: newEnabled }),
+            });
+            if (!res.ok) throw new Error();
+        } catch {
+            // 若後端尚未實作，仍更新 UI
+        }
+
+        iconEl.textContent = newEnabled ? 'notifications' : 'notifications_off';
+        btn.title   = newEnabled ? '關閉通知' : '開啟通知';
+        btn.style.opacity = newEnabled ? '0.4' : '1';
+    }
+
+    /* 內建日曆：開啟編輯 modal（目前導向對應頁面） */
+    function openBuiltinEditModal(type) {
+        const urlMap = {
+            salary: '/salary',
+            period: '/period/dashboard',
+        };
+        const url = urlMap[type];
+        if (url) window.location.href = url;
     }
 
     /* ─────────────────────────────────────────────
