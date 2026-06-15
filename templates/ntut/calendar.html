@@ -979,6 +979,18 @@
     let builtinEditSelectedColor = COLORS[0];
     let fcCalendar = null;  // FullCalendar instance
     let icsToken = null;    // iCal export token
+    let calSourceMap = {};  // {id: {url, color, name}} 用於重新加回 event source
+
+    /* ── 可見性狀態（存 localStorage） ─────────────────────── */
+    const VIS_KEY = 'calVis_v1';
+    function _visState() {
+        try { return JSON.parse(localStorage.getItem(VIS_KEY) || '{}'); } catch { return {}; }
+    }
+    function isVisible(key) { return _visState()[key] !== false; }
+    function setVisible(key, v) {
+        const s = _visState(); s[key] = v;
+        localStorage.setItem(VIS_KEY, JSON.stringify(s));
+    }
 
     /* ─────────────────────────────────────────────
        FullCalendar Init
@@ -1045,7 +1057,7 @@
         const muteIcon = c.notify_enabled !== false ? 'notifications' : 'notifications_off';
         const muteTitle = c.notify_enabled !== false ? '關閉通知' : '開啟通知';
         div.innerHTML = `
-        <span class="cal-dot" style="background:${c.color}"></span>
+        <span class="cal-dot" data-color="${c.color}" style="background:${c.color};cursor:pointer;" title="點擊顯示/隱藏"></span>
         <span class="cal-item-name" title="${c.name}">${c.name}</span>
         <div class="cal-item-actions">
             <button class="btn-edit-cal btn-mute-cal" id="mute-btn-${c.id}" onclick="toggleCalMute(${c.id})" title="${muteTitle}" style="opacity:${c.notify_enabled !== false ? '0.4' : '1'}">
@@ -1058,10 +1070,20 @@
                 <span class="material-icons">delete_outline</span>
             </button>
         </div>`;
+
+        // 點擊 dot 切換顯示
+        div.querySelector('.cal-dot').addEventListener('click', () => toggleSubscribedVisibility(c.id));
+
+        // 恢復已儲存的可見性狀態
+        if (!isVisible(`cal-${c.id}`)) _applyVis(div, false);
+
         return div;
     }
 
+
     function addEventSource(c) {
+        calSourceMap[c.id] = { url: `/ntut/calendars/${c.id}/events`, color: c.color, name: c.name };
+        if (!isVisible(`cal-${c.id}`)) return;  // 隱藏狀態不加入
         fcCalendar.addEventSource({
             id: String(c.id),
             url: `/ntut/calendars/${c.id}/events`,
@@ -1069,6 +1091,7 @@
             failure: () => console.warn(`日曆 ${c.name} 事件載入失敗`),
         });
     }
+
 
     async function deleteCalendar(id) {
         if (!confirm('確定要刪除這個日曆嗎？')) return;
@@ -1399,19 +1422,91 @@
                 color = type === 'salary' ? '#6366f1' : '#ff4d4f';
             }
 
-            // 更新側邊欄
             const nameEl = document.getElementById(`builtin-name-${type}`);
             const dotEl  = document.getElementById(`builtin-dot-${type}`);
-            if (nameEl) nameEl.textContent = name;
-            if (dotEl)  dotEl.style.background = color;
+            const itemEl = document.getElementById(`builtin-cal-item-${type}`);
 
-            // 加入 FullCalendar EventSource
+            if (nameEl) nameEl.textContent = name;
+            if (dotEl) {
+                dotEl.dataset.color = color;
+                dotEl.style.background = color;
+                dotEl.style.cursor = 'pointer';
+                dotEl.title = '點擊顯示/隱藏';
+                dotEl.addEventListener('click', () => toggleBuiltinVisibility(type));
+            }
+
+            // 恢復已儲存的可見性狀態
+            const visible = isVisible(`builtin-${type}`);
+            if (!visible && dotEl && itemEl) _applyVis(itemEl, false, dotEl);
+
+            // 只在可見時加入 EventSource
+            if (visible) {
+                fcCalendar.addEventSource({
+                    id:    `builtin-${type}`,
+                    url:   `/ntut/internal/${type}-events`,
+                    color: color,
+                    failure: () => console.warn(`${type} 載入失敗`),
+                });
+            }
+        }
+    }
+
+    /* 切換可見性 UI 輔助函數 */
+    function _applyVis(itemEl, visible, dotEl) {
+        if (!itemEl) return;
+        dotEl = dotEl || itemEl.querySelector('.cal-dot');
+        const color = dotEl?.dataset.color || dotEl?.style.background || '';
+        if (visible) {
+            itemEl.style.opacity = '1';
+            if (dotEl) { dotEl.style.background = color; dotEl.style.boxShadow = ''; }
+        } else {
+            itemEl.style.opacity = '0.45';
+            if (dotEl) { dotEl.style.background = 'transparent'; dotEl.style.boxShadow = `inset 0 0 0 2px ${color}`; }
+        }
+    }
+
+    /* 內建日曆顯示/隱藏 */
+    function toggleBuiltinVisibility(type) {
+        const key    = `builtin-${type}`;
+        const srcId  = key;
+        const dotEl  = document.getElementById(`builtin-dot-${type}`);
+        const itemEl = document.getElementById(`builtin-cal-item-${type}`);
+        const newVis = !isVisible(key);
+        setVisible(key, newVis);
+        _applyVis(itemEl, newVis, dotEl);
+        if (newVis) {
+            const color = dotEl?.dataset.color || (type === 'salary' ? '#6366f1' : '#ff4d4f');
             fcCalendar.addEventSource({
-                id:    `builtin-${type}`,
+                id:    srcId,
                 url:   `/ntut/internal/${type}-events`,
                 color: color,
                 failure: () => console.warn(`${type} 載入失敗`),
             });
+        } else {
+            fcCalendar.getEventSourceById(srcId)?.remove();
+        }
+    }
+
+    /* 訂閱日曆顯示/隱藏 */
+    function toggleSubscribedVisibility(id) {
+        const key   = `cal-${id}`;
+        const srcId = String(id);
+        const itemEl = document.getElementById(`cal-item-${id}`);
+        const newVis = !isVisible(key);
+        setVisible(key, newVis);
+        _applyVis(itemEl, newVis);
+        if (newVis) {
+            const info = calSourceMap[id];
+            if (info && !fcCalendar.getEventSourceById(srcId)) {
+                fcCalendar.addEventSource({
+                    id:    srcId,
+                    url:   info.url,
+                    color: info.color,
+                    failure: () => console.warn(`日曆載入失敗`),
+                });
+            }
+        } else {
+            fcCalendar.getEventSourceById(srcId)?.remove();
         }
     }
 
