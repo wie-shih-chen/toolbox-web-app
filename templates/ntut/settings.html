@@ -378,17 +378,60 @@
         }
     }
 
-    async function loadCalendars() {
-        const res = await fetch('/ntut/calendars');
-        const cals = await res.json();
-        const list = document.getElementById('cal-mute-list');
+    async function toggleBuiltinMute(type, enabled) {
+        try {
+            await fetch(`/ntut/internal/${type}/notify`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ notify_enabled: enabled }),
+            });
+        } catch {}
+        showToast(enabled ? '🔔 已開啟通知' : '🔕 已靜音此日曆');
+    }
 
-        if (!cals.length) {
-            list.innerHTML = '<div class="empty-cals">你還沒有新增任何日曆</div>';
-            return;
+    async function loadCalendars() {
+        const list = document.getElementById('cal-mute-list');
+        list.innerHTML = '';
+
+        // ── 內建日曆（班表、週期追蹤）──
+        const builtins = [
+            { type: 'salary', defaultName: '🏷 班表',   defaultColor: '#6366f1' },
+            { type: 'period', defaultName: '🩸 週期追蹤', defaultColor: '#ff4d4f' },
+        ];
+
+        for (const b of builtins) {
+            let name = b.defaultName, color = b.defaultColor;
+            try {
+                const r = await fetch(`/ntut/internal/${b.type}/settings`);
+                const d = await r.json();
+                if (d.name)  name  = d.name;
+                if (d.color) color = d.color;
+            } catch {}
+
+            const uid  = `mute-builtin-${b.type}`;
+            const item = document.createElement('div');
+            item.className = 'cal-mute-item';
+            item.innerHTML = `
+                <span class="cal-mute-dot" style="background:${color}"></span>
+                <span class="cal-mute-name">${name}</span>
+                <div class="toggle-wrap">
+                    <input type="checkbox" class="toggle-input" id="${uid}" checked>
+                    <label class="toggle-label" for="${uid}"></label>
+                </div>`;
+            item.querySelector(`#${uid}`).addEventListener('change', function () {
+                toggleBuiltinMute(b.type, this.checked);
+            });
+            list.appendChild(item);
         }
 
-        list.innerHTML = '';
+        // ── 訂閱日曆 ──
+        const res = await fetch('/ntut/calendars');
+        const cals = await res.json();
+
+        if (!cals.length && list.children.length === builtins.length) {
+            // 只有內建，沒有訂閱
+        }
+
         cals.forEach(c => {
             const item = document.createElement('div');
             item.className = 'cal-mute-item';
