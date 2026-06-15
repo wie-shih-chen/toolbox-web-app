@@ -1,6 +1,6 @@
 # 📊 工具箱 Web App - 完整架構總覽
 
-> **最後更新**：2026-05-10 | **版本**：v4.1（AI 全接管架構：移除手動快速通道、規則降級備援、Flex 卡片優化）  
+> **最後更新**：2026-06-16 | **版本**：v4.2（整合日曆全功能升級：內建日曆顯示設定、顏色主題、顯示/隱藏切換）  
 > 這份文件整合了所有專案架構資訊，閱讀順序建議：Part 1 → Part 2 → Part 3 → Part 4
 
 ---
@@ -28,7 +28,7 @@ web_app/
 │   ├── salary_routes.py            # 💼 薪資模組 (排班管理 / CSV匯出 / 月曆)
 │   ├── period_routes.py            # 🩸 生理期追蹤 (紀錄 API & 月曆)
 │   ├── countdown_routes.py         # ⏳ 倒數 & 紀念日 (卡片 / 圖片裁切 / 里程碑)
-│   ├── ntut_routes.py              # 📅 整合行事曆 (ICS 解析 / 多來源訂閱管理)
+│   ├── ntut_routes.py              # 📅 整合行事曆（ICS 解析、多來源訂閱管理、內建日曆設定 API）
 │   ├── reminder_routes.py          # 🔔 提醒事項 (單次 & 週期性提醒)
 │   ├── download_routes.py          # 📥 影音下載器 (yt-dlp 任務)
 │   ├── line_routes.py              # 📱 LINE Bot Webhook (智慧語意解析 & 推播)
@@ -116,8 +116,9 @@ web_app/
 │       └── line_qr_code.png        # LINE Bot 快速綁定 QR Code
 │
 └── 🔧 scripts/maintenance/ (維護腳本)
-    ├── init_db.py                  # ⭐ 初始化所有資料表 (首次部署必跑)
-    ├── migrate_ai_session.py       # ⭐ v4.0 遷移：建立對話 Session 資料表
+    ├── init_db.py                  # ⭐ 初始化所有資料表（首次部署必跑）
+    ├── migrate_builtin_cal.py      # ⭐ v4.2 遷移：UserSettings 新增內建日曆欄位
+    ├── migrate_ai_session.py       # v4.0 遷移：建立對話 Session 資料表
     ├── migrate_line_bindings.py    # v3.0 遷移：UserSettings.line_user_id → LineBinding
     ├── migrate_period_notify_types.py
     ├── migrate_settings_v1~v4.py   # 歷代設定欄位遷移
@@ -170,8 +171,12 @@ web_app/
 | `binding_code` | String(6) | 6位驗證碼（新增 LineBinding 用） |
 | `binding_expiry` | DateTime | 驗證碼過期時間（UTC，5分鐘有效） |
 | `notification_methods` | Text (JSON) | `["email", "line"]` |
-| `calendar_notify_enabled` | Boolean | 行事曆每日通知 |
+| `calendar_notify_enabled` | Boolean | 行事曆每日通知開關 |
 | `calendar_notify_time` | String(5) | 通知時間 HH:MM |
+| `builtin_salary_name` | String(50) | 班表日曆自訂名稱（預設「🏷 班表」） |
+| `builtin_salary_color` | String(10) | 班表日曆自訂顏色（預設 `#6366f1`） |
+| `builtin_period_name` | String(50) | 週期追蹤日曆自訂名稱（預設「🩸 週期追蹤」） |
+| `builtin_period_color` | String(10) | 週期追蹤日曆自訂顏色（預設 `#ff4d4f`） |
 | `period_notify_enabled` | Boolean | 生理期提前通知 |
 | `period_notify_time` | String(5) | 通知時間（預設 08:00） |
 | `period_notify_days_before` | Integer | 提早幾天通知（預設 3） |
@@ -457,6 +462,31 @@ python scripts/maintenance/init_db.py  # 建立所有資料表
 ---
 
 ## 📋 Part 11: 版本更新記錄 (Changelog)
+
+### v4.2（2026-06-16）整合日曆全功能升級
+
+#### 內建日曆顯示設定
+- **UserSettings 新增欄位**：`builtin_salary_name/color`、`builtin_period_name/color`，允許自訂班表與週期追蹤的顯示名稱與顏色。
+- **新增設定 API**：`GET/PUT /ntut/internal/<type>/settings`（`type` = `salary` | `period`）。
+- **編輯 Modal**：日曆側邊欄的 ✏️ 按鈕改為彈出編輯視窗（而非跳頁），可即時修改名稱與顏色，儲存後月曆立即更新。
+- **DB Migration**：`migrate_builtin_cal.py`，執行 `python migrate_builtin_cal.py` 自動補齊欄位。
+
+#### 日曆顏色實現原理
+- **班表事件**：`display: 'block'`（強制月視圖以彩色方塊顯示，而非預設的點+文字）+ 事件層 `backgroundColor` 從 `UserSettings` 讀取。
+- **週期事件分類著色**：
+  - `history`（歷史經期）→ 使用者主題色實心
+  - `predicted_period`（預測經期）→ 主題色 20% 半透明底色 + 實線邊框（`_hex_to_rgba()` 輔助函數轉換）
+  - `fertile_window`、`ovulation` → 保留原本語意顏色（綠色系）
+- **顏色正確套用原則**：FullCalendar 的事件層 `backgroundColor` 優先於 EventSource 的 `color`，因此必須在後端事件 JSON 中直接設定正確顏色。
+
+#### 日曆顯示/隱藏切換
+- **觸發方式**：點擊側邊欄的彩色圓點 (`.cal-dot`) 切換可見性。
+- **視覺反饋**：隱藏時圓點變空心輪廓 (`boxShadow: inset 0 0 0 2px color`)，列表項目半透明（opacity 0.45）。
+- **持久化**：狀態存 `localStorage`（key: `calVis_v1`），重整頁面後保持。
+- **技術實現**：`toggleBuiltinVisibility(type)` / `toggleSubscribedVisibility(id)` + `_applyVis()` 輔助函數；`calSourceMap` 快取訂閱日曆的 URL 與顏色，以便重新加回 EventSource。
+
+#### 通知設定頁更新
+- `settings.html` 的「個別日曆設定」區塊現在也顯示班表與週期追蹤的靜音開關（原只有訂閱日曆）。
 
 ### v4.1（2026-05-10）AI 全接管架構：移除手動快速通道 + 規則降級備援 + Flex 卡片優化
 - **AI 全面接管**：移除所有手動快速通道（記帳/排班/獎金/月經/倒數等關鍵字的 if/else 規則），現在所有訊息一律透過 Gemini AI 進行意圖分析，讓互動更自然靈活。
