@@ -347,10 +347,22 @@ def internal_period_events():
         e['extendedProps']['readonly']     = True
         e['extendedProps']['source_type']  = 'period'
         e['extendedProps']['source_label'] = label
-        # 套用使用者自訂顏色（只在事件本身沒有指定顏色時覆蓋）
-        if 'backgroundColor' not in e:
+
+        event_type = e.get('extendedProps', {}).get('type', '')
+
+        if event_type == 'history':
+            # 歷史經期：直接套用使用者主題色（實心）
             e['backgroundColor'] = color
             e['borderColor']     = color
+
+        elif event_type == 'predicted_period':
+            # 預測經期：保留透明底，邊框用使用者主題色（較淡）
+            e['backgroundColor'] = 'transparent'
+            e['borderColor']     = color
+            e['textColor']       = color
+
+        # fertile_window、ovulation：保留原本語意顏色，不覆蓋
+
     return jsonify(events)
 
 
