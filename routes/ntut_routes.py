@@ -233,6 +233,60 @@ def get_events(cal_id):
         return jsonify({'error': str(e)}), 500
 
 
+# ── Built-in Calendar Settings ────────────────────────────────────────────────
+
+_BUILTIN_TYPES = {
+    'salary': {
+        'name_field':  'builtin_salary_name',
+        'color_field': 'builtin_salary_color',
+        'default_name':  '🏷 班表',
+        'default_color': '#6366f1',
+    },
+    'period': {
+        'name_field':  'builtin_period_name',
+        'color_field': 'builtin_period_color',
+        'default_name':  '🩸 週期追蹤',
+        'default_color': '#ff4d4f',
+    },
+}
+
+
+@ntut_bp.route('/internal/<string:type>/settings', methods=['GET'])
+@login_required
+def get_builtin_settings(type):
+    if type not in _BUILTIN_TYPES:
+        return jsonify({'error': '不支援的類型'}), 400
+    cfg = _BUILTIN_TYPES[type]
+    s   = _get_or_create_settings(current_user.id)
+    return jsonify({
+        'name':  getattr(s, cfg['name_field'],  cfg['default_name']),
+        'color': getattr(s, cfg['color_field'], cfg['default_color']),
+    })
+
+
+@ntut_bp.route('/internal/<string:type>/settings', methods=['PUT'])
+@login_required
+def update_builtin_settings(type):
+    if type not in _BUILTIN_TYPES:
+        return jsonify({'error': '不支援的類型'}), 400
+    cfg  = _BUILTIN_TYPES[type]
+    data = request.json or {}
+    s    = _get_or_create_settings(current_user.id)
+
+    name  = data.get('name', '').strip()
+    color = data.get('color', '').strip()
+    if name:
+        setattr(s, cfg['name_field'], name[:50])
+    if color:
+        setattr(s, cfg['color_field'], color[:10])
+
+    db.session.commit()
+    return jsonify({
+        'name':  getattr(s, cfg['name_field'],  cfg['default_name']),
+        'color': getattr(s, cfg['color_field'], cfg['default_color']),
+    })
+
+
 # ── Internal Event Sources (Read-Only) ────────────────────────────────────────
 
 @ntut_bp.route('/internal/salary-events', methods=['GET'])

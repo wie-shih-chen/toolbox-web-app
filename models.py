@@ -108,6 +108,12 @@ class UserSettings(db.Model):
     calendar_notify_enabled = db.Column(db.Boolean, default=True)
     calendar_notify_time = db.Column(db.String(5), default='20:00')  # HH:MM
 
+    # Built-in calendar display settings
+    builtin_salary_name  = db.Column(db.String(50), default='🏷 班表')
+    builtin_salary_color = db.Column(db.String(10), default='#6366f1')
+    builtin_period_name  = db.Column(db.String(50), default='🩸 週期追蹤')
+    builtin_period_color = db.Column(db.String(10), default='#ff4d4f')
+
     # Menstrual Cycle settings
     avg_period_cycle = db.Column(db.Integer, default=28)
     avg_period_duration = db.Column(db.Integer, default=5)

@@ -904,7 +904,22 @@
     </div>
 </div>
 
-<!-- ── iCal Export Modal ── -->
+<!-- ── Built-in Calendar Edit Modal ── -->
+<div id="builtinEditModal" class="modal-overlay" style="display:none" onclick="handleBuiltinEditOverlay(event)">
+    <div class="modal-box">
+        <div class="modal-header">
+            <h3 id="builtin-edit-modal-title">編輯內建日曆</h3>
+            <button class="btn-close-modal" onclick="closeBuiltinEditModal()">✕</button>
+        </div>
+        <input type="hidden" id="builtin-edit-type">
+        <input type="text" id="builtin-edit-name" class="modal-input" placeholder="日曆名稱" maxlength="50">
+        <div class="color-row" id="builtin-edit-color-row"></div>
+        <p class="modal-error" id="builtin-edit-error"></p>
+        <button class="btn-submit" id="btn-builtin-edit-submit" onclick="submitBuiltinEdit()">儲存變更</button>
+    </div>
+</div>
+
+
 <div id="icalModal" class="modal-overlay" style="display:none" onclick="handleIcalOverlayClick(event)">
     <div class="modal-box">
         <div class="modal-header">
@@ -961,6 +976,7 @@
     let selectedColor = COLORS[0];
     let currentTab = 'url';
     let editSelectedColor = COLORS[0];
+    let builtinEditSelectedColor = COLORS[0];
     let fcCalendar = null;  // FullCalendar instance
     let icsToken = null;    // iCal export token
 
@@ -970,6 +986,7 @@
     document.addEventListener('DOMContentLoaded', async () => {
         buildColorSwatches('color-row', c => { selectedColor = c; }, true);
         buildColorSwatches('edit-color-row', c => { editSelectedColor = c; }, false);
+        buildColorSwatches('builtin-edit-color-row', c => { builtinEditSelectedColor = c; }, false);
 
         const el = document.getElementById('calendar');
         const isMobile = window.innerWidth <= 640;
@@ -993,18 +1010,8 @@
         });
         fcCalendar.render();
 
-        // 加入內建事件源
-        fcCalendar.addEventSource({
-            id: 'builtin-salary',
-            url: '/ntut/internal/salary-events',
-            failure: () => console.warn('班表載入失敗'),
-        });
-        fcCalendar.addEventSource({
-            id: 'builtin-period',
-            url: '/ntut/internal/period-events',
-            failure: () => console.warn('週期追蹤載入失敗'),
-        });
-
+        // 載入內建日曆設定（名稱、顏色）並加入 EventSource
+        await loadBuiltinCalendars();
         await loadCalendars();
     });
 
@@ -1288,14 +1295,119 @@
         btn.style.opacity = newEnabled ? '0.4' : '1';
     }
 
-    /* 內建日曆：開啟編輯 modal（目前導向對應頁面） */
-    function openBuiltinEditModal(type) {
-        const urlMap = {
-            salary: '/salary',
-            period: '/period/dashboard',
-        };
-        const url = urlMap[type];
-        if (url) window.location.href = url;
+    /* 內建日曆：開啟編輯 modal */
+    async function openBuiltinEditModal(type) {
+        const labelMap = { salary: '編輯 🏷 班表', period: '編輯 🩸 週期追蹤' };
+        document.getElementById('builtin-edit-type').value = type;
+        document.getElementById('builtin-edit-modal-title').textContent = labelMap[type] || '編輯內建日曆';
+        document.getElementById('builtin-edit-error').style.display = 'none';
+
+        // 載入目前設定
+        try {
+            const res  = await fetch(`/ntut/internal/${type}/settings`);
+            const data = await res.json();
+            document.getElementById('builtin-edit-name').value = data.name || '';
+            builtinEditSelectedColor = data.color || COLORS[0];
+            // 選中對應顏色色塊
+            document.querySelectorAll('#builtin-edit-color-row .color-swatch').forEach(el => {
+                el.classList.toggle('selected', el.title === builtinEditSelectedColor);
+            });
+        } catch {
+            document.getElementById('builtin-edit-name').value = '';
+        }
+
+        document.getElementById('builtinEditModal').style.display = 'flex';
+    }
+
+    function closeBuiltinEditModal() {
+        document.getElementById('builtinEditModal').style.display = 'none';
+    }
+
+    function handleBuiltinEditOverlay(e) {
+        if (e.target === document.getElementById('builtinEditModal')) closeBuiltinEditModal();
+    }
+
+    async function submitBuiltinEdit() {
+        const btn    = document.getElementById('btn-builtin-edit-submit');
+        const errEl  = document.getElementById('builtin-edit-error');
+        const type   = document.getElementById('builtin-edit-type').value;
+        const name   = document.getElementById('builtin-edit-name').value.trim();
+        const color  = builtinEditSelectedColor;
+
+        if (!name) {
+            errEl.textContent = '請輸入日曆名稱';
+            errEl.style.display = 'block';
+            return;
+        }
+
+        btn.disabled = true;
+        btn.textContent = '儲存中…';
+        errEl.style.display = 'none';
+
+        try {
+            const res = await fetch(`/ntut/internal/${type}/settings`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name, color }),
+            });
+            if (!res.ok) throw new Error();
+            const data = await res.json();
+
+            // 更新側邊欄 UI
+            document.getElementById(`builtin-name-${type}`).textContent = data.name;
+            document.getElementById(`builtin-dot-${type}`).style.background = data.color;
+
+            // 更新 FullCalendar EventSource 顏色
+            const srcId = `builtin-${type}`;
+            const src   = fcCalendar.getEventSourceById(srcId);
+            if (src) {
+                src.remove();
+                fcCalendar.addEventSource({
+                    id:   srcId,
+                    url:  `/ntut/internal/${type}-events`,
+                    color: data.color,
+                    failure: () => console.warn(`${type} 載入失敗`),
+                });
+            }
+
+            closeBuiltinEditModal();
+        } catch {
+            errEl.textContent = '儲存失敗，請重試';
+            errEl.style.display = 'block';
+        } finally {
+            btn.disabled = false;
+            btn.textContent = '儲存變更';
+        }
+    }
+
+    /* 載入內建日曆設定（初始化展示）並加入 EventSource */
+    async function loadBuiltinCalendars() {
+        for (const type of ['salary', 'period']) {
+            let name, color;
+            try {
+                const res  = await fetch(`/ntut/internal/${type}/settings`);
+                const data = await res.json();
+                name  = data.name;
+                color = data.color;
+            } catch {
+                name  = type === 'salary' ? '🏷 班表' : '🩸 週期追蹤';
+                color = type === 'salary' ? '#6366f1' : '#ff4d4f';
+            }
+
+            // 更新側邊欄
+            const nameEl = document.getElementById(`builtin-name-${type}`);
+            const dotEl  = document.getElementById(`builtin-dot-${type}`);
+            if (nameEl) nameEl.textContent = name;
+            if (dotEl)  dotEl.style.background = color;
+
+            // 加入 FullCalendar EventSource
+            fcCalendar.addEventSource({
+                id:    `builtin-${type}`,
+                url:   `/ntut/internal/${type}-events`,
+                color: color,
+                failure: () => console.warn(`${type} 載入失敗`),
+            });
+        }
     }
 
     /* ─────────────────────────────────────────────
