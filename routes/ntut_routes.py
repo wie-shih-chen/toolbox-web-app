@@ -235,6 +235,15 @@ def get_events(cal_id):
 
 # ── Built-in Calendar Settings ────────────────────────────────────────────────
 
+def _hex_to_rgba(hex_color: str, alpha: float) -> str:
+    """Convert #RRGGBB to rgba(r, g, b, alpha)."""
+    h = hex_color.lstrip('#')
+    if len(h) == 6:
+        r, g, b = int(h[0:2], 16), int(h[2:4], 16), int(h[4:6], 16)
+        return f'rgba({r},{g},{b},{alpha})'
+    return hex_color  # fallback
+
+
 _BUILTIN_TYPES = {
     'salary': {
         'name_field':  'builtin_salary_name',
@@ -357,10 +366,11 @@ def internal_period_events():
             e['borderColor']     = color
 
         elif event_type == 'predicted_period':
-            # 預測經期：保留透明底，邊框用使用者主題色（較淡）
-            e['backgroundColor'] = 'transparent'
+            # 預測經期：主顏色 20% 定調底色 + 實線邊框，外觀與歷史經期區別
+            e['backgroundColor'] = _hex_to_rgba(color, 0.2)
             e['borderColor']     = color
             e['textColor']       = color
+            e.pop('className', None)  # 移除虛線樣式（現在有顏色了）
 
         # fertile_window、ovulation：保留原本語意顏色，不覆蓋
 
