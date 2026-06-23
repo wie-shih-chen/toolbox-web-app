@@ -1,12 +1,14 @@
 from flask import Blueprint, render_template, redirect, url_for, flash, request, session, jsonify, send_file, current_app
 from werkzeug.utils import secure_filename
 from flask_login import login_user, logout_user, login_required, current_user
-from models import db, User, SalaryRecord, ExpenseRecord, UserSettings, LineBinding
+from models import db, User, SalaryRecord, ExpenseRecord, UserSettings, LineBinding, SSOUsedToken
 from services.email_service import EmailService
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
 import json, random
 import os
 import re
+import uuid
+import jwt as pyjwt
 from config import Config
 
 from routes.settings_api import register_settings_api
@@ -16,11 +18,48 @@ auth_bp = Blueprint('auth', __name__, url_prefix='/auth')
 # Register auto-save API routes
 register_settings_api(auth_bp)
 
+# ─────────────────────────────────────────────────────────────
+# SSO — Single Sign-On token 發行端點
+# ─────────────────────────────────────────────────────────────
+
+@auth_bp.route('/sso-token')
+@login_required
+def sso_token():
+    """
+    產生短效 JWT 並 redirect 到 Web2 的 SSO 登入端點。
+    URL 參數 redirect_to 可指定跳轉目標（預設 'shop'）。
+    """
+    # 清理超過 30 分鐘的舊 jti（防止資料表無限成長）
+    cutoff = datetime.now(timezone.utc) - timedelta(minutes=30)
+    SSOUsedToken.query.filter(SSOUsedToken.used_at < cutoff).delete()
+    db.session.commit()
+
+    jti = str(uuid.uuid4())
+    now = datetime.now(timezone.utc)
+
+    payload = {
+        'sub': current_user.username,
+        'iat': now,
+        'exp': now + timedelta(minutes=5),
+        'jti': jti,
+    }
+
+    token = pyjwt.encode(
+        payload,
+        Config.SSO_SECRET,
+        algorithm='HS256'
+    )
+
+    web2_url = Config.WEB2_URL.rstrip('/')
+    redirect_url = f"{web2_url}/auth/sso-login?token={token}"
+    return redirect(redirect_url)
+
+
 @auth_bp.route('/register', methods=['GET', 'POST'])
 def register():
     if current_user.is_authenticated:
         return redirect(url_for('main.index'))
-    
+
     if request.method == 'POST':
         email = request.form.get('email')
         username = request.form.get('username')

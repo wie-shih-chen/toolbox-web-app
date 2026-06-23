@@ -256,3 +256,15 @@ class LineConversationSession(db.Model):
     collected_data = db.Column(db.Text, default='{}')           # JSON: 已收集欄位
     pending_fields = db.Column(db.Text, default='[]')           # JSON list: 待追問欄位
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+
+class SSOUsedToken(db.Model):
+    """
+    記錄已使用的 SSO JWT jti（JWT ID），防止重放攻擊。
+    jti 是 UUID4，每個 token 只能使用一次。
+    自動清理超過 30 分鐘的記錄（在 sso-token 端點觸發清理）。
+    """
+    __tablename__ = 'sso_used_tokens'
+    jti      = db.Column(db.String(36), primary_key=True)   # UUID4
+    used_at  = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+

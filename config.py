@@ -3,6 +3,11 @@ import os
 class Config:
     SECRET_KEY = os.environ.get('SECRET_KEY') or 'dev-secret-key-change-in-production'
     GEMINI_API_KEY = os.environ.get('GEMINI_API_KEY')
+
+    # SSO (Single Sign-On) Config
+    # 在 PythonAnywhere 環境變數設定相同的值（兩個 app 共用）
+    SSO_SECRET  = os.environ.get('SSO_SECRET', '213babe7434b974ea9f295eadc2788a377ce87de9d964d8d71ed55f520299e1e')
+    WEB2_URL    = os.environ.get('WEB2_URL', 'https://weishihchensec.pythonanywhere.com')
     # Salary Data File
     BASE_DIR = os.path.dirname(os.path.abspath(__file__))
     SALARY_DATA_FILE = os.path.join(BASE_DIR, 'salary_data.json')

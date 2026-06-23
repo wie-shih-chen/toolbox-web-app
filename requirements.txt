@@ -42,3 +42,4 @@ openpyxl==3.1.2
 Flask-APScheduler
 icalendar
 google-genai
+PyJWT>=2.8.0
