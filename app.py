@@ -60,8 +60,7 @@ with app.app_context():
     from routes.countdown_routes import countdown_bp
     app.register_blueprint(countdown_bp)
 
-    from routes.travel_routes import travel_bp
-    app.register_blueprint(travel_bp)
+
 
     # Initialize Scheduler
     try:

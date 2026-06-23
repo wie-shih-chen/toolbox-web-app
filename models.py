@@ -22,7 +22,7 @@ class User(UserMixin, db.Model):
     settings = db.relationship('UserSettings', backref='user', uselist=False, lazy=True)
     reminders = db.relationship('Reminder', backref='user', lazy=True)
     line_bindings = db.relationship('LineBinding', backref='user', lazy=True)
-    trip_plans = db.relationship('TripPlan', backref='user', lazy=True)
+
 
     def set_password(self, password):
         self.password_hash = generate_password_hash(password)
@@ -270,37 +270,6 @@ class SSOUsedToken(db.Model):
     used_at  = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
 
 
-class TripPlan(db.Model):
-    """旅程計劃（行程表頭）"""
-    __tablename__ = 'trip_plan'
-    id          = db.Column(db.Integer, primary_key=True)
-    user_id     = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
-    title       = db.Column(db.String(100), nullable=False)
-    description = db.Column(db.String(500), nullable=True)
-    start_date  = db.Column(db.String(10), nullable=True)   # YYYY-MM-DD
-    end_date    = db.Column(db.String(10), nullable=True)   # YYYY-MM-DD
-    created_at  = db.Column(db.DateTime, default=datetime.utcnow)
-    updated_at  = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
-    stops = db.relationship('TripStop', backref='trip', lazy=True,
-                            order_by='TripStop.day_index, TripStop.order_index',
-                            cascade='all, delete-orphan')
-
-
-class TripStop(db.Model):
-    """旅程景點站點"""
-    __tablename__ = 'trip_stop'
-    id                = db.Column(db.Integer, primary_key=True)
-    trip_id           = db.Column(db.Integer, db.ForeignKey('trip_plan.id'), nullable=False)
-    day_index         = db.Column(db.Integer, default=0)    # 第幾天（0-based）
-    order_index       = db.Column(db.Integer, default=0)    # 當天第幾站（0-based）
-    name              = db.Column(db.String(200), nullable=False)
-    address           = db.Column(db.String(500), nullable=True)
-    lat               = db.Column(db.Float, nullable=True)
-    lng               = db.Column(db.Float, nullable=True)
-    note              = db.Column(db.String(500), nullable=True)
-    estimated_expense = db.Column(db.Float, default=0.0)
-    is_completed      = db.Column(db.Boolean, default=False)
-    created_at        = db.Column(db.DateTime, default=datetime.utcnow)
 
 
