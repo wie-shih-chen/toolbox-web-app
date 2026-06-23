@@ -26,7 +26,7 @@ def load_user(user_id):
 
 # Register Blueprints
 with app.app_context():
-    db.create_all() # Create tables if they don't exist
+    db.create_all() # Create tables if they don't exist (checkfirst is default in SQLAlchemy 2.x)
 
     from routes.main_routes import main_bp
     from routes.salary_routes import salary_bp
@@ -59,6 +59,9 @@ with app.app_context():
 
     from routes.countdown_routes import countdown_bp
     app.register_blueprint(countdown_bp)
+
+    from routes.travel_routes import travel_bp
+    app.register_blueprint(travel_bp)
 
     # Initialize Scheduler
     try:
