@@ -8,7 +8,6 @@ import json, random
 import os
 import re
 import uuid
-import jwt as pyjwt
 from config import Config
 
 from routes.settings_api import register_settings_api
@@ -27,12 +26,20 @@ register_settings_api(auth_bp)
 def sso_token():
     """
     產生短效 JWT 並 redirect 到 Web2 的 SSO 登入端點。
-    URL 參數 redirect_to 可指定跳轉目標（預設 'shop'）。
     """
+    try:
+        import jwt as pyjwt
+    except ImportError:
+        flash('衣物選購暫時無法使用（缺少 PyJWT 套件），請聯絡管理員', 'danger')
+        return redirect(url_for('main.index'))
+
     # 清理超過 30 分鐘的舊 jti（防止資料表無限成長）
-    cutoff = datetime.now(timezone.utc) - timedelta(minutes=30)
-    SSOUsedToken.query.filter(SSOUsedToken.used_at < cutoff).delete()
-    db.session.commit()
+    try:
+        cutoff = datetime.now(timezone.utc) - timedelta(minutes=30)
+        SSOUsedToken.query.filter(SSOUsedToken.used_at < cutoff).delete()
+        db.session.commit()
+    except Exception:
+        db.session.rollback()  # SSOUsedToken 表可能還未建立，忽略此錯誤
 
     jti = str(uuid.uuid4())
     now = datetime.now(timezone.utc)
