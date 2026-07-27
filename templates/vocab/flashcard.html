@@ -541,6 +541,10 @@ function restart() {
 }
 
 // Init
+const _urlParams = new URLSearchParams(window.location.search);
+if (_urlParams.has('review_date') && document.getElementById('filterReviewDate')) {
+  document.getElementById('filterReviewDate').value = _urlParams.get('review_date');
+}
 loadWords();
 </script>
 {% endblock %}
