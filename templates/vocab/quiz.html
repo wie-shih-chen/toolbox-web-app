@@ -1,0 +1,310 @@
+{% extends 'base.html' %}
+{% block title %}選擇題 — TOEIC 背單字{% endblock %}
+
+{% block extra_css %}
+<style>
+  .quiz-container { max-width: 640px; margin: 0 auto; padding: 1rem; }
+  .quiz-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.5rem; }
+  .quiz-header a { text-decoration: none; color: var(--text-muted); font-size: 0.9rem; }
+
+  .score-bar { display: flex; gap: 1.5rem; font-size: 0.9rem; }
+  .score-correct { color: #22c55e; font-weight: 600; }
+  .score-wrong { color: #ef4444; font-weight: 600; }
+
+  .filter-bar { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 1.5rem; }
+  .filter-bar select {
+    padding: 0.4rem 0.8rem; border-radius: 100px;
+    border: 1px solid rgba(0,0,0,0.15); background: var(--card-bg,#fff);
+    font-size: 0.85rem; cursor: pointer;
+  }
+
+  .question-card {
+    background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+    border-radius: 20px;
+    padding: 2rem;
+    color: white;
+    text-align: center;
+    margin-bottom: 1.5rem;
+    min-height: 160px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 8px 32px rgba(79, 172, 254, 0.3);
+  }
+  .question-card .q-word { font-size: 2.4rem; font-weight: 800; }
+  .question-card .q-pos { font-size: 0.85rem; opacity: 0.8; margin-top: 0.5rem; }
+  .question-card .q-num { font-size: 0.8rem; opacity: 0.7; margin-bottom: 0.5rem; }
+  .question-card .q-star { font-size: 0.9rem; opacity: 0.85; margin-top: 0.4rem; }
+
+  .options-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.8rem; margin-bottom: 1.5rem; }
+  .opt-btn {
+    padding: 1rem;
+    border-radius: 14px;
+    border: 2px solid rgba(0,0,0,0.1);
+    background: var(--card-bg, #fff);
+    font-size: 0.95rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-align: center;
+    line-height: 1.4;
+  }
+  .opt-btn:hover:not(:disabled) { border-color: #4facfe; background: rgba(79,172,254,0.08); }
+  .opt-btn.correct { border-color: #22c55e; background: #dcfce7; color: #15803d; }
+  .opt-btn.wrong { border-color: #ef4444; background: #fee2e2; color: #b91c1c; }
+  .opt-btn:disabled { cursor: default; }
+
+  .feedback-box {
+    border-radius: 14px;
+    padding: 1rem 1.2rem;
+    margin-bottom: 1rem;
+    display: none;
+    font-size: 0.9rem;
+    line-height: 1.6;
+  }
+  .feedback-box.correct { background: #dcfce7; border: 1px solid #bbf7d0; color: #15803d; }
+  .feedback-box.wrong { background: #fee2e2; border: 1px solid #fecaca; color: #b91c1c; }
+
+  .btn-next {
+    width: 100%;
+    padding: 1rem;
+    border-radius: 14px;
+    background: linear-gradient(135deg, #4facfe, #00f2fe);
+    color: white;
+    border: none;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    display: none;
+    transition: opacity 0.2s;
+  }
+  .btn-next:hover { opacity: 0.9; }
+
+  .finished-card {
+    text-align: center;
+    padding: 3rem 1rem;
+    display: none;
+  }
+  .finished-card .big-emoji { font-size: 4rem; margin-bottom: 1rem; }
+  .finished-card h2 { font-size: 1.5rem; font-weight: 700; margin-bottom: 0.5rem; }
+  .finished-card .result-text { color: var(--text-muted); margin-bottom: 1.5rem; }
+  .btn-restart {
+    padding: 0.8rem 2.5rem;
+    border-radius: 14px;
+    background: linear-gradient(135deg, #4facfe, #00f2fe);
+    color: white;
+    border: none;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+  }
+
+  .loading-overlay {
+    display: flex; flex-direction: column; align-items: center;
+    justify-content: center; gap: 1rem; padding: 4rem 1rem;
+    color: var(--text-muted);
+  }
+  .spinner { width: 36px; height: 36px; border: 3px solid rgba(79,172,254,0.2); border-top-color: #4facfe; border-radius: 50%; animation: spin 0.7s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+</style>
+{% endblock %}
+
+{% block content %}
+{% include 'shop/_nav.html' %}
+<div class="quiz-container">
+  <div class="quiz-header">
+    <a href="{{ url_for('vocab.index') }}">← 返回學習中心</a>
+    <div class="score-bar">
+      <span class="score-correct">✓ <span id="scoreCorrect">0</span></span>
+      <span class="score-wrong">✗ <span id="scoreWrong">0</span></span>
+    </div>
+  </div>
+
+  <div class="filter-bar">
+    <select id="filterStar" onchange="applyFilters()">
+      <option value="">全部星等</option>
+      <option value="5">⭐⭐⭐⭐⭐</option>
+      <option value="4">⭐⭐⭐⭐</option>
+      <option value="3">⭐⭐⭐</option>
+    </select>
+    <select id="filterCategory" onchange="applyFilters()">
+      <option value="">全部分類</option>
+      <option>商務辦公</option><option>財務會計</option><option>行銷銷售</option>
+      <option>採購物流</option><option>法律合規</option><option>資訊技術</option><option>客戶服務</option>
+    </select>
+  </div>
+
+  <div class="loading-overlay" id="loadingState">
+    <div class="spinner"></div><div>載入單字中…</div>
+  </div>
+
+  <div id="quizArea" style="display:none;">
+    <div class="question-card">
+      <div class="q-num" id="qNum"></div>
+      <div class="q-word" id="qWord"></div>
+      <div class="q-pos" id="qPos"></div>
+      <div class="q-star" id="qStar"></div>
+    </div>
+
+    <div class="options-grid" id="optionsGrid"></div>
+
+    <div class="feedback-box" id="feedbackBox"></div>
+    <button class="btn-next" id="btnNext" onclick="nextQuestion()">下一題 →</button>
+  </div>
+
+  <div class="finished-card" id="finishedCard">
+    <div class="big-emoji">🏆</div>
+    <h2>測驗完成！</h2>
+    <p class="result-text" id="finishedResult"></p>
+    <button class="btn-restart" onclick="restart()">再玩一次</button>
+    <br><a href="{{ url_for('vocab.index') }}" style="display:inline-block; margin-top:0.8rem; color:var(--text-muted);">返回學習中心</a>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let words = [], shuffled = [], currentIdx = 0;
+let sessionCorrect = 0, sessionWrong = 0;
+let answered = false;
+
+async function loadWords() {
+  const star = document.getElementById('filterStar').value;
+  const category = document.getElementById('filterCategory').value;
+  let allWords = [];
+  let batchOffset = 0;
+  try {
+    while (true) {
+      let url = `/vocab/api/words?offset=${batchOffset}&length=100`;
+      if (star) url += `&star=${star}`;
+      if (category) url += `&category=${encodeURIComponent(category)}`;
+      const res = await fetch(url);
+      const data = await res.json();
+      if (!data.words || data.error) break;
+      allWords = allWords.concat(data.words);
+      if (data.words.length < 100 || batchOffset + 100 >= data.total) break;
+      batchOffset += 100;
+    }
+  } catch(e) { console.error(e); }
+  words = shuffle(allWords);
+  shuffled = words;
+  document.getElementById('loadingState').style.display = 'none';
+  if (words.length < 4) { document.getElementById('quizArea').innerHTML = '<p style="text-align:center;padding:2rem;color:var(--text-muted);">單字數量不足以出題（至少需要 4 個）</p>'; return; }
+  document.getElementById('quizArea').style.display = 'block';
+  showQuestion();
+}
+
+function shuffle(arr) {
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
+}
+
+function applyFilters() {
+  words = []; shuffled = []; currentIdx = 0;
+  sessionCorrect = 0; sessionWrong = 0;
+  updateScore();
+  document.getElementById('loadingState').style.display = 'flex';
+  document.getElementById('quizArea').style.display = 'none';
+  document.getElementById('finishedCard').style.display = 'none';
+  loadWords();
+}
+
+function showQuestion() {
+  if (currentIdx >= shuffled.length) { showFinished(); return; }
+  answered = false;
+  const w = shuffled[currentIdx];
+  
+  document.getElementById('qNum').textContent = `第 ${currentIdx + 1} / ${shuffled.length} 題`;
+  document.getElementById('qWord').textContent = w.word;
+  document.getElementById('qPos').textContent = (w.parts_of_speech || []).slice(0, 2).join('  ');
+  document.getElementById('qStar').textContent = '⭐'.repeat(w.star || 0);
+  
+  // Pick 3 wrong answers
+  const wrongs = shuffle(shuffled.filter((_, i) => i !== currentIdx)).slice(0, 3);
+  const options = shuffle([w, ...wrongs]);
+  
+  const grid = document.getElementById('optionsGrid');
+  grid.innerHTML = '';
+  options.forEach(opt => {
+    const btn = document.createElement('button');
+    btn.className = 'opt-btn';
+    btn.textContent = opt.definition;
+    btn.onclick = () => selectAnswer(btn, opt.word === w.word, w);
+    grid.appendChild(btn);
+  });
+  
+  document.getElementById('feedbackBox').style.display = 'none';
+  document.getElementById('btnNext').style.display = 'none';
+}
+
+function selectAnswer(btn, isCorrect, w) {
+  if (answered) return;
+  answered = true;
+  
+  const allBtns = document.querySelectorAll('.opt-btn');
+  allBtns.forEach(b => {
+    b.disabled = true;
+    if (b.textContent === w.definition) b.classList.add('correct');
+  });
+  
+  const feedback = document.getElementById('feedbackBox');
+  
+  if (isCorrect) {
+    btn.classList.add('correct');
+    sessionCorrect++;
+    feedback.className = 'feedback-box correct';
+    feedback.innerHTML = `✅ 正確！<br>${w.word} = ${w.definition}`;
+  } else {
+    btn.classList.add('wrong');
+    sessionWrong++;
+    feedback.className = 'feedback-box wrong';
+    feedback.innerHTML = `❌ 答錯了！正確答案是：<strong>${w.definition}</strong>`;
+  }
+  
+  feedback.style.display = 'block';
+  document.getElementById('btnNext').style.display = 'block';
+  updateScore();
+  
+  // Record progress
+  fetch('/vocab/api/progress', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ word: w.word, result: isCorrect ? 'correct' : 'incorrect' })
+  });
+}
+
+function nextQuestion() {
+  currentIdx++;
+  showQuestion();
+}
+
+function updateScore() {
+  document.getElementById('scoreCorrect').textContent = sessionCorrect;
+  document.getElementById('scoreWrong').textContent = sessionWrong;
+}
+
+function showFinished() {
+  document.getElementById('quizArea').style.display = 'none';
+  document.getElementById('finishedCard').style.display = 'block';
+  const total = sessionCorrect + sessionWrong;
+  const acc = total > 0 ? Math.round(sessionCorrect / total * 100) : 0;
+  document.getElementById('finishedResult').textContent =
+    `共 ${total} 題 · 答對 ${sessionCorrect} · 答錯 ${sessionWrong} · 正確率 ${acc}%`;
+}
+
+function restart() {
+  sessionCorrect = 0; sessionWrong = 0; currentIdx = 0;
+  updateScore();
+  shuffled = shuffle([...words]);
+  document.getElementById('finishedCard').style.display = 'none';
+  document.getElementById('quizArea').style.display = 'block';
+  showQuestion();
+}
+
+loadWords();
+</script>
+{% endblock %}

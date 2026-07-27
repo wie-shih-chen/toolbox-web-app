@@ -1,0 +1,152 @@
+{% extends 'base.html' %}
+{% block title %}TOEIC 背單字 — 學習中心{% endblock %}
+
+{% block extra_css %}
+<style>
+  .vocab-hero {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 20px;
+    padding: 2rem;
+    color: white;
+    margin-bottom: 2rem;
+  }
+  .vocab-hero h1 { font-size: 2rem; font-weight: 700; margin: 0 0 0.5rem; }
+  .vocab-hero p { opacity: 0.85; margin: 0; font-size: 1.05rem; }
+  .daily-goal-bar {
+    background: rgba(255,255,255,0.2);
+    border-radius: 100px;
+    height: 12px;
+    margin: 1rem 0 0.4rem;
+    overflow: hidden;
+  }
+  .daily-goal-fill {
+    height: 100%;
+    background: white;
+    border-radius: 100px;
+    transition: width 0.8s ease;
+  }
+  .goal-text { font-size: 0.85rem; opacity: 0.9; }
+
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1rem;
+    margin-bottom: 2rem;
+  }
+  .stat-card {
+    background: var(--card-bg, #fff);
+    border-radius: 16px;
+    padding: 1.2rem;
+    text-align: center;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+    border: 1px solid rgba(0,0,0,0.06);
+  }
+  .stat-card .num {
+    font-size: 2rem;
+    font-weight: 700;
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  .stat-card .label { font-size: 0.78rem; color: var(--text-muted, #888); margin-top: 0.2rem; }
+
+  .mode-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
+    margin-bottom: 2rem;
+  }
+  .mode-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.6rem;
+    padding: 1.8rem 1rem;
+    border-radius: 18px;
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 1.05rem;
+    transition: transform 0.2s, box-shadow 0.2s;
+    color: white;
+    position: relative;
+    overflow: hidden;
+  }
+  .mode-card:hover { transform: translateY(-4px); box-shadow: 0 12px 32px rgba(0,0,0,0.18); color: white; }
+  .mode-card .mode-icon { font-size: 2.5rem; }
+  .mode-card .mode-desc { font-size: 0.78rem; font-weight: 400; opacity: 0.85; }
+  .mode-card.flashcard { background: linear-gradient(135deg, #f093fb, #f5576c); }
+  .mode-card.quiz      { background: linear-gradient(135deg, #4facfe, #00f2fe); }
+  .mode-card.spelling  { background: linear-gradient(135deg, #43e97b, #38f9d7); }
+  .mode-card.browse    { background: linear-gradient(135deg, #fa709a, #fee140); }
+  .mode-card.full-width { grid-column: 1 / -1; }
+
+  @media (max-width: 600px) {
+    .stats-grid { grid-template-columns: repeat(3, 1fr); gap: 0.6rem; }
+    .mode-grid { grid-template-columns: 1fr; }
+    .stat-card .num { font-size: 1.4rem; }
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+{% include 'shop/_nav.html' %}
+<div class="container" style="max-width: 680px; padding-bottom: 3rem;">
+
+  <!-- Hero + 每日目標 -->
+  <div class="vocab-hero">
+    <h1>📚 TOEIC 背單字</h1>
+    <p>11,154 個單字 · 中英雙語例句 · 星等分類</p>
+    <div class="daily-goal-bar">
+      <div class="daily-goal-fill" style="width: {{ stats.daily_progress_pct }}%"></div>
+    </div>
+    <div class="goal-text">
+      今日目標：已複習 <strong>{{ stats.today_reviewed }}</strong> / {{ stats.daily_goal }} 個
+      {% if stats.daily_progress_pct >= 100 %}🎉 今日目標達成！{% endif %}
+    </div>
+  </div>
+
+  <!-- 統計 -->
+  <div class="stats-grid">
+    <div class="stat-card">
+      <div class="num">{{ stats.total_seen }}</div>
+      <div class="label">學過的字</div>
+    </div>
+    <div class="stat-card">
+      <div class="num">{{ stats.overall_accuracy }}%</div>
+      <div class="label">整體正確率</div>
+    </div>
+    <div class="stat-card">
+      <div class="num">{{ stats.correct_sum }}</div>
+      <div class="label">累計答對</div>
+    </div>
+  </div>
+
+  <!-- 學習模式 -->
+  <h2 style="font-size: 1.1rem; font-weight: 600; margin-bottom: 1rem;">選擇學習模式</h2>
+  <div class="mode-grid">
+    <a href="{{ url_for('vocab.flashcard') }}" class="mode-card flashcard">
+      <div class="mode-icon">🃏</div>
+      <div>卡片翻轉</div>
+      <div class="mode-desc">正面英文・背面中文</div>
+    </a>
+    <a href="{{ url_for('vocab.quiz') }}" class="mode-card quiz">
+      <div class="mode-icon">📝</div>
+      <div>選擇題</div>
+      <div class="mode-desc">看英文選中文 (4選1)</div>
+    </a>
+    <a href="{{ url_for('vocab.spelling') }}" class="mode-card spelling">
+      <div class="mode-icon">⌨️</div>
+      <div>拼字測驗</div>
+      <div class="mode-desc">看中文打出英文</div>
+    </a>
+    <a href="{{ url_for('vocab.browse') }}" class="mode-card browse">
+      <div class="mode-icon">📖</div>
+      <div>瀏覽模式</div>
+      <div class="mode-desc">捲動看所有單字</div>
+    </a>
+  </div>
+
+</div>
+{% endblock %}

@@ -1,0 +1,216 @@
+{% extends 'base.html' %}
+{% block title %}瀏覽單字 — TOEIC 背單字{% endblock %}
+
+{% block extra_css %}
+<style>
+  .browse-container { max-width: 900px; margin: 0 auto; padding: 1rem; }
+  .browse-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 0.5rem; }
+  .browse-header a { text-decoration: none; color: var(--text-muted); font-size: 0.9rem; }
+  .browse-count { font-size: 0.85rem; color: var(--text-muted); }
+
+  .filter-bar { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 1.5rem; align-items: center; }
+  .filter-bar select, .filter-bar input {
+    padding: 0.45rem 0.9rem; border-radius: 100px;
+    border: 1px solid rgba(0,0,0,0.15); background: var(--card-bg,#fff);
+    font-size: 0.85rem; cursor: pointer;
+  }
+  .filter-bar input { cursor: text; min-width: 160px; }
+
+  .words-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1rem; }
+
+  .word-card {
+    background: var(--card-bg, #fff);
+    border-radius: 16px;
+    padding: 1.2rem;
+    border: 1px solid rgba(0,0,0,0.07);
+    box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+    transition: transform 0.2s, box-shadow 0.2s;
+    cursor: default;
+    position: relative;
+  }
+  .word-card:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(0,0,0,0.1); }
+
+  .word-card .wc-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.5rem; }
+  .word-card .wc-word { font-size: 1.2rem; font-weight: 700; color: #4a4a8a; }
+  .word-card .wc-star { font-size: 0.75rem; }
+  .word-card .wc-def { font-size: 0.9rem; color: var(--text-color, #444); margin-bottom: 0.5rem; font-weight: 500; }
+  .word-card .wc-pos { display: flex; gap: 0.3rem; flex-wrap: wrap; margin-bottom: 0.5rem; }
+  .pos-tag { background: rgba(102,126,234,0.1); color: #667eea; border-radius: 100px; padding: 0.1rem 0.6rem; font-size: 0.72rem; font-weight: 600; }
+  .word-card .wc-example { font-size: 0.78rem; color: var(--text-muted, #888); line-height: 1.5; border-top: 1px solid rgba(0,0,0,0.06); padding-top: 0.5rem; margin-top: 0.3rem; }
+  .word-card .wc-cat { font-size: 0.7rem; color: #aaa; position: absolute; bottom: 0.8rem; right: 1rem; }
+  .word-card .wc-score { font-size: 0.7rem; color: #bbb; }
+
+  /* Progress dot */
+  .progress-dot {
+    width: 8px; height: 8px; border-radius: 50%;
+    display: inline-block; margin-right: 4px;
+    vertical-align: middle;
+  }
+  .dot-known { background: #22c55e; }
+  .dot-learning { background: #f59e0b; }
+  .dot-new { background: #d1d5db; }
+
+  /* Load more */
+  .load-more-btn {
+    display: block; width: 100%; margin: 1.5rem 0;
+    padding: 0.8rem; border-radius: 14px;
+    background: rgba(102,126,234,0.1); border: 1.5px solid rgba(102,126,234,0.2);
+    color: #667eea; font-size: 0.95rem; font-weight: 600;
+    cursor: pointer; transition: background 0.2s;
+  }
+  .load-more-btn:hover { background: rgba(102,126,234,0.2); }
+  .load-more-btn:disabled { opacity: 0.5; cursor: default; }
+
+  .loading-overlay { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1rem; padding: 4rem 1rem; color: var(--text-muted); }
+  .spinner { width: 36px; height: 36px; border: 3px solid rgba(102,126,234,0.2); border-top-color: #667eea; border-radius: 50%; animation: spin 0.7s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+</style>
+{% endblock %}
+
+{% block content %}
+{% include 'shop/_nav.html' %}
+<div class="browse-container">
+  <div class="browse-header">
+    <a href="{{ url_for('vocab.index') }}">← 返回學習中心</a>
+    <div class="browse-count" id="browseCount">載入中…</div>
+  </div>
+
+  <div class="filter-bar">
+    <input type="text" id="searchInput" placeholder="🔍 搜尋單字或中文…" oninput="filterLocal()">
+    <select id="filterStar" onchange="resetAndLoad()">
+      <option value="">全部星等</option>
+      <option value="5">⭐⭐⭐⭐⭐</option>
+      <option value="4">⭐⭐⭐⭐</option>
+      <option value="3">⭐⭐⭐</option>
+      <option value="2">⭐⭐</option>
+      <option value="1">⭐</option>
+    </select>
+    <select id="filterCategory" onchange="resetAndLoad()">
+      <option value="">全部分類</option>
+      <option>商務辦公</option><option>財務會計</option><option>行銷銷售</option>
+      <option>採購物流</option><option>法律合規</option><option>資訊技術</option><option>客戶服務</option>
+    </select>
+    <select id="filterScore" onchange="resetAndLoad()">
+      <option value="">全部分數段</option>
+      <option value="400">400分以下</option>
+      <option value="600">400–600</option>
+      <option value="800">600–800</option>
+      <option value="990">800+</option>
+    </select>
+  </div>
+
+  <div class="loading-overlay" id="loadingState"><div class="spinner"></div><div>載入單字中…</div></div>
+
+  <div class="words-grid" id="wordsGrid"></div>
+  <button class="load-more-btn" id="btnLoadMore" style="display:none;" onclick="loadMore()">載入更多</button>
+  <div id="endMsg" style="display:none;text-align:center;padding:1rem;color:var(--text-muted);font-size:0.85rem;">已顯示全部單字</div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let allWords = [];
+let displayedWords = [];
+let offset = 0;
+const PAGE_SIZE = 100;
+let totalAvailable = 0;
+let loading = false;
+let searchQuery = '';
+let userProgress = {};
+
+async function init() {
+  // Load progress first
+  const pr = await fetch('/vocab/api/progress');
+  userProgress = await pr.json();
+  await loadWords();
+}
+
+async function loadWords() {
+  if (loading) return;
+  loading = true;
+
+  const star = document.getElementById('filterStar').value;
+  const category = document.getElementById('filterCategory').value;
+  const score = document.getElementById('filterScore').value;
+
+  let url = `/vocab/api/words?offset=${offset}&length=${PAGE_SIZE}`;
+  if (star) url += `&star=${star}`;
+  if (category) url += `&category=${encodeURIComponent(category)}`;
+  if (score) url += `&score_range=${encodeURIComponent(score)}`;
+
+  try {
+    const res = await fetch(url);
+    const data = await res.json();
+    if (data.error) { console.error(data.error); loading = false; return; }
+
+    allWords = allWords.concat(data.words);
+    totalAvailable = data.total;
+    offset += PAGE_SIZE;
+
+    document.getElementById('loadingState').style.display = 'none';
+    applySearch();
+
+    const hasMore = offset < totalAvailable;
+    document.getElementById('btnLoadMore').style.display = hasMore ? 'block' : 'none';
+    document.getElementById('endMsg').style.display = hasMore ? 'none' : 'block';
+  } catch(e) { console.error(e); }
+  loading = false;
+}
+
+function applySearch() {
+  const q = document.getElementById('searchInput').value.toLowerCase();
+  displayedWords = allWords.filter(w => {
+    if (!q) return true;
+    return w.word.toLowerCase().includes(q) || (w.definition || '').toLowerCase().includes(q);
+  });
+  renderWords();
+}
+
+function filterLocal() { applySearch(); }
+
+function resetAndLoad() {
+  allWords = []; displayedWords = []; offset = 0;
+  document.getElementById('wordsGrid').innerHTML = '';
+  document.getElementById('btnLoadMore').style.display = 'none';
+  document.getElementById('endMsg').style.display = 'none';
+  document.getElementById('loadingState').style.display = 'flex';
+  loadWords();
+}
+
+function renderWords() {
+  const grid = document.getElementById('wordsGrid');
+  grid.innerHTML = '';
+
+  displayedWords.forEach(w => {
+    const prog = userProgress[w.word];
+    let dotClass = 'dot-new';
+    if (prog) {
+      dotClass = (prog.correct >= prog.incorrect && prog.correct > 0) ? 'dot-known' : 'dot-learning';
+    }
+
+    const example = (w.examples && w.examples.length > 0) ? w.examples[0] : null;
+    const card = document.createElement('div');
+    card.className = 'word-card';
+    card.innerHTML = `
+      <div class="wc-top">
+        <div class="wc-word">
+          <span class="progress-dot ${dotClass}"></span>${w.word}
+        </div>
+        <div class="wc-star">${'⭐'.repeat(w.star || 0)}</div>
+      </div>
+      <div class="wc-def">${w.definition || ''}</div>
+      <div class="wc-pos">${(w.parts_of_speech || []).slice(0,3).map(p => `<span class="pos-tag">${p}</span>`).join('')}</div>
+      ${example ? `<div class="wc-example"><em>${example.english || ''}</em><br>${example.chinese || ''}</div>` : ''}
+      <div class="wc-cat">${w.category || ''}</div>
+    `;
+    grid.appendChild(card);
+  });
+
+  document.getElementById('browseCount').textContent = `顯示 ${displayedWords.length} / ${totalAvailable} 個單字`;
+}
+
+function loadMore() { loadWords(); }
+
+init();
+</script>
+{% endblock %}

@@ -384,3 +384,22 @@ class OrderItem(db.Model):
     color          = db.Column(db.String(50), nullable=True)   # 快照顏色
     quantity       = db.Column(db.Integer, default=1)
     price_at_order = db.Column(db.Float, nullable=True)
+
+
+# ─── 背單字模組 ──────────────────────────────────────────────────
+class VocabProgress(db.Model):
+    """記錄每位使用者對每個單字的學習進度"""
+    __tablename__ = 'vocab_progress'
+    id            = db.Column(db.Integer, primary_key=True)
+    user_id       = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    word          = db.Column(db.String(100), nullable=False)   # 英文單字（唯一鍵）
+    correct       = db.Column(db.Integer, default=0)            # 答對次數
+    incorrect     = db.Column(db.Integer, default=0)            # 答錯次數
+    last_reviewed = db.Column(db.DateTime, default=datetime.utcnow)
+
+    __table_args__ = (db.UniqueConstraint('user_id', 'word', name='uq_user_word'),)
+
+    @property
+    def accuracy(self):
+        total = self.correct + self.incorrect
+        return round(self.correct / total * 100) if total > 0 else None

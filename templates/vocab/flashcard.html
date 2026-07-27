@@ -1,0 +1,499 @@
+{% extends 'base.html' %}
+{% block title %}卡片翻轉 — TOEIC 背單字{% endblock %}
+
+{% block extra_css %}
+<style>
+  .flashcard-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 1rem;
+    min-height: 80vh;
+  }
+  .fc-toolbar {
+    width: 100%;
+    max-width: 600px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 1.5rem;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+  }
+  .fc-toolbar a { text-decoration: none; color: var(--text-muted, #888); font-size: 0.9rem; }
+  .fc-toolbar .fc-counter { font-size: 0.9rem; color: var(--text-muted, #888); }
+
+  /* Filter bar */
+  .filter-bar { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 1.5rem; }
+  .filter-bar select {
+    padding: 0.4rem 0.8rem;
+    border-radius: 100px;
+    border: 1px solid rgba(0,0,0,0.15);
+    background: var(--card-bg, #fff);
+    font-size: 0.85rem;
+    cursor: pointer;
+  }
+
+  /* 3D Card */
+  .card-scene {
+    width: 100%;
+    max-width: 600px;
+    height: 340px;
+    perspective: 1000px;
+    cursor: pointer;
+    margin-bottom: 1.5rem;
+  }
+  .card-3d {
+    width: 100%;
+    height: 100%;
+    position: relative;
+    transform-style: preserve-3d;
+    transition: transform 0.55s cubic-bezier(0.23, 1, 0.32, 1);
+  }
+  .card-3d.flipped { transform: rotateY(180deg); }
+  .card-face {
+    position: absolute;
+    inset: 0;
+    border-radius: 24px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem;
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+    box-shadow: 0 12px 48px rgba(0,0,0,0.15);
+  }
+  .card-front {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+  }
+  .card-back {
+    background: white;
+    color: #1a1a2e;
+    transform: rotateY(180deg);
+  }
+  .card-front .word {
+    font-size: 2.8rem;
+    font-weight: 800;
+    letter-spacing: -1px;
+    text-align: center;
+  }
+  .card-front .pos-badge {
+    display: flex;
+    gap: 0.4rem;
+    margin-top: 0.8rem;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  .pos-tag {
+    background: rgba(255,255,255,0.25);
+    border-radius: 100px;
+    padding: 0.2rem 0.8rem;
+    font-size: 0.78rem;
+  }
+  .card-front .hint { font-size: 0.8rem; opacity: 0.6; margin-top: 1.5rem; }
+  .card-front .star-rating { font-size: 1rem; margin-top: 0.6rem; opacity: 0.9; }
+
+  .card-back .definition {
+    font-size: 1.6rem;
+    font-weight: 700;
+    text-align: center;
+    margin-bottom: 1rem;
+    color: #4a4a8a;
+  }
+  .card-back .word-small {
+    font-size: 1rem;
+    color: #888;
+    margin-bottom: 1rem;
+    font-style: italic;
+  }
+  .card-back .example {
+    font-size: 0.82rem;
+    color: #666;
+    text-align: center;
+    max-width: 420px;
+    line-height: 1.6;
+  }
+  .card-back .example .en { font-style: italic; color: #555; }
+  .card-back .example .zh { color: #888; }
+
+  /* Action Buttons */
+  .action-row {
+    display: flex;
+    gap: 1rem;
+    max-width: 600px;
+    width: 100%;
+    margin-bottom: 1rem;
+  }
+  .btn-know, .btn-unknown {
+    flex: 1;
+    padding: 1rem;
+    border: none;
+    border-radius: 14px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: transform 0.15s, box-shadow 0.15s;
+  }
+  .btn-know { background: linear-gradient(135deg, #43e97b, #38f9d7); color: #0a5e3a; }
+  .btn-unknown { background: linear-gradient(135deg, #f5576c, #f093fb); color: white; }
+  .btn-know:hover, .btn-unknown:hover { transform: scale(1.03); }
+  .btn-know:disabled, .btn-unknown:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+
+  .btn-flip {
+    background: rgba(102, 126, 234, 0.1);
+    border: 2px solid rgba(102, 126, 234, 0.3);
+    color: #667eea;
+    border-radius: 14px;
+    padding: 0.7rem 2rem;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: background 0.2s;
+    margin-bottom: 1rem;
+  }
+  .btn-flip:hover { background: rgba(102, 126, 234, 0.2); }
+
+  /* Loading */
+  .loading-overlay {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 1rem;
+    padding: 4rem 1rem;
+    color: var(--text-muted, #888);
+  }
+  .spinner {
+    width: 40px;
+    height: 40px;
+    border: 3px solid rgba(102, 126, 234, 0.2);
+    border-top-color: #667eea;
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .progress-mini {
+    width: 100%;
+    max-width: 600px;
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+    font-size: 0.82rem;
+    color: var(--text-muted);
+  }
+  .progress-mini-bar {
+    flex: 1;
+    height: 6px;
+    background: rgba(0,0,0,0.08);
+    border-radius: 100px;
+    overflow: hidden;
+  }
+  .progress-mini-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #667eea, #764ba2);
+    border-radius: 100px;
+    transition: width 0.4s;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+{% include 'shop/_nav.html' %}
+<div class="flashcard-container">
+  <!-- Toolbar -->
+  <div class="fc-toolbar">
+    <a href="{{ url_for('vocab.index') }}">← 返回學習中心</a>
+    <div class="fc-counter" id="cardCounter">載入中…</div>
+  </div>
+
+  <!-- Filters -->
+  <div class="filter-bar">
+    <select id="filterStar" onchange="applyFilters()">
+      <option value="">全部星等</option>
+      <option value="5">⭐⭐⭐⭐⭐ 最重要</option>
+      <option value="4">⭐⭐⭐⭐</option>
+      <option value="3">⭐⭐⭐</option>
+      <option value="2">⭐⭐</option>
+      <option value="1">⭐</option>
+    </select>
+    <select id="filterCategory" onchange="applyFilters()">
+      <option value="">全部分類</option>
+      <option>商務辦公</option>
+      <option>財務會計</option>
+      <option>行銷銷售</option>
+      <option>採購物流</option>
+      <option>法律合規</option>
+      <option>資訊技術</option>
+      <option>客戶服務</option>
+    </select>
+    <select id="filterScore" onchange="applyFilters()">
+      <option value="">全部分數段</option>
+      <option value="400">400分以下</option>
+      <option value="600">400–600</option>
+      <option value="800">600–800</option>
+      <option value="990">800+</option>
+    </select>
+  </div>
+
+  <!-- Loading State -->
+  <div class="loading-overlay" id="loadingState">
+    <div class="spinner"></div>
+    <div>從 HuggingFace 載入單字中…</div>
+  </div>
+
+  <!-- Card -->
+  <div id="mainContent" style="display:none; width:100%; max-width:600px;">
+    <div class="card-scene" onclick="flipCard()" id="cardScene">
+      <div class="card-3d" id="card3d">
+        <div class="card-face card-front">
+          <div class="star-rating" id="cardStar"></div>
+          <div class="word" id="cardWord"></div>
+          <div class="pos-badge" id="cardPos"></div>
+          <div class="hint">點擊查看中文意思</div>
+        </div>
+        <div class="card-face card-back">
+          <div class="word-small" id="cardWordBack"></div>
+          <div class="definition" id="cardDef"></div>
+          <div class="example" id="cardExample"></div>
+        </div>
+      </div>
+    </div>
+
+    <button class="btn-flip" onclick="flipCard()">🔄 翻轉</button>
+
+    <div class="action-row">
+      <button class="btn-unknown" id="btnUnknown" onclick="answer('incorrect')" disabled>😵 不認識</button>
+      <button class="btn-know" id="btnKnow" onclick="answer('correct')" disabled>😄 認識！</button>
+    </div>
+
+    <div class="progress-mini">
+      <span id="progressText"></span>
+      <div class="progress-mini-bar">
+        <div class="progress-mini-fill" id="progressFill" style="width:0%"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Empty State -->
+  <div id="emptyState" style="display:none; text-align:center; padding:3rem; color:var(--text-muted);">
+    <div style="font-size:3rem; margin-bottom:1rem;">🔍</div>
+    <div>找不到符合篩選條件的單字</div>
+  </div>
+
+  <!-- Finished State -->
+  <div id="finishedState" style="display:none; text-align:center; padding:3rem;">
+    <div style="font-size:4rem; margin-bottom:1rem;">🎉</div>
+    <h2>這批單字全部完成！</h2>
+    <p id="sessionResult" style="color:var(--text-muted);"></p>
+    <button onclick="restart()" style="margin-top:1rem; padding:0.8rem 2rem; border-radius:14px; background:linear-gradient(135deg,#667eea,#764ba2); color:white; border:none; font-size:1rem; font-weight:600; cursor:pointer;">再來一次</button>
+    <a href="{{ url_for('vocab.index') }}" style="display:block; margin-top:0.8rem; color:var(--text-muted);">返回學習中心</a>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let words = [];
+let filtered = [];
+let currentIdx = 0;
+let isFlipped = false;
+let sessionCorrect = 0;
+let sessionIncorrect = 0;
+let answered = false;
+let offset = 0;
+const PAGE_SIZE = 100;
+let totalWords = 0;
+let allLoaded = false;
+let loading = false;
+
+async function loadWords() {
+  if (loading || allLoaded) return;
+  loading = true;
+  
+  const star = document.getElementById('filterStar').value;
+  const category = document.getElementById('filterCategory').value;
+  const score = document.getElementById('filterScore').value;
+  
+  // Load all pages for current filters
+  let batch = [];
+  let batchOffset = 0;
+  
+  try {
+    while (true) {
+      let url = `/vocab/api/words?offset=${batchOffset}&length=100`;
+      if (star) url += `&star=${star}`;
+      if (category) url += `&category=${encodeURIComponent(category)}`;
+      if (score) url += `&score_range=${encodeURIComponent(score)}`;
+      
+      const res = await fetch(url);
+      const data = await res.json();
+      
+      if (data.error) { console.error(data.error); break; }
+      
+      batch = batch.concat(data.words);
+      totalWords = data.total;
+      
+      // If we got less than 100 and no more pages, stop
+      if (data.words.length < 100 || batchOffset + 100 >= data.total) break;
+      batchOffset += 100;
+    }
+  } catch(e) {
+    console.error('Load error:', e);
+  }
+  
+  // Shuffle
+  words = shuffle(batch);
+  filtered = words;
+  loading = false;
+  
+  document.getElementById('loadingState').style.display = 'none';
+  
+  if (filtered.length === 0) {
+    document.getElementById('emptyState').style.display = 'block';
+    return;
+  }
+  
+  currentIdx = 0;
+  showCard();
+}
+
+function shuffle(arr) {
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
+}
+
+function applyFilters() {
+  // Reset and reload from API
+  words = [];
+  filtered = [];
+  currentIdx = 0;
+  offset = 0;
+  allLoaded = false;
+  document.getElementById('loadingState').style.display = 'flex';
+  document.getElementById('mainContent').style.display = 'none';
+  document.getElementById('emptyState').style.display = 'none';
+  document.getElementById('finishedState').style.display = 'none';
+  loadWords();
+}
+
+function showCard() {
+  if (currentIdx >= filtered.length) {
+    showFinished();
+    return;
+  }
+  
+  const w = filtered[currentIdx];
+  isFlipped = false;
+  answered = false;
+  
+  // Reset card
+  document.getElementById('card3d').classList.remove('flipped');
+  
+  // Front
+  const stars = '⭐'.repeat(w.star || 0);
+  document.getElementById('cardStar').textContent = stars;
+  document.getElementById('cardWord').textContent = w.word;
+  
+  const posEl = document.getElementById('cardPos');
+  posEl.innerHTML = '';
+  (w.parts_of_speech || []).slice(0, 3).forEach(pos => {
+    const tag = document.createElement('span');
+    tag.className = 'pos-tag';
+    tag.textContent = pos;
+    posEl.appendChild(tag);
+  });
+  
+  // Back
+  document.getElementById('cardWordBack').textContent = w.word;
+  document.getElementById('cardDef').textContent = w.definition || '';
+  
+  const exEl = document.getElementById('cardExample');
+  if (w.examples && w.examples.length > 0) {
+    const ex = w.examples[0];
+    exEl.innerHTML = `<div class="en">${ex.english || ''}</div><div class="zh">${ex.chinese || ''}</div>`;
+  } else {
+    exEl.textContent = '';
+  }
+  
+  // Buttons
+  document.getElementById('btnKnow').disabled = true;
+  document.getElementById('btnUnknown').disabled = true;
+  
+  // Counter
+  document.getElementById('cardCounter').textContent = `${currentIdx + 1} / ${filtered.length}`;
+  updateProgress();
+  
+  document.getElementById('mainContent').style.display = 'block';
+}
+
+function flipCard() {
+  isFlipped = !isFlipped;
+  document.getElementById('card3d').classList.toggle('flipped', isFlipped);
+  
+  if (isFlipped && !answered) {
+    document.getElementById('btnKnow').disabled = false;
+    document.getElementById('btnUnknown').disabled = false;
+  }
+}
+
+async function answer(result) {
+  if (answered) return;
+  answered = true;
+  
+  const word = filtered[currentIdx].word;
+  
+  if (result === 'correct') sessionCorrect++;
+  else sessionIncorrect++;
+  
+  // Record to DB
+  fetch('/vocab/api/progress', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ word, result })
+  });
+  
+  document.getElementById('btnKnow').disabled = true;
+  document.getElementById('btnUnknown').disabled = true;
+  
+  // Next card after short delay
+  setTimeout(() => {
+    currentIdx++;
+    showCard();
+  }, 400);
+}
+
+function updateProgress() {
+  const pct = Math.round((currentIdx / filtered.length) * 100);
+  document.getElementById('progressFill').style.width = pct + '%';
+  document.getElementById('progressText').textContent = `${pct}%`;
+}
+
+function showFinished() {
+  document.getElementById('mainContent').style.display = 'none';
+  document.getElementById('finishedState').style.display = 'block';
+  const total = sessionCorrect + sessionIncorrect;
+  const acc = total > 0 ? Math.round(sessionCorrect / total * 100) : 0;
+  document.getElementById('sessionResult').textContent = 
+    `本次學習：答對 ${sessionCorrect} 個 · 答錯 ${sessionIncorrect} 個 · 正確率 ${acc}%`;
+}
+
+function restart() {
+  sessionCorrect = 0;
+  sessionIncorrect = 0;
+  currentIdx = 0;
+  words = shuffle([...filtered]);
+  filtered = words;
+  document.getElementById('finishedState').style.display = 'none';
+  showCard();
+}
+
+// Init
+loadWords();
+</script>
+{% endblock %}
