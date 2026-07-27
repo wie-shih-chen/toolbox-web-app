@@ -264,11 +264,21 @@ def import_products_zip():
     
     try:
         with zipfile.ZipFile(file, 'r') as zf:
-            if 'products.json' not in zf.namelist():
+            # 尋找 products.json (可能被包在一層資料夾內)
+            json_filename = None
+            for name in zf.namelist():
+                if name == 'products.json' or name.endswith('/products.json'):
+                    json_filename = name
+                    break
+                    
+            if not json_filename:
                 flash('ZIP 檔案內找不到 products.json', 'danger')
                 return redirect(url_for('admin.dashboard'))
             
-            json_data = zf.read('products.json').decode('utf-8-sig')
+            # 取得 JSON 所在的目錄前綴 (例如: 'products_export_20230501/')
+            base_dir = json_filename[:-len('products.json')]
+            
+            json_data = zf.read(json_filename).decode('utf-8-sig')
             data = json.loads(json_data)
             products = data.get('products', [])
             
@@ -301,7 +311,7 @@ def import_products_zip():
                 # 處理圖片
                 images = p_data.get('images', [])
                 for idx, img_filename in enumerate(images):
-                    zip_img_path = f"images/{img_filename}"
+                    zip_img_path = f"{base_dir}images/{img_filename}"
                     if zip_img_path in zf.namelist():
                         img_data = zf.read(zip_img_path)
                         save_path = os.path.join(upload_dir, img_filename)
