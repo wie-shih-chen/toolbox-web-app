@@ -181,6 +181,7 @@ def api_words():
     star_f   = request.args.get('star', type=int)
     cat_f    = request.args.get('category', '').strip()
     score_f  = request.args.get('score_range', '').strip()
+    search_q = request.args.get('search', '').strip().lower()
     
     review_date = request.args.get('review_date', '').strip()
     
@@ -203,6 +204,8 @@ def api_words():
         filtered = [w for w in filtered if cat_f in w['category']]
     if score_f:
         filtered = [w for w in filtered if score_f in w['score_range']]
+    if search_q:
+        filtered = [w for w in filtered if search_q in w['word'].lower() or search_q in w.get('definition', '').lower()]
     
     total = len(filtered)
     page  = filtered[offset:offset + length]

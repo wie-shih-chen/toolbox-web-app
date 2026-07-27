@@ -117,7 +117,7 @@
   </div>
 
   <div class="filter-bar">
-    <input type="text" id="searchInput" placeholder="🔍 搜尋單字或中文…" oninput="filterLocal()">
+    <input type="text" id="searchInput" placeholder="🔍 搜尋單字或中文…" oninput="debounceSearch()">
     <select id="filterStar" onchange="resetAndLoad()">
       <option value="">全部星等</option>
       <option value="5">⭐⭐⭐⭐⭐</option>
@@ -175,11 +175,13 @@ async function loadWords() {
   const star = document.getElementById('filterStar').value;
   const category = document.getElementById('filterCategory').value;
   const score = document.getElementById('filterScore').value;
+  const searchQ = document.getElementById('searchInput').value.trim();
 
   let url = `/vocab/api/words?offset=${offset}&length=${PAGE_SIZE}`;
   if (star) url += `&star=${star}`;
   if (category) url += `&category=${encodeURIComponent(category)}`;
   if (score) url += `&score_range=${encodeURIComponent(score)}`;
+  if (searchQ) url += `&search=${encodeURIComponent(searchQuery)}`;
 
   try {
     const res = await fetch(url);
@@ -191,7 +193,8 @@ async function loadWords() {
     offset += PAGE_SIZE;
 
     document.getElementById('loadingState').style.display = 'none';
-    applySearch();
+    displayedWords = allWords; // 直接顯示後端返回的所有結果
+    renderWords();
 
     const hasMore = offset < totalAvailable;
     document.getElementById('btnLoadMore').style.display = hasMore ? 'block' : 'none';
@@ -200,16 +203,14 @@ async function loadWords() {
   loading = false;
 }
 
-function applySearch() {
-  const q = document.getElementById('searchInput').value.toLowerCase();
-  displayedWords = allWords.filter(w => {
-    if (!q) return true;
-    return w.word.toLowerCase().includes(q) || (w.definition || '').toLowerCase().includes(q);
-  });
-  renderWords();
+let searchTimeout = null;
+function debounceSearch() {
+  clearTimeout(searchTimeout);
+  searchTimeout = setTimeout(() => {
+    searchQuery = document.getElementById('searchInput').value.trim();
+    resetAndLoad();
+  }, 500);
 }
-
-function filterLocal() { applySearch(); }
 
 function resetAndLoad() {
   allWords = []; displayedWords = []; offset = 0;
