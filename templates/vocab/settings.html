@@ -3,7 +3,7 @@
 {% block content %}
 <div class="container" style="max-width: 600px; padding-bottom: 4rem;">
   <div style="margin-bottom: 1.5rem; display: flex; align-items: center; gap: 1rem;">
-    <a href="{{ url_for('vocab.index') }}" class="btn-secondary" style="padding: 0.5rem 1rem; border-radius: 8px; text-decoration: none; color: inherit; background: var(--surface); border: 1px solid var(--border);">
+    <a href="{{ url_for('vocab.index') }}" class="btn-secondary" style="padding: 0.5rem 1rem; border-radius: 8px; text-decoration: none; color: inherit;">
       <i class="fas fa-arrow-left"></i> 返回
     </a>
     <h2 style="margin: 0;">⚙️ 背單字設定</h2>
@@ -17,7 +17,7 @@
         <small style="color: var(--text-muted); display: block; margin-top: 0.5rem;">設定您每天想要複習或學習的新單字目標個數。此數字會顯示在首頁的進度條上。</small>
       </div>
       
-      <button type="submit" style="width: 100%; padding: 1rem; border-radius: 8px; font-weight: 600; background: var(--primary); color: #fff; border: none; cursor: pointer;">儲存設定</button>
+      <button type="submit" class="btn-primary" style="width: 100%; padding: 1rem; border-radius: 8px; font-weight: 600; cursor: pointer; text-align: center; border: none; font-size: 1rem;">儲存設定</button>
     </form>
   </div>
 </div>
