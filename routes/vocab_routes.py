@@ -205,11 +205,13 @@ def api_words():
     if score_f:
         filtered = [w for w in filtered if score_f in w['score_range']]
     if search_q:
-        # 單字優先以字首 (startswith) 搜尋，中文解釋則包含 (in) 即可
-        filtered = [
-            w for w in filtered 
-            if w['word'].lower().startswith(search_q) or search_q in w.get('definition', '').lower()
-        ]
+        import re
+        if re.match(r'^[a-z0-9\s\-]+$', search_q):
+            # 如果搜尋字串只有英文/數字，則只精確比對「英文單字字首」
+            filtered = [w for w in filtered if w['word'].lower().startswith(search_q)]
+        else:
+            # 如果包含中文或其他字元，則只在「中文解釋」中尋找
+            filtered = [w for w in filtered if search_q in w.get('definition', '').lower()]
     
     total = len(filtered)
     page  = filtered[offset:offset + length]
