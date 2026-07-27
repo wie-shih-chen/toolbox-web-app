@@ -14,27 +14,29 @@
     gap: 1rem;
     margin-bottom: 2rem;
     padding-bottom: 1rem;
-    border-bottom: 1px solid var(--border);
+    border-bottom: 1px solid var(--border-color, #404040);
   }
   .history-header h2 {
     margin: 0;
     font-size: 1.8rem;
-    background: linear-gradient(135deg, var(--text-color), var(--primary-color));
+    background: linear-gradient(135deg, var(--text-primary, #fff), var(--accent-color, #4ecdc4));
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
   }
   .history-day-card {
-    background: var(--surface);
-    border-radius: 16px;
-    border: 1px solid var(--border);
+    background: var(--card-bg, #2d2d2d);
+    backdrop-filter: var(--ios-blur, blur(25px));
+    -webkit-backdrop-filter: var(--ios-blur, blur(25px));
+    border-radius: var(--ios-radius, 24px);
+    border: 1px solid var(--ios-border, rgba(255,255,255,0.08));
     overflow: hidden;
-    margin-bottom: 1rem;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.05);
-    transition: transform 0.2s, box-shadow 0.2s;
+    margin-bottom: 1.5rem;
+    box-shadow: var(--ios-shadow, 0 10px 40px rgba(0,0,0,0.3));
+    transition: transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 0.3s;
   }
   .history-day-card:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+    transform: translateY(-4px) scale(1.01);
+    box-shadow: 0 15px 50px rgba(0,0,0,0.4);
   }
   .history-summary {
     padding: 1.2rem 1.5rem;
@@ -51,7 +53,7 @@
   .history-date {
     font-size: 1.2rem;
     font-weight: 700;
-    color: var(--text-color);
+    color: var(--text-primary, #ffffff);
     display: flex;
     align-items: center;
     gap: 0.8rem;
@@ -59,7 +61,7 @@
   .history-count {
     font-size: 0.85rem;
     font-weight: 500;
-    color: var(--text-muted);
+    color: var(--text-secondary, #b0b0b0);
     background: rgba(255,255,255,0.05);
     padding: 0.3rem 0.8rem;
     border-radius: 20px;
@@ -87,8 +89,8 @@
   }
   .history-content {
     padding: 0 1.5rem 1.5rem 1.5rem;
-    border-top: 1px solid var(--border);
-    background: var(--bg);
+    border-top: 1px solid var(--border-color, #404040);
+    background: rgba(0,0,0,0.2);
   }
   .history-table {
     width: 100%;
@@ -100,7 +102,7 @@
   .history-table th {
     text-align: left;
     padding: 0.8rem 1rem;
-    color: var(--text-muted);
+    color: var(--text-secondary, #b0b0b0);
     font-weight: 600;
     font-size: 0.85rem;
     text-transform: uppercase;
@@ -108,22 +110,23 @@
   }
   .history-table td {
     padding: 1rem;
-    background: var(--surface);
-    border-top: 1px solid var(--border);
-    border-bottom: 1px solid var(--border);
+    background: var(--ios-bg, rgba(255,255,255,0.06));
+    border-top: 1px solid var(--border-color, #404040);
+    border-bottom: 1px solid var(--border-color, #404040);
+    backdrop-filter: blur(10px);
   }
   .history-table td:first-child {
-    border-left: 1px solid var(--border);
-    border-top-left-radius: 10px;
-    border-bottom-left-radius: 10px;
+    border-left: 1px solid var(--border-color, #404040);
+    border-top-left-radius: 12px;
+    border-bottom-left-radius: 12px;
     font-weight: 600;
     font-size: 1.05rem;
-    color: var(--primary-color);
+    color: var(--accent-color, #4ecdc4);
   }
   .history-table td:last-child {
-    border-right: 1px solid var(--border);
-    border-top-right-radius: 10px;
-    border-bottom-right-radius: 10px;
+    border-right: 1px solid var(--border-color, #404040);
+    border-top-right-radius: 12px;
+    border-bottom-right-radius: 12px;
   }
   .history-table tr {
     transition: transform 0.1s, box-shadow 0.1s;
@@ -144,10 +147,10 @@
   .empty-state {
     text-align: center;
     padding: 4rem 1rem;
-    color: var(--text-muted);
-    background: var(--surface);
-    border-radius: 16px;
-    border: 1px dashed var(--border);
+    color: var(--text-secondary, #b0b0b0);
+    background: var(--card-bg, #2d2d2d);
+    border-radius: 24px;
+    border: 1px dashed var(--border-color, #404040);
   }
   .empty-state i {
     font-size: 3rem;
@@ -160,7 +163,7 @@
     justify-content: flex-end;
   }
   .btn-retest {
-    background: linear-gradient(135deg, var(--primary-color), #2980b9);
+    background: linear-gradient(135deg, var(--accent-color, #4ecdc4), #2980b9);
     color: white;
     padding: 0.7rem 1.5rem;
     border-radius: 25px;
@@ -171,11 +174,11 @@
     align-items: center;
     gap: 0.5rem;
     transition: transform 0.2s, box-shadow 0.2s;
-    box-shadow: 0 4px 15px rgba(var(--primary-color-rgb, 52, 152, 219), 0.3);
+    box-shadow: 0 4px 15px rgba(78, 205, 196, 0.3);
   }
   .btn-retest:hover {
     transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(var(--primary-color-rgb, 52, 152, 219), 0.4);
+    box-shadow: 0 6px 20px rgba(78, 205, 196, 0.4);
     color: white;
   }
 </style>
