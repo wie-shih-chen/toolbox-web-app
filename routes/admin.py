@@ -1,5 +1,5 @@
 from flask import (Blueprint, render_template, redirect, url_for,
-                   request, flash, jsonify, current_app, Response)
+                   request, flash, jsonify, current_app, Response, send_file)
 from flask_login import login_required, current_user
 from functools import wraps
 from models import db, Product, ProductImage, Order, OrderItem, User
@@ -240,10 +240,11 @@ def export_products():
         
     memory_file.seek(0)
     
-    return Response(
-        memory_file.getvalue(),
+    return send_file(
+        memory_file,
         mimetype='application/zip',
-        headers={'Content-Disposition': f'attachment;filename=products_export_{datetime.now().strftime("%Y%m%d")}.zip'}
+        as_attachment=True,
+        download_name=f'products_export_{datetime.now().strftime("%Y%m%d")}.zip'
     )
 
 
