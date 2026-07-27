@@ -393,7 +393,7 @@ async function loadWords() {
   
   filtered = words;
   document.getElementById('loadingState').style.display = 'none';
-  
+  loading = false;
   
   if (filtered.length === 0) {
     document.getElementById('emptyState').style.display = 'block';
