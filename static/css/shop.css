@@ -1003,7 +1003,7 @@ tr:hover td { background: rgba(255,255,255,0.02); }
 .shop-nav {
     display: flex;
     width: fit-content;
-    margin: 20px auto 30px auto;
+    margin: 90px auto 30px auto;
     background: rgba(118, 118, 128, 0.24);
     backdrop-filter: blur(25px);
     -webkit-backdrop-filter: blur(25px);
