@@ -178,7 +178,7 @@ def update_progress():
     
     record = VocabProgress.query.filter_by(user_id=current_user.id, word=word).first()
     if not record:
-        record = VocabProgress(user_id=current_user.id, word=word)
+        record = VocabProgress(user_id=current_user.id, word=word, correct=0, incorrect=0)
         db.session.add(record)
     
     if result == 'correct':
