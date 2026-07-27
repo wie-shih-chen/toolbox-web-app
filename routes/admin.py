@@ -290,9 +290,9 @@ def import_products_zip():
                     code=p_data['code'],
                     name=p_data.get('name', ''),
                     price=p_data.get('price'),
-                    sizes=p_data.get('sizes', []),
-                    colors=p_data.get('colors', []),
-                    description=p_data.get('description', ''),
+                    sizes=p_data.get('sizes') or [],
+                    colors=p_data.get('colors') or '',
+                    description=p_data.get('description') or '',
                     status='published'
                 )
                 db.session.add(new_product)
