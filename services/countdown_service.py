@@ -1,5 +1,4 @@
-from app import db
-from models import Countdown, CountdownSubEvent
+from models import db, Countdown, CountdownSubEvent
 import datetime
 
 class CountdownService:

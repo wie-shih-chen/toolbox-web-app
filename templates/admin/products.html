@@ -1,0 +1,304 @@
+{% extends 'base.html' %}
+{% block title %}商品管理 — Admin{% endblock %}
+{% block content %}
+{% include 'shop/_nav.html' %}
+<div class="container">
+  <div class="page-title">
+    📦 商品管理
+    <div style="margin-left:auto;display:flex;gap:0.5rem">
+      <a class="btn btn-primary btn-sm" href="{{ url_for('admin.export_products') }}">📦 匯出商品 (ZIP)</a>
+      <a class="btn btn-secondary btn-sm" href="{{ url_for('admin.orders') }}">📋 訂單 & 統計</a>
+      <a class="btn btn-secondary btn-sm" href="{{ url_for('admin.export_orders') }}">⬇️ 訂單 CSV</a>
+      <a class="btn btn-secondary btn-sm" href="{{ url_for('admin.users') }}">👤 使用者</a>
+    </div>
+  </div>
+
+  <!-- 批量上傳區 -->
+  <div class="upload-area" id="uploadArea" onclick="document.getElementById('fileInput').click()">
+    <div class="upload-icon">📸</div>
+    <div class="upload-text">
+      <strong>點擊或拖曳圖片</strong>至此批量上傳<br>
+      <small style="color:var(--text-muted)">每張圖自動建立一個草稿商品 · 支援 JPG / PNG / WEBP</small>
+    </div>
+  </div>
+  <form id="uploadForm" method="POST" action="{{ url_for('admin.upload_images') }}" enctype="multipart/form-data"
+    style="display:none">
+    <input type="file" id="fileInput" name="images" multiple accept="image/*">
+  </form>
+
+  <!-- 草稿商品列表 -->
+  {% if drafts %}
+  <div style="margin-top:2rem">
+    <div style="font-size:1rem;font-weight:600;margin-bottom:0.75rem;display:flex;align-items:center;gap:0.5rem">
+      ⚠️ 待設定商品
+      <span class="pill pill-draft">{{ drafts|length }}</span>
+    </div>
+
+    {% for p in drafts %}
+    <div class="draft-item" id="draft-{{ p.id }}">
+      <!-- 主圖（可點擊放大） -->
+      <div class="draft-img-wrap" onclick="openLightbox({{ p.images | map(attribute='filename') | list | tojson }}, 0)"
+        title="點擊預覽">
+        {% if p.primary_image %}
+        <img src="{{ url_for('static', filename='uploads/' + p.primary_image.filename) }}" alt="" loading="lazy">
+        {% else %}
+        <div class="draft-img-placeholder">📦</div>
+        {% endif %}
+        <div class="draft-img-overlay">&#128269;</div>
+      </div>
+
+      <!-- 欄位 -->
+      <div>
+        <div class="draft-fields">
+          <div class="form-group" style="margin-bottom:0.5rem">
+            <label class="form-label">商品編號 <span style="color:var(--danger)">*</span></label>
+            <input class="form-control" type="text" id="code-{{ p.id }}" placeholder="如 1762"
+              value="{{ p.code or '' }}">
+          </div>
+          <div class="form-group" style="margin-bottom:0.5rem">
+            <label class="form-label">商品名稱（選填）</label>
+            <input class="form-control" type="text" id="name-{{ p.id }}" value="{{ p.name or '' }}" placeholder="寬版短褲…">
+          </div>
+          <div class="form-group" style="margin-bottom:0.5rem">
+            <label class="form-label">價格（選填）</label>
+            <input class="form-control" type="number" id="price-{{ p.id }}" value="{{ p.price or '' }}"
+              placeholder="499">
+          </div>
+          <div class="form-group" style="margin-bottom:0.5rem">
+            <label class="form-label">顏色/款式（選填）</label>
+            <!-- Tag Input 元件 -->
+            <div class="color-tag-wrap" id="color-wrap-{{ p.id }}"
+              onclick="document.getElementById('color-inp-{{ p.id }}').focus()">
+              <input class="color-text-inp" type="text" id="color-inp-{{ p.id }}" placeholder="輸入顏色按 Enter 新增…"
+                autocomplete="off">
+            </div>
+            <!-- 存盤实際宫。逗號分隔 -->
+            <input type="hidden" id="colors-{{ p.id }}" value="{{ p.colors or '' }}">
+          </div>
+        </div>
+
+        <!-- 尺寸多選 -->
+        <div class="form-group" style="margin-bottom:0.75rem">
+          <label class="form-label">尺寸 <span style="color:var(--danger)">*</span></label>
+          <div class="size-check-group">
+            {% set has_sizes = p.sizes | length > 0 %}
+            {% for s in sizes %}
+            <div class="size-check">
+              <input type="checkbox" id="sz-{{ p.id }}-{{ s }}" value="{{ s }}" {% if has_sizes %}{% if s in p.sizes
+                %}checked{% endif %}{% else %}checked{% endif %}>
+              <label for="sz-{{ p.id }}-{{ s }}">{{ s }}</label>
+            </div>
+            {% endfor %}
+          </div>
+        </div>
+
+        <!-- 操作按鈕 -->
+        <div style="display:flex;gap:0.5rem;flex-wrap:wrap">
+          <button class="btn btn-secondary btn-sm" onclick="saveDraft({{ p.id }})">💾 儲存</button>
+          <button class="btn btn-success btn-sm" onclick="publishDraft({{ p.id }})">✅ 上架</button>
+          <form method="POST" action="{{ url_for('admin.product_delete', pid=p.id) }}"
+            onsubmit="return confirm('確定刪除此草稿？')" style="display:inline">
+            <button class="btn btn-danger btn-sm" type="submit">🗑 刪除</button>
+          </form>
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  <!-- 已上架商品 -->
+  <div style="margin-top:2rem">
+    <div style="font-size:1rem;font-weight:600;margin-bottom:0.75rem;display:flex;align-items:center;gap:0.5rem">
+      ✅ 已上架商品
+      <span class="pill pill-published">{{ published|length }}</span>
+    </div>
+
+    {% if published %}
+    <div class="product-grid">
+      {% for p in published %}
+      <div class="product-card" id="product-{{ p.id }}">
+        <div class="product-img-wrap"
+          onclick="openLightbox({{ p.images | map(attribute='filename') | list | tojson }}, 0)" title="點擊放大">
+          {% if p.primary_image %}
+          <img src="{{ url_for('static', filename='uploads/' + p.primary_image.filename) }}"
+            alt="{{ p.name or p.code }}" loading="lazy">
+          {% else %}
+          <div class="product-img-placeholder">📦</div>
+          {% endif %}
+        </div>
+        <div class="product-info">
+          <div class="product-code"># {{ p.code }}</div>
+          {% if p.name %}<div class="product-name">{{ p.name }}</div>{% endif %}
+          {% if p.price %}<div class="product-price">NT$ {{ '%.0f'|format(p.price) }}</div>{% endif %}
+          <div class="product-sizes">
+            {% for s in p.sizes %}<span class="size-tag">{{ s }}</span>{% endfor %}
+          </div>
+          <div style="display:flex;gap:0.4rem;margin-top:0.75rem">
+            <button class="btn btn-danger btn-sm" style="flex:1;justify-content:center"
+              onclick="toggleProduct({{ p.id }}, this)">下架</button>
+            <form method="POST" action="{{ url_for('admin.product_delete', pid=p.id) }}"
+              onsubmit="return confirm('確定刪除？')" style="flex:1">
+              <button class="btn btn-secondary btn-sm" style="width:100%;justify-content:center"
+                type="submit">刪除</button>
+            </form>
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div class="empty-state" style="padding:2rem">
+      <p>還沒有上架商品</p>
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  // ── 拖曳上傳 ──────────────────────────────────────────────────
+  const uploadArea = document.getElementById('uploadArea');
+  const fileInput = document.getElementById('fileInput');
+  const uploadForm = document.getElementById('uploadForm');
+
+  ['dragenter', 'dragover'].forEach(e => uploadArea.addEventListener(e, ev => {
+    ev.preventDefault(); uploadArea.classList.add('dragover');
+  }));
+  ['dragleave', 'drop'].forEach(e => uploadArea.addEventListener(e, ev => {
+    ev.preventDefault(); uploadArea.classList.remove('dragover');
+  }));
+  uploadArea.addEventListener('drop', ev => {
+    fileInput.files = ev.dataTransfer.files;
+    uploadForm.submit();
+  });
+  fileInput.addEventListener('change', () => { if (fileInput.files.length) uploadForm.submit(); });
+
+  // ── 草稿操作 ─────────────────────────────────────────────────
+  function getDraftData(pid) {
+    const sizes = [...document.querySelectorAll(`[id^="sz-${pid}-"]:checked`)].map(el => el.value);
+    return {
+      code: document.getElementById(`code-${pid}`).value,
+      name: document.getElementById(`name-${pid}`).value,
+      price: document.getElementById(`price-${pid}`).value,
+      colors: document.getElementById(`colors-${pid}`).value,
+      sizes,
+    };
+  }
+
+  async function submitDraft(pid, action) {
+    const data = getDraftData(pid);
+    const form = new URLSearchParams();
+    form.set('code', data.code);
+    form.set('name', data.name);
+    form.set('price', data.price);
+    form.set('colors', data.colors);
+    form.set('action', action);
+    data.sizes.forEach(s => form.append('sizes', s));  // 逐一 append，不混入 undefined
+
+    const res = await fetch(`/admin/products/${pid}/setup`, {
+      method: 'POST', body: form,
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
+    });
+    const json = await res.json();
+    if (json.ok) {
+      showToast(action === 'publish' ? '✅ 已上架！' : '💾 已儲存', 'success');
+      if (action === 'publish') setTimeout(() => location.reload(), 800);
+    } else {
+      showToast('❌ ' + json.msg, 'danger');
+    }
+  }
+  function saveDraft(pid) { submitDraft(pid, 'save'); }
+  function publishDraft(pid) { submitDraft(pid, 'publish'); }
+
+  async function toggleProduct(pid, btn) {
+    const res = await fetch(`/admin/products/${pid}/toggle`, { method: 'POST' });
+    const json = await res.json();
+    if (json.ok) { showToast(json.msg, 'success'); setTimeout(() => location.reload(), 700); }
+    else showToast('❌ ' + json.msg, 'danger');
+  }
+
+  function showToast(msg, type) {
+    const el = document.createElement('div');
+    el.className = `alert alert-${type}`;
+    el.textContent = msg;
+    el.style.cssText = 'position:fixed;top:70px;left:50%;transform:translateX(-50%);z-index:9999;min-width:260px;text-align:center';
+    document.body.appendChild(el);
+    setTimeout(() => el.remove(), 2000);
+  }
+
+  // ── Color Tag Input 初始化 ────────────────────────────────────
+  function initColorTags(pid) {
+    const hidden = document.getElementById(`colors-${pid}`);
+    const wrap = document.getElementById(`color-wrap-${pid}`);
+    const inp = document.getElementById(`color-inp-${pid}`);
+    if (!wrap || !inp) return;
+
+    // 從 hidden 讀取現有顏色渲染 tag
+    const init = (hidden.value || '').split(/[,、，]/).map(c => c.trim()).filter(Boolean);
+    init.forEach(c => addTag(pid, c));
+
+    inp.addEventListener('keydown', e => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        e.stopPropagation(); // 不觸發草稿儲存 Enter
+        const val = inp.value.trim();
+        if (val) { addTag(pid, val); inp.value = ''; syncColors(pid); }
+      } else if (e.key === 'Backspace' && !inp.value) {
+        // 消除最後一個 tag
+        const tags = wrap.querySelectorAll('.color-tag');
+        if (tags.length) tags[tags.length - 1].remove();
+        syncColors(pid);
+      }
+    });
+  }
+
+  function addTag(pid, text) {
+    const wrap = document.getElementById(`color-wrap-${pid}`);
+    const inp = document.getElementById(`color-inp-${pid}`);
+    // 避免重複
+    const exists = [...wrap.querySelectorAll('.color-tag')].some(t => t.dataset.val === text);
+    if (exists) return;
+
+    const tag = document.createElement('span');
+    tag.className = 'color-tag';
+    tag.dataset.val = text;
+    tag.innerHTML = `${text} <span class="tag-rm" title="移除">×</span>`;
+    tag.querySelector('.tag-rm').addEventListener('click', () => {
+      tag.remove(); syncColors(pid);
+    });
+    wrap.insertBefore(tag, inp);
+  }
+
+  function syncColors(pid) {
+    const wrap = document.getElementById(`color-wrap-${pid}`);
+    const hidden = document.getElementById(`colors-${pid}`);
+    const vals = [...wrap.querySelectorAll('.color-tag')].map(t => t.dataset.val);
+    hidden.value = vals.join('、');
+  }
+
+  // ── Enter 自動儲存 + 移至下一欄 ─────────────────────────────
+  document.addEventListener('DOMContentLoaded', () => {
+    document.querySelectorAll('.draft-item').forEach(item => {
+      const pid = item.id.replace('draft-', '');
+      initColorTags(pid);
+
+      // 只對一般文字 / 數字欄位監聽 Enter（排除顏色輸入框）
+      const inputs = [...item.querySelectorAll('input[type="text"], input[type="number"]')]
+        .filter(el => !el.classList.contains('color-text-inp'));
+
+      inputs.forEach((inp, idx) => {
+        inp.addEventListener('keydown', async e => {
+          if (e.key !== 'Enter') return;
+          e.preventDefault();
+          await submitDraft(pid, 'save');
+          const next = inputs[idx + 1];
+          if (next) { next.focus(); next.select(); }
+        });
+      });
+    });
+  });
+
+</script>
+{% endblock %}

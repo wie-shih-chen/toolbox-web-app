@@ -1,0 +1,158 @@
+{% extends 'base.html' %}
+{% block title %}訂單管理 — Admin{% endblock %}
+{% block content %}
+{% include 'shop/_nav.html' %}
+<div class="container">
+
+  <!-- 統計卡片 -->
+  <div class="stats-grid" style="margin-bottom:1.25rem">
+    <div class="stat-card">
+      <div class="stat-icon">📬</div>
+      <div class="stat-val">{{ stats.pending_orders }}</div>
+      <div class="stat-label">待確認</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon">💰</div>
+      <div class="stat-val">{{ stats.unpaid_orders }}</div>
+      <div class="stat-label">未付款</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon">📅</div>
+      <div class="stat-val">{{ stats.today_orders }}</div>
+      <div class="stat-label">今日訂單</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon">📈</div>
+      <div class="stat-val">{{ stats.week_orders }}</div>
+      <div class="stat-label">本週訂單</div>
+    </div>
+  </div>
+
+  <div class="page-title">
+    📋 所有訂單
+    <div style="margin-left:auto;display:flex;gap:0.5rem;flex-wrap:wrap">
+      <a class="btn btn-sm {% if not status_filter %}btn-primary{% else %}btn-secondary{% endif %}"
+        href="{{ url_for('admin.orders') }}">全部</a>
+      <a class="btn btn-sm {% if status_filter=='pending' %}btn-primary{% else %}btn-secondary{% endif %}"
+        href="{{ url_for('admin.orders', status='pending') }}">待確認</a>
+      <a class="btn btn-sm {% if status_filter=='completed' %}btn-primary{% else %}btn-secondary{% endif %}"
+        href="{{ url_for('admin.orders', status='completed') }}">完成</a>
+      <a class="btn btn-secondary btn-sm" href="{{ url_for('admin.export_orders') }}">⬇️ CSV</a>
+      <form method="POST" action="{{ url_for('admin.clear_paid_orders') }}"
+        onsubmit="return confirm('確定清除所有已付款訂單？此操作不可還原！')">
+        <button class="btn btn-danger btn-sm" type="submit">🗑 清除已付款</button>
+      </form>
+    </div>
+  </div>
+
+  {% if orders %}
+  {% for order in orders %}
+  <div class="card" style="padding:1.25rem;margin-bottom:1rem">
+    <div class="admin-order-header"
+      style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:0.75rem;flex-wrap:wrap;gap:0.5rem">
+      <div>
+        <span style="font-weight:700">訂單 #{{ order.id }}</span>
+        <span style="margin:0 0.5rem;color:var(--text-muted)">·</span>
+        <span style="font-weight:600;color:var(--accent)">{{ order.user.username }}</span>
+        <span style="font-size:0.8rem;color:var(--text-muted);margin-left:0.5rem">
+          {{ order.created_at.strftime('%Y/%m/%d %H:%M') }}
+        </span>
+      </div>
+      <div style="display:flex;gap:0.5rem;align-items:center;flex-wrap:wrap">
+        <!-- 狀態 -->
+        <select class="form-control" style="width:auto;padding:0.3rem 0.6rem;font-size:0.8rem"
+          onchange="updateStatus({{ order.id }}, this.value, this)">
+          <option value="pending" {% if order.status=='pending' %}selected{% endif %}>待確認</option>
+          <option value="completed" {% if order.status=='completed' %}selected{% endif %}>完成</option>
+          <option value="cancelled" {% if order.status=='cancelled' %}selected{% endif %}>取消</option>
+        </select>
+        <!-- 付款 -->
+        {% if current_user.is_admin or current_user.can_mark_paid %}
+        <button class="paid-toggle {% if order.is_paid %}paid{% else %}unpaid{% endif %}" id="paid-{{ order.id }}"
+          onclick="togglePaid({{ order.id }})">
+          💰 {% if order.is_paid %}已付款{% else %}未付款{% endif %}
+        </button>
+        {% else %}
+        <span class="pill {% if order.is_paid %}pill-paid{% else %}pill-draft{% endif %}">
+          {% if order.is_paid %}已付款{% else %}未付款{% endif %}
+        </span>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- 明細 -->
+    {% for item in order.items %}
+    <div
+      style="display:flex;justify-content:space-between;align-items:center;font-size:0.875rem;padding:0.35rem 0;border-bottom:1px solid var(--border)">
+      <span>
+        {% if item.product and item.product.primary_image %}
+        <img src="{{ url_for('static', filename='uploads/' + item.product.primary_image.filename) }}"
+          style="width:36px;height:36px;object-fit:cover;border-radius:4px;vertical-align:middle;margin-right:0.4rem;cursor:pointer"
+          data-lb>
+        {% endif %}
+        <span style="font-weight:500">{{ item.product_name or ('#' + item.product_code) }}</span>
+        <span style="color:var(--text-muted)"> / {{ item.size }}{% if item.color %} / {{ item.color }}{% endif %}</span>
+      </span>
+      <span>
+        × {{ item.quantity }}
+        {% if item.price_at_order %}
+        <span style="color:var(--accent);font-weight:600;margin-left:0.5rem">
+          NT$ {{ '%.0f'|format(item.price_at_order * item.quantity) }}
+        </span>
+        {% endif %}
+      </span>
+    </div>
+    {% endfor %}
+
+    {% if order.note %}
+    <div style="margin-top:0.5rem;font-size:0.8rem;color:var(--text-muted)">📝 {{ order.note }}</div>
+    {% endif %}
+    {% if order.total %}
+    <div style="text-align:right;margin-top:0.5rem;font-weight:700;color:var(--accent)">
+      合計 NT$ {{ '%.0f'|format(order.total) }}
+    </div>
+    {% endif %}
+  </div>
+  {% endfor %}
+  {% else %}
+  <div class="empty-state">
+    <div class="empty-icon">📋</div>
+    <p>目前沒有訂單</p>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  async function updateStatus(oid, status, sel) {
+    const form = new URLSearchParams({ status });
+    const res = await fetch(`/admin/orders/${oid}/status`, {
+      method: 'POST', body: form,
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
+    });
+    const json = await res.json();
+    if (!json.ok) { alert('更新失敗'); sel.value = sel.dataset.prev; }
+    else { sel.dataset.prev = status; showToast('狀態已更新：' + json.label, 'success'); }
+  }
+
+  async function togglePaid(oid) {
+    const res = await fetch(`/admin/orders/${oid}/paid`, { method: 'POST' });
+    const json = await res.json();
+    if (json.ok) {
+      const btn = document.getElementById(`paid-${oid}`);
+      btn.className = `paid-toggle ${json.is_paid ? 'paid' : 'unpaid'}`;
+      btn.textContent = `💰 ${json.is_paid ? '已付款' : '未付款'}`;
+    }
+  }
+
+  function showToast(msg, type) {
+    const el = document.createElement('div');
+    el.className = `alert alert-${type}`;
+    el.textContent = msg;
+    el.style.cssText = 'position:fixed;top:70px;left:50%;transform:translateX(-50%);z-index:9999;min-width:260px;text-align:center';
+    document.body.appendChild(el);
+    setTimeout(() => el.remove(), 2000);
+  }
+</script>
+{% endblock %}

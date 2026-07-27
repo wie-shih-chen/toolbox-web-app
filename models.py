@@ -2,6 +2,7 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_login import UserMixin
 from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime
+import json
 
 db = SQLAlchemy()
 
@@ -15,6 +16,11 @@ class User(UserMixin, db.Model):
     avatar_type = db.Column(db.String(20), default='preset') # 'preset' or 'upload'
     avatar_val = db.Column(db.String(255), default='default') # preset name or file path
     
+    # Roles and Permissions
+    role = db.Column(db.String(10), default='member')  # 'admin' | 'member'
+    can_mark_paid = db.Column(db.Boolean, default=False)
+    
+    
     # Relationships
     salary_records = db.relationship('SalaryRecord', backref='user', lazy=True)
     expense_records = db.relationship('ExpenseRecord', backref='user', lazy=True)
@@ -22,13 +28,18 @@ class User(UserMixin, db.Model):
     settings = db.relationship('UserSettings', backref='user', uselist=False, lazy=True)
     reminders = db.relationship('Reminder', backref='user', lazy=True)
     line_bindings = db.relationship('LineBinding', backref='user', lazy=True)
-
+    orders = db.relationship('Order', backref='user', lazy=True)
+    cart = db.relationship('CartItem', backref='user', lazy=True)
 
     def set_password(self, password):
         self.password_hash = generate_password_hash(password)
 
     def check_password(self, password):
         return check_password_hash(self.password_hash, password)
+
+    @property
+    def is_admin(self):
+        return self.role == 'admin'
 
     def get_reset_token(self, expires_sec=1800):
         from flask import current_app
@@ -270,6 +281,106 @@ class SSOUsedToken(db.Model):
     used_at  = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
 
 
+# ========================================================
+# Shopping Models
+# ========================================================
+
+class Product(db.Model):
+    __tablename__ = 'products'
+    id          = db.Column(db.Integer, primary_key=True)
+    code        = db.Column(db.String(50), unique=True, nullable=True)   # 草稿時可為 null
+    name        = db.Column(db.String(100), nullable=True)
+    price       = db.Column(db.Float, nullable=True)
+    sizes_json  = db.Column(db.Text, default='[]')    # JSON list e.g. ["S","M","L"]
+    colors      = db.Column(db.String(200), nullable=True)
+    description = db.Column(db.Text, nullable=True)
+    status      = db.Column(db.String(10), default='draft')  # 'draft' | 'published'
+    created_at  = db.Column(db.DateTime, default=datetime.utcnow)
+
+    images      = db.relationship('ProductImage', backref='product',
+                                  lazy=True, order_by='ProductImage.order_index',
+                                  cascade='all, delete-orphan')
+    cart_items  = db.relationship('CartItem', backref='product', lazy=True)
+    order_items = db.relationship('OrderItem', backref='product', lazy=True)
+
+    @property
+    def sizes(self):
+        try:
+            return json.loads(self.sizes_json or '[]')
+        except Exception:
+            return []
+
+    @sizes.setter
+    def sizes(self, val):
+        self.sizes_json = json.dumps(val, ensure_ascii=False)
+
+    @property
+    def primary_image(self):
+        for img in self.images:
+            if img.is_primary:
+                return img
+        return self.images[0] if self.images else None
+
+    @property
+    def is_published(self):
+        return self.status == 'published'
+
+    @property
+    def is_ready(self):
+        """草稿是否已填好必填欄位，可以上架"""
+        return bool(self.code and self.sizes)
 
 
+class ProductImage(db.Model):
+    __tablename__ = 'product_images'
+    id          = db.Column(db.Integer, primary_key=True)
+    product_id  = db.Column(db.Integer, db.ForeignKey('products.id'), nullable=False)
+    filename    = db.Column(db.String(255), nullable=False)
+    is_primary  = db.Column(db.Boolean, default=False)
+    order_index = db.Column(db.Integer, default=0)
 
+
+class CartItem(db.Model):
+    __tablename__ = 'cart_items'
+    id         = db.Column(db.Integer, primary_key=True)
+    user_id    = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    product_id = db.Column(db.Integer, db.ForeignKey('products.id'), nullable=False)
+    size       = db.Column(db.String(10), nullable=False)
+    color      = db.Column(db.String(50), nullable=True)   # 使用者選的顏色
+    quantity   = db.Column(db.Integer, default=1)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+
+class Order(db.Model):
+    __tablename__ = 'orders'
+    id         = db.Column(db.Integer, primary_key=True)
+    user_id    = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    status     = db.Column(db.String(15), default='pending')  # 'pending'|'completed'|'cancelled'
+    is_paid    = db.Column(db.Boolean, default=False)
+    note       = db.Column(db.Text, nullable=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    items = db.relationship('OrderItem', backref='order', lazy=True,
+                            cascade='all, delete-orphan')
+
+    @property
+    def total(self):
+        return sum((i.price_at_order or 0) * i.quantity for i in self.items)
+
+    @property
+    def status_label(self):
+        return {'pending': '待確認', 'completed': '完成', 'cancelled': '取消'}.get(self.status, self.status)
+
+
+class OrderItem(db.Model):
+    __tablename__ = 'order_items'
+    id             = db.Column(db.Integer, primary_key=True)
+    order_id       = db.Column(db.Integer, db.ForeignKey('orders.id'), nullable=False)
+    product_id     = db.Column(db.Integer, db.ForeignKey('products.id'), nullable=True)
+    product_code   = db.Column(db.String(50))
+    product_name   = db.Column(db.String(100))
+    size           = db.Column(db.String(10), nullable=False)
+    color          = db.Column(db.String(50), nullable=True)   # 快照顏色
+    quantity       = db.Column(db.Integer, default=1)
+    price_at_order = db.Column(db.Float, nullable=True)

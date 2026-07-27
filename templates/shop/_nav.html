@@ -1,0 +1,21 @@
+<!-- Horizontal Navigation Bar for Shop Module -->
+<div class="shop-nav">
+    <a href="{{ url_for('shop.index') }}"
+        class="shop-nav-item {% if request.endpoint == 'shop.index' %}active{% endif %}">
+        🛍️ 瀏覽商品
+    </a>
+    <a href="{{ url_for('shop.cart') }}"
+        class="shop-nav-item {% if request.endpoint == 'shop.cart' %}active{% endif %}">
+        🛒 購物車
+    </a>
+    <a href="{{ url_for('shop.my_orders') }}"
+        class="shop-nav-item {% if request.endpoint == 'shop.my_orders' %}active{% endif %}">
+        📜 我的訂單
+    </a>
+    {% if current_user.is_admin %}
+    <a href="{{ url_for('admin.dashboard') }}"
+        class="shop-nav-item {% if 'admin' in request.endpoint %}active{% endif %}">
+        ⚙️ 後台管理
+    </a>
+    {% endif %}
+</div>

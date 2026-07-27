@@ -58,7 +58,7 @@ def toggle_notify(item_id):
     from models import Countdown
     item = Countdown.query.filter_by(id=item_id, user_id=current_user.id).first_or_404()
     item.notify_enabled = not item.notify_enabled
-    from app import db
+    from models import db
     db.session.commit()
     return jsonify({"success": True, "notify_enabled": item.notify_enabled})
 

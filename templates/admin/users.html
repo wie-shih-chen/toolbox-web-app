@@ -1,0 +1,129 @@
+{% extends 'base.html' %}
+{% block title %}使用者管理 — Admin{% endblock %}
+{% block content %}
+{% include 'shop/_nav.html' %}
+<div class="container" style="max-width:800px">
+  <div class="page-title">
+    👥 使用者管理
+    <button class="btn btn-primary btn-sm" onclick="document.getElementById('createModal').classList.add('active')" style="margin-left:auto">+ 新增帳號</button>
+  </div>
+
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>帳號</th>
+          <th>角色</th>
+          <th>可勾付款</th>
+          <th>建立時間</th>
+          <th>操作</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for u in users %}
+        <tr>
+          <td><strong>{{ u.username }}</strong>
+            {% if u.id == current_user.id %}<span class="pill pill-published" style="margin-left:0.4rem">我</span>{% endif %}
+          </td>
+          <td><span class="pill {% if u.is_admin %}pill-paid{% else %}pill-draft{% endif %}">
+            {{ '管理員' if u.is_admin else '會員' }}
+          </span></td>
+          <td>{{ '✅' if u.can_mark_paid else '—' }}</td>
+          <td style="color:var(--text-muted);font-size:0.8rem">{{ u.created_at.strftime('%Y/%m/%d') }}</td>
+          <td>
+            {% if u.id != current_user.id %}
+            <button class="btn btn-secondary btn-sm" onclick="editUser({{ u.id }}, '{{ u.username }}', '{{ u.role }}', {{ 'true' if u.can_mark_paid else 'false' }})">編輯</button>
+            <form method="POST" action="{{ url_for('admin.user_delete', uid=u.id) }}"
+                  style="display:inline" onsubmit="return confirm('確定刪除 {{ u.username }}？')">
+              <button class="btn btn-danger btn-sm" type="submit">刪除</button>
+            </form>
+            {% else %}
+            <a class="btn btn-secondary btn-sm" href="{{ url_for('auth.change_password') }}">改密碼</a>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- 新增帳號 Modal -->
+<div class="modal-overlay" id="createModal">
+  <div class="modal">
+    <div class="modal-title">➕ 新增帳號</div>
+    <form method="POST" action="{{ url_for('admin.user_create') }}">
+      <div class="form-group">
+        <label class="form-label">帳號名稱</label>
+        <input class="form-control" type="text" name="username" placeholder="輸入帳號" required autofocus>
+      </div>
+      <div class="form-group">
+        <label class="form-label">密碼（至少4個字元）</label>
+        <input class="form-control" type="password" name="password" placeholder="輸入密碼" required>
+      </div>
+      <div class="form-group">
+        <label class="form-label">角色</label>
+        <select class="form-control" name="role">
+          <option value="member">會員</option>
+          <option value="admin">管理員</option>
+        </select>
+      </div>
+      <div class="form-group" style="display:flex;align-items:center;gap:0.5rem">
+        <input type="checkbox" name="can_mark_paid" id="create-cmp" style="accent-color:var(--accent)">
+        <label for="create-cmp" style="font-size:0.875rem;cursor:pointer">可勾選「已付款」</label>
+      </div>
+      <div style="display:flex;gap:0.75rem">
+        <button class="btn btn-primary" type="submit" style="flex:1;justify-content:center">建立帳號</button>
+        <button class="btn btn-secondary" type="button"
+                onclick="document.getElementById('createModal').classList.remove('active')">取消</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Edit Modal -->
+<div class="modal-overlay" id="editModal">
+  <div class="modal">
+    <div class="modal-title">編輯帳號</div>
+    <form method="POST" id="editForm">
+      <div class="form-group">
+        <label class="form-label">角色</label>
+        <select class="form-control" name="role" id="edit-role">
+          <option value="member">會員</option>
+          <option value="admin">管理員</option>
+        </select>
+      </div>
+      <div class="form-group" style="display:flex;align-items:center;gap:0.5rem">
+        <input type="checkbox" name="can_mark_paid" id="edit-cmp" style="accent-color:var(--accent)">
+        <label for="edit-cmp" style="font-size:0.875rem;cursor:pointer">可勾選「已付款」</label>
+      </div>
+      <div class="form-group">
+        <label class="form-label">重設密碼（留空不更改）</label>
+        <input class="form-control" type="password" name="password" placeholder="輸入新密碼">
+      </div>
+      <div style="display:flex;gap:0.75rem">
+        <button class="btn btn-primary" type="submit" style="flex:1;justify-content:center">儲存</button>
+        <button class="btn btn-secondary" type="button" onclick="document.getElementById('editModal').classList.remove('active')">取消</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function editUser(uid, username, role, canMarkPaid) {
+  document.getElementById('editForm').action = `/admin/users/${uid}/edit`;
+  document.getElementById('edit-role').value = role;
+  document.getElementById('edit-cmp').checked = canMarkPaid;
+  document.querySelector('#editModal .modal-title').textContent = `編輯：${username}`;
+  document.getElementById('editModal').classList.add('active');
+}
+document.getElementById('editModal').addEventListener('click', function(e){
+  if (e.target === this) this.classList.remove('active');
+});
+document.getElementById('createModal').addEventListener('click', function(e){
+  if (e.target === this) this.classList.remove('active');
+});
+</script>
+{% endblock %}

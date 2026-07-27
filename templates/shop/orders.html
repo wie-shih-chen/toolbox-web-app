@@ -1,0 +1,94 @@
+{% extends 'base.html' %}
+{% block title %}我的訂單 — ClothShop{% endblock %}
+{% block content %}
+{% include 'shop/_nav.html' %}
+<div class="container" style="max-width:720px">
+  <div class="page-title">📦 我的訂單</div>
+
+  {% if orders %}
+  {% for order in orders %}
+  <div class="card" style="padding:1.25rem;margin-bottom:1rem">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.75rem">
+      <div>
+        <span style="font-weight:600;font-size:0.95rem">訂單 #{{ order.id }}</span>
+        <span style="font-size:0.8rem;color:var(--text-muted);margin-left:0.5rem">
+          {{ order.created_at.strftime('%Y/%m/%d %H:%M') }}
+        </span>
+      </div>
+      <div style="display:flex;gap:0.5rem;align-items:center">
+        <span class="pill pill-{{ order.status }}">{{ order.status_label }}</span>
+        {% if order.is_paid %}
+        <span class="pill pill-paid">已付款</span>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- 訂單明細 -->
+    {% for item in order.items %}
+    <div style="display:flex;justify-content:space-between;font-size:0.875rem;padding:0.3rem 0;border-bottom:1px solid var(--border)">
+      <span>
+        {% if item.product and item.product.primary_image %}
+        <img src="{{ url_for('static', filename='uploads/' + item.product.primary_image.filename) }}"
+             style="width:32px;height:32px;object-fit:cover;border-radius:4px;vertical-align:middle;margin-right:0.4rem;cursor:pointer"
+             data-lb>
+        {% endif %}
+        {{ item.product_name or ('#' + item.product_code) }} <span style="color:var(--text-muted)">/ {{ item.size }}{% if item.color %} / {{ item.color }}{% endif %}</span>
+      </span>
+      <span>
+        × {{ item.quantity }}
+        {% if item.price_at_order %}
+        <span style="color:var(--accent);font-weight:600;margin-left:0.5rem">
+          NT$ {{ '%.0f'|format(item.price_at_order * item.quantity) }}
+        </span>
+        {% endif %}
+      </span>
+    </div>
+    {% endfor %}
+
+    {% if order.note %}
+    <div style="margin-top:0.5rem;font-size:0.8rem;color:var(--text-muted)">📝 {{ order.note }}</div>
+    {% endif %}
+
+    {% if order.total %}
+    <div style="text-align:right;margin-top:0.75rem;font-weight:700;color:var(--accent)">
+      合計 NT$ {{ '%.0f'|format(order.total) }}
+    </div>
+    {% endif %}
+
+    {% if order.status == 'pending' %}
+    <div style="margin-top:0.75rem;text-align:right">
+      <button class="btn btn-secondary btn-sm"
+              onclick="cancelOrder({{ order.id }}, this)"
+              style="color:var(--danger);border-color:var(--danger)">
+        ✕ 取消訂單
+      </button>
+    </div>
+    {% endif %}
+  </div>
+  {% endfor %}
+  {% else %}
+  <div class="empty-state">
+    <div class="empty-icon">📦</div>
+    <p>還沒有訂單記錄</p>
+    <a class="btn btn-primary" href="{{ url_for('shop.index') }}" style="margin-top:1rem">去購物</a>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+async function cancelOrder(oid, btn) {
+  if (!confirm('確定取消此訂單？商品將會放回購物車讓你修改。')) return;
+  btn.disabled = true;
+  const res  = await fetch(`/orders/${oid}/cancel`, { method: 'POST' });
+  const json = await res.json();
+  if (json.ok) {
+    window.location.href = json.redirect || '/cart';
+  } else {
+    alert(json.msg);
+    btn.disabled = false;
+  }
+}
+</script>
+{% endblock %}

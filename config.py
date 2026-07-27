@@ -24,9 +24,17 @@ class Config:
     # Download Path (relative to project root)
     DOWNLOAD_PATH = os.path.join(BASE_DIR, 'downloads')
     
-    # Ensure download directory exists
+    # Upload Path for product images
+    UPLOAD_FOLDER = os.path.join(BASE_DIR, 'static', 'uploads')
+    MAX_CONTENT_LENGTH = 32 * 1024 * 1024  # 32MB max upload
+    ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'webp'}
+    SIZES = ['S', 'M', 'L', 'XL', '2XL', '3XL']
+    
+    # Ensure directories exist
     if not os.path.exists(DOWNLOAD_PATH):
         os.makedirs(DOWNLOAD_PATH, exist_ok=True)
+    if not os.path.exists(UPLOAD_FOLDER):
+        os.makedirs(UPLOAD_FOLDER, exist_ok=True)
     # Email Configuration
     MAIL_SERVER = 'smtp.gmail.com'
     MAIL_PORT = 587

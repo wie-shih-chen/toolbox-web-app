@@ -1,6 +1,6 @@
 import datetime
 from datetime import timedelta
-from app import db
+from models import db
 from models import PeriodRecord, UserSettings
 
 class PeriodService:

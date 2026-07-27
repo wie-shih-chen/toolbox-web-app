@@ -1,0 +1,218 @@
+{% extends 'base.html' %}
+{% block title %}商品 — ClothShop{% endblock %}
+{% block content %}
+{% include 'shop/_nav.html' %}
+<div class="container">
+  <div class="page-title">
+    🛍️ 商品
+    <span class="sub">{{ products|length }} 件商品</span>
+  </div>
+
+  <!-- 搜尋 & 排序 -->
+  <div class="search-bar">
+    <input class="search-input" type="text" id="searchInput" placeholder="🔍 搜尋商品編號或名稱…" oninput="filterProducts()">
+  </div>
+  <div class="filter-chips" style="margin-bottom:1.25rem">
+    <span class="filter-chip active" data-sort="newest">最新上架</span>
+    <span class="filter-chip" data-sort="price-asc">價格低→高</span>
+    <span class="filter-chip" data-sort="price-desc">價格高→低</span>
+  </div>
+
+  {% if products %}
+  <div class="product-grid" id="productGrid">
+    {% for p in products %}
+    {% set is_new = (now - p.created_at).days <= 3 %}
+    <div class="product-card"
+         data-name="{{ (p.name or '') | lower }}"
+         data-code="{{ p.code | lower }}"
+         data-price="{{ p.price or '' }}"
+         data-age="{{ (now - p.created_at).days }}">
+      <!-- 圖片區（點擊放大） -->
+      <div class="product-img-wrap"
+           onclick="openLightbox({{ p.images | map(attribute='filename') | list | tojson }}, 0)"
+           title="點擊放大">
+        {% if p.primary_image %}
+        <img src="{{ url_for('static', filename='uploads/' + p.primary_image.filename) }}"
+             alt="{{ p.name or p.code }}" loading="lazy">
+        {% else %}
+        <div class="product-img-placeholder">📦</div>
+        {% endif %}
+      </div>
+
+      <!-- 商品資訊 -->
+      <div class="product-info">
+        <div class="product-code">
+          # {{ p.code }}
+          {% if is_new %}<span class="badge-new">NEW</span>{% endif %}
+        </div>
+        {% if p.name %}
+        <div class="product-name">{{ p.name }}</div>
+        {% endif %}
+        {% if p.price %}
+        <div class="product-price">NT$ {{ '%.0f'|format(p.price) }}</div>
+        {% else %}
+        <div class="product-no-price">詢價</div>
+        {% endif %}
+        <div class="product-sizes">
+          {% for s in p.sizes %}
+          <span class="size-tag">{{ s }}</span>
+          {% endfor %}
+        </div>
+        <!-- 我要訂按鈕 -->
+        <button class="btn-order"
+                data-pid="{{ p.id }}"
+                data-sizes='{{ p.sizes | tojson }}'
+                data-colors='{{ (p.colors or "") | e }}'
+                data-name="{{ (p.name or p.code) | e }}"
+                onclick="openOrderModal(this)">
+          我要訂
+        </button>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="empty-state">
+    <div class="empty-icon">🏪</div>
+    <p>目前還沒有商品</p>
+  </div>
+  {% endif %}
+</div>
+
+<!-- 訂購 Modal -->
+<div class="modal-overlay" id="orderModal">
+  <div class="modal">
+    <div class="modal-title" id="modal-product-name">選擇尺寸</div>
+    <form method="POST" action="{{ url_for('shop.cart_add') }}">
+      <input type="hidden" name="product_id" id="modal-product-id">
+
+      <!-- 顏色 -->
+      <div class="form-group" id="modal-color-group" style="display:none">
+        <label class="form-label">顏色 <span style="color:var(--danger)">*</span></label>
+        <div class="size-check-group" id="modal-colors"></div>
+        <input type="hidden" name="color" id="modal-color-input">
+      </div>
+
+      <!-- 尺寸 -->
+      <div class="form-group">
+        <label class="form-label">尺寸 <span style="color:var(--danger)">*</span></label>
+        <div class="size-check-group" id="modal-sizes"></div>
+        <input type="hidden" name="size" id="modal-size-input" required>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">數量</label>
+        <div class="qty-ctrl">
+          <button type="button" class="qty-btn" onclick="changeQty(-1)">−</button>
+          <span class="qty-val" id="modal-qty-display">1</span>
+          <button type="button" class="qty-btn" onclick="changeQty(1)">+</button>
+          <input type="hidden" name="quantity" id="modal-qty-input" value="1">
+        </div>
+      </div>
+      <div style="display:flex;gap:0.75rem;margin-top:1rem">
+        <button class="btn btn-primary" type="submit" style="flex:1;justify-content:center">
+          加入購物車
+        </button>
+        <button class="btn btn-secondary" type="button" onclick="closeOrderModal()">取消</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function openOrderModal(btn) {
+  const productId  = btn.dataset.pid;
+  const sizes      = JSON.parse(btn.dataset.sizes || '[]');
+  const colorsRaw  = btn.dataset.colors || '';
+  const colors     = colorsRaw ? colorsRaw.split(/[,、，]/).map(c => c.trim()).filter(Boolean) : [];
+  const name       = btn.dataset.name;
+
+  document.getElementById('modal-product-id').value = productId;
+  document.getElementById('modal-product-name').textContent = '訂購：' + name;
+  document.getElementById('modal-size-input').value  = '';
+  document.getElementById('modal-color-input').value = '';
+
+  // ── 顏色 ──────────────────────────────────────────────────────
+  const colorGroup = document.getElementById('modal-color-group');
+  const colorCont  = document.getElementById('modal-colors');
+  colorCont.innerHTML = '';
+  if (colors.length > 0) {
+    colorGroup.style.display = '';
+    colors.forEach(c => {
+      const wrap = document.createElement('div');
+      wrap.className = 'size-check';
+      wrap.innerHTML = `
+        <input type="radio" name="_color_radio" id="cl_${c}" value="${c}"
+               onchange="document.getElementById('modal-color-input').value='${c}'">
+        <label for="cl_${c}">${c}</label>`;
+      colorCont.appendChild(wrap);
+    });
+  } else {
+    colorGroup.style.display = 'none';
+  }
+
+  // ── 尺寸 ──────────────────────────────────────────────────────
+  const sizeCont = document.getElementById('modal-sizes');
+  sizeCont.innerHTML = '';
+  sizes.forEach(s => {
+    const wrap = document.createElement('div');
+    wrap.className = 'size-check';
+    wrap.innerHTML = `
+      <input type="radio" name="_size_radio" id="sz_${s}" value="${s}"
+             onchange="document.getElementById('modal-size-input').value='${s}'">
+      <label for="sz_${s}">${s}</label>`;
+    sizeCont.appendChild(wrap);
+  });
+
+  document.getElementById('modal-qty-display').textContent = 1;
+  document.getElementById('modal-qty-input').value = 1;
+  document.getElementById('orderModal').classList.add('active');
+}
+function closeOrderModal() {
+  document.getElementById('orderModal').classList.remove('active');
+}
+function changeQty(delta) {
+  const inp  = document.getElementById('modal-qty-input');
+  const disp = document.getElementById('modal-qty-display');
+  let v = parseInt(inp.value) + delta;
+  if (v < 1) v = 1;
+  inp.value = v;
+  disp.textContent = v;
+}
+function filterProducts() {
+  const q    = document.getElementById('searchInput').value.toLowerCase();
+  const sort = document.querySelector('.filter-chip.active')?.dataset.sort || 'newest';
+  const grid = document.getElementById('productGrid');
+  const cards = [...grid.querySelectorAll('.product-card')];
+
+  // 搜尋過濾
+  cards.forEach(card => {
+    const match = !q || (card.dataset.name || '').includes(q) || (card.dataset.code || '').includes(q);
+    card.style.display = match ? '' : 'none';
+  });
+
+  // 排序（只對顯示中的卡片排序）
+  const visible = cards.filter(c => c.style.display !== 'none');
+  visible.sort((a, b) => {
+    const pa = parseFloat(a.dataset.price) || Infinity;
+    const pb = parseFloat(b.dataset.price) || Infinity;
+    const da = parseInt(a.dataset.age) || 0;
+    const db = parseInt(b.dataset.age) || 0;
+    if (sort === 'price-asc')  return pa - pb;
+    if (sort === 'price-desc') return pb - pa;
+    return da - db; // newest：age 越小越新
+  });
+  visible.forEach(c => grid.appendChild(c));
+}
+
+document.querySelectorAll('.filter-chip').forEach(chip => {
+  chip.addEventListener('click', () => {
+    document.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
+    chip.classList.add('active');
+    filterProducts();
+  });
+});
+</script>
+{% endblock %}

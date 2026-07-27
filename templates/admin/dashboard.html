@@ -1,0 +1,98 @@
+{% extends 'base.html' %}
+{% block title %}管理首頁 — ClothShop{% endblock %}
+{% block content %}
+{% include 'shop/_nav.html' %}
+<div class="container">
+  <div class="page-title">
+    📊 管理後台
+    <div style="margin-left:auto;display:flex;gap:0.5rem">
+      <a class="btn btn-secondary btn-sm" href="{{ url_for('admin.products') }}">商品</a>
+      <a class="btn btn-secondary btn-sm" href="{{ url_for('admin.orders') }}">訂單</a>
+      <a class="btn btn-secondary btn-sm" href="{{ url_for('admin.users') }}">使用者</a>
+    </div>
+  </div>
+
+  <!-- 統計卡片 -->
+  <div class="stats-grid">
+    <div class="stat-card">
+      <div class="stat-icon">📬</div>
+      <div class="stat-val">{{ stats.pending_orders }}</div>
+      <div class="stat-label">待確認訂單</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon">💰</div>
+      <div class="stat-val">{{ stats.unpaid_orders }}</div>
+      <div class="stat-label">未付款訂單</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon">📅</div>
+      <div class="stat-val">{{ stats.today_orders }}</div>
+      <div class="stat-label">今日訂單</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon">📈</div>
+      <div class="stat-val">{{ stats.week_orders }}</div>
+      <div class="stat-label">本週訂單</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon">📦</div>
+      <div class="stat-val">{{ stats.total_products }}</div>
+      <div class="stat-label">上架商品</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon">🧾</div>
+      <div class="stat-val">{{ stats.draft_products }}</div>
+      <div class="stat-label">草稿商品</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon">👥</div>
+      <div class="stat-val">{{ stats.total_members }}</div>
+      <div class="stat-label">會員人數</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon">🗂️</div>
+      <div class="stat-val">{{ stats.total_orders }}</div>
+      <div class="stat-label">全部訂單</div>
+    </div>
+  </div>
+
+  <!-- 快速操作 -->
+  <div style="display:flex;gap:0.75rem;flex-wrap:wrap;margin:1.5rem 0">
+    <a class="btn btn-primary" href="{{ url_for('admin.orders') }}?status=pending">
+      📬 查看待確認訂單
+    </a>
+    <a class="btn btn-secondary" href="{{ url_for('admin.export_orders') }}">
+      ⬇️ 匯出訂單 CSV
+    </a>
+    <a class="btn btn-secondary" href="{{ url_for('admin.products') }}">
+      📦 管理商品
+    </a>
+  </div>
+
+  <!-- 最近訂單 -->
+  <div style="font-size:1rem;font-weight:600;margin-bottom:0.75rem">🕐 最近 8 筆訂單</div>
+  <div style="display:flex;flex-direction:column;gap:0.5rem">
+    {% for order in recent_orders %}
+    <div class="card"
+      style="padding:0.85rem 1.1rem;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:0.5rem">
+      <div style="display:flex;align-items:center;gap:0.75rem">
+        <span style="font-weight:600;color:var(--accent)">#{{ order.id }}</span>
+        <span style="font-size:0.8rem;color:var(--text-muted)">
+          {{ order.user.username if order.user else '?' }} ·
+          {{ order.created_at.strftime('%m/%d %H:%M') }}
+        </span>
+        <span class="pill pill-{{ order.status }}">{{ order.status_label }}</span>
+        {% if order.is_paid %}<span class="pill pill-paid">已付款</span>{% endif %}
+      </div>
+      <div style="display:flex;gap:0.5rem">
+        <span style="font-size:0.8rem;color:var(--text-muted)">
+          {{ order.items | length }} 件商品
+          {% if order.total %} · NT$ {{ '%.0f'|format(order.total) }}{% endif %}
+        </span>
+        <a class="btn btn-secondary btn-sm" href="{{ url_for('admin.orders') }}">查看</a>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}

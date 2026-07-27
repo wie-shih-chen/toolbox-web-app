@@ -24,6 +24,22 @@ login_manager.init_app(app)
 def load_user(user_id):
     return User.query.get(int(user_id))
 
+@login_manager.request_loader
+def load_user_from_request(request):
+    auth_header = request.headers.get('Authorization')
+    if auth_header and auth_header.startswith('Bearer '):
+        token = auth_header.replace('Bearer ', '', 1)
+        import jwt
+        from config import Config
+        try:
+            payload = jwt.decode(token, Config.SECRET_KEY, algorithms=['HS256'])
+            user_id = payload.get('user_id')
+            if user_id:
+                return User.query.get(int(user_id))
+        except:
+            return None
+    return None
+
 # Register Blueprints
 with app.app_context():
     db.create_all() # Create tables if they don't exist (checkfirst is default in SQLAlchemy 2.x)
@@ -34,6 +50,8 @@ with app.app_context():
     from routes.ntut_routes import ntut_bp
     from routes.expense_routes import expense_bp
     from routes.auth import auth_bp
+    from routes.shop import shop_bp
+    from routes.admin import admin_bp
 
     app.register_blueprint(main_bp)
     app.register_blueprint(salary_bp, url_prefix='/salary')
@@ -41,6 +59,8 @@ with app.app_context():
     app.register_blueprint(ntut_bp)
     app.register_blueprint(expense_bp)
     app.register_blueprint(auth_bp)
+    app.register_blueprint(shop_bp, url_prefix='/shop')
+    app.register_blueprint(admin_bp, url_prefix='/admin')
     
     from services.line_service import LineService
     from routes.line_routes import line_bp, register_line_handlers
@@ -108,4 +128,4 @@ with app.app_context():
 
 
 if __name__ == '__main__':
-    app.run(debug=True, port=5001)
+    app.run(host='0.0.0.0', debug=True, port=5001)
