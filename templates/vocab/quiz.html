@@ -237,7 +237,11 @@ async function loadWords() {
   words = shuffle(allWords);
   shuffled = words;
   document.getElementById('loadingState').style.display = 'none';
-  if (words.length < 4) { document.getElementById('quizArea').innerHTML = '<p style="text-align:center;padding:2rem;color:var(--text-secondary);">單字數量不足以出題（至少需要 4 個）</p>'; return; }
+  if (words.length === 0) {
+    document.getElementById('quizArea').style.display = 'block';
+    document.getElementById('quizArea').innerHTML = '<p style="text-align:center;padding:2rem;color:var(--text-secondary);">找不到符合條件的單字</p>'; 
+    return; 
+  }
   document.getElementById('quizArea').style.display = 'block';
   showQuestion();
 }
