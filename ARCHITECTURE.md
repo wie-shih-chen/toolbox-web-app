@@ -32,7 +32,9 @@ web_app/
 │   ├── reminder_routes.py          # 🔔 提醒事項 (單次 & 週期性提醒)
 │   ├── download_routes.py          # 📥 影音下載器 (yt-dlp 任務)
 │   ├── line_routes.py              # 📱 LINE Bot Webhook (智慧語意解析 & 推播)
-│   └── settings_api.py             # ⚙️ 設定專用 API (AJAX 非同步儲存)
+│   ├── settings_api.py             # ⚙️ 設定專用 API (AJAX 非同步儲存)
+│   ├── shop.py                     # 🛍️ 購物前台 (商品瀏覽 / 購物車 / 結帳流程)
+│   └── admin.py                    # 🛠️ 商店後台 (商品管理 / ZIP 匯入匯出 / 訂單管理)
 │
 ├── 🧠 services/ (服務層 - 商業邏輯)
 │   ├── ai_chat_service.py          # ⭐ AI 核心服務 (Gemini 整合 / 意圖分析 / 狀態機邏輯)
@@ -88,6 +90,17 @@ web_app/
 │   ├── ntut/
 │   │   ├── calendar.html           # 多來源行事曆 (FullCalendar & 假日整合)
 │   │   └── settings.html           # ⚙️ 行事曆通知 & 來源設定
+│   │
+│   ├── shop/
+│   │   ├── index.html              # 🛍️ 購物前台首頁 (商品展示)
+│   │   ├── cart.html               # 🛒 購物車與結帳
+│   │   └── orders.html             # 📦 前台我的訂單
+│   │
+│   ├── admin/
+│   │   ├── dashboard.html          # 🛠️ 商店後台總覽
+│   │   ├── products.html           # 📦 商品管理 (ZIP 匯入匯出)
+│   │   ├── orders.html             # 📋 訂單管理與出貨
+│   │   └── users.html              # 👤 會員權限管理
 │   │
 │   └── email/
 │       ├── welcome.html            # 歡迎信
