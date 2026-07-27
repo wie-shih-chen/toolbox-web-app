@@ -162,8 +162,18 @@
     </select>
     <select id="filterCategory" onchange="applyFilters()">
       <option value="">全部分類</option>
-      <option>商務辦公</option><option>財務會計</option><option>行銷銷售</option>
-      <option>採購物流</option><option>法律合規</option><option>資訊技術</option>
+      <option>辦公日常</option><option>行銷與銷售</option><option>金融與會計</option><option>人力資源</option>
+      <option>採購與物流</option><option>會議與簡報</option><option>科技與技術支援</option><option>一般專業</option>
+      <option>溝通互動</option><option>旅遊與交通</option><option>住宿與餐飲</option><option>營運管理</option>
+      <option>法務合規與安全</option><option>客戶服務</option><option>物業與不動產</option>
+    </select>
+    <select id="filterScore" onchange="applyFilters()">
+      <option value="">全部分數段</option>
+      <option value="0-400">0-400</option>
+      <option value="400-600">400-600</option>
+      <option value="600-780">600-780</option>
+      <option value="780-900">780-900</option>
+      <option value="900+">900+</option>
     </select>
   </div>
 
@@ -214,9 +224,11 @@ let currentWord = '';
 async function loadWords() {
   const star = document.getElementById('filterStar').value;
   const category = document.getElementById('filterCategory').value;
+  const score = document.getElementById('filterScore').value;
   let url = `/vocab/api/words?offset=0&length=100`;
   if (star) url += `&star=${star}`;
   if (category) url += `&category=${encodeURIComponent(category)}`;
+  if (score) url += `&score_range=${encodeURIComponent(score)}`;
   let allWords = [];
   try {
     const res = await fetch(url);
