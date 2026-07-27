@@ -181,6 +181,40 @@
     box-shadow: 0 6px 20px rgba(78, 205, 196, 0.4);
     color: white;
   }
+  
+  .table-responsive {
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  
+  @media (max-width: 600px) {
+    .history-summary {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 1rem;
+      padding: 1rem;
+    }
+    .history-date {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 0.5rem;
+    }
+    .history-content {
+      padding: 0 1rem 1rem 1rem;
+    }
+    .history-table {
+      min-width: 400px; /* Force table width on mobile to enable scroll */
+    }
+    .history-table th, .history-table td {
+      padding: 0.6rem;
+      font-size: 0.9rem;
+    }
+    .btn-retest {
+      width: 100%;
+      justify-content: center;
+    }
+  }
 </style>
 {% endblock %}
 
@@ -222,28 +256,30 @@
       </summary>
       
       <div class="history-content">
-        <table class="history-table">
-          <thead>
-            <tr>
-              <th>單字 (Word)</th>
-              <th style="text-align: center;">答對次數 (Correct)</th>
-              <th style="text-align: center;">答錯次數 (Incorrect)</th>
-            </tr>
-          </thead>
-          <tbody>
-            {% for word, counts in data.words.items() %}
-            <tr>
-              <td>{{ word }}</td>
-              <td class="count-cell {% if counts.correct > 0 %}correct{% endif %}">
-                {{ counts.correct if counts.correct > 0 else '-' }}
-              </td>
-              <td class="count-cell {% if counts.incorrect > 0 %}incorrect{% endif %}">
-                {{ counts.incorrect if counts.incorrect > 0 else '-' }}
-              </td>
-            </tr>
-            {% endfor %}
-          </tbody>
-        </table>
+        <div class="table-responsive">
+          <table class="history-table">
+            <thead>
+              <tr>
+                <th>單字 (Word)</th>
+                <th style="text-align: center;">答對 (Correct)</th>
+                <th style="text-align: center;">答錯 (Incorrect)</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for word, counts in data.words.items() %}
+              <tr>
+                <td>{{ word }}</td>
+                <td class="count-cell {% if counts.correct > 0 %}correct{% endif %}">
+                  {{ counts.correct if counts.correct > 0 else '-' }}
+                </td>
+                <td class="count-cell {% if counts.incorrect > 0 %}incorrect{% endif %}">
+                  {{ counts.incorrect if counts.incorrect > 0 else '-' }}
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
         
         <div class="action-footer">
           <a href="{{ url_for('vocab.quiz') }}?review_date={{ date_str }}" class="btn-retest">
