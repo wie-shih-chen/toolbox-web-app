@@ -22,7 +22,7 @@
   }
   .fc-toolbar a { 
     text-decoration: none; 
-    color: var(--text-muted, #888); 
+    color: var(--text-secondary, #888); 
     font-size: 0.95rem; 
     font-weight: 500;
     transition: color 0.2s;
@@ -30,7 +30,7 @@
   .fc-toolbar a:hover { color: #667eea; }
   .fc-toolbar .fc-counter { 
     font-size: 0.9rem; 
-    color: var(--text-muted, #888); 
+    color: var(--text-secondary, #888); 
     background: var(--card-bg, #fff);
     padding: 0.4rem 1rem;
     border-radius: 100px;
@@ -96,7 +96,7 @@
   }
   .card-back {
     background: var(--card-bg, #fff);
-    color: var(--text-color, #1a1a2e);
+    color: var(--text-primary, #1a1a2e);
     transform: rotateY(180deg);
     border: 1px solid rgba(0,0,0,0.05);
   }
@@ -130,27 +130,27 @@
     font-weight: 800;
     text-align: center;
     margin-bottom: 1.2rem;
-    color: #667eea;
+    color: #a5b4fc;
   }
   .card-back .word-small {
     font-size: 1.1rem;
-    color: var(--text-muted, #888);
+    color: var(--text-secondary, #888);
     margin-bottom: 1.2rem;
     font-style: italic;
     font-weight: 500;
   }
   .card-back .example {
     font-size: 0.95rem;
-    color: var(--text-color, #555);
+    color: var(--text-primary, #555);
     text-align: center;
     max-width: 460px;
     line-height: 1.6;
     padding: 1rem;
-    background: rgba(102, 126, 234, 0.05);
+    background: rgba(102, 126, 234, 0.1);
     border-radius: 16px;
   }
-  .card-back .example .en { font-style: italic; color: #444; margin-bottom: 0.4rem; font-weight: 500; }
-  .card-back .example .zh { color: var(--text-muted, #777); }
+  .card-back .example .en { font-style: italic; color: var(--text-primary, #444); margin-bottom: 0.4rem; font-weight: 600; }
+  .card-back .example .zh { color: var(--text-secondary, #777); }
 
   /* Action Buttons */
   .action-row {
@@ -192,7 +192,7 @@
   .btn-flip {
     background: rgba(102, 126, 234, 0.1);
     border: 2px solid rgba(102, 126, 234, 0.3);
-    color: #667eea;
+    color: #a5b4fc;
     border-radius: 100px;
     padding: 0.8rem 2.5rem;
     font-size: 1rem;
@@ -211,7 +211,7 @@
     justify-content: center;
     gap: 1.2rem;
     padding: 4rem 1rem;
-    color: var(--text-muted, #888);
+    color: var(--text-secondary, #888);
     font-weight: 500;
   }
   .spinner {
@@ -232,7 +232,7 @@
     gap: 1rem;
     font-size: 0.85rem;
     font-weight: 500;
-    color: var(--text-muted);
+    color: var(--text-secondary);
   }
   .progress-mini-bar {
     flex: 1;
@@ -335,7 +335,7 @@
   </div>
 
   <!-- Empty State -->
-  <div id="emptyState" style="display:none; text-align:center; padding:3rem; color:var(--text-muted);">
+  <div id="emptyState" style="display:none; text-align:center; padding:3rem; color:var(--text-secondary);">
     <div style="font-size:3rem; margin-bottom:1rem;">🔍</div>
     <div>找不到符合篩選條件的單字</div>
   </div>
@@ -344,9 +344,9 @@
   <div id="finishedState" style="display:none; text-align:center; padding:3rem;">
     <div style="font-size:4rem; margin-bottom:1rem;">🎉</div>
     <h2>這批單字全部完成！</h2>
-    <p id="sessionResult" style="color:var(--text-muted);"></p>
+    <p id="sessionResult" style="color:var(--text-secondary);"></p>
     <button onclick="restart()" style="margin-top:1rem; padding:0.8rem 2rem; border-radius:14px; background:linear-gradient(135deg,#667eea,#764ba2); color:white; border:none; font-size:1rem; font-weight:600; cursor:pointer;">再來一次</button>
-    <a href="{{ url_for('vocab.index') }}" style="display:block; margin-top:0.8rem; color:var(--text-muted);">返回學習中心</a>
+    <a href="{{ url_for('vocab.index') }}" style="display:block; margin-top:0.8rem; color:var(--text-secondary);">返回學習中心</a>
   </div>
 </div>
 
