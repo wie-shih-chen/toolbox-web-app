@@ -1,55 +1,251 @@
 {% extends "base.html" %}
 {% block title %}歷史學習紀錄{% endblock %}
+
+{% block extra_css %}
+<style>
+  .history-container {
+    max-width: 800px;
+    margin: 0 auto;
+    padding-bottom: 4rem;
+  }
+  .history-header {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 2rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid var(--border);
+  }
+  .history-header h2 {
+    margin: 0;
+    font-size: 1.8rem;
+    background: linear-gradient(135deg, var(--text-color), var(--primary-color));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+  .history-day-card {
+    background: var(--surface);
+    border-radius: 16px;
+    border: 1px solid var(--border);
+    overflow: hidden;
+    margin-bottom: 1rem;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+    transition: transform 0.2s, box-shadow 0.2s;
+  }
+  .history-day-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+  }
+  .history-summary {
+    padding: 1.2rem 1.5rem;
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: linear-gradient(to right, rgba(255,255,255,0.02), transparent);
+    user-select: none;
+  }
+  .history-summary::-webkit-details-marker {
+    display: none;
+  }
+  .history-date {
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: var(--text-color);
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+  }
+  .history-count {
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: var(--text-muted);
+    background: rgba(255,255,255,0.05);
+    padding: 0.3rem 0.8rem;
+    border-radius: 20px;
+  }
+  .history-stats {
+    display: flex;
+    gap: 0.8rem;
+  }
+  .stat-badge {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.4rem 0.8rem;
+    border-radius: 20px;
+    font-size: 0.9rem;
+    font-weight: 600;
+  }
+  .stat-badge.correct {
+    background: rgba(46, 213, 115, 0.15);
+    color: var(--success-color, #2ed573);
+  }
+  .stat-badge.incorrect {
+    background: rgba(255, 107, 107, 0.15);
+    color: var(--danger-color, #ff6b6b);
+  }
+  .history-content {
+    padding: 0 1.5rem 1.5rem 1.5rem;
+    border-top: 1px solid var(--border);
+    background: var(--bg);
+  }
+  .history-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0 0.5rem;
+    font-size: 0.95rem;
+    margin-top: 1rem;
+  }
+  .history-table th {
+    text-align: left;
+    padding: 0.8rem 1rem;
+    color: var(--text-muted);
+    font-weight: 600;
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  .history-table td {
+    padding: 1rem;
+    background: var(--surface);
+    border-top: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+  }
+  .history-table td:first-child {
+    border-left: 1px solid var(--border);
+    border-top-left-radius: 10px;
+    border-bottom-left-radius: 10px;
+    font-weight: 600;
+    font-size: 1.05rem;
+    color: var(--primary-color);
+  }
+  .history-table td:last-child {
+    border-right: 1px solid var(--border);
+    border-top-right-radius: 10px;
+    border-bottom-right-radius: 10px;
+  }
+  .history-table tr {
+    transition: transform 0.1s, box-shadow 0.1s;
+  }
+  .history-table tbody tr:hover {
+    transform: scale(1.01);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+    position: relative;
+    z-index: 1;
+  }
+  .count-cell {
+    text-align: center;
+    font-weight: 700;
+    font-size: 1.1rem;
+  }
+  .count-cell.correct { color: var(--success-color, #2ed573); }
+  .count-cell.incorrect { color: var(--danger-color, #ff6b6b); }
+  .empty-state {
+    text-align: center;
+    padding: 4rem 1rem;
+    color: var(--text-muted);
+    background: var(--surface);
+    border-radius: 16px;
+    border: 1px dashed var(--border);
+  }
+  .empty-state i {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+    opacity: 0.5;
+  }
+  .action-footer {
+    margin-top: 1.5rem;
+    display: flex;
+    justify-content: flex-end;
+  }
+  .btn-retest {
+    background: linear-gradient(135deg, var(--primary-color), #2980b9);
+    color: white;
+    padding: 0.7rem 1.5rem;
+    border-radius: 25px;
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 0.95rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    transition: transform 0.2s, box-shadow 0.2s;
+    box-shadow: 0 4px 15px rgba(var(--primary-color-rgb, 52, 152, 219), 0.3);
+  }
+  .btn-retest:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(var(--primary-color-rgb, 52, 152, 219), 0.4);
+    color: white;
+  }
+</style>
+{% endblock %}
+
 {% block content %}
-<div class="container" style="max-width: 800px; padding-bottom: 4rem;">
-  <div style="margin-bottom: 1.5rem; display: flex; align-items: center; gap: 1rem;">
-    <a href="{{ url_for('vocab.index') }}" class="btn-secondary" style="padding: 0.5rem 1rem; border-radius: 8px; text-decoration: none; color: inherit;">
+<div class="container history-container">
+  <div class="history-header">
+    <a href="{{ url_for('vocab.index') }}" class="btn-secondary" style="padding: 0.5rem 1rem; border-radius: 12px; text-decoration: none; color: inherit; display: flex; align-items: center; gap: 0.5rem; font-weight: 500;">
       ← 返回
     </a>
-    <h2 style="margin: 0;">📅 歷史學習紀錄</h2>
+    <h2>📅 歷史學習紀錄</h2>
   </div>
 
   {% if not history_data %}
-  <div class="card" style="padding: 2rem; text-align: center; background: var(--surface); border-radius: 12px; border: 1px solid var(--border); color: var(--text-muted);">
-    您還沒有任何學習紀錄喔！趕快開始背單字吧！
+  <div class="empty-state">
+    <div style="font-size: 3rem; margin-bottom: 1rem;">🍃</div>
+    <h3>尚無歷史紀錄</h3>
+    <p>快去測驗或拼字來累積你的學習進度吧！</p>
+    <a href="{{ url_for('vocab.quiz') }}" class="btn-primary" style="margin-top: 1rem; display: inline-block;">前往測驗</a>
   </div>
   {% else %}
-  <div class="history-list" style="display: flex; flex-direction: column; gap: 1rem;">
+  <div class="history-list">
     {% for date_str, data in history_data.items() %}
-    <details class="history-day-card" style="background: var(--surface); border-radius: 12px; border: 1px solid var(--border); overflow: hidden;">
-      <summary style="padding: 1rem 1.5rem; cursor: pointer; font-weight: 600; display: flex; justify-content: space-between; align-items: center; background: rgba(0,0,0,0.02);">
-        <div style="display: flex; gap: 1rem; align-items: center;">
-          <span style="font-size: 1.1rem;">{{ date_str }}</span>
-          <span style="font-size: 0.9rem; font-weight: normal; color: var(--text-muted);">複習了 {{ data.words|length }} 個單字</span>
+    <details class="history-day-card">
+      <summary class="history-summary">
+        <div class="history-date">
+          {{ date_str }}
+          <span class="history-count">複習了 {{ data.words|length }} 個單字</span>
         </div>
-        <div style="display: flex; gap: 1rem; font-size: 0.9rem; font-weight: normal;">
-          <span style="color: var(--success-color, #2ed573);">✓ {{ data.correct }}</span>
-          <span style="color: var(--danger-color, #ff6b6b);">✗ {{ data.incorrect }}</span>
+        <div class="history-stats">
+          <div class="stat-badge correct">
+            <span>✓</span>
+            <span>{{ data.correct }}</span>
+          </div>
+          <div class="stat-badge incorrect">
+            <span>✗</span>
+            <span>{{ data.incorrect }}</span>
+          </div>
         </div>
       </summary>
       
-      <div style="padding: 1rem 1.5rem; border-top: 1px solid var(--border); background: var(--bg);">
-        <table style="width: 100%; border-collapse: collapse; font-size: 0.95rem;">
+      <div class="history-content">
+        <table class="history-table">
           <thead>
-            <tr style="text-align: left; border-bottom: 2px solid var(--border); color: var(--text-muted);">
-              <th style="padding: 0.5rem;">單字</th>
-              <th style="padding: 0.5rem; text-align: center;">答對次數</th>
-              <th style="padding: 0.5rem; text-align: center;">答錯次數</th>
+            <tr>
+              <th>單字 (Word)</th>
+              <th style="text-align: center;">答對次數 (Correct)</th>
+              <th style="text-align: center;">答錯次數 (Incorrect)</th>
             </tr>
           </thead>
           <tbody>
             {% for word, counts in data.words.items() %}
-            <tr style="border-bottom: 1px solid var(--border);">
-              <td style="padding: 0.8rem 0.5rem; font-weight: 500;">{{ word }}</td>
-              <td style="padding: 0.8rem 0.5rem; text-align: center; color: var(--success-color, #2ed573);">{{ counts.correct }}</td>
-              <td style="padding: 0.8rem 0.5rem; text-align: center; color: var(--danger-color, #ff6b6b);">{{ counts.incorrect }}</td>
+            <tr>
+              <td>{{ word }}</td>
+              <td class="count-cell {% if counts.correct > 0 %}correct{% endif %}">
+                {{ counts.correct if counts.correct > 0 else '-' }}
+              </td>
+              <td class="count-cell {% if counts.incorrect > 0 %}incorrect{% endif %}">
+                {{ counts.incorrect if counts.incorrect > 0 else '-' }}
+              </td>
             </tr>
             {% endfor %}
           </tbody>
         </table>
         
-        <div style="margin-top: 1rem; text-align: right;">
-          <a href="{{ url_for('vocab.quiz') }}?review_date={{ date_str }}" class="btn-primary" style="padding: 0.5rem 1rem; border-radius: 8px; text-decoration: none; display: inline-block; font-size: 0.9rem;">▶️ 重新測驗此天單字</a>
+        <div class="action-footer">
+          <a href="{{ url_for('vocab.quiz') }}?review_date={{ date_str }}" class="btn-retest">
+            <span>▶️</span> 重新測驗此天單字
+          </a>
         </div>
       </div>
     </details>
@@ -57,16 +253,4 @@
   </div>
   {% endif %}
 </div>
-
-<style>
-  details > summary {
-    list-style: none;
-  }
-  details > summary::-webkit-details-marker {
-    display: none;
-  }
-  details[open] summary {
-    border-bottom: 1px solid var(--border);
-  }
-</style>
 {% endblock %}
