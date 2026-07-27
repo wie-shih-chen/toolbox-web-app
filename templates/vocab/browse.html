@@ -68,7 +68,7 @@
 {% endblock %}
 
 {% block content %}
-{% include 'shop/_nav.html' %}
+
 <div class="browse-container">
   <div class="browse-header">
     <a href="{{ url_for('vocab.index') }}">← 返回學習中心</a>
@@ -119,9 +119,8 @@ let searchQuery = '';
 let userProgress = {};
 
 async function init() {
-  // Load progress first
-  const pr = await fetch('/vocab/api/progress');
-  userProgress = await pr.json();
+  // Load progress first (non-blocking)
+  fetch('/vocab/api/progress').then(r => r.json()).then(p => { userProgress = p; renderWords(); });
   await loadWords();
 }
 

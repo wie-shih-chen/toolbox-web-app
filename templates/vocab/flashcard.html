@@ -200,7 +200,6 @@
 {% endblock %}
 
 {% block content %}
-{% include 'shop/_nav.html' %}
 <div class="flashcard-container">
   <!-- Toolbar -->
   <div class="fc-toolbar">
@@ -310,46 +309,34 @@ let allLoaded = false;
 let loading = false;
 
 async function loadWords() {
-  if (loading || allLoaded) return;
+  if (loading) return;
   loading = true;
   
   const star = document.getElementById('filterStar').value;
   const category = document.getElementById('filterCategory').value;
   const score = document.getElementById('filterScore').value;
   
-  // Load all pages for current filters
-  let batch = [];
-  let batchOffset = 0;
+  // 只抓一頁（100 個），用亂序洗牌當作一組學習
+  let url = `/vocab/api/words?offset=0&length=100`;
+  if (star) url += `&star=${star}`;
+  if (category) url += `&category=${encodeURIComponent(category)}`;
+  if (score) url += `&score_range=${encodeURIComponent(score)}`;
   
   try {
-    while (true) {
-      let url = `/vocab/api/words?offset=${batchOffset}&length=100`;
-      if (star) url += `&star=${star}`;
-      if (category) url += `&category=${encodeURIComponent(category)}`;
-      if (score) url += `&score_range=${encodeURIComponent(score)}`;
-      
-      const res = await fetch(url);
-      const data = await res.json();
-      
-      if (data.error) { console.error(data.error); break; }
-      
-      batch = batch.concat(data.words);
-      totalWords = data.total;
-      
-      // If we got less than 100 and no more pages, stop
-      if (data.words.length < 100 || batchOffset + 100 >= data.total) break;
-      batchOffset += 100;
-    }
+    const res = await fetch(url);
+    const data = await res.json();
+    
+    if (data.error) { console.error(data.error); loading = false; return; }
+    
+    words = shuffle(data.words);
+    totalWords = data.total;
   } catch(e) {
     console.error('Load error:', e);
   }
   
-  // Shuffle
-  words = shuffle(batch);
   filtered = words;
-  loading = false;
-  
   document.getElementById('loadingState').style.display = 'none';
+  
   
   if (filtered.length === 0) {
     document.getElementById('emptyState').style.display = 'block';

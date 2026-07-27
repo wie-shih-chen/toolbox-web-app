@@ -94,7 +94,6 @@
 {% endblock %}
 
 {% block content %}
-{% include 'shop/_nav.html' %}
 <div class="spelling-container">
   <div class="spelling-header">
     <a href="{{ url_for('vocab.index') }}">← 返回學習中心</a>
@@ -165,20 +164,14 @@ let currentWord = '';
 async function loadWords() {
   const star = document.getElementById('filterStar').value;
   const category = document.getElementById('filterCategory').value;
+  let url = `/vocab/api/words?offset=0&length=100`;
+  if (star) url += `&star=${star}`;
+  if (category) url += `&category=${encodeURIComponent(category)}`;
   let allWords = [];
-  let batchOffset = 0;
   try {
-    while (true) {
-      let url = `/vocab/api/words?offset=${batchOffset}&length=100`;
-      if (star) url += `&star=${star}`;
-      if (category) url += `&category=${encodeURIComponent(category)}`;
-      const res = await fetch(url);
-      const data = await res.json();
-      if (!data.words || data.error) break;
-      allWords = allWords.concat(data.words);
-      if (data.words.length < 100 || batchOffset + 100 >= data.total) break;
-      batchOffset += 100;
-    }
+    const res = await fetch(url);
+    const data = await res.json();
+    if (!data.error) allWords = data.words;
   } catch(e) { console.error(e); }
   words = shuffle(allWords);
   shuffled = words;
