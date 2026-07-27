@@ -205,7 +205,11 @@ def api_words():
     if score_f:
         filtered = [w for w in filtered if score_f in w['score_range']]
     if search_q:
-        filtered = [w for w in filtered if search_q in w['word'].lower() or search_q in w.get('definition', '').lower()]
+        # 單字優先以字首 (startswith) 搜尋，中文解釋則包含 (in) 即可
+        filtered = [
+            w for w in filtered 
+            if w['word'].lower().startswith(search_q) or search_q in w.get('definition', '').lower()
+        ]
     
     total = len(filtered)
     page  = filtered[offset:offset + length]
