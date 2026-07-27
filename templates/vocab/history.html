@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+{% block title %}歷史學習紀錄{% endblock %}
+{% block content %}
+<div class="container" style="max-width: 800px; padding-bottom: 4rem;">
+  <div style="margin-bottom: 1.5rem; display: flex; align-items: center; gap: 1rem;">
+    <a href="{{ url_for('vocab.index') }}" class="btn-secondary" style="padding: 0.5rem 1rem; border-radius: 8px; text-decoration: none; color: inherit; background: var(--surface); border: 1px solid var(--border);">
+      <i class="fas fa-arrow-left"></i> 返回
+    </a>
+    <h2 style="margin: 0;">📅 歷史學習紀錄</h2>
+  </div>
+
+  {% if not history_data %}
+  <div class="card" style="padding: 2rem; text-align: center; background: var(--surface); border-radius: 12px; border: 1px solid var(--border); color: var(--text-muted);">
+    您還沒有任何學習紀錄喔！趕快開始背單字吧！
+  </div>
+  {% else %}
+  <div class="history-list" style="display: flex; flex-direction: column; gap: 1rem;">
+    {% for date_str, data in history_data.items() %}
+    <details class="history-day-card" style="background: var(--surface); border-radius: 12px; border: 1px solid var(--border); overflow: hidden;">
+      <summary style="padding: 1rem 1.5rem; cursor: pointer; font-weight: 600; display: flex; justify-content: space-between; align-items: center; background: rgba(0,0,0,0.02);">
+        <div style="display: flex; gap: 1rem; align-items: center;">
+          <span style="font-size: 1.1rem;">{{ date_str }}</span>
+          <span style="font-size: 0.9rem; font-weight: normal; color: var(--text-muted);">複習了 {{ data.words|length }} 個單字</span>
+        </div>
+        <div style="display: flex; gap: 1rem; font-size: 0.9rem; font-weight: normal;">
+          <span style="color: var(--success);"><i class="fas fa-check-circle"></i> {{ data.correct }}</span>
+          <span style="color: var(--danger);"><i class="fas fa-times-circle"></i> {{ data.incorrect }}</span>
+        </div>
+      </summary>
+      
+      <div style="padding: 1rem 1.5rem; border-top: 1px solid var(--border); background: var(--bg);">
+        <table style="width: 100%; border-collapse: collapse; font-size: 0.95rem;">
+          <thead>
+            <tr style="text-align: left; border-bottom: 2px solid var(--border); color: var(--text-muted);">
+              <th style="padding: 0.5rem;">單字</th>
+              <th style="padding: 0.5rem; text-align: center;">答對次數</th>
+              <th style="padding: 0.5rem; text-align: center;">答錯次數</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for word, counts in data.words.items() %}
+            <tr style="border-bottom: 1px solid var(--border);">
+              <td style="padding: 0.8rem 0.5rem; font-weight: 500;">{{ word }}</td>
+              <td style="padding: 0.8rem 0.5rem; text-align: center; color: var(--success);">{{ counts.correct }}</td>
+              <td style="padding: 0.8rem 0.5rem; text-align: center; color: var(--danger);">{{ counts.incorrect }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+        
+        <div style="margin-top: 1rem; text-align: right;">
+          <a href="{{ url_for('vocab.quiz') }}?review_date={{ date_str }}" class="btn-primary" style="padding: 0.5rem 1rem; border-radius: 8px; text-decoration: none; display: inline-block; font-size: 0.9rem;"><i class="fas fa-play"></i> 重新測驗此天單字</a>
+        </div>
+      </div>
+    </details>
+    {% endfor %}
+  </div>
+  {% endif %}
+</div>
+
+<style>
+  details > summary {
+    list-style: none;
+  }
+  details > summary::-webkit-details-marker {
+    display: none;
+  }
+  details[open] summary {
+    border-bottom: 1px solid var(--border);
+  }
+</style>
+{% endblock %}

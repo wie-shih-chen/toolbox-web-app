@@ -135,6 +135,9 @@ class UserSettings(db.Model):
     period_notify_period = db.Column(db.Boolean, default=True)      # 🩸 月經前通知
     period_notify_ovulation = db.Column(db.Boolean, default=False)  # 🥚 排卵期前通知
 
+    # Vocab Settings
+    vocab_daily_goal = db.Column(db.Integer, default=20)
+
 class PeriodRecord(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
@@ -403,3 +406,13 @@ class VocabProgress(db.Model):
     def accuracy(self):
         total = self.correct + self.incorrect
         return round(self.correct / total * 100) if total > 0 else None
+
+
+class VocabHistoryLog(db.Model):
+    """記錄每次單字學習的詳細歷史（按次/天）"""
+    __tablename__ = 'vocab_history_log'
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    word = db.Column(db.String(100), nullable=False)
+    result = db.Column(db.String(20), nullable=False)   # 'correct' or 'incorrect'
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)

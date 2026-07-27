@@ -4,9 +4,9 @@ TOEIC 背單字模組 — 從本地 JSON 檔案讀取（離線模式，不依賴
 """
 import json
 import os
-from flask import Blueprint, render_template, request, jsonify, current_app
+from flask import Blueprint, render_template, request, jsonify, current_app, redirect, url_for, flash
 from flask_login import login_required, current_user
-from models import db, VocabProgress
+from models import db, VocabProgress, UserSettings, VocabHistoryLog
 from datetime import datetime
 
 vocab_bp = Blueprint('vocab', __name__, template_folder='../templates')
@@ -62,7 +62,9 @@ def index():
     
     total_answers = correct_sum + incorrect_sum
     overall_accuracy = round(correct_sum / total_answers * 100) if total_answers > 0 else 0
-    daily_goal = 20
+    
+    settings = UserSettings.query.filter_by(user_id=current_user.id).first()
+    daily_goal = settings.vocab_daily_goal if settings else 20
     
     try:
         all_words = _load_vocab()
@@ -107,6 +109,51 @@ def spelling():
     return render_template('vocab/spelling.html')
 
 
+@vocab_bp.route('/settings', methods=['GET', 'POST'])
+@login_required
+def settings():
+    settings_obj = UserSettings.query.filter_by(user_id=current_user.id).first()
+    if not settings_obj:
+        settings_obj = UserSettings(user_id=current_user.id)
+        db.session.add(settings_obj)
+        db.session.commit()
+        
+    if request.method == 'POST':
+        goal = request.form.get('vocab_daily_goal', type=int)
+        if goal and goal > 0:
+            settings_obj.vocab_daily_goal = goal
+            db.session.commit()
+            flash('設定已儲存', 'success')
+        else:
+            flash('無效的目標數字', 'error')
+        return redirect(url_for('vocab.settings'))
+        
+    return render_template('vocab/settings.html', settings=settings_obj)
+
+
+@vocab_bp.route('/history')
+@login_required
+def history():
+    # 找出使用者所有的歷史紀錄，並依日期分組
+    logs = VocabHistoryLog.query.filter_by(user_id=current_user.id).order_by(VocabHistoryLog.created_at.desc()).all()
+    
+    history_data = {}
+    for log in logs:
+        # local time representation via UTC
+        date_str = log.created_at.strftime('%Y-%m-%d')
+        if date_str not in history_data:
+            history_data[date_str] = {'correct': 0, 'incorrect': 0, 'words': {}}
+            
+        history_data[date_str][log.result] += 1
+        
+        # Keep track of words studied this day
+        if log.word not in history_data[date_str]['words']:
+            history_data[date_str]['words'][log.word] = {'correct': 0, 'incorrect': 0}
+        history_data[date_str]['words'][log.word][log.result] += 1
+        
+    return render_template('vocab/history.html', history_data=history_data)
+
+
 # ─── API 路由 ────────────────────────────────────────────────────
 @vocab_bp.route('/api/words')
 @login_required
@@ -121,12 +168,20 @@ def api_words():
     cat_f    = request.args.get('category', '').strip()
     score_f  = request.args.get('score_range', '').strip()
     
+    review_date = request.args.get('review_date', '').strip()
+    
     try:
         all_words = _load_vocab()
     except Exception as e:
         return jsonify({'error': str(e)}), 500
     
-    # 過濾
+    # 歷史複習過濾
+    if review_date:
+        logs = VocabHistoryLog.query.filter_by(user_id=current_user.id).all()
+        reviewed_words = {log.word for log in logs if log.created_at.strftime('%Y-%m-%d') == review_date}
+        all_words = [w for w in all_words if w['word'] in reviewed_words]
+    
+    # 常規過濾
     filtered = all_words
     if star_f:
         filtered = [w for w in filtered if w['star'] == star_f]
@@ -186,6 +241,11 @@ def update_progress():
     else:
         record.incorrect += 1
     record.last_reviewed = datetime.utcnow()
+    
+    # 新增歷史紀錄
+    history_log = VocabHistoryLog(user_id=current_user.id, word=word, result=result)
+    db.session.add(history_log)
+    
     db.session.commit()
     
     return jsonify({'ok': True, 'correct': record.correct, 'incorrect': record.incorrect})
@@ -205,9 +265,12 @@ def api_stats():
     incorrect_sum = db.session.query(db.func.sum(VocabProgress.incorrect)).filter_by(user_id=current_user.id).scalar() or 0
     total_answers = correct_sum + incorrect_sum
     
+    settings = UserSettings.query.filter_by(user_id=current_user.id).first()
+    daily_goal = settings.vocab_daily_goal if settings else 20
+    
     return jsonify({
         'today_reviewed': today_reviewed,
-        'daily_goal': 20,
+        'daily_goal': daily_goal,
         'total_seen': VocabProgress.query.filter_by(user_id=current_user.id).count(),
         'overall_accuracy': round(correct_sum / total_answers * 100) if total_answers > 0 else 0,
     })

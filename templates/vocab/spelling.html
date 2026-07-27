@@ -175,6 +175,7 @@
       <option value="780-900">780-900</option>
       <option value="900+">900+</option>
     </select>
+    <input type="date" id="filterReviewDate" onchange="applyFilters()" style="padding: 0.5rem; border: 1px solid var(--border); border-radius: 8px; background: var(--surface); color: var(--text);">
   </div>
 
   <div class="loading-overlay" id="loadingState"><div class="spinner"></div><div>載入單字中…</div></div>
@@ -225,10 +226,12 @@ async function loadWords() {
   const star = document.getElementById('filterStar').value;
   const category = document.getElementById('filterCategory').value;
   const score = document.getElementById('filterScore').value;
+  const reviewDate = document.getElementById('filterReviewDate') ? document.getElementById('filterReviewDate').value : '';
   let url = `/vocab/api/words?offset=0&length=100`;
   if (star) url += `&star=${star}`;
   if (category) url += `&category=${encodeURIComponent(category)}`;
   if (score) url += `&score_range=${encodeURIComponent(score)}`;
+  if (reviewDate) url += `&review_date=${encodeURIComponent(reviewDate)}`;
   let allWords = [];
   try {
     const res = await fetch(url);

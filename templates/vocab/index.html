@@ -136,6 +136,10 @@
       今日目標：已複習 <strong>{{ stats.today_reviewed }}</strong> / {{ stats.daily_goal }} 個
       {% if stats.daily_progress_pct >= 100 %}🎉 今日目標達成！{% endif %}
     </div>
+    <div style="margin-top: 1rem; display: flex; gap: 0.5rem; justify-content: center;">
+      <a href="{{ url_for('vocab.history') }}" class="btn-secondary" style="font-size: 0.9rem; padding: 0.4rem 1rem;"><i class="fas fa-history"></i> 歷史紀錄</a>
+      <a href="{{ url_for('vocab.settings') }}" class="btn-secondary" style="font-size: 0.9rem; padding: 0.4rem 1rem;"><i class="fas fa-cog"></i> 目標設定</a>
+    </div>
   </div>
 
   <!-- 統計 -->
