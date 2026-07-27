@@ -181,7 +181,11 @@
       <option value="780-900">780-900</option>
       <option value="900+">900+</option>
     </select>
-    <input type="date" id="filterReviewDate" onchange="applyFilters()" style="padding: 0.5rem; border: 1px solid var(--border); border-radius: 8px; background: var(--surface); color: var(--text);">
+    <input type="hidden" id="filterReviewDate">
+    <div id="reviewDateBadge" style="display: none; padding: 0.5rem 1rem; background: rgba(78, 205, 196, 0.15); color: var(--accent-color, #4ecdc4); border-radius: 20px; font-weight: 600; font-size: 0.9rem; align-items: center; gap: 0.5rem; border: 1px solid rgba(78, 205, 196, 0.3);">
+      📅 限定複習: <span id="reviewDateText"></span> 
+      <a href="?" title="取消特定日期過濾" style="color: var(--danger-color, #ff6b6b); text-decoration: none; margin-left: 0.8rem; font-weight: bold; background: rgba(255,107,107,0.15); width: 24px; height: 24px; display: inline-flex; align-items: center; justify-content: center; border-radius: 50%; transition: transform 0.2s;">✕</a>
+    </div>
   </div>
 
   <div class="loading-overlay" id="loadingState">
@@ -357,8 +361,15 @@ function restart() {
 }
 
 const _urlParams = new URLSearchParams(window.location.search);
-if (_urlParams.has('review_date') && document.getElementById('filterReviewDate')) {
-  document.getElementById('filterReviewDate').value = _urlParams.get('review_date');
+if (_urlParams.has('review_date')) {
+  if (document.getElementById('filterReviewDate')) {
+    document.getElementById('filterReviewDate').value = _urlParams.get('review_date');
+  }
+  const badge = document.getElementById('reviewDateBadge');
+  if (badge) {
+    badge.style.display = 'flex';
+    document.getElementById('reviewDateText').textContent = _urlParams.get('review_date');
+  }
 }
 loadWords();
 </script>
