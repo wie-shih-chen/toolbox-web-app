@@ -153,6 +153,20 @@ def history():
         
     return render_template('vocab/history.html', history_data=history_data)
 
+@vocab_bp.route('/api/reset_progress', methods=['POST'])
+@login_required
+def reset_progress():
+    """
+    刪除該使用者的所有背單字進度與歷史紀錄
+    """
+    try:
+        VocabProgress.query.filter_by(user_id=current_user.id).delete()
+        VocabHistoryLog.query.filter_by(user_id=current_user.id).delete()
+        db.session.commit()
+        return jsonify({'success': True})
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'error': str(e)}), 500
 
 # ─── API 路由 ────────────────────────────────────────────────────
 @vocab_bp.route('/api/words')
