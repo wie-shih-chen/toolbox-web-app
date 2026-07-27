@@ -5,56 +5,69 @@
 <style>
   .vocab-hero {
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    border-radius: 20px;
-    padding: 2rem;
+    border-radius: 24px;
+    padding: 2.5rem 2rem;
     color: white;
     margin-bottom: 2rem;
+    box-shadow: 0 10px 30px rgba(118, 75, 162, 0.2);
+    text-align: center;
   }
-  .vocab-hero h1 { font-size: 2rem; font-weight: 700; margin: 0 0 0.5rem; }
-  .vocab-hero p { opacity: 0.85; margin: 0; font-size: 1.05rem; }
+  .vocab-hero h1 { font-size: 2.2rem; font-weight: 800; margin: 0 0 0.8rem; letter-spacing: -0.5px; }
+  .vocab-hero p { opacity: 0.9; margin: 0; font-size: 1.1rem; }
   .daily-goal-bar {
     background: rgba(255,255,255,0.2);
     border-radius: 100px;
-    height: 12px;
-    margin: 1rem 0 0.4rem;
+    height: 14px;
+    margin: 1.5rem auto 0.6rem;
     overflow: hidden;
+    max-width: 400px;
+    backdrop-filter: blur(5px);
   }
   .daily-goal-fill {
     height: 100%;
-    background: white;
+    background: #fff;
     border-radius: 100px;
-    transition: width 0.8s ease;
+    transition: width 1s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 0 10px rgba(255,255,255,0.5);
   }
-  .goal-text { font-size: 0.85rem; opacity: 0.9; }
+  .goal-text { font-size: 0.9rem; opacity: 0.95; font-weight: 500; }
 
   .stats-grid {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
-    gap: 1rem;
-    margin-bottom: 2rem;
+    gap: 1.2rem;
+    margin-bottom: 2.5rem;
   }
   .stat-card {
     background: var(--card-bg, #fff);
-    border-radius: 16px;
-    padding: 1.2rem;
+    border-radius: 20px;
+    padding: 1.5rem 1rem;
     text-align: center;
-    box-shadow: 0 2px 12px rgba(0,0,0,0.06);
-    border: 1px solid rgba(0,0,0,0.06);
+    box-shadow: 0 8px 24px rgba(0,0,0,0.04);
+    border: 1px solid rgba(0,0,0,0.04);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+  }
+  .stat-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 32px rgba(0,0,0,0.08);
   }
   .stat-card .num {
-    font-size: 2rem;
-    font-weight: 700;
+    font-size: 2.2rem;
+    font-weight: 800;
     background: linear-gradient(135deg, #667eea, #764ba2);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
+    line-height: 1.2;
   }
-  .stat-card .label { font-size: 0.78rem; color: var(--text-muted, #888); margin-top: 0.2rem; }
+  .stat-card .label { font-size: 0.85rem; color: var(--text-muted, #888); font-weight: 600; margin-top: 0.4rem; text-transform: uppercase; letter-spacing: 0.5px; }
+
+  .section-title { font-size: 1.3rem; font-weight: 700; margin-bottom: 1.2rem; color: var(--text-color, #333); }
 
   .mode-grid {
     display: grid;
     grid-template-columns: repeat(2, 1fr);
-    gap: 1rem;
+    gap: 1.2rem;
     margin-bottom: 2rem;
   }
   .mode-card {
@@ -62,31 +75,50 @@
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: 0.6rem;
-    padding: 1.8rem 1rem;
-    border-radius: 18px;
+    gap: 0.8rem;
+    padding: 2rem 1.5rem;
+    border-radius: 24px;
     text-decoration: none;
-    font-weight: 600;
-    font-size: 1.05rem;
-    transition: transform 0.2s, box-shadow 0.2s;
+    font-weight: 700;
+    font-size: 1.2rem;
+    transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
     color: white;
     position: relative;
     overflow: hidden;
   }
-  .mode-card:hover { transform: translateY(-4px); box-shadow: 0 12px 32px rgba(0,0,0,0.18); color: white; }
-  .mode-card .mode-icon { font-size: 2.5rem; }
-  .mode-card .mode-desc { font-size: 0.78rem; font-weight: 400; opacity: 0.85; }
+  .mode-card::before {
+    content: ''; position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+    background: linear-gradient(180deg, rgba(255,255,255,0.2) 0%, rgba(255,255,255,0) 100%);
+    opacity: 0; transition: opacity 0.3s;
+  }
+  .mode-card:hover { transform: translateY(-6px); box-shadow: 0 16px 40px rgba(0,0,0,0.2); color: white; }
+  .mode-card:hover::before { opacity: 1; }
+  .mode-card .mode-icon { font-size: 3rem; margin-bottom: 0.2rem; filter: drop-shadow(0 4px 8px rgba(0,0,0,0.2)); }
+  .mode-card .mode-desc { font-size: 0.85rem; font-weight: 500; opacity: 0.9; text-align: center; line-height: 1.4; }
+  
   .mode-card.flashcard { background: linear-gradient(135deg, #f093fb, #f5576c); }
   .mode-card.quiz      { background: linear-gradient(135deg, #4facfe, #00f2fe); }
   .mode-card.spelling  { background: linear-gradient(135deg, #43e97b, #38f9d7); }
   .mode-card.browse    { background: linear-gradient(135deg, #fa709a, #fee140); }
-  .mode-card.full-width { grid-column: 1 / -1; }
 
-  @media (max-width: 600px) {
-    .stats-grid { grid-template-columns: repeat(3, 1fr); gap: 0.6rem; }
-    .mode-grid { grid-template-columns: 1fr; }
-    .stat-card .num { font-size: 1.4rem; }
+  @media (max-width: 768px) {
+    .vocab-hero { padding: 2rem 1.5rem; border-radius: 20px; }
+    .vocab-hero h1 { font-size: 1.8rem; }
+    .stats-grid { gap: 0.8rem; }
+    .stat-card { padding: 1.2rem 0.8rem; border-radius: 16px; }
+    .stat-card .num { font-size: 1.8rem; }
+    .stat-card .label { font-size: 0.75rem; }
+    .mode-card { padding: 1.5rem 1rem; border-radius: 20px; }
+    .mode-card .mode-icon { font-size: 2.5rem; }
   }
+
+  @media (max-width: 480px) {
+    .stats-grid { grid-template-columns: 1fr; gap: 0.8rem; }
+    .stat-card { display: flex; align-items: center; justify-content: space-between; padding: 1.2rem 1.5rem; text-align: left; }
+    .stat-card .label { margin-top: 0; margin-right: 1rem; }
+    .mode-grid { grid-template-columns: 1fr; }
+  }
+</style>
 </style>
 {% endblock %}
 
@@ -123,7 +155,7 @@
   </div>
 
   <!-- 學習模式 -->
-  <h2 style="font-size: 1.1rem; font-weight: 600; margin-bottom: 1rem;">選擇學習模式</h2>
+  <h2 class="section-title">選擇學習模式</h2>
   <div class="mode-grid">
     <a href="{{ url_for('vocab.flashcard') }}" class="mode-card flashcard">
       <div class="mode-icon">🃏</div>
