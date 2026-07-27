@@ -247,6 +247,86 @@ def export_products():
     )
 
 
+@admin_bp.route('/products/import', methods=['POST'])
+@login_required
+@admin_required
+def import_products_zip():
+    """匯入商品 ZIP 檔"""
+    if 'zip_file' not in request.files:
+        flash('沒有選擇檔案', 'danger')
+        return redirect(url_for('admin.dashboard'))
+    
+    file = request.files['zip_file']
+    if file.filename == '' or not file.filename.endswith('.zip'):
+        flash('請選擇有效的 ZIP 檔案', 'danger')
+        return redirect(url_for('admin.dashboard'))
+    
+    try:
+        with zipfile.ZipFile(file, 'r') as zf:
+            if 'products.json' not in zf.namelist():
+                flash('ZIP 檔案內找不到 products.json', 'danger')
+                return redirect(url_for('admin.dashboard'))
+            
+            json_data = zf.read('products.json')
+            data = json.loads(json_data)
+            products = data.get('products', [])
+            
+            imported_count = 0
+            skipped_count = 0
+            
+            upload_dir = current_app.config['UPLOAD_FOLDER']
+            os.makedirs(upload_dir, exist_ok=True)
+            
+            for p_data in products:
+                # 檢查是否已存在相同 code
+                existing = Product.query.filter_by(code=p_data['code']).first()
+                if existing:
+                    skipped_count += 1
+                    continue
+                
+                # 建立新商品
+                new_product = Product(
+                    code=p_data['code'],
+                    name=p_data.get('name', ''),
+                    price=p_data.get('price'),
+                    sizes=p_data.get('sizes', []),
+                    colors=p_data.get('colors', []),
+                    description=p_data.get('description', ''),
+                    status='published'
+                )
+                db.session.add(new_product)
+                db.session.flush() # 取得 ID
+                
+                # 處理圖片
+                images = p_data.get('images', [])
+                for idx, img_filename in enumerate(images):
+                    zip_img_path = f"images/{img_filename}"
+                    if zip_img_path in zf.namelist():
+                        img_data = zf.read(zip_img_path)
+                        save_path = os.path.join(upload_dir, img_filename)
+                        with open(save_path, 'wb') as f:
+                            f.write(img_data)
+                        
+                        pi = ProductImage(
+                            product_id=new_product.id,
+                            filename=img_filename,
+                            is_primary=(idx == 0)
+                        )
+                        db.session.add(pi)
+                        
+                imported_count += 1
+                
+            db.session.commit()
+            flash(f'成功匯入 {imported_count} 件商品，略過 {skipped_count} 件已存在的商品。', 'success')
+            
+    except Exception as e:
+        db.session.rollback()
+        flash(f'匯入失敗：{str(e)}', 'danger')
+        
+    return redirect(url_for('admin.dashboard'))
+
+
+
 # ─── 訂單管理（含統計） ──────────────────────────────────────
 @admin_bp.route('/orders')
 @login_required

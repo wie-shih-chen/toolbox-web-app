@@ -7,6 +7,10 @@
     📦 商品管理
     <div style="margin-left:auto;display:flex;gap:0.5rem">
       <a class="btn btn-primary btn-sm" href="{{ url_for('admin.export_products') }}">📦 匯出商品 (ZIP)</a>
+      <button class="btn btn-primary btn-sm" onclick="document.getElementById('importZipInput').click()">📥 匯入商品 (ZIP)</button>
+      <form id="importZipForm" method="POST" action="{{ url_for('admin.import_products_zip') }}" enctype="multipart/form-data" style="display:none;">
+        <input type="file" id="importZipInput" name="zip_file" accept=".zip" onchange="document.getElementById('importZipForm').submit()">
+      </form>
       <a class="btn btn-secondary btn-sm" href="{{ url_for('admin.orders') }}">📋 訂單 & 統計</a>
       <a class="btn btn-secondary btn-sm" href="{{ url_for('admin.export_orders') }}">⬇️ 訂單 CSV</a>
       <a class="btn btn-secondary btn-sm" href="{{ url_for('admin.users') }}">👤 使用者</a>
