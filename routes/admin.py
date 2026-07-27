@@ -268,7 +268,7 @@ def import_products_zip():
                 flash('ZIP 檔案內找不到 products.json', 'danger')
                 return redirect(url_for('admin.dashboard'))
             
-            json_data = zf.read('products.json')
+            json_data = zf.read('products.json').decode('utf-8-sig')
             data = json.loads(json_data)
             products = data.get('products', [])
             
