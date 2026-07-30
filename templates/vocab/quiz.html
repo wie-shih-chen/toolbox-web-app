@@ -256,6 +256,9 @@ async function loadWords() {
           const badge = document.getElementById('reviewDateBadge');
           if (badge) { badge.style.display = 'flex'; document.getElementById('reviewDateText').textContent = `編號 ${cStart} ~ ${cEnd}`; }
         }
+        
+        // Ignore words that don't have complete data (word and definition)
+        allWords = allWords.filter(w => w.word && w.word.trim() !== '' && w.definition && w.definition.trim() !== '');
       }
     } catch (e) { console.error('Error loading custom words:', e); }
   } else {

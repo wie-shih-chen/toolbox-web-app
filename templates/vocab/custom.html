@@ -758,9 +758,11 @@ function startCustomQuiz(type) {
   const mode = document.querySelector('input[name="quizMode"]:checked').value;
   let url = type === 'quiz' ? '/vocab/quiz?source=custom' : '/vocab/spelling?source=custom';
   
+  let selectedWords = [];
   if (mode === 'date') {
     const date = document.getElementById('quizDateSelect').value;
     url += `&date=${encodeURIComponent(date)}`;
+    selectedWords = allWords.filter(w => (w.created_at || '以前加入的單字') === date);
   } else {
     const start = parseInt(document.getElementById('quizStartIdx').value) || 1;
     const end = parseInt(document.getElementById('quizEndIdx').value) || allWords.length;
@@ -769,6 +771,17 @@ function startCustomQuiz(type) {
       return;
     }
     url += `&start=${start}&end=${end}`;
+    selectedWords = allWords.slice(start - 1, end);
+  }
+  
+  // Check for incomplete words
+  const validWords = selectedWords.filter(w => w.word && w.word.trim() !== '' && w.definition && w.definition.trim() !== '');
+  if (validWords.length === 0) {
+    alert('此範圍內沒有包含完整資料的單字（需填寫單字及中文意思），無法開始測驗！');
+    return;
+  }
+  if (validWords.length < selectedWords.length) {
+    alert(`範圍內有 ${selectedWords.length - validWords.length} 個單字缺乏完整資料（單字或中文意思），將在測驗中被自動忽略。`);
   }
   
   if (dirty) {
