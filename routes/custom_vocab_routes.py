@@ -23,10 +23,12 @@ CUSTOM_VOCAB_DIR = None   # 延遲初始化，在 request context 內使用 curr
 
 EXPECTED_COLUMNS = {
     'word':        ['word', 'english', 'english_word', '單字', '英文'],
-    'definition':  ['definition', 'chinese', 'chinese_definition', 'meaning', '中文', '意思', '定義'],
+    'definition':  ['definition', 'chinese', 'chinese_definition', 'meaning', '中文', '意思', '定義', '中文意思', '中文翻譯'],
     'pos':         ['pos', 'parts_of_speech', 'part_of_speech', '詞性'],
     'example_en':  ['example_en', 'example_english', 'english_example', '英文例句'],
     'example_zh':  ['example_zh', 'example_chinese', 'chinese_example', '中文例句'],
+    'preposition': ['介係詞', 'preposition', 'prep'],
+    'exam_tip':    ['出題重點', 'exam_tip', 'tip', 'notes', '備註'],
 }
 
 
@@ -65,7 +67,13 @@ def _normalize_col(col_name: str, mapping: dict) -> str | None:
 
 
 def _parse_excel_bytes(file_bytes: bytes) -> list[dict]:
-    """解析 Excel bytes，回傳 word 物件列表"""
+    """解析 Excel bytes，回傳 word 物件列表
+    
+    支援兩種格式：
+    1. 標準格式：標題列含 Word, Definition, POS, Example_EN, Example_ZH
+    2. 使用者自訂格式（vocabulary.xlsx 格式）：
+       A=單字, B=詞性, C=中文意思（無標題）, D=介係詞, E=出題重點
+    """
     wb = openpyxl.load_workbook(io.BytesIO(file_bytes), read_only=True, data_only=True)
     ws = wb.active
 
@@ -77,9 +85,32 @@ def _parse_excel_bytes(file_bytes: bytes) -> list[dict]:
     raw_headers = [str(h).strip() if h else '' for h in rows[0]]
     col_map = {}   # {system_key: col_index}
     for i, h in enumerate(raw_headers):
+        if not h:
+            continue
         key = _normalize_col(h, EXPECTED_COLUMNS)
         if key:
             col_map[key] = i
+
+    # ─── 位置式回退（適用於使用者的 vocabulary.xlsx 格式）─────────────
+    # 判斷依據：標題列第 0 欄是「單字」（已對應到 word），
+    # 但第 2 欄標題是空的（None），需依位置推斷它是「中文意思」
+    if 'word' in col_map and 'definition' not in col_map:
+        # 嘗試找第一個非空、非 word、非 pos 的欄位 → 視為 definition
+        used_cols = set(col_map.values())
+        for i, h in enumerate(raw_headers):
+            if i not in used_cols and i != col_map.get('word') and i != col_map.get('pos'):
+                # 檢查第一筆資料該欄是否有值且看起來像中文
+                sample = rows[1][i] if len(rows) > 1 else None
+                if sample and any('\u4e00' <= c <= '\u9fff' for c in str(sample)):
+                    col_map['definition'] = i
+                    break
+
+    # 抓「出題重點」欄（用來當作 exam_tip，合併進 examples）
+    for i, h in enumerate(raw_headers):
+        if h and _normalize_col(h, {'exam_tip': ['出題重點', 'exam_tip', 'tip', 'notes', '備註']}):
+            col_map['exam_tip'] = i
+        if h and _normalize_col(h, {'preposition': ['介係詞', 'preposition', 'prep']}):
+            col_map['preposition'] = i
 
     words = []
     for row in rows[1:]:
@@ -89,7 +120,7 @@ def _parse_excel_bytes(file_bytes: bytes) -> list[dict]:
 
         def _get(key):
             idx = col_map.get(key)
-            if idx is None:
+            if idx is None or idx >= len(row):
                 return ''
             val = row[idx]
             return str(val).strip() if val else ''
@@ -97,15 +128,25 @@ def _parse_excel_bytes(file_bytes: bytes) -> list[dict]:
         pos_raw = _get('pos')
         pos_list = [p.strip() for p in pos_raw.replace('/', ',').split(',') if p.strip()] if pos_raw else []
 
+        # 組合 definition：中文意思 + 介係詞補充
+        definition = _get('definition')
+        prep = _get('preposition')
+        if prep and prep.lower() != 'none':
+            definition = f"{definition}（{prep}）".strip('（）').replace('（）', '') if not definition else f"{definition}（{prep}）"
+
+        # 把「出題重點」存進 examples（當作英文例句提示）
         examples = []
         en = _get('example_en')
         zh = _get('example_zh')
+        exam_tip = _get('exam_tip')
         if en or zh:
             examples.append({'english': en, 'chinese': zh})
+        elif exam_tip and exam_tip.lower() != 'none':
+            examples.append({'english': exam_tip, 'chinese': ''})
 
         words.append({
             'word':             word_val,
-            'definition':       _get('definition'),
+            'definition':       definition,
             'parts_of_speech':  pos_list,
             'examples':         examples,
         })
