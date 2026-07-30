@@ -215,21 +215,27 @@
       justify-content: center;
     }
   }
-  .word-modal-overlay {
-    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-    background: rgba(0,0,0,0.6); z-index: 2000;
+  .center-modal-overlay {
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.65); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
+    z-index: 2000;
+    display: flex; align-items: center; justify-content: center;
     opacity: 0; pointer-events: none; transition: opacity 0.3s;
-    display: flex; flex-direction: column; justify-content: flex-end;
+    padding: 1rem;
   }
-  .word-modal-overlay.open { opacity: 1; pointer-events: all; }
-  .word-modal {
-    background: var(--card-bg, #2d2d2d);
-    border-top-left-radius: 24px; border-top-right-radius: 24px;
-    padding: 1.5rem; max-height: 80vh; overflow-y: auto;
-    transform: translateY(100%); transition: transform 0.3s;
+  .center-modal-overlay.open { opacity: 1; pointer-events: all; }
+  .center-modal {
+    width: 100%; max-width: 450px;
+    background: linear-gradient(160deg, #1a1a2e 0%, #16213e 100%);
+    border-radius: 24px;
+    padding: 2rem 1.5rem;
+    transform: scale(0.95); opacity: 0;
+    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    border: 1px solid rgba(255,255,255,0.1);
     position: relative;
+    box-shadow: 0 20px 50px rgba(0,0,0,0.5);
   }
-  .word-modal-overlay.open .word-modal { transform: translateY(0); }
+  .center-modal-overlay.open .center-modal { transform: scale(1); opacity: 1; }
   .modal-close {
     position: absolute; top: 15px; right: 15px;
     background: rgba(255,255,255,0.1); border: none; border-radius: 50%;
@@ -317,8 +323,8 @@
 </div>
 
 <!-- 歷史紀錄測驗設定彈窗 -->
-<div class="word-modal-overlay" id="historyQuizModal" onclick="closeHistoryQuizModal(event)">
-  <div class="word-modal" style="padding: 2rem; border-top-left-radius: 24px; border-top-right-radius: 24px;">
+<div class="center-modal-overlay" id="historyQuizModal" onclick="closeHistoryQuizModal(event)">
+  <div class="center-modal">
     <div class="modal-close" onclick="closeHistoryQuizModal()" style="top: 15px; right: 15px;">&#10005;</div>
     <h2 style="color: #4ecdc4; margin-bottom: 1.5rem; text-align: center; font-size: 1.4rem;">🎯 選擇測驗方式</h2>
     <p id="historyQuizDateText" style="text-align: center; color: rgba(255,255,255,0.7); margin-bottom: 2rem;"></p>
