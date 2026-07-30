@@ -649,12 +649,11 @@
     <h2 style="color: #4ecdc4; margin-bottom: 1.5rem; text-align: center; font-size: 1.4rem;">🎯 自訂測驗設定</h2>
     
     <div class="segment-control">
-      <label class="segment-label">
-        <input type="radio" name="quizMode" value="date" checked onchange="toggleQuizMode()"> 依日期測驗
-      </label>
-      <label class="segment-label">
-        <input type="radio" name="quizMode" value="range" onchange="toggleQuizMode()"> 依編號區間
-      </label>
+      <input type="radio" name="quizMode" id="quizModeDate" value="date" checked onchange="toggleQuizMode()">
+      <label class="segment-label" for="quizModeDate">依日期測驗</label>
+      
+      <input type="radio" name="quizMode" id="quizModeRange" value="range" onchange="toggleQuizMode()">
+      <label class="segment-label" for="quizModeRange">依編號區間</label>
     </div>
 
     <!-- 依日期設定 -->
