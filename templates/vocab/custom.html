@@ -1181,16 +1181,26 @@ async function batchLookup() {
 function updateBadgesInDOM() {
   const trs = document.querySelectorAll('.vocab-table tbody tr:not(.add-row)');
   trs.forEach((tr, i) => {
-    const w = displayWords[i];
+    // skip .date-divider-row which are not mapped to displayWords by 1-to-1 index
+    if (tr.classList.contains('date-divider-row')) return;
+    
+    // find actual real index of word from tr dataset
+    const realIdx = parseInt(tr.dataset.realIdx);
+    if (isNaN(realIdx) || realIdx < 0 || realIdx >= allWords.length) return;
+    
+    const w = allWords[realIdx];
     if (!w || !w.word) return;
     const wKey = w.word.toLowerCase();
     const hasMatch = officialMatchMap[wKey] === true;
     const tdWord = tr.querySelector('.td-word');
     if (!tdWord) return;
     
-    const badge = tdWord.querySelector('.official-badge');
+    const wordContentContainer = tdWord.querySelector('.word-cell-content');
+    if (!wordContentContainer) return;
+    
+    const badge = wordContentContainer.querySelector('.official-badge');
     if (hasMatch && !badge) {
-      tdWord.insertAdjacentHTML('beforeend', `<button class="official-badge" onclick="openWordModal('${escHtml(w.word)}')" title="在官方 TOEIC 字庫中有此字！點擊查看詳情">i</button>`);
+      wordContentContainer.insertAdjacentHTML('beforeend', `<button class="official-badge" onclick="openWordModal('${escHtml(w.word)}')" title="在官方 TOEIC 字庫中有此字！點擊查看詳情">i</button>`);
     } else if (!hasMatch && badge) {
       badge.remove();
     }
