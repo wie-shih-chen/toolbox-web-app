@@ -274,6 +274,48 @@ def update_progress():
     return jsonify({'ok': True, 'correct': record.correct, 'incorrect': record.incorrect})
 
 
+@vocab_bp.route('/api/lookup')
+@login_required
+def api_lookup():
+    """
+    GET /vocab/api/lookup?word=resume
+    從官方字庫精確比對單一單字，回傳完整資料
+    """
+    word = request.args.get('word', '').strip().lower()
+    if not word:
+        return jsonify({'found': False}), 400
+    try:
+        all_words = _load_vocab()
+    except Exception as e:
+        return jsonify({'found': False, 'error': str(e)}), 500
+
+    for w in all_words:
+        if w['word'].lower() == word:
+            return jsonify({'found': True, 'word': w})
+    return jsonify({'found': False})
+
+
+@vocab_bp.route('/api/batch_lookup', methods=['POST'])
+@login_required
+def api_batch_lookup():
+    """
+    POST /vocab/api/batch_lookup  body: {"words": ["resume","opening",...]}
+    批量比對多個單字是否在官方字庫中，回傳 {word: bool} 的對應表
+    """
+    body = request.get_json()
+    query_words = [w.strip().lower() for w in (body.get('words') or []) if w]
+    if not query_words:
+        return jsonify({})
+    try:
+        all_words = _load_vocab()
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+    official_set = {w['word'].lower() for w in all_words}
+    result = {qw: (qw in official_set) for qw in query_words}
+    return jsonify(result)
+
+
 @vocab_bp.route('/api/stats')
 @login_required
 def api_stats():

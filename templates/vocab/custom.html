@@ -425,6 +425,88 @@
     .btn-action { font-size: 0.78rem; padding: 0.4rem 0.7rem; }
     .floating-save { left: 16px; right: 16px; width: auto; justify-content: center; border-radius: 20px; }
   }
+
+  /* ─── 官方比對徽章 & 彈窗 ────────────── */
+  .official-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #4ecdc4, #2980b9);
+    color: white;
+    font-size: 0.65rem;
+    font-weight: 800;
+    cursor: pointer;
+    margin-left: 6px;
+    vertical-align: middle;
+    flex-shrink: 0;
+    transition: transform 0.2s, box-shadow 0.2s;
+    box-shadow: 0 2px 6px rgba(78,205,196,0.4);
+    line-height: 1;
+    border: none;
+    outline: none;
+    position: relative;
+    top: -1px;
+  }
+  .official-badge:hover { transform: scale(1.25); box-shadow: 0 4px 12px rgba(78,205,196,0.6); }
+
+  /* 彈窗遮罩 */
+  .word-modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.65);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+    z-index: 2000;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s;
+  }
+  .word-modal-overlay.open { opacity: 1; pointer-events: all; }
+  .word-modal {
+    width: 100%;
+    max-width: 600px;
+    background: linear-gradient(160deg, #1a1a2e 0%, #16213e 100%);
+    border-radius: 28px 28px 0 0;
+    padding: 1.2rem 1.8rem 3rem;
+    transform: translateY(100%);
+    transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-bottom: none;
+    position: relative;
+    max-height: 85vh;
+    overflow-y: auto;
+  }
+  .word-modal-overlay.open .word-modal { transform: translateY(0); }
+  .modal-drag-bar { width: 40px; height: 4px; background: rgba(255,255,255,0.15); border-radius: 100px; margin: 0 auto 1.5rem; }
+  .modal-close {
+    position: absolute; top: 1.2rem; right: 1.2rem;
+    width: 32px; height: 32px; border-radius: 50%;
+    border: none; background: rgba(255,255,255,0.08);
+    color: #aaa; font-size: 1rem; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: background 0.2s;
+  }
+  .modal-close:hover { background: rgba(255,107,107,0.25); color: #ff6b6b; }
+  .modal-word { font-size: 2rem; font-weight: 800; color: #a5b4fc; margin-bottom: 0.3rem; }
+  .modal-star { font-size: 0.9rem; margin-bottom: 0.6rem; opacity: 0.8; }
+  .modal-pos-row { display: flex; gap: 0.4rem; flex-wrap: wrap; margin-bottom: 1rem; }
+  .modal-pos-tag { background: rgba(102,126,234,0.2); color: #818cf8; border-radius: 100px; padding: 0.2rem 0.8rem; font-size: 0.78rem; font-weight: 700; }
+  .modal-def { font-size: 1.1rem; font-weight: 600; color: #e0e0e0; margin-bottom: 1.2rem; line-height: 1.5; }
+  .modal-section-title { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 1px; color: #888; font-weight: 700; margin-bottom: 0.6rem; }
+  .modal-example {
+    background: rgba(255,255,255,0.04); border-left: 3px solid rgba(78,205,196,0.5);
+    border-radius: 0 12px 12px 0; padding: 0.8rem 1rem; margin-bottom: 0.6rem;
+    font-size: 0.9rem; line-height: 1.6;
+  }
+  .modal-example em { font-style: normal; font-weight: 600; color: #ddd; display: block; margin-bottom: 0.2rem; }
+  .modal-example span { color: #999; font-size: 0.85rem; }
+  .modal-tip { background: rgba(254,215,170,0.08); border: 1px solid rgba(254,215,170,0.2); border-radius: 12px; padding: 0.7rem 1rem; font-size: 0.85rem; color: #fde68a; margin-top: 0.5rem; line-height: 1.5; }
 </style>
 
 {% endblock %}
@@ -501,6 +583,20 @@
 <!-- Toast 提示 -->
 <div class="toast" id="toastMsg"></div>
 
+<!-- 官方字庫詳情彈窗 (bottom sheet) -->
+<div class="word-modal-overlay" id="wordModalOverlay" onclick="closeWordModal(event)">
+  <div class="word-modal" id="wordModal">
+    <div class="modal-drag-bar"></div>
+    <button class="modal-close" onclick="closeWordModal()">&#10005;</button>
+    <div class="modal-word" id="modalWord"></div>
+    <div class="modal-star" id="modalStar"></div>
+    <div class="modal-pos-row" id="modalPos"></div>
+    <div class="modal-def" id="modalDef"></div>
+    <div id="modalExamples"></div>
+    <div id="modalTip"></div>
+  </div>
+</div>
+
 {% endblock %}
 
 {% block extra_js %}
@@ -508,6 +604,7 @@
 // ─── 狀態 ──────────────────────────────────────────────────────────
 let allWords = [];          // 原始完整資料
 let displayWords = [];      // 目前顯示的（搜尋後）
+let officialMatchMap = {};  // {word.toLowerCase(): true/false} 官方字庫比對結果
 let dirty = false;          // 是否有未儲存的變更
 let bookmarkIdx = null;     // 書籤 index
 let sortKey = 'index';
@@ -526,6 +623,8 @@ async function init() {
     if (allWords.length === 0) {
       document.getElementById('uploadZone').style.display = 'block';
     }
+    // 載完之後再批量比對官方字庫
+    batchLookup();
   } catch (e) {
     showToast('載入失敗，請重新整理', 'error');
   }
@@ -559,11 +658,17 @@ function renderTable() {
 
     const exEn = (w.examples && w.examples[0]) ? (w.examples[0].english || '') : '';
     const pos   = (w.parts_of_speech || []).join(', ');
+    const wKey  = (w.word || '').toLowerCase();
+    const inOfficial = officialMatchMap[wKey] !== undefined;  // 已比對完成
+    const hasMatch   = officialMatchMap[wKey] === true;        // 在官方字庫中
 
     tr.innerHTML = `
       <td class="td-check"><input type="checkbox" class="row-check" onchange="onCheckChange()"></td>
       <td class="td-num">${i + 1}${isBookmark ? `<span class="bookmark-label">🔖 書籤</span>` : ''}</td>
-      <td class="td-word"><span class="editable-cell" contenteditable="true" data-placeholder="單字…" onblur="onCellEdit(${realIdx},'word',this)" onkeydown="handleCellKey(event,${realIdx},'word',this)">${escHtml(w.word || '')}</span></td>
+      <td class="td-word">
+        <span class="editable-cell" contenteditable="true" data-placeholder="單字…" onblur="onCellEdit(${realIdx},'word',this)" onkeydown="handleCellKey(event,${realIdx},'word',this)">${escHtml(w.word || '')}</span>
+        ${hasMatch ? `<button class="official-badge" onclick="openWordModal('${escHtml(w.word)}')" title="在官方 TOEIC 字庫中有此字！點擊查看詳情">i</button>` : ''}
+      </td>
       <td class="td-def"><span class="editable-cell" contenteditable="true" data-placeholder="中文意思…" onblur="onCellEdit(${realIdx},'definition',this)" onkeydown="handleCellKey(event,${realIdx},'definition',this)">${escHtml(w.definition || '')}</span></td>
       <td class="td-pos"><span class="editable-cell" contenteditable="true" data-placeholder="v., n.…" onblur="onCellEdit(${realIdx},'pos',this)" onkeydown="handleCellKey(event,${realIdx},'pos',this)">${escHtml(pos)}</span></td>
       <td class="td-ex"><span class="editable-cell" contenteditable="true" data-placeholder="英文例句…" onblur="onCellEdit(${realIdx},'example_en',this)" onkeydown="handleCellKey(event,${realIdx},'example_en',this)">${escHtml(exEn)}</span></td>
@@ -664,6 +769,8 @@ function addNewRow() {
   ['newWord','newDef','newPos'].forEach(id => document.getElementById(id).value = '');
   markDirty();
   renderTable();
+  // 比對新單字是否在官方字庫
+  batchLookup();
   document.getElementById('newWord').focus();
   showToast('已新增', 'success');
 }
@@ -752,6 +859,7 @@ async function handleFileUpload(input) {
       bookmarkIdx = null;
       markDirty();
       renderTable();
+      batchLookup();  // 新上傳後重新比對
       showToast(`✅ 成功匯入 ${d.count} 個單字`, 'success');
     } else {
       showToast(`❌ ${d.msg}`, 'error');
@@ -820,6 +928,71 @@ document.addEventListener('paste', e => {
   markDirty();
   renderTable();
   showToast(`✅ 貼入 ${lines.length} 個單字`, 'success');
+});
+
+// ─── 官方字庫比對 ──────────────────────────────────────────────────
+async function batchLookup() {
+  if (!allWords.length) return;
+  const wordList = allWords.map(w => w.word).filter(Boolean);
+  try {
+    const res = await fetch('/vocab/api/batch_lookup', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ words: wordList })
+    });
+    const map = await res.json();  // { "resume": true, "xyz123": false, ... }
+    // 將後端回傳的結果（key 為小寫）存入 officialMatchMap
+    Object.entries(map).forEach(([k, v]) => { officialMatchMap[k.toLowerCase()] = v; });
+    renderTable();  // 重新渲染，讓徽章出現
+  } catch (e) { console.warn('batch_lookup failed', e); }
+}
+
+// ─── 官方單字詳情彈窗 ──────────────────────────────────────────────
+async function openWordModal(word) {
+  try {
+    const res = await fetch(`/vocab/api/lookup?word=${encodeURIComponent(word)}`);
+    const d = await res.json();
+    if (!d.found) { showToast('找不到官方資料', 'error'); return; }
+    const w = d.word;
+
+    document.getElementById('modalWord').textContent = w.word || '';
+    document.getElementById('modalStar').textContent = w.star ? '⭐'.repeat(w.star) : '';
+    
+    const posEl = document.getElementById('modalPos');
+    posEl.innerHTML = (w.parts_of_speech || []).map(p => `<span class="modal-pos-tag">${escHtml(p)}</span>`).join('');
+
+    document.getElementById('modalDef').textContent = w.definition || '';
+
+    const exEl = document.getElementById('modalExamples');
+    if (w.examples && w.examples.length) {
+      exEl.innerHTML = `<div class="modal-section-title">例句</div>` +
+        w.examples.slice(0, 3).map(e => `
+          <div class="modal-example">
+            <em>${escHtml(e.english || '')}</em>
+            <span>${escHtml(e.chinese || '')}</span>
+          </div>`).join('');
+    } else { exEl.innerHTML = ''; }
+
+    const tipEl = document.getElementById('modalTip');
+    if (w.exam_tips && w.exam_tips.length) {
+      tipEl.innerHTML = `<div class="modal-section-title" style="margin-top:1rem;">考試提示</div>` +
+        `<div class="modal-tip">${escHtml(w.exam_tips.join(' · '))}</div>`;
+    } else { tipEl.innerHTML = ''; }
+
+    document.getElementById('wordModalOverlay').classList.add('open');
+    document.body.style.overflow = 'hidden';
+  } catch (e) { showToast('載入失敗', 'error'); }
+}
+
+function closeWordModal(e) {
+  if (e && e.target !== document.getElementById('wordModalOverlay')) return;
+  document.getElementById('wordModalOverlay').classList.remove('open');
+  document.body.style.overflow = '';
+}
+
+// 按 ESC 關閉彈窗
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') closeWordModal();
 });
 
 // ─── dirty 狀態 ────────────────────────────────────────────────────
