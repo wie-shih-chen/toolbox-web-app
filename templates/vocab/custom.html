@@ -862,7 +862,7 @@ async function checkSync() {
       
       renderTable();
       batchLookup();
-      showToast('🔄 已同步最新單字本', 'success');
+      // 同步完成後不再跳出通知，以達到無縫更新
     }
   } catch (e) {
     // 忽略背景同步錯誤
