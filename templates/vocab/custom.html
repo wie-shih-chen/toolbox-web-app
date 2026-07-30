@@ -190,7 +190,7 @@
   td.td-check input[type="checkbox"] { width: 15px; height: 15px; cursor: pointer; accent-color: #4ecdc4; }
   td.td-word { font-weight: 700; font-size: 1rem; color: #a5b4fc; min-width: 140px; padding-right: 8px; vertical-align: middle; }
   .word-cell-content { display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 6px; width: 100%; }
-  td.td-word .editable-cell { width: 100% !important; min-width: 40px; display: block; word-break: break-word; }
+  td.td-word .editable-cell { width: 100% !important; min-width: 40px; display: block; word-break: keep-all; overflow-wrap: normal; }
   .bookmark-label-wrap { display: block; margin-top: 6px; padding-left: 4px; }
 
   td.td-def  { color: var(--text-primary, #e0e0e0); min-width: 150px; }
@@ -209,7 +209,8 @@
     display: inline-block;
     width: 100%;
     box-sizing: border-box;
-    word-break: break-word;
+    word-break: normal;
+    overflow-wrap: break-word;
   }
   .editable-cell:focus {
     background: rgba(78,205,196,0.08);
