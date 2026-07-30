@@ -205,14 +205,6 @@
   <!-- 學習模式 -->
   <h2 class="section-title">選擇學習模式</h2>
 
-  <!-- 字庫來源切換 -->
-  <div class="source-switch" id="sourceSwitch">
-    <button class="source-btn active" onclick="setSource('official', this)" id="srcOfficial">📚 今日官方字庫</button>
-    <button class="source-btn" onclick="setSource('custom', this)"   id="srcCustom">📝 我的字庫</button>
-    <button class="source-btn" onclick="setSource('mixed', this)"   id="srcMixed">🎲 混合測驗</button>
-  </div>
-  <div class="source-desc" id="sourceDesc">從 11,000+ 個官方 TOEIC 單字中隨機出題</div>
-
   <div class="mode-grid">
     <a id="linkFlashcard" href="{{ url_for('vocab.flashcard') }}" class="mode-card flashcard">
       <div class="mode-icon">🃏</div>
@@ -246,54 +238,6 @@
 
 {% block extra_js %}
 <script>
-const SOURCE_DESCS = {
-  official: '從 11,000+ 個官方 TOEIC 單字中隨機出題',
-  custom:   '僅從您的「自訂單字本」中出題',
-  mixed:    '官方字庫 + 自訂字庫混合隨機出題',
-};
-
-const MODE_LINKS = {
-  official: {
-    flashcard: '{{ url_for("vocab.flashcard") }}',
-    quiz:      '{{ url_for("vocab.quiz") }}',
-    spelling:  '{{ url_for("vocab.spelling") }}',
-    browse:    '{{ url_for("vocab.browse") }}',
-  },
-  custom: {
-    flashcard: '{{ url_for("vocab.flashcard") }}?source=custom',
-    quiz:      '{{ url_for("vocab.quiz") }}?source=custom',
-    spelling:  '{{ url_for("vocab.spelling") }}?source=custom',
-    browse:    '{{ url_for("vocab.browse") }}?source=custom',
-  },
-  mixed: {
-    flashcard: '{{ url_for("vocab.flashcard") }}?source=mixed',
-    quiz:      '{{ url_for("vocab.quiz") }}?source=mixed',
-    spelling:  '{{ url_for("vocab.spelling") }}?source=mixed',
-    browse:    '{{ url_for("vocab.browse") }}?source=mixed',
-  },
-};
-
-function setSource(src, btn) {
-  document.querySelectorAll('.source-btn').forEach(b => b.classList.remove('active'));
-  btn.classList.add('active');
-  document.getElementById('sourceDesc').textContent = SOURCE_DESCS[src] || '';
-  const links = MODE_LINKS[src];
-  if (links) {
-    document.getElementById('linkFlashcard').href = links.flashcard;
-    document.getElementById('linkQuiz').href      = links.quiz;
-    document.getElementById('linkSpelling').href  = links.spelling;
-    document.getElementById('linkBrowse').href    = links.browse;
-  }
-  localStorage.setItem('vocab_source', src);
-}
-
-// 頁面載入時自動復從上次的選擇
-(function() {
-  const saved = localStorage.getItem('vocab_source') || 'official';
-  const btn = document.getElementById(
-    saved === 'custom' ? 'srcCustom' : saved === 'mixed' ? 'srcMixed' : 'srcOfficial'
-  );
-  if (btn) setSource(saved, btn);
-})();
+// Dashboard specific interactions can go here
 </script>
 {% endblock %}
