@@ -527,9 +527,8 @@
     <a href="{{ url_for('vocab.index') }}" class="back-btn">← 返回</a>
     <input class="list-name-input" id="listNameInput" value="我的單字本" placeholder="單字本名稱…" title="點擊重新命名">
     <div class="top-actions">
-      <button class="btn-action btn-template" onclick="downloadTemplate()" title="下載空白 Excel 範本">📋 下載範本</button>
-      <label class="btn-action btn-upload" title="上傳 Excel 檔案" style="cursor:pointer;">
-        📤 上傳 Excel
+      <label class="btn-action btn-upload" title="上傳 Excel (支援欄位自動對齊)">
+        📥 上傳 Excel
         <input type="file" id="fileInput" accept=".xlsx" style="display:none" onchange="handleFileUpload(this)">
       </label>
       <button class="btn-action btn-export" onclick="exportExcel()" title="將目前單字本匯出為 Excel">📥 匯出</button>
@@ -900,9 +899,8 @@ function handleDrop(e) {
   handleFileUpload(fakeInput);
 }
 
-// ─── 匯出 / 範本 ────────────────────────────────────────────────────
+// ─── 匯出 ─────────────────────────────────────────────────────────
 function exportExcel() { window.location.href = '/vocab/api/custom/export'; }
-function downloadTemplate() { window.location.href = '/vocab/api/custom/template'; }
 
 // ─── 復原 ──────────────────────────────────────────────────────────
 function pushUndo() {

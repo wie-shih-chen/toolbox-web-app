@@ -265,30 +265,3 @@ def api_custom_export():
                      mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
 
 
-@custom_vocab_bp.route('/api/custom/template', methods=['GET'])
-@login_required
-def api_custom_template():
-    """GET 下載空白範本 Excel"""
-    if not HAS_OPENPYXL:
-        return jsonify({'ok': False, 'msg': 'openpyxl 未安裝'}), 500
-
-    wb = openpyxl.Workbook()
-    ws = wb.active
-    ws.title = 'Vocabulary'
-
-    headers = ['Word', 'Definition', 'POS', 'Example_EN', 'Example_ZH']
-    ws.append(headers)
-
-    # 範例一列
-    ws.append(['implement', '實作、執行', 'v.', 'We will implement the new feature.', '我們將實作新功能。'])
-
-    # 設定欄寬
-    for col, width in zip(['A', 'B', 'C', 'D', 'E'], [20, 30, 10, 45, 45]):
-        ws.column_dimensions[col].width = width
-
-    buf = io.BytesIO()
-    wb.save(buf)
-    buf.seek(0)
-
-    return send_file(buf, as_attachment=True, download_name='vocab_template.xlsx',
-                     mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
