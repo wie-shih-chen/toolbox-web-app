@@ -188,9 +188,9 @@
   td.td-num { width: 44px; text-align: center; color: var(--text-secondary, #888); font-size: 0.8rem; font-weight: 600; }
   td.td-check { width: 36px; text-align: center; }
   td.td-check input[type="checkbox"] { width: 15px; height: 15px; cursor: pointer; accent-color: #4ecdc4; }
-  td.td-word { font-weight: 700; font-size: 1rem; color: #a5b4fc; min-width: 120px; padding-right: 8px; vertical-align: middle; }
-  .word-cell-content { display: inline-flex; align-items: center; gap: 6px; width: 100%; flex-wrap: nowrap; }
-  td.td-word .editable-cell { width: auto; flex: 0 1 auto; min-width: 40px; display: inline-block; white-space: normal; }
+  td.td-word { font-weight: 700; font-size: 1rem; color: #a5b4fc; min-width: 140px; padding-right: 8px; vertical-align: middle; }
+  .word-cell-content { display: flex; align-items: flex-start; justify-content: space-between; width: 100%; gap: 6px; }
+  td.td-word .editable-cell { flex: 1; min-width: 40px; display: block; word-break: break-word; }
   .bookmark-label-wrap { display: block; margin-top: 6px; }
 
   td.td-def  { color: var(--text-primary, #e0e0e0); min-width: 150px; }
