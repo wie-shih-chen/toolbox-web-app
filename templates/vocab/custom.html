@@ -747,6 +747,10 @@ function onCellEdit(realIdx, field, el) {
     allWords[realIdx][field] = val;
   }
   markDirty();
+  
+  if (field === 'word') {
+    batchLookup();
+  }
 }
 
 function handleCellKey(e, realIdx, field, el) {
@@ -961,11 +965,39 @@ async function batchLookup() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ words: wordList })
     });
-    const map = await res.json();  // { "resume": true, "xyz123": false, ... }
-    // 將後端回傳的結果（key 為小寫）存入 officialMatchMap
-    Object.entries(map).forEach(([k, v]) => { officialMatchMap[k.toLowerCase()] = v; });
-    renderTable();  // 重新渲染，讓徽章出現
+    const map = await res.json();
+    
+    let changed = false;
+    Object.entries(map).forEach(([k, v]) => { 
+      if (officialMatchMap[k.toLowerCase()] !== v) {
+        officialMatchMap[k.toLowerCase()] = v; 
+        changed = true;
+      }
+    });
+    
+    if (changed) {
+      updateBadgesInDOM();
+    }
   } catch (e) { console.warn('batch_lookup failed', e); }
+}
+
+function updateBadgesInDOM() {
+  const trs = document.querySelectorAll('.vocab-table tbody tr:not(.add-row)');
+  trs.forEach((tr, i) => {
+    const w = displayWords[i];
+    if (!w || !w.word) return;
+    const wKey = w.word.toLowerCase();
+    const hasMatch = officialMatchMap[wKey] === true;
+    const tdWord = tr.querySelector('.td-word');
+    if (!tdWord) return;
+    
+    const badge = tdWord.querySelector('.official-badge');
+    if (hasMatch && !badge) {
+      tdWord.insertAdjacentHTML('beforeend', `<button class="official-badge" onclick="openWordModal('${escHtml(w.word)}')" title="在官方 TOEIC 字庫中有此字！點擊查看詳情">i</button>`);
+    } else if (!hasMatch && badge) {
+      badge.remove();
+    }
+  });
 }
 
 // ─── 官方單字詳情彈窗 ──────────────────────────────────────────────
