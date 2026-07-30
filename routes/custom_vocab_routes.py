@@ -167,10 +167,17 @@ def custom_editor():
 # ─── API ──────────────────────────────────────────────────────────
 @custom_vocab_bp.route('/api/custom/words', methods=['GET'])
 @login_required
-def api_custom_get():
-    """GET 取得自訂單字本"""
+def api_custom_words():
+    """GET 取得當前使用者的自訂單字本"""
     data = _load_custom_vocab()
     return jsonify(data)
+
+@custom_vocab_bp.route('/api/custom/timestamp', methods=['GET'])
+@login_required
+def api_custom_timestamp():
+    """GET 取得當前使用者的自訂單字本最後更新時間"""
+    data = _load_custom_vocab()
+    return jsonify({'updated_at': data.get('updated_at')})
 
 
 @custom_vocab_bp.route('/api/custom/words', methods=['POST'])
@@ -185,7 +192,7 @@ def api_custom_save():
     data['list_name'] = body.get('list_name', data.get('list_name', '我的單字本'))
     data['words'] = body.get('words', [])
     _save_custom_vocab(data)
-    return jsonify({'ok': True, 'count': len(data['words'])})
+    return jsonify({'ok': True, 'count': len(data['words']), 'updated_at': data.get('updated_at')})
 
 
 @custom_vocab_bp.route('/api/custom/bookmark', methods=['POST'])
@@ -204,7 +211,7 @@ def api_custom_bookmark():
     else:
         data['bookmark'] = None
     _save_custom_vocab(data)
-    return jsonify({'ok': True, 'bookmark': data.get('bookmark')})
+    return jsonify({'ok': True, 'bookmark': data.get('bookmark'), 'updated_at': data.get('updated_at')})
 
 
 @custom_vocab_bp.route('/api/custom/upload', methods=['POST'])

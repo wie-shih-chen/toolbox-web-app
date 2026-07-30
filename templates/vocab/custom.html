@@ -813,6 +813,8 @@ let sortKey = 'index';
 let sortAsc = true;
 let undoStack = [];         // 復原堆疊（最多 30 步）
 let autoSaveTimer = null;   // 自動儲存計時器
+let lastUpdatedAt = null;   // 本地端最後更新時間
+let syncInterval = null;    // 同步輪詢計時器
 
 // ─── 初始化 ────────────────────────────────────────────────────────
 async function init() {
@@ -822,14 +824,47 @@ async function init() {
     document.getElementById('listNameInput').value = data.list_name || '我的單字本';
     allWords = data.words || [];
     bookmarkIdx = data.bookmark ? data.bookmark.index : null;
+    lastUpdatedAt = data.updated_at || null;
     renderTable();
     if (allWords.length === 0) {
       document.getElementById('uploadZone').style.display = 'block';
     }
-    // 載完之後再批量比對官方字庫
     batchLookup();
+    
+    // 啟動背景同步輪詢
+    if (!syncInterval) {
+      syncInterval = setInterval(checkSync, 5000);
+    }
   } catch (e) {
     showToast('載入失敗，請重新整理', 'error');
+  }
+}
+
+// ─── 背景同步檢查 ──────────────────────────────────────────────────
+async function checkSync() {
+  // 若當前有未儲存的變更（正在打字或剛打完字），則暫停同步，以免覆蓋本地變更
+  if (dirty) return;
+  
+  try {
+    const res = await fetch('/vocab/api/custom/timestamp');
+    const data = await res.json();
+    
+    if (data.updated_at && data.updated_at !== lastUpdatedAt) {
+      // 伺服器有較新的資料，執行無縫更新
+      const wordsRes = await fetch('/vocab/api/custom/words');
+      const wordsData = await wordsRes.json();
+      
+      document.getElementById('listNameInput').value = wordsData.list_name || '我的單字本';
+      allWords = wordsData.words || [];
+      bookmarkIdx = wordsData.bookmark ? wordsData.bookmark.index : null;
+      lastUpdatedAt = wordsData.updated_at || null;
+      
+      renderTable();
+      batchLookup();
+      showToast('🔄 已同步最新單字本', 'success');
+    }
+  } catch (e) {
+    // 忽略背景同步錯誤
   }
 }
 
@@ -950,11 +985,13 @@ async function setBookmark(realIdx) {
   renderTable();
   markDirty();
   try {
-    await fetch('/vocab/api/custom/bookmark', {
+    const res = await fetch('/vocab/api/custom/bookmark', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ index: newIdx })
     });
+    const d = await res.json();
+    if (d.updated_at) lastUpdatedAt = d.updated_at;
     showToast(newIdx !== null ? '🔖 書籤已設定！' : '書籤已清除', 'success');
   } catch {}
 }
@@ -1083,6 +1120,7 @@ async function saveWords(silent = false) {
     });
     const d = await res.json();
     if (d.ok) {
+      if (d.updated_at) lastUpdatedAt = d.updated_at;
       if (!silent) showToast(`✅ 已儲存 ${d.count} 個單字`, 'success');
       markClean();
     } else {
