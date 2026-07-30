@@ -350,15 +350,83 @@
   .toast.show    { opacity: 1; transform: translateY(0); }
 
   /* ─── RWD ───────────────────────────────── */
+
+  /* 768px: 隱藏詞性、例句欄，讓版面能在平板上正常顯示 */
   @media (max-width: 768px) {
-    td.td-pos, td.td-ex, thead th:nth-child(4), thead th:nth-child(5) { display: none; }
-    .top-actions { width: 100%; }
+    /* 隱藏次要欄位 */
+    td.td-pos, thead th:nth-child(5) { display: none; }
+
+    /* 頂欄：按鈕換行到第二行 */
+    .top-bar { flex-direction: column; align-items: flex-start; gap: 0.7rem; }
+    .list-name-input { font-size: 1.25rem; width: 100%; }
+    .top-actions { width: 100%; justify-content: flex-start; }
+
+    /* 工具列滿版 */
+    .toolbar-search { max-width: 100%; }
+
+    /* 浮動按鈕往上移，避免被底部導覽列擋到 */
+    .floating-save { bottom: 80px; right: 16px; font-size: 0.88rem; padding: 0.65rem 1.2rem; }
+    .toast { right: 16px; bottom: 150px; }
   }
+
+  /* 600px: 切換成單欄卡片式呈現，告別表格佈局 */
+  @media (max-width: 600px) {
+    /* 隱藏所有表格欄標題，改用資料標籤呈現 */
+    .vocab-table thead { display: none; }
+
+    /* 每一行獨立成卡片 */
+    .vocab-table tbody tr:not(.add-row) {
+      display: block;
+      padding: 0.8rem 1rem;
+      border-bottom: 1px solid rgba(255,255,255,0.06) !important;
+      border-top: none !important;
+      position: relative;
+    }
+    .vocab-table tbody tr.bookmarked {
+      border-top: 2px solid #4ecdc4 !important;
+    }
+
+    /* 隱藏 checkbox、編號欄，改由 row-actions 提供操作 */
+    td.td-check, td.td-num { display: none; }
+
+    /* 所有 td 變成 block，只顯示需要的欄位 */
+    .vocab-table td {
+      display: block;
+      padding: 0.2rem 0;
+      border: none;
+    }
+    td.td-ex { display: none; } /* 例句欄在手機太佔空間，隱藏 */
+    td.td-pos { display: none; }
+
+    /* 單字欄加大 */
+    td.td-word { font-size: 1.1rem; margin-bottom: 0.2rem; }
+    td.td-def { font-size: 0.88rem; color: rgba(255,255,255,0.7); margin-bottom: 0.4rem; }
+
+    /* 操作按鈕固定在卡片右上角 */
+    td.td-actions {
+      position: absolute;
+      top: 0.8rem;
+      right: 0.6rem;
+      width: auto;
+    }
+    .row-actions { opacity: 1 !important; } /* 手機上永遠顯示 */
+
+    /* 新增列欄位垂直堆疊 */
+    .add-row-inner { flex-direction: column; align-items: stretch; gap: 0.4rem; }
+    .add-row input { width: 100% !important; box-sizing: border-box; }
+
+    /* 表格容器允許溢出捲動（備用） */
+    .table-wrap { border-radius: 14px; }
+  }
+
+  /* 480px: 極小手機 */
   @media (max-width: 480px) {
-    .vocab-table { font-size: 0.82rem; }
-    td.td-word { min-width: 80px; }
+    .custom-wrap { padding: 1rem 0.6rem 6rem; }
+    .btn-action { font-size: 0.78rem; padding: 0.4rem 0.7rem; }
+    .floating-save { left: 16px; right: 16px; width: auto; justify-content: center; border-radius: 20px; }
   }
 </style>
+
 {% endblock %}
 
 {% block content %}
