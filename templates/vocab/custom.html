@@ -157,7 +157,7 @@
   
   /* 書籤行 */
   .vocab-table tbody tr.bookmarked {
-    border-top: 2px solid #4ecdc4 !important;
+    border-bottom: 2px solid #4ecdc4 !important;
     position: relative;
   }
   .bookmark-label {
@@ -188,7 +188,7 @@
   td.td-num { width: 44px; text-align: center; color: var(--text-secondary, #888); font-size: 0.8rem; font-weight: 600; }
   td.td-check { width: 36px; text-align: center; }
   td.td-check input[type="checkbox"] { width: 15px; height: 15px; cursor: pointer; accent-color: #4ecdc4; }
-  td.td-word { font-weight: 700; font-size: 1rem; color: #a5b4fc; min-width: 120px; display: flex; align-items: center; justify-content: space-between; flex-wrap: nowrap; gap: 4px; padding-right: 8px; }
+  td.td-word { font-weight: 700; font-size: 1rem; color: #a5b4fc; min-width: 120px; padding-right: 8px; vertical-align: middle; }
   td.td-word .editable-cell { width: auto; flex: 0 1 auto; min-width: 60px; }
 
   td.td-def  { color: var(--text-primary, #e0e0e0); min-width: 150px; }
@@ -456,7 +456,6 @@
     border: none;
     outline: none;
     position: relative;
-    top: -1px;
   }
   .official-badge:hover { transform: scale(1.25); box-shadow: 0 4px 12px rgba(78,205,196,0.6); }
 
