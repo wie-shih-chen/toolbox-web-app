@@ -864,10 +864,13 @@ function renderTable() {
 
     tr.innerHTML = `
       <td class="td-check"><input type="checkbox" class="row-check" onchange="onCheckChange()"></td>
-      <td class="td-num">${i + 1}${isBookmark ? `<span class="bookmark-label">🔖 書籤</span>` : ''}</td>
+      <td class="td-num">${i + 1}</td>
       <td class="td-word">
-        <span class="editable-cell" contenteditable="true" data-placeholder="單字…" onblur="onCellEdit(${realIdx},'word',this)" onkeydown="handleCellKey(event,${realIdx},'word',this)">${escHtml(w.word || '')}</span>
-        ${hasMatch ? `<button class="official-badge" onclick="openWordModal('${escHtml(w.word)}')" title="在官方 TOEIC 字庫中有此字！點擊查看詳情">i</button>` : ''}
+        <div style="display: flex; align-items: center;">
+          <span class="editable-cell" contenteditable="true" data-placeholder="單字…" onblur="onCellEdit(${realIdx},'word',this)" onkeydown="handleCellKey(event,${realIdx},'word',this)">${escHtml(w.word || '')}</span>
+          ${hasMatch ? `<button class="official-badge" onclick="openWordModal('${escHtml(w.word)}')" title="在官方 TOEIC 字庫中有此字！點擊查看詳情">i</button>` : ''}
+        </div>
+        ${isBookmark ? `<div style="margin-top: 6px;"><span class="bookmark-label" style="margin-left: 0;">🔖 書籤進度</span></div>` : ''}
       </td>
       <td class="td-def"><span class="editable-cell" contenteditable="true" data-placeholder="中文意思…" onblur="onCellEdit(${realIdx},'definition',this)" onkeydown="handleCellKey(event,${realIdx},'definition',this)">${escHtml(w.definition || '')}</span></td>
       <td class="td-pos"><span class="editable-cell" contenteditable="true" data-placeholder="v., n.…" onblur="onCellEdit(${realIdx},'pos',this)" onkeydown="handleCellKey(event,${realIdx},'pos',this)">${escHtml(pos)}</span></td>
