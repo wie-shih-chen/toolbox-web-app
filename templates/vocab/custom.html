@@ -355,6 +355,8 @@
 
   /* 768px: 隱藏詞性、例句欄，讓版面能在平板上正常顯示 */
   @media (max-width: 768px) {
+    .custom-wrap { padding-top: 4.5rem; } /* 避免被固定導覽列遮擋 */
+    
     /* 隱藏次要欄位 */
     td.td-pos, thead th:nth-child(5) { display: none; }
 
@@ -388,21 +390,24 @@
       border-top: 2px solid #4ecdc4 !important;
     }
 
-    /* 隱藏 checkbox、編號欄，改由 row-actions 提供操作 */
-    td.td-check, td.td-num { display: none; }
-
-    /* 所有 td 變成 block，只顯示需要的欄位 */
+    /* 所有 td 變成 block，預設換行 */
     .vocab-table td {
       display: block;
       padding: 0.2rem 0;
       border: none;
     }
-    td.td-ex { display: none; } /* 例句欄在手機太佔空間，隱藏 */
-    td.td-pos { display: none; }
 
-    /* 單字欄加大 */
-    td.td-word { font-size: 1.1rem; margin-bottom: 0.2rem; }
-    td.td-def { font-size: 0.88rem; color: rgba(255,255,255,0.7); margin-bottom: 0.4rem; }
+    /* 隱藏 checkbox、編號欄、例句、詞性 */
+    td.td-check, td.td-num, td.td-ex, td.td-pos { display: none !important; }
+
+    /* 單字欄維持 flex 排列讓徽章對齊，並加大字體 */
+    td.td-word { 
+      display: flex !important; 
+      font-size: 1.25rem; 
+      margin-bottom: 0.3rem; 
+    }
+    
+    td.td-def { font-size: 0.95rem; color: rgba(255,255,255,0.75); margin-bottom: 0.4rem; }
 
     /* 操作按鈕固定在卡片右上角 */
     td.td-actions {
@@ -423,8 +428,9 @@
 
   /* 480px: 極小手機 */
   @media (max-width: 480px) {
-    .custom-wrap { padding: 1rem 0.6rem 6rem; }
-    .btn-action { font-size: 0.78rem; padding: 0.4rem 0.7rem; }
+    /* 增加頂部 padding 避免被固定導覽列遮擋 */
+    .custom-wrap { padding: 5rem 0.8rem 6rem; }
+    .btn-action { font-size: 0.82rem; padding: 0.5rem 0.8rem; }
     .floating-save { left: 16px; right: 16px; width: auto; justify-content: center; border-radius: 20px; }
   }
 
