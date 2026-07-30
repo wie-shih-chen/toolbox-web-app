@@ -37,6 +37,7 @@ body {
     background-color: var(--bg-color);
     color: var(--text-primary);
     min-height: 100vh;
+    overflow-x: hidden;
     /* overflow: hidden; Removed to allow scrolling on mobile/auth pages if needed */
 }
 

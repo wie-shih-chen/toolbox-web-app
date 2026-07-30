@@ -57,7 +57,7 @@
   .word-card:hover { transform: translateY(-4px); box-shadow: 0 8px 25px rgba(0,0,0,0.08); }
 
   .word-card .wc-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.8rem; gap: 0.5rem; }
-  .word-card .wc-word { font-size: 1.4rem; font-weight: 800; color: #a5b4fc; display: flex; align-items: flex-start; line-height: 1.3; letter-spacing: -0.5px; flex: 1; }
+  .word-card .wc-word { font-size: 1.4rem; font-weight: 800; color: #a5b4fc; display: flex; align-items: flex-start; line-height: 1.3; letter-spacing: -0.5px; flex: 1; min-width: 0; }
   .word-card .wc-star { font-size: 0.8rem; opacity: 0.9; white-space: nowrap; flex-shrink: 0; text-align: right; margin-top: 0.2rem; }
   .word-card .wc-def { font-size: 1rem; color: var(--text-primary, #333); margin-bottom: 0.8rem; font-weight: 600; line-height: 1.4; }
   .word-card .wc-pos { display: flex; gap: 0.4rem; flex-wrap: wrap; margin-bottom: 1rem; }
@@ -306,7 +306,7 @@ function renderWords() {
             <span class="progress-dot ${dotClass}"></span>
             <span style="color: var(--text-secondary); font-size: 0.65em; font-weight: 500; white-space: nowrap;">#${wIndex + 1}</span>
           </div>
-          <span style="flex: 1; word-break: keep-all; overflow-wrap: break-word;">${w.word}</span>
+          <span style="flex: 1; word-break: keep-all; overflow-wrap: break-word; min-width: 0;">${w.word}</span>
           ${w.exam_tips && w.exam_tips.length > 0 ? `<button class="official-badge" style="margin-left: 8px; margin-top: 0.15rem; flex-shrink: 0;" onclick="openBrowseWordModal('${w.word.replace(/'/g, "\\'")}')" title="考試提示">i</button>` : ''}
         </div>
         <div class="wc-star">${'⭐'.repeat(w.star || 0)}</div>
