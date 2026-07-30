@@ -1,0 +1,784 @@
+{% extends 'base.html' %}
+{% block title %}自訂單字本編輯器{% endblock %}
+
+{% block extra_css %}
+<style>
+  /* ─── 全域 ───────────────────────────────── */
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+  
+  .custom-wrap {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 1.5rem 1rem 6rem;
+    font-family: 'Inter', sans-serif;
+  }
+
+  /* ─── 頂欄 ───────────────────────────────── */
+  .top-bar {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+    flex-wrap: wrap;
+  }
+  .back-btn {
+    text-decoration: none;
+    color: var(--text-secondary, #888);
+    font-weight: 600;
+    font-size: 0.9rem;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    transition: color 0.2s;
+  }
+  .back-btn:hover { color: var(--accent-color, #4ecdc4); }
+  .list-name-input {
+    flex: 1;
+    background: transparent;
+    border: none;
+    outline: none;
+    font-size: 1.6rem;
+    font-weight: 800;
+    color: var(--text-primary, #fff);
+    min-width: 180px;
+    border-bottom: 2px solid transparent;
+    transition: border-color 0.2s;
+    padding: 0 0.2rem;
+  }
+  .list-name-input:focus { border-bottom-color: var(--accent-color, #4ecdc4); }
+  .top-actions { display: flex; gap: 0.6rem; flex-wrap: wrap; }
+  .btn-action {
+    padding: 0.5rem 1rem;
+    border-radius: 20px;
+    border: none;
+    font-weight: 600;
+    font-size: 0.85rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    transition: all 0.2s;
+  }
+  .btn-upload { background: rgba(78,205,196,0.15); color: #4ecdc4; border: 1px solid rgba(78,205,196,0.3); }
+  .btn-upload:hover { background: rgba(78,205,196,0.25); transform: translateY(-1px); }
+  .btn-template { background: rgba(255,255,255,0.08); color: var(--text-secondary, #aaa); border: 1px solid rgba(255,255,255,0.12); }
+  .btn-template:hover { background: rgba(255,255,255,0.12); transform: translateY(-1px); }
+  .btn-export { background: rgba(102,126,234,0.15); color: #818cf8; border: 1px solid rgba(102,126,234,0.3); }
+  .btn-export:hover { background: rgba(102,126,234,0.25); transform: translateY(-1px); }
+
+  /* ─── 工具列 ─────────────────────────────── */
+  .toolbar {
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+    margin-bottom: 1rem;
+    flex-wrap: wrap;
+  }
+  .toolbar-search {
+    flex: 1;
+    min-width: 160px;
+    max-width: 300px;
+    padding: 0.5rem 1rem;
+    border-radius: 20px;
+    border: 1px solid rgba(255,255,255,0.1);
+    background: rgba(255,255,255,0.05);
+    color: var(--text-primary, #fff);
+    font-size: 0.9rem;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  .toolbar-search:focus { border-color: var(--accent-color, #4ecdc4); }
+  .word-count-badge {
+    font-size: 0.82rem;
+    color: var(--text-secondary, #888);
+    font-weight: 500;
+    margin-left: auto;
+    white-space: nowrap;
+  }
+  .btn-bulk-del {
+    padding: 0.4rem 0.8rem;
+    border-radius: 16px;
+    border: 1px solid rgba(255,107,107,0.3);
+    background: rgba(255,107,107,0.1);
+    color: #ff6b6b;
+    font-size: 0.82rem;
+    font-weight: 600;
+    cursor: pointer;
+    display: none;
+    align-items: center;
+    gap: 0.3rem;
+    transition: all 0.2s;
+  }
+  .btn-bulk-del.visible { display: flex; }
+  .btn-bulk-del:hover { background: rgba(255,107,107,0.2); transform: translateY(-1px); }
+
+  /* ─── 表格容器 ───────────────────────────── */
+  .table-wrap {
+    background: rgba(255,255,255,0.04);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 20px;
+    overflow: hidden;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+  }
+
+  /* ─── 表格 ───────────────────────────────── */
+  .vocab-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.9rem;
+  }
+  .vocab-table thead th {
+    padding: 0.9rem 1rem;
+    text-align: left;
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    color: var(--text-secondary, #888);
+    border-bottom: 1px solid rgba(255,255,255,0.08);
+    cursor: pointer;
+    user-select: none;
+    white-space: nowrap;
+    transition: color 0.2s;
+    background: rgba(255,255,255,0.02);
+  }
+  .vocab-table thead th:hover { color: var(--accent-color, #4ecdc4); }
+  .vocab-table thead th.sorted-asc::after { content: ' ↑'; opacity: 0.7; }
+  .vocab-table thead th.sorted-desc::after { content: ' ↓'; opacity: 0.7; }
+
+  .vocab-table tbody tr {
+    transition: background 0.15s;
+    position: relative;
+  }
+  .vocab-table tbody tr:not(.add-row):hover { background: rgba(255,255,255,0.04); }
+  .vocab-table tbody tr + tr { border-top: 1px solid rgba(255,255,255,0.04); }
+  
+  /* 書籤行 */
+  .vocab-table tbody tr.bookmarked {
+    border-top: 2px solid #4ecdc4 !important;
+    position: relative;
+  }
+  .bookmark-label {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    font-size: 0.7rem;
+    font-weight: 700;
+    color: #4ecdc4;
+    background: rgba(78,205,196,0.12);
+    border: 1px solid rgba(78,205,196,0.3);
+    border-radius: 20px;
+    padding: 0.15rem 0.5rem;
+    margin-left: 0.5rem;
+    vertical-align: middle;
+    animation: glow-pulse 2s ease-in-out infinite;
+  }
+  @keyframes glow-pulse {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(78,205,196,0); }
+    50% { box-shadow: 0 0 10px 2px rgba(78,205,196,0.25); }
+  }
+
+  .vocab-table td {
+    padding: 0.6rem 1rem;
+    color: var(--text-primary, #fff);
+    vertical-align: middle;
+  }
+  td.td-num { width: 44px; text-align: center; color: var(--text-secondary, #888); font-size: 0.8rem; font-weight: 600; }
+  td.td-check { width: 36px; text-align: center; }
+  td.td-check input[type="checkbox"] { width: 15px; height: 15px; cursor: pointer; accent-color: #4ecdc4; }
+  td.td-word { font-weight: 700; font-size: 1rem; color: #a5b4fc; min-width: 120px; }
+  td.td-def  { color: var(--text-primary, #e0e0e0); min-width: 150px; }
+  td.td-pos  { min-width: 80px; }
+  td.td-ex   { font-size: 0.82rem; color: var(--text-secondary, #aaa); min-width: 180px; max-width: 260px; }
+  td.td-actions { width: 90px; text-align: right; white-space: nowrap; }
+
+  /* 可編輯儲存格 */
+  .editable-cell {
+    outline: none;
+    border-radius: 6px;
+    padding: 4px 6px;
+    min-height: 1.4em;
+    transition: background 0.15s, box-shadow 0.15s;
+    cursor: text;
+    display: inline-block;
+    width: 100%;
+    box-sizing: border-box;
+    word-break: break-word;
+  }
+  .editable-cell:focus {
+    background: rgba(78,205,196,0.08);
+    box-shadow: 0 0 0 2px rgba(78,205,196,0.4);
+  }
+  .editable-cell:empty::before {
+    content: attr(data-placeholder);
+    color: rgba(255,255,255,0.2);
+    pointer-events: none;
+    font-style: italic;
+  }
+
+  /* 行內按鈕 */
+  .row-actions { display: flex; gap: 0.3rem; justify-content: flex-end; opacity: 0; transition: opacity 0.15s; }
+  tr:hover .row-actions { opacity: 1; }
+  .btn-row {
+    width: 28px; height: 28px;
+    border-radius: 8px;
+    border: none;
+    cursor: pointer;
+    font-size: 0.85rem;
+    display: flex; align-items: center; justify-content: center;
+    transition: all 0.15s;
+  }
+  .btn-bookmark-row { background: rgba(78,205,196,0.1); color: #4ecdc4; }
+  .btn-bookmark-row:hover { background: rgba(78,205,196,0.25); transform: scale(1.1); }
+  .btn-bookmark-row.active { background: rgba(78,205,196,0.3); }
+  .btn-del-row { background: rgba(255,107,107,0.1); color: #ff6b6b; }
+  .btn-del-row:hover { background: rgba(255,107,107,0.25); transform: scale(1.1); }
+
+  /* 新增列 */
+  .add-row td { padding: 0.5rem 1rem; }
+  .add-row-inner {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+  .add-row input {
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 8px;
+    color: var(--text-primary, #fff);
+    font-size: 0.85rem;
+    padding: 0.4rem 0.7rem;
+    outline: none;
+    transition: border-color 0.15s;
+  }
+  .add-row input:focus { border-color: var(--accent-color, #4ecdc4); }
+  .add-row input.inp-word { width: 120px; font-weight: 700; color: #a5b4fc; }
+  .add-row input.inp-def  { flex: 1; min-width: 120px; }
+  .add-row input.inp-pos  { width: 80px; }
+  .btn-add-confirm {
+    padding: 0.4rem 1rem;
+    border-radius: 16px;
+    border: none;
+    background: linear-gradient(135deg, #4ecdc4, #2980b9);
+    color: white;
+    font-weight: 700;
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    white-space: nowrap;
+  }
+  .btn-add-confirm:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(78,205,196,0.3); }
+
+  /* 空狀態 */
+  .empty-state {
+    text-align: center;
+    padding: 4rem 1rem;
+    color: var(--text-secondary, #888);
+  }
+  .empty-state .es-icon { font-size: 3.5rem; margin-bottom: 1rem; }
+  .empty-state h3 { font-size: 1.3rem; font-weight: 700; margin-bottom: 0.5rem; color: var(--text-primary, #ddd); }
+  
+  /* 拖曳區 */
+  .upload-zone {
+    border: 2px dashed rgba(78,205,196,0.4);
+    border-radius: 16px;
+    padding: 2.5rem;
+    text-align: center;
+    color: var(--text-secondary, #888);
+    cursor: pointer;
+    transition: all 0.2s;
+    margin: 1rem 0;
+    background: rgba(78,205,196,0.03);
+  }
+  .upload-zone:hover, .upload-zone.dragover {
+    border-color: #4ecdc4;
+    background: rgba(78,205,196,0.06);
+    color: #4ecdc4;
+  }
+  .upload-zone .uz-icon { font-size: 2.5rem; margin-bottom: 0.8rem; }
+  .upload-zone p { font-size: 0.9rem; margin: 0; font-weight: 500; }
+
+  /* ─── 浮動儲存按鈕 ────────────────────────── */
+  .floating-save {
+    position: fixed;
+    bottom: 32px;
+    right: 24px;
+    display: none;
+    align-items: center;
+    gap: 0.6rem;
+    padding: 0.75rem 1.5rem;
+    border-radius: 50px;
+    border: none;
+    background: linear-gradient(135deg, #4ecdc4, #2980b9);
+    color: white;
+    font-weight: 700;
+    font-size: 0.95rem;
+    cursor: pointer;
+    box-shadow: 0 8px 24px rgba(78,205,196,0.4);
+    animation: float-in 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+    z-index: 999;
+    transition: transform 0.2s, box-shadow 0.2s;
+  }
+  .floating-save:hover { transform: translateY(-3px); box-shadow: 0 12px 30px rgba(78,205,196,0.5); }
+  .floating-save.visible { display: flex; }
+  @keyframes float-in {
+    from { transform: translateY(80px); opacity: 0; }
+    to   { transform: translateY(0);    opacity: 1; }
+  }
+
+  /* ─── Toast ─────────────────────────────── */
+  .toast {
+    position: fixed;
+    bottom: 100px;
+    right: 24px;
+    padding: 0.75rem 1.25rem;
+    border-radius: 14px;
+    font-weight: 600;
+    font-size: 0.9rem;
+    color: white;
+    pointer-events: none;
+    z-index: 1001;
+    opacity: 0;
+    transform: translateY(20px);
+    transition: all 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  }
+  .toast.success { background: rgba(34,197,94,0.9); box-shadow: 0 6px 20px rgba(34,197,94,0.3); }
+  .toast.error   { background: rgba(239,68,68,0.9);  box-shadow: 0 6px 20px rgba(239,68,68,0.3);  }
+  .toast.show    { opacity: 1; transform: translateY(0); }
+
+  /* ─── RWD ───────────────────────────────── */
+  @media (max-width: 768px) {
+    td.td-pos, td.td-ex, thead th:nth-child(4), thead th:nth-child(5) { display: none; }
+    .top-actions { width: 100%; }
+  }
+  @media (max-width: 480px) {
+    .vocab-table { font-size: 0.82rem; }
+    td.td-word { min-width: 80px; }
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="custom-wrap">
+
+  <!-- 頂欄 -->
+  <div class="top-bar">
+    <a href="{{ url_for('vocab.index') }}" class="back-btn">← 返回</a>
+    <input class="list-name-input" id="listNameInput" value="我的單字本" placeholder="單字本名稱…" title="點擊重新命名">
+    <div class="top-actions">
+      <button class="btn-action btn-template" onclick="downloadTemplate()" title="下載空白 Excel 範本">📋 下載範本</button>
+      <label class="btn-action btn-upload" title="上傳 Excel 檔案" style="cursor:pointer;">
+        📤 上傳 Excel
+        <input type="file" id="fileInput" accept=".xlsx" style="display:none" onchange="handleFileUpload(this)">
+      </label>
+      <button class="btn-action btn-export" onclick="exportExcel()" title="將目前單字本匯出為 Excel">📥 匯出</button>
+    </div>
+  </div>
+
+  <!-- 拖曳上傳區（初始空狀態才顯示） -->
+  <div id="uploadZone" class="upload-zone" style="display:none;"
+       ondragover="event.preventDefault(); this.classList.add('dragover')"
+       ondragleave="this.classList.remove('dragover')"
+       ondrop="handleDrop(event)">
+    <div class="uz-icon">📂</div>
+    <p>拖曳 .xlsx 檔案到這裡，或點擊按鈕上傳</p>
+  </div>
+
+  <!-- 工具列 -->
+  <div class="toolbar">
+    <input class="toolbar-search" id="searchInput" placeholder="🔍 搜尋單字…" oninput="applySearch()">
+    <button class="btn-bulk-del" id="btnBulkDel" onclick="bulkDelete()">🗑️ 刪除選取</button>
+    <div class="word-count-badge" id="wordCountBadge">0 個單字</div>
+  </div>
+
+  <!-- 資料表 -->
+  <div class="table-wrap">
+    <table class="vocab-table" id="vocabTable">
+      <thead>
+        <tr>
+          <th style="width:36px;">
+            <input type="checkbox" id="checkAll" onchange="toggleCheckAll(this)" style="width:15px;height:15px;accent-color:#4ecdc4;cursor:pointer;">
+          </th>
+          <th class="th-num" style="width:44px;" onclick="sortTable('index')">#</th>
+          <th onclick="sortTable('word')">單字</th>
+          <th onclick="sortTable('definition')">中文意思</th>
+          <th>詞性</th>
+          <th>英文例句</th>
+          <th style="width:90px;"></th>
+        </tr>
+      </thead>
+      <tbody id="vocabTbody">
+        <!-- 由 JS 填充 -->
+      </tbody>
+    </table>
+  </div>
+
+  <!-- 空狀態 -->
+  <div class="empty-state" id="emptyState" style="display:none;">
+    <div class="es-icon">📝</div>
+    <h3>單字本是空的</h3>
+    <p>上傳 Excel 或直接在下方新增列開始建立您的專屬單字本！</p>
+  </div>
+
+</div>
+
+<!-- 浮動儲存按鈕 -->
+<button class="floating-save" id="floatSaveBtn" onclick="saveWords()">
+  💾 儲存所有變更
+</button>
+
+<!-- Toast 提示 -->
+<div class="toast" id="toastMsg"></div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// ─── 狀態 ──────────────────────────────────────────────────────────
+let allWords = [];          // 原始完整資料
+let displayWords = [];      // 目前顯示的（搜尋後）
+let dirty = false;          // 是否有未儲存的變更
+let bookmarkIdx = null;     // 書籤 index
+let sortKey = 'index';
+let sortAsc = true;
+let undoStack = [];         // 復原堆疊（最多 30 步）
+
+// ─── 初始化 ────────────────────────────────────────────────────────
+async function init() {
+  try {
+    const res = await fetch('/vocab/api/custom/words');
+    const data = await res.json();
+    document.getElementById('listNameInput').value = data.list_name || '我的單字本';
+    allWords = data.words || [];
+    bookmarkIdx = data.bookmark ? data.bookmark.index : null;
+    renderTable();
+    if (allWords.length === 0) {
+      document.getElementById('uploadZone').style.display = 'block';
+    }
+  } catch (e) {
+    showToast('載入失敗，請重新整理', 'error');
+  }
+}
+
+// ─── 渲染表格 ──────────────────────────────────────────────────────
+function renderTable() {
+  const q = document.getElementById('searchInput').value.toLowerCase().trim();
+  displayWords = q
+    ? allWords.filter(w => (w.word || '').toLowerCase().startsWith(q) || (w.definition || '').includes(q))
+    : [...allWords];
+
+  // 排序
+  if (sortKey !== 'index') {
+    displayWords.sort((a, b) => {
+      const av = (a[sortKey] || '').toLowerCase();
+      const bv = (b[sortKey] || '').toLowerCase();
+      return sortAsc ? av.localeCompare(bv) : bv.localeCompare(av);
+    });
+  }
+
+  const tbody = document.getElementById('vocabTbody');
+  tbody.innerHTML = '';
+
+  displayWords.forEach((w, i) => {
+    const realIdx = allWords.indexOf(w);
+    const isBookmark = realIdx === bookmarkIdx;
+    const tr = document.createElement('tr');
+    if (isBookmark) tr.classList.add('bookmarked');
+    tr.dataset.realIdx = realIdx;
+
+    const exEn = (w.examples && w.examples[0]) ? (w.examples[0].english || '') : '';
+    const pos   = (w.parts_of_speech || []).join(', ');
+
+    tr.innerHTML = `
+      <td class="td-check"><input type="checkbox" class="row-check" onchange="onCheckChange()"></td>
+      <td class="td-num">${i + 1}${isBookmark ? `<span class="bookmark-label">🔖 書籤</span>` : ''}</td>
+      <td class="td-word"><span class="editable-cell" contenteditable="true" data-placeholder="單字…" onblur="onCellEdit(${realIdx},'word',this)" onkeydown="handleCellKey(event,${realIdx},'word',this)">${escHtml(w.word || '')}</span></td>
+      <td class="td-def"><span class="editable-cell" contenteditable="true" data-placeholder="中文意思…" onblur="onCellEdit(${realIdx},'definition',this)" onkeydown="handleCellKey(event,${realIdx},'definition',this)">${escHtml(w.definition || '')}</span></td>
+      <td class="td-pos"><span class="editable-cell" contenteditable="true" data-placeholder="v., n.…" onblur="onCellEdit(${realIdx},'pos',this)" onkeydown="handleCellKey(event,${realIdx},'pos',this)">${escHtml(pos)}</span></td>
+      <td class="td-ex"><span class="editable-cell" contenteditable="true" data-placeholder="英文例句…" onblur="onCellEdit(${realIdx},'example_en',this)" onkeydown="handleCellKey(event,${realIdx},'example_en',this)">${escHtml(exEn)}</span></td>
+      <td class="td-actions">
+        <div class="row-actions">
+          <button class="btn-row btn-bookmark-row ${isBookmark ? 'active' : ''}" title="設為今日進度書籤" onclick="setBookmark(${realIdx})">🔖</button>
+          <button class="btn-row btn-del-row" title="刪除此列" onclick="deleteRow(${realIdx})">🗑</button>
+        </div>
+      </td>
+    `;
+    tbody.appendChild(tr);
+  });
+
+  // 新增列
+  const addRow = document.createElement('tr');
+  addRow.className = 'add-row';
+  addRow.innerHTML = `
+    <td colspan="7">
+      <div class="add-row-inner">
+        <input class="inp-word"  id="newWord"  placeholder="新增單字…" onkeydown="addRowKey(event)">
+        <input class="inp-def"   id="newDef"   placeholder="中文意思…"  onkeydown="addRowKey(event)">
+        <input class="inp-pos"   id="newPos"   placeholder="詞性…"      onkeydown="addRowKey(event)">
+        <button class="btn-add-confirm" onclick="addNewRow()">+ 新增</button>
+      </div>
+    </td>
+  `;
+  tbody.appendChild(addRow);
+
+  document.getElementById('wordCountBadge').textContent = `${allWords.length} 個單字`;
+  document.getElementById('emptyState').style.display = allWords.length === 0 ? 'block' : 'none';
+  document.getElementById('uploadZone').style.display = allWords.length === 0 ? 'block' : 'none';
+
+  // 書籤自動捲動
+  if (bookmarkIdx !== null) {
+    const bmRow = tbody.querySelector('tr.bookmarked');
+    if (bmRow) setTimeout(() => bmRow.scrollIntoView({ behavior: 'smooth', block: 'center' }), 300);
+  }
+}
+
+// ─── 書籤 ──────────────────────────────────────────────────────────
+async function setBookmark(realIdx) {
+  const newIdx = (bookmarkIdx === realIdx) ? null : realIdx;
+  bookmarkIdx = newIdx;
+  renderTable();
+  markDirty();
+  try {
+    await fetch('/vocab/api/custom/bookmark', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ index: newIdx })
+    });
+    showToast(newIdx !== null ? '🔖 書籤已設定！' : '書籤已清除', 'success');
+  } catch {}
+}
+
+// ─── 編輯儲存格 ────────────────────────────────────────────────────
+function onCellEdit(realIdx, field, el) {
+  const val = el.innerText.trim();
+  pushUndo();
+
+  if (field === 'pos') {
+    allWords[realIdx].parts_of_speech = val ? val.split(/[,/]/).map(p => p.trim()).filter(Boolean) : [];
+  } else if (field === 'example_en') {
+    if (!allWords[realIdx].examples || !allWords[realIdx].examples.length)
+      allWords[realIdx].examples = [{ english: '', chinese: '' }];
+    allWords[realIdx].examples[0].english = val;
+  } else {
+    allWords[realIdx][field] = val;
+  }
+  markDirty();
+}
+
+function handleCellKey(e, realIdx, field, el) {
+  if (e.key === 'Enter') { e.preventDefault(); el.blur(); }
+  if (e.key === 'Tab') { e.preventDefault(); el.blur(); focusNextCell(el, e.shiftKey); }
+}
+
+function focusNextCell(currentEl, reverse) {
+  const cells = [...document.querySelectorAll('.editable-cell')];
+  const idx = cells.indexOf(currentEl);
+  const next = cells[reverse ? idx - 1 : idx + 1];
+  if (next) { next.focus(); const range = document.createRange(); range.selectNodeContents(next); window.getSelection().removeAllRanges(); window.getSelection().addRange(range); }
+}
+
+// ─── 新增列 ────────────────────────────────────────────────────────
+function addNewRow() {
+  const word = document.getElementById('newWord').value.trim();
+  if (!word) { document.getElementById('newWord').focus(); return; }
+
+  pushUndo();
+  allWords.push({
+    word,
+    definition: document.getElementById('newDef').value.trim(),
+    parts_of_speech: document.getElementById('newPos').value.trim()
+      ? document.getElementById('newPos').value.trim().split(/[,/]/).map(p => p.trim()) : [],
+    examples: []
+  });
+  ['newWord','newDef','newPos'].forEach(id => document.getElementById(id).value = '');
+  markDirty();
+  renderTable();
+  document.getElementById('newWord').focus();
+  showToast('已新增', 'success');
+}
+
+function addRowKey(e) { if (e.key === 'Enter') addNewRow(); }
+
+// ─── 刪除 ──────────────────────────────────────────────────────────
+function deleteRow(realIdx) {
+  pushUndo();
+  if (bookmarkIdx === realIdx) bookmarkIdx = null;
+  else if (bookmarkIdx > realIdx) bookmarkIdx--;
+  allWords.splice(realIdx, 1);
+  markDirty();
+  renderTable();
+}
+
+function bulkDelete() {
+  const checked = [...document.querySelectorAll('.row-check:checked')];
+  const idxs = checked.map(el => parseInt(el.closest('tr').dataset.realIdx)).sort((a,b) => b-a);
+  if (idxs.length === 0) return;
+  if (!confirm(`確定刪除 ${idxs.length} 個單字嗎？`)) return;
+  pushUndo();
+  idxs.forEach(i => allWords.splice(i, 1));
+  bookmarkIdx = null;
+  markDirty();
+  renderTable();
+}
+
+function toggleCheckAll(cb) {
+  document.querySelectorAll('.row-check').forEach(c => c.checked = cb.checked);
+  onCheckChange();
+}
+function onCheckChange() {
+  const anyChecked = [...document.querySelectorAll('.row-check')].some(c => c.checked);
+  document.getElementById('btnBulkDel').classList.toggle('visible', anyChecked);
+}
+
+// ─── 排序 ──────────────────────────────────────────────────────────
+function sortTable(key) {
+  if (sortKey === key) sortAsc = !sortAsc;
+  else { sortKey = key; sortAsc = true; }
+  document.querySelectorAll('thead th').forEach(th => { th.classList.remove('sorted-asc','sorted-desc'); });
+  const ths = document.querySelectorAll('thead th');
+  const keyMap = { word: 2, definition: 3 };
+  if (keyMap[key]) {
+    ths[keyMap[key]].classList.add(sortAsc ? 'sorted-asc' : 'sorted-desc');
+  }
+  renderTable();
+}
+
+// ─── 搜尋 ──────────────────────────────────────────────────────────
+function applySearch() { renderTable(); }
+
+// ─── 儲存 ──────────────────────────────────────────────────────────
+async function saveWords() {
+  const listName = document.getElementById('listNameInput').value.trim() || '我的單字本';
+  try {
+    const res = await fetch('/vocab/api/custom/words', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ list_name: listName, words: allWords })
+    });
+    const d = await res.json();
+    if (d.ok) {
+      showToast(`✅ 已儲存 ${d.count} 個單字`, 'success');
+      markClean();
+    } else {
+      showToast('儲存失敗', 'error');
+    }
+  } catch { showToast('網路錯誤', 'error'); }
+}
+
+// ─── 上傳 Excel ────────────────────────────────────────────────────
+async function handleFileUpload(input) {
+  const file = input.files[0];
+  if (!file) return;
+  const fd = new FormData();
+  fd.append('file', file);
+  showToast('解析中…', 'success');
+  try {
+    const res = await fetch('/vocab/api/custom/upload', { method: 'POST', body: fd });
+    const d = await res.json();
+    if (d.ok) {
+      pushUndo();
+      allWords = d.words;
+      bookmarkIdx = null;
+      markDirty();
+      renderTable();
+      showToast(`✅ 成功匯入 ${d.count} 個單字`, 'success');
+    } else {
+      showToast(`❌ ${d.msg}`, 'error');
+    }
+  } catch { showToast('上傳失敗', 'error'); }
+  input.value = '';
+}
+
+function handleDrop(e) {
+  e.preventDefault();
+  document.getElementById('uploadZone').classList.remove('dragover');
+  const file = e.dataTransfer.files[0];
+  if (!file) return;
+  const fakeInput = { files: [file] };
+  handleFileUpload(fakeInput);
+}
+
+// ─── 匯出 / 範本 ────────────────────────────────────────────────────
+function exportExcel() { window.location.href = '/vocab/api/custom/export'; }
+function downloadTemplate() { window.location.href = '/vocab/api/custom/template'; }
+
+// ─── 復原 ──────────────────────────────────────────────────────────
+function pushUndo() {
+  undoStack.push(JSON.stringify(allWords));
+  if (undoStack.length > 30) undoStack.shift();
+}
+document.addEventListener('keydown', e => {
+  if ((e.ctrlKey || e.metaKey) && e.key === 'z') {
+    e.preventDefault();
+    if (undoStack.length) {
+      allWords = JSON.parse(undoStack.pop());
+      markDirty();
+      renderTable();
+      showToast('↩️ 已復原', 'success');
+    }
+  }
+  if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+    e.preventDefault();
+    saveWords();
+  }
+});
+
+// ─── 貼上支援 ──────────────────────────────────────────────────────
+document.addEventListener('paste', e => {
+  const active = document.activeElement;
+  if (active && active.classList.contains('editable-cell')) return; // 在編輯格內，讓瀏覽器自己處理
+  
+  const text = (e.clipboardData || window.clipboardData).getData('text');
+  if (!text) return;
+  
+  // 嘗試解析多行貼上（每行一個單字）
+  const lines = text.split('\n').map(l => l.trim()).filter(Boolean);
+  if (lines.length <= 1) return; // 單行交給 editable-cell 處理
+  
+  e.preventDefault();
+  pushUndo();
+  lines.forEach(line => {
+    const parts = line.split('\t'); // TSV（從 Excel 貼上）
+    allWords.push({
+      word:             parts[0] || '',
+      definition:       parts[1] || '',
+      parts_of_speech:  parts[2] ? [parts[2]] : [],
+      examples:         parts[3] ? [{ english: parts[3], chinese: parts[4] || '' }] : []
+    });
+  });
+  markDirty();
+  renderTable();
+  showToast(`✅ 貼入 ${lines.length} 個單字`, 'success');
+});
+
+// ─── dirty 狀態 ────────────────────────────────────────────────────
+function markDirty() {
+  dirty = true;
+  document.getElementById('floatSaveBtn').classList.add('visible');
+}
+function markClean() {
+  dirty = false;
+  document.getElementById('floatSaveBtn').classList.remove('visible');
+}
+window.addEventListener('beforeunload', e => { if (dirty) { e.preventDefault(); e.returnValue = ''; } });
+
+// ─── Toast ─────────────────────────────────────────────────────────
+function showToast(msg, type = 'success') {
+  const el = document.getElementById('toastMsg');
+  el.textContent = msg;
+  el.className = `toast ${type} show`;
+  setTimeout(() => el.classList.remove('show'), 2800);
+}
+
+// ─── HTML 安全逸出 ─────────────────────────────────────────────────
+function escHtml(str) {
+  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// ─── 啟動 ──────────────────────────────────────────────────────────
+init();
+</script>
+{% endblock %}

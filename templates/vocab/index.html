@@ -100,6 +100,46 @@
   .mode-card.quiz      { background: linear-gradient(135deg, #4facfe, #00f2fe); }
   .mode-card.spelling  { background: linear-gradient(135deg, #43e97b, #38f9d7); }
   .mode-card.browse    { background: linear-gradient(135deg, #fa709a, #fee140); }
+  .mode-card.custom    { background: linear-gradient(135deg, #a18cd1, #fbc2eb); }
+
+  /* 字庫切換按鈕 */
+  .source-switch {
+    display: flex;
+    gap: 0.5rem;
+    background: rgba(255,255,255,0.06);
+    border-radius: 20px;
+    padding: 0.3rem;
+    margin-bottom: 2rem;
+    border: 1px solid rgba(255,255,255,0.08);
+    flex-wrap: wrap;
+  }
+  .source-btn {
+    flex: 1;
+    padding: 0.55rem 0.8rem;
+    border-radius: 16px;
+    border: none;
+    cursor: pointer;
+    font-size: 0.82rem;
+    font-weight: 700;
+    color: var(--text-secondary, #aaa);
+    background: transparent;
+    transition: all 0.25s;
+    text-align: center;
+    white-space: nowrap;
+  }
+  .source-btn.active {
+    background: linear-gradient(135deg, #a18cd1, #fbc2eb);
+    color: white;
+    box-shadow: 0 4px 12px rgba(161,140,209,0.3);
+  }
+  .source-desc {
+    font-size: 0.82rem;
+    color: var(--text-secondary, #888);
+    text-align: center;
+    margin-bottom: 1.5rem;
+    min-height: 1.2em;
+    transition: opacity 0.2s;
+  }
 
   @media (max-width: 768px) {
     .vocab-hero { padding: 2rem 1.5rem; border-radius: 20px; }
@@ -164,28 +204,96 @@
 
   <!-- 學習模式 -->
   <h2 class="section-title">選擇學習模式</h2>
+
+  <!-- 字庫來源切換 -->
+  <div class="source-switch" id="sourceSwitch">
+    <button class="source-btn active" onclick="setSource('official', this)" id="srcOfficial">📚 今日官方字庫</button>
+    <button class="source-btn" onclick="setSource('custom', this)"   id="srcCustom">📝 我的字庫</button>
+    <button class="source-btn" onclick="setSource('mixed', this)"   id="srcMixed">🎲 混合測驗</button>
+  </div>
+  <div class="source-desc" id="sourceDesc">從 11,000+ 個官方 TOEIC 單字中隨機出題</div>
+
   <div class="mode-grid">
-    <a href="{{ url_for('vocab.flashcard') }}" class="mode-card flashcard">
+    <a id="linkFlashcard" href="{{ url_for('vocab.flashcard') }}" class="mode-card flashcard">
       <div class="mode-icon">🃏</div>
       <div>卡片翻轉</div>
-      <div class="mode-desc">正面英文・背面中文</div>
+      <div class="mode-desc">正面英文·背面中文</div>
     </a>
-    <a href="{{ url_for('vocab.quiz') }}" class="mode-card quiz">
+    <a id="linkQuiz" href="{{ url_for('vocab.quiz') }}" class="mode-card quiz">
       <div class="mode-icon">📝</div>
       <div>選擇題</div>
       <div class="mode-desc">看英文選中文 (4選1)</div>
     </a>
-    <a href="{{ url_for('vocab.spelling') }}" class="mode-card spelling">
+    <a id="linkSpelling" href="{{ url_for('vocab.spelling') }}" class="mode-card spelling">
       <div class="mode-icon">⌨️</div>
       <div>拼字測驗</div>
       <div class="mode-desc">看中文打出英文</div>
     </a>
-    <a href="{{ url_for('vocab.browse') }}" class="mode-card browse">
+    <a id="linkBrowse" href="{{ url_for('vocab.browse') }}" class="mode-card browse">
       <div class="mode-icon">📖</div>
       <div>瀏覽模式</div>
       <div class="mode-desc">捲動看所有單字</div>
     </a>
+    <a href="{{ url_for('custom_vocab.custom_editor') }}" class="mode-card custom" style="grid-column: span 2;">
+      <div class="mode-icon">✏️</div>
+      <div>自訂單字本</div>
+      <div class="mode-desc">上傳 Excel · 線上編輯·書簽進度</div>
+    </a>
   </div>
 
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+const SOURCE_DESCS = {
+  official: '從 11,000+ 個官方 TOEIC 單字中隨機出題',
+  custom:   '僅從您的「自訂單字本」中出題',
+  mixed:    '官方字庫 + 自訂字庫混合隨機出題',
+};
+
+const MODE_LINKS = {
+  official: {
+    flashcard: '{{ url_for("vocab.flashcard") }}',
+    quiz:      '{{ url_for("vocab.quiz") }}',
+    spelling:  '{{ url_for("vocab.spelling") }}',
+    browse:    '{{ url_for("vocab.browse") }}',
+  },
+  custom: {
+    flashcard: '{{ url_for("vocab.flashcard") }}?source=custom',
+    quiz:      '{{ url_for("vocab.quiz") }}?source=custom',
+    spelling:  '{{ url_for("vocab.spelling") }}?source=custom',
+    browse:    '{{ url_for("vocab.browse") }}?source=custom',
+  },
+  mixed: {
+    flashcard: '{{ url_for("vocab.flashcard") }}?source=mixed',
+    quiz:      '{{ url_for("vocab.quiz") }}?source=mixed',
+    spelling:  '{{ url_for("vocab.spelling") }}?source=mixed',
+    browse:    '{{ url_for("vocab.browse") }}?source=mixed',
+  },
+};
+
+function setSource(src, btn) {
+  document.querySelectorAll('.source-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('sourceDesc').textContent = SOURCE_DESCS[src] || '';
+  const links = MODE_LINKS[src];
+  if (links) {
+    document.getElementById('linkFlashcard').href = links.flashcard;
+    document.getElementById('linkQuiz').href      = links.quiz;
+    document.getElementById('linkSpelling').href  = links.spelling;
+    document.getElementById('linkBrowse').href    = links.browse;
+  }
+  localStorage.setItem('vocab_source', src);
+}
+
+// 頁面載入時自動復從上次的選擇
+(function() {
+  const saved = localStorage.getItem('vocab_source') || 'official';
+  const btn = document.getElementById(
+    saved === 'custom' ? 'srcCustom' : saved === 'mixed' ? 'srcMixed' : 'srcOfficial'
+  );
+  if (btn) setSource(saved, btn);
+})();
+</script>
 {% endblock %}
