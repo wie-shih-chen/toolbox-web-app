@@ -189,7 +189,9 @@
   td.td-check { width: 36px; text-align: center; }
   td.td-check input[type="checkbox"] { width: 15px; height: 15px; cursor: pointer; accent-color: #4ecdc4; }
   td.td-word { font-weight: 700; font-size: 1rem; color: #a5b4fc; min-width: 120px; padding-right: 8px; vertical-align: middle; }
-  td.td-word .editable-cell { width: auto; flex: 0 1 auto; min-width: 60px; }
+  .word-cell-content { display: inline-flex; align-items: center; gap: 6px; width: 100%; flex-wrap: nowrap; }
+  td.td-word .editable-cell { width: auto; flex: 0 1 auto; min-width: 40px; display: inline-block; white-space: normal; }
+  .bookmark-label-wrap { display: block; margin-top: 6px; }
 
   td.td-def  { color: var(--text-primary, #e0e0e0); min-width: 150px; }
   td.td-pos  { min-width: 80px; }
@@ -865,11 +867,11 @@ function renderTable() {
       <td class="td-check"><input type="checkbox" class="row-check" onchange="onCheckChange()"></td>
       <td class="td-num">${i + 1}</td>
       <td class="td-word">
-        <div style="display: flex; align-items: center;">
+        <div class="word-cell-content">
           <span class="editable-cell" contenteditable="true" data-placeholder="單字…" onblur="onCellEdit(${realIdx},'word',this)" onkeydown="handleCellKey(event,${realIdx},'word',this)">${escHtml(w.word || '')}</span>
           ${hasMatch ? `<button class="official-badge" onclick="openWordModal('${escHtml(w.word)}')" title="在官方 TOEIC 字庫中有此字！點擊查看詳情">i</button>` : ''}
         </div>
-        ${isBookmark ? `<div style="margin-top: 6px;"><span class="bookmark-label" style="margin-left: 0;">🔖 書籤進度</span></div>` : ''}
+        ${isBookmark ? `<div class="bookmark-label-wrap"><span class="bookmark-label" style="margin-left: 0;">🔖 書籤進度</span></div>` : ''}
       </td>
       <td class="td-def"><span class="editable-cell" contenteditable="true" data-placeholder="中文意思…" onblur="onCellEdit(${realIdx},'definition',this)" onkeydown="handleCellKey(event,${realIdx},'definition',this)">${escHtml(w.definition || '')}</span></td>
       <td class="td-pos"><span class="editable-cell" contenteditable="true" data-placeholder="v., n.…" onblur="onCellEdit(${realIdx},'pos',this)" onkeydown="handleCellKey(event,${realIdx},'pos',this)">${escHtml(pos)}</span></td>
