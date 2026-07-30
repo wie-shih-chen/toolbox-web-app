@@ -612,6 +612,7 @@ let bookmarkIdx = null;     // 書籤 index
 let sortKey = 'index';
 let sortAsc = true;
 let undoStack = [];         // 復原堆疊（最多 30 步）
+let autoSaveTimer = null;   // 自動儲存計時器
 
 // ─── 初始化 ────────────────────────────────────────────────────────
 async function init() {
@@ -827,8 +828,15 @@ function sortTable(key) {
 function applySearch() { renderTable(); }
 
 // ─── 儲存 ──────────────────────────────────────────────────────────
-async function saveWords() {
+async function saveWords(silent = false) {
   const listName = document.getElementById('listNameInput').value.trim() || '我的單字本';
+  const btn = document.getElementById('floatSaveBtn');
+  
+  if (!silent) {
+    btn.innerHTML = '⏳ 儲存中...';
+    btn.style.pointerEvents = 'none';
+  }
+
   try {
     const res = await fetch('/vocab/api/custom/words', {
       method: 'POST',
@@ -837,12 +845,19 @@ async function saveWords() {
     });
     const d = await res.json();
     if (d.ok) {
-      showToast(`✅ 已儲存 ${d.count} 個單字`, 'success');
+      if (!silent) showToast(`✅ 已儲存 ${d.count} 個單字`, 'success');
       markClean();
     } else {
-      showToast('儲存失敗', 'error');
+      if (!silent) showToast('儲存失敗', 'error');
     }
-  } catch { showToast('網路錯誤', 'error'); }
+  } catch { 
+    if (!silent) showToast('網路錯誤', 'error'); 
+  } finally {
+    if (!silent) {
+      btn.innerHTML = '💾 儲存所有變更';
+      btn.style.pointerEvents = 'auto';
+    }
+  }
 }
 
 // ─── 上傳 Excel ────────────────────────────────────────────────────
@@ -1003,7 +1018,15 @@ document.addEventListener('keydown', e => {
 // ─── dirty 狀態 ────────────────────────────────────────────────────
 function markDirty() {
   dirty = true;
-  document.getElementById('floatSaveBtn').classList.add('visible');
+  const btn = document.getElementById('floatSaveBtn');
+  btn.classList.add('visible');
+  btn.innerHTML = '💾 儲存所有變更';
+
+  // 自動儲存 (Debounce: 使用者停止操作 1.5 秒後自動背景儲存)
+  if (autoSaveTimer) clearTimeout(autoSaveTimer);
+  autoSaveTimer = setTimeout(() => {
+    saveWords(true); // 靜默儲存，不跳出 toast
+  }, 1500);
 }
 function markClean() {
   dirty = false;
