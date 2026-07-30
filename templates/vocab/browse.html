@@ -105,6 +105,28 @@
     .words-grid { grid-template-columns: 1fr; gap: 1rem; }
     .word-card { padding: 1.2rem; }
   }
+  
+  .toast-msg {
+    position: fixed;
+    bottom: 40px;
+    left: 50%;
+    transform: translateX(-50%) translateY(100px);
+    background: rgba(46, 213, 115, 0.95);
+    color: white;
+    padding: 12px 24px;
+    border-radius: 30px;
+    font-weight: 600;
+    box-shadow: 0 10px 30px rgba(46, 213, 115, 0.4);
+    opacity: 0;
+    transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.4s;
+    z-index: 1000;
+    pointer-events: none;
+    font-size: 0.95rem;
+  }
+  .toast-msg.show {
+    transform: translateX(-50%) translateY(0);
+    opacity: 1;
+  }
 </style>
 {% endblock %}
 
@@ -148,6 +170,8 @@
   <div class="words-grid" id="wordsGrid"></div>
   <button class="load-more-btn" id="btnLoadMore" style="display:none;" onclick="loadMore()">載入更多</button>
   <div id="endMsg" style="display:none;text-align:center;padding:1rem;color:var(--text-secondary);font-size:0.85rem;">已顯示全部單字</div>
+  
+  <div id="toastMsg" class="toast-msg">✨ 已為您恢復上次的瀏覽進度</div>
 </div>
 {% endblock %}
 
@@ -173,7 +197,14 @@ async function init() {
   
   const savedScroll = parseInt(sessionStorage.getItem('browse_scrollY'), 10);
   if (savedScroll) {
-    setTimeout(() => window.scrollTo(0, savedScroll), 100);
+    setTimeout(() => {
+      window.scrollTo(0, savedScroll);
+      const toast = document.getElementById('toastMsg');
+      if (toast) {
+        toast.classList.add('show');
+        setTimeout(() => toast.classList.remove('show'), 3000);
+      }
+    }, 100);
   }
 }
 
