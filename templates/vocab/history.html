@@ -236,6 +236,20 @@
     box-shadow: 0 20px 50px rgba(0,0,0,0.5);
   }
   .center-modal-overlay.open .center-modal { transform: scale(1); opacity: 1; }
+  
+  .modal-btn-group { display: flex; gap: 0.8rem; margin-top: 1rem; }
+  .modal-btn {
+    flex: 1; padding: 0.9rem; border-radius: 16px; font-size: 1rem; font-weight: 600;
+    border: none; cursor: pointer; transition: all 0.2s; color: white;
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+  }
+  .modal-btn:hover { transform: translateY(-2px); }
+  .modal-btn:active { transform: translateY(1px); }
+  .modal-btn.quiz { background: linear-gradient(135deg, #4ecdc4 0%, #2980b9 100%); box-shadow: 0 4px 15px rgba(78, 205, 196, 0.3); }
+  .modal-btn.quiz:hover { box-shadow: 0 6px 20px rgba(78, 205, 196, 0.4); }
+  .modal-btn.spell { background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); box-shadow: 0 4px 15px rgba(245, 158, 11, 0.3); }
+  .modal-btn.spell:hover { box-shadow: 0 6px 20px rgba(245, 158, 11, 0.4); }
+
   .modal-close {
     position: absolute; top: 15px; right: 15px;
     background: rgba(255,255,255,0.1); border: none; border-radius: 50%;
@@ -329,9 +343,9 @@
     <h2 style="color: #4ecdc4; margin-bottom: 1.5rem; text-align: center; font-size: 1.4rem;">🎯 選擇測驗方式</h2>
     <p id="historyQuizDateText" style="text-align: center; color: rgba(255,255,255,0.7); margin-bottom: 2rem;"></p>
     
-    <div style="display: flex; gap: 1rem; justify-content: center;">
-      <button class="btn-primary" onclick="startHistoryQuiz('quiz')" style="padding: 0.8rem 1.5rem;">📝 選擇題</button>
-      <button class="btn-primary" onclick="startHistoryQuiz('spelling')" style="padding: 0.8rem 1.5rem; background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);">⌨️ 拼字測驗</button>
+    <div class="modal-btn-group">
+      <button class="modal-btn quiz" onclick="startHistoryQuiz('quiz')">📝 選擇題</button>
+      <button class="modal-btn spell" onclick="startHistoryQuiz('spelling')">⌨️ 拼字測驗</button>
     </div>
   </div>
 </div>

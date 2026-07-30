@@ -499,6 +499,42 @@
     box-shadow: 0 20px 50px rgba(0,0,0,0.5);
   }
   .center-modal-overlay.open .center-modal { transform: scale(1); opacity: 1; }
+  
+  /* Modal Premium UI Elements */
+  .segment-control {
+    display: flex; background: rgba(0,0,0,0.4); border-radius: 16px; padding: 4px;
+    margin-bottom: 1.5rem; border: 1px solid rgba(255,255,255,0.05);
+  }
+  .segment-label {
+    flex: 1; text-align: center; padding: 0.7rem; color: rgba(255,255,255,0.5); cursor: pointer;
+    border-radius: 12px; transition: all 0.3s; font-weight: 500; font-size: 0.95rem; margin: 0;
+  }
+  .segment-control input[type="radio"] { display: none; }
+  .segment-control input[type="radio"]:checked + .segment-label {
+    color: #fff; background: rgba(255,255,255,0.15); box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+  }
+  .modern-input {
+    width: 100%; padding: 0.9rem 1.2rem; border-radius: 14px;
+    border: 1px solid rgba(255,255,255,0.1); background: rgba(0,0,0,0.2);
+    color: #fff; font-size: 1rem; transition: all 0.3s; outline: none;
+  }
+  .modern-input:focus {
+    border-color: #4ecdc4; background: rgba(0,0,0,0.4);
+    box-shadow: 0 0 0 3px rgba(78, 205, 196, 0.15);
+  }
+  .modal-btn-group { display: flex; gap: 0.8rem; margin-top: 2rem; }
+  .modal-btn {
+    flex: 1; padding: 0.9rem; border-radius: 16px; font-size: 1rem; font-weight: 600;
+    border: none; cursor: pointer; transition: all 0.2s; color: white;
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+  }
+  .modal-btn:hover { transform: translateY(-2px); }
+  .modal-btn:active { transform: translateY(1px); }
+  .modal-btn.quiz { background: linear-gradient(135deg, #4ecdc4 0%, #2980b9 100%); box-shadow: 0 4px 15px rgba(78, 205, 196, 0.3); }
+  .modal-btn.quiz:hover { box-shadow: 0 6px 20px rgba(78, 205, 196, 0.4); }
+  .modal-btn.spell { background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); box-shadow: 0 4px 15px rgba(245, 158, 11, 0.3); }
+  .modal-btn.spell:hover { box-shadow: 0 6px 20px rgba(245, 158, 11, 0.4); }
+
   .word-modal {
     width: 100%;
     max-width: 600px;
@@ -612,34 +648,36 @@
     <div class="modal-close" onclick="closeQuizSetup()" style="top: 15px; right: 15px;">&#10005;</div>
     <h2 style="color: #4ecdc4; margin-bottom: 1.5rem; text-align: center; font-size: 1.4rem;">🎯 自訂測驗設定</h2>
     
-    <div style="display: flex; gap: 1rem; margin-bottom: 1.5rem; justify-content: center;">
-      <label style="cursor:pointer; display:flex; align-items:center; gap:5px; color:#fff;">
+    <div class="segment-control">
+      <label class="segment-label">
         <input type="radio" name="quizMode" value="date" checked onchange="toggleQuizMode()"> 依日期測驗
       </label>
-      <label style="cursor:pointer; display:flex; align-items:center; gap:5px; color:#fff;">
+      <label class="segment-label">
         <input type="radio" name="quizMode" value="range" onchange="toggleQuizMode()"> 依編號區間
       </label>
     </div>
 
     <!-- 依日期設定 -->
     <div id="quizDateBlock" style="text-align: center; margin-bottom: 1.5rem;">
-      <p style="color: #a5b4fc; margin-bottom: 0.5rem; font-size: 0.95rem;">選擇要測驗的日期範圍：</p>
-      <select id="quizDateSelect" class="list-name-input" style="width: 100%; max-width: 250px; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.2);"></select>
+      <p style="color: rgba(255,255,255,0.7); margin-bottom: 0.8rem; font-size: 0.95rem;">選擇要測驗的日期範圍</p>
+      <select id="quizDateSelect" class="modern-input" style="text-align: center; cursor: pointer;">
+        <option>載入中...</option>
+      </select>
     </div>
 
     <!-- 依編號區間設定 -->
     <div id="quizRangeBlock" style="text-align: center; margin-bottom: 1.5rem; display: none;">
-      <p style="color: #a5b4fc; margin-bottom: 0.5rem; font-size: 0.95rem;">請輸入單字編號範圍 (1 ~ <span id="maxWordIdx">0</span>)：</p>
+      <p style="color: rgba(255,255,255,0.7); margin-bottom: 0.8rem; font-size: 0.95rem;">請輸入單字編號範圍 (1 ~ <span id="maxWordIdx">0</span>)</p>
       <div style="display: flex; gap: 10px; justify-content: center; align-items: center;">
-        <input type="number" id="quizStartIdx" class="list-name-input" style="width: 80px; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.2);" min="1" value="1">
-        <span style="color: #fff;">至</span>
-        <input type="number" id="quizEndIdx" class="list-name-input" style="width: 80px; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.2);" min="1">
+        <input type="number" id="quizStartIdx" class="modern-input" style="text-align: center;" min="1" value="1">
+        <span style="color: rgba(255,255,255,0.5); font-weight: 500;">至</span>
+        <input type="number" id="quizEndIdx" class="modern-input" style="text-align: center;" min="1">
       </div>
     </div>
 
-    <div style="display: flex; gap: 1rem; justify-content: center; margin-top: 2rem;">
-      <button class="btn-primary" onclick="startCustomQuiz('quiz')" style="padding: 0.8rem 1.5rem;">📝 選擇題</button>
-      <button class="btn-primary" onclick="startCustomQuiz('spelling')" style="padding: 0.8rem 1.5rem; background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);">⌨️ 拼字測驗</button>
+    <div class="modal-btn-group">
+      <button class="modal-btn quiz" onclick="startCustomQuiz('quiz')">📝 選擇題</button>
+      <button class="modal-btn spell" onclick="startCustomQuiz('spelling')">⌨️ 拼字測驗</button>
     </div>
   </div>
 </div>
