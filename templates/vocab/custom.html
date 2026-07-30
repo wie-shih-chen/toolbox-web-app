@@ -775,16 +775,18 @@ function renderTable() {
     // 插入日期分隔線
     const wDate = w.created_at || '以前加入的單字';
     if (wDate !== lastDate) {
-      const divTr = document.createElement('tr');
-      divTr.className = 'date-divider-row';
-      divTr.innerHTML = `<td colspan="7">
-        <div style="display: flex; align-items: center; text-align: center; color: rgba(255,255,255,0.4); font-size: 0.85rem; margin: 10px 0;">
-          <div style="flex: 1; border-bottom: 1px solid rgba(255,255,255,0.1);"></div>
-          <span style="padding: 0 10px;">🗓 ${wDate}</span>
-          <div style="flex: 1; border-bottom: 1px solid rgba(255,255,255,0.1);"></div>
-        </div>
-      </td>`;
-      tbody.appendChild(divTr);
+      if (i !== 0) {
+        const divTr = document.createElement('tr');
+        divTr.className = 'date-divider-row';
+        divTr.innerHTML = `<td colspan="7">
+          <div style="display: flex; align-items: center; text-align: center; color: rgba(255,255,255,0.4); font-size: 0.85rem; margin: 10px 0;">
+            <div style="flex: 1; border-bottom: 1px solid rgba(255,255,255,0.1);"></div>
+            <span style="padding: 0 10px;">🗓 ${wDate}</span>
+            <div style="flex: 1; border-bottom: 1px solid rgba(255,255,255,0.1);"></div>
+          </div>
+        </td>`;
+        tbody.appendChild(divTr);
+      }
       lastDate = wDate;
     }
 
