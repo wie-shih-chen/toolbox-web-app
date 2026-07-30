@@ -273,7 +273,7 @@ function renderWords() {
   const grid = document.getElementById('wordsGrid');
   grid.innerHTML = '';
 
-  displayedWords.forEach(w => {
+  displayedWords.forEach((w, wIndex) => {
     const prog = userProgress[w.word];
     let dotClass = 'dot-new';
     if (prog) {
@@ -286,7 +286,8 @@ function renderWords() {
     card.innerHTML = `
       <div class="wc-top">
         <div class="wc-word">
-          <span class="progress-dot ${dotClass}"></span>${w.word}
+          <span class="progress-dot ${dotClass}"></span>
+          <span style="color: var(--text-secondary); font-size: 0.85em; margin-right: 8px; font-weight: 500;">#${wIndex + 1}</span>${w.word}
         </div>
         <div class="wc-star">${'⭐'.repeat(w.star || 0)}</div>
       </div>
