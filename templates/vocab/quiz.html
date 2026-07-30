@@ -53,7 +53,9 @@
     justify-content: center;
     box-shadow: 0 12px 35px rgba(79, 172, 254, 0.25);
   }
-  .question-card .q-word { font-size: 2.8rem; font-weight: 800; line-height: 1.2; letter-spacing: -0.5px; }
+  .question-card .q-word { font-size: 2.8rem; font-weight: 800; line-height: 1.2; letter-spacing: -0.5px; max-width: 100%; }
+  .nowrap-scroll { white-space: nowrap; overflow-x: auto; overflow-y: hidden; scrollbar-width: none; }
+  .nowrap-scroll::-webkit-scrollbar { display: none; }
   .question-card .q-pos { font-size: 0.9rem; opacity: 0.9; margin-top: 0.8rem; font-weight: 500; background: rgba(255,255,255,0.2); padding: 0.2rem 0.8rem; border-radius: 100px; }
   .question-card .q-num { font-size: 0.85rem; opacity: 0.85; margin-bottom: 0.8rem; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; }
   .question-card .q-star { font-size: 1rem; opacity: 0.9; margin-top: 0.6rem; }
@@ -146,7 +148,8 @@
   }
 
   @media (max-width: 600px) {
-    .question-card .q-word { font-size: 2.2rem; }
+    .question-card { padding: 2rem 1.5rem; min-height: 160px; }
+    .question-card .q-word { font-size: 2rem; }
     .options-grid { grid-template-columns: 1fr; gap: 0.8rem; }
     .opt-btn { padding: 1rem; font-size: 0.95rem; }
   }
@@ -199,7 +202,7 @@
   <div id="quizArea" style="display:none;">
     <div class="question-card">
       <div class="q-num" id="qNum"></div>
-      <div class="q-word" id="qWord"></div>
+      <div class="q-word nowrap-scroll" id="qWord"></div>
       <div class="q-pos" id="qPos"></div>
       <div class="q-star" id="qStar"></div>
     </div>
