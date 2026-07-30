@@ -310,7 +310,10 @@
       <div class="card-3d" id="card3d">
         <div class="card-face card-front">
           <div class="star-rating" id="cardStar"></div>
-          <div class="word" id="cardWord"></div>
+          <div class="word" style="display: flex; align-items: center; justify-content: center; gap: 8px;">
+            <span id="cardWord"></span>
+            <button class="official-badge" id="cardTipBtn" onclick="openFlashcardModal(event)" style="display:none;" title="考試提示">i</button>
+          </div>
           <div class="pos-badge" id="cardPos"></div>
           <div class="hint">點擊查看中文意思</div>
         </div>
@@ -351,8 +354,10 @@
     <button onclick="restart()" style="margin-top:1rem; padding:0.8rem 2rem; border-radius:14px; background:linear-gradient(135deg,#667eea,#764ba2); color:white; border:none; font-size:1rem; font-weight:600; cursor:pointer;">再來一次</button>
     <a href="{{ url_for('vocab.index') }}" style="display:block; margin-top:0.8rem; color:var(--text-secondary);">返回學習中心</a>
   </div>
+  <div id="toastMsg" class="toast-msg">✨ 已為您恢復上次的翻卡進度</div>
 </div>
 
+{% include 'vocab/components/word_modal.html' %}
 {% endblock %}
 
 {% block extra_js %}
@@ -450,6 +455,13 @@ function showCard() {
   const stars = '⭐'.repeat(w.star || 0);
   document.getElementById('cardStar').textContent = stars;
   document.getElementById('cardWord').textContent = w.word;
+  
+  const tipBtn = document.getElementById('cardTipBtn');
+  if (w.exam_tips && w.exam_tips.length > 0) {
+    tipBtn.style.display = 'inline-flex';
+  } else {
+    tipBtn.style.display = 'none';
+  }
   
   const posEl = document.getElementById('cardPos');
   posEl.innerHTML = '';
@@ -556,6 +568,13 @@ if (_urlParams.has('review_date')) {
     document.getElementById('reviewDateText').textContent = _urlParams.get('review_date');
   }
 }
+
+function openFlashcardModal(e) {
+  if (e) { e.stopPropagation(); }
+  const w = filtered[currentIdx];
+  if (w) openWordModalByObj(w);
+}
+
 loadWords();
 </script>
 {% endblock %}

@@ -180,6 +180,8 @@
   
   <div id="toastMsg" class="toast-msg">✨ 已為您恢復上次的瀏覽進度</div>
 </div>
+
+{% include 'vocab/components/word_modal.html' %}
 {% endblock %}
 
 {% block extra_js %}
@@ -295,6 +297,7 @@ function renderWords() {
         <div class="wc-word">
           <span class="progress-dot ${dotClass}"></span>
           <span style="color: var(--text-secondary); font-size: 0.85em; margin-right: 8px; font-weight: 500;">#${wIndex + 1}</span>${w.word}
+          ${w.exam_tips && w.exam_tips.length > 0 ? `<button class="official-badge" onclick="openBrowseWordModal('${w.word.replace(/'/g, "\\'")}')" title="考試提示">i</button>` : ''}
         </div>
         <div class="wc-star">${'⭐'.repeat(w.star || 0)}</div>
       </div>
@@ -310,6 +313,11 @@ function renderWords() {
 }
 
 function loadMore() { loadWords(); }
+
+function openBrowseWordModal(wordStr) {
+  const w = allWords.find(x => x.word === wordStr);
+  if (w) openWordModalByObj(w);
+}
 
 init();
 </script>

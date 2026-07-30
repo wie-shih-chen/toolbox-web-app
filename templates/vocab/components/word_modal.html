@@ -1,0 +1,120 @@
+<!-- 官方字庫詳情彈窗 CSS -->
+<style>
+  .word-modal-overlay {
+    position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+    background: rgba(0,0,0,0.6); backdrop-filter: blur(8px);
+    z-index: 2000; opacity: 0; pointer-events: none;
+    transition: opacity 0.3s; display: flex; align-items: flex-end; justify-content: center;
+  }
+  .word-modal-overlay.open { opacity: 1; pointer-events: auto; }
+  .word-modal {
+    width: 100%; max-width: 600px;
+    background: linear-gradient(160deg, #1a1a2e 0%, #16213e 100%);
+    border-radius: 28px 28px 0 0; padding: 1.2rem 1.8rem 3rem;
+    transform: translateY(100%); transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    border: 1px solid rgba(255,255,255,0.1); border-bottom: none;
+    position: relative; max-height: 85vh; overflow-y: auto;
+    text-align: left; /* Ensure text alignment is left by default */
+  }
+  .word-modal-overlay.open .word-modal { transform: translateY(0); }
+  .modal-drag-bar { width: 40px; height: 4px; background: rgba(255,255,255,0.15); border-radius: 100px; margin: 0 auto 1.5rem; }
+  .modal-close {
+    position: absolute; top: 1.2rem; right: 1.2rem; width: 32px; height: 32px; border-radius: 50%;
+    border: none; background: rgba(255,255,255,0.08); color: #aaa; font-size: 1rem; cursor: pointer;
+    display: flex; align-items: center; justify-content: center; transition: background 0.2s;
+  }
+  .modal-close:hover { background: rgba(255,107,107,0.25); color: #ff6b6b; }
+  .modal-word { font-size: 2rem; font-weight: 800; color: #a5b4fc; margin-bottom: 0.3rem; }
+  .modal-star { font-size: 0.9rem; margin-bottom: 0.6rem; opacity: 0.8; }
+  .modal-pos-row { display: flex; gap: 0.4rem; flex-wrap: wrap; margin-bottom: 1rem; }
+  .modal-pos-tag { background: rgba(102,126,234,0.2); color: #818cf8; border-radius: 100px; padding: 0.2rem 0.8rem; font-size: 0.78rem; font-weight: 700; }
+  .modal-def { font-size: 1.1rem; font-weight: 600; color: #e0e0e0; margin-bottom: 1.2rem; line-height: 1.5; }
+  .modal-section-title { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 1px; color: #888; font-weight: 700; margin-bottom: 0.6rem; }
+  .modal-example {
+    background: rgba(255,255,255,0.04); border-left: 3px solid rgba(78,205,196,0.5);
+    border-radius: 0 12px 12px 0; padding: 0.8rem 1rem; margin-bottom: 0.6rem; font-size: 0.9rem; line-height: 1.6;
+  }
+  .modal-example em { font-style: normal; font-weight: 600; color: #ddd; display: block; margin-bottom: 0.2rem; }
+  .modal-example span { color: #999; font-size: 0.85rem; }
+  .modal-tip { background: rgba(254,215,170,0.08); border: 1px solid rgba(254,215,170,0.2); border-radius: 12px; padding: 0.7rem 1rem; font-size: 0.85rem; color: #fde68a; margin-top: 0.5rem; margin-bottom: 0.5rem; line-height: 1.5; }
+  
+  .official-badge {
+    background: rgba(165, 180, 252, 0.1); color: #a5b4fc; border: 1px solid rgba(165, 180, 252, 0.3);
+    border-radius: 50%; width: 22px; height: 22px; font-size: 0.75rem; font-weight: 800; cursor: pointer;
+    display: inline-flex; align-items: center; justify-content: center; transition: all 0.2s;
+    font-family: monospace; font-style: italic; margin-left: 8px; vertical-align: middle;
+  }
+  .official-badge:hover { background: rgba(165, 180, 252, 0.25); transform: scale(1.1); box-shadow: 0 0 10px rgba(165, 180, 252, 0.3); }
+</style>
+
+<!-- 官方字庫詳情彈窗 (bottom sheet) HTML -->
+<div class="word-modal-overlay" id="wordModalOverlay" onclick="closeWordModal(event)">
+  <div class="word-modal" id="wordModal">
+    <div class="modal-drag-bar"></div>
+    <button class="modal-close" onclick="closeWordModal()">&#10005;</button>
+    <div class="modal-word" id="modalWord"></div>
+    <div class="modal-star" id="modalStar"></div>
+    <div class="modal-pos-row" id="modalPos"></div>
+    <div class="modal-def" id="modalDef"></div>
+    <div id="modalExamples"></div>
+    <div id="modalTip"></div>
+  </div>
+</div>
+
+<!-- 官方字庫詳情彈窗 JS -->
+<script>
+if (typeof escHtml !== 'function') {
+  function escHtml(str) {
+    return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+}
+
+// 通用的打開彈窗方法（傳入完整的單字物件）
+function openWordModalByObj(w) {
+  if (!w) return;
+  document.getElementById('modalWord').textContent = w.word || '';
+  document.getElementById('modalStar').textContent = w.star ? '⭐'.repeat(w.star) : '';
+  
+  const posEl = document.getElementById('modalPos');
+  posEl.innerHTML = (w.parts_of_speech || []).map(p => `<span class="modal-pos-tag">${escHtml(p)}</span>`).join('');
+  
+  document.getElementById('modalDef').textContent = w.definition || '';
+
+  const exEl = document.getElementById('modalExamples');
+  if (w.examples && w.examples.length) {
+    exEl.innerHTML = `<div class="modal-section-title">例句</div>` +
+      w.examples.slice(0, 3).map(e => `
+        <div class="modal-example">
+          <em>${escHtml(e.english || '')}</em>
+          <span>${escHtml(e.chinese || '')}</span>
+        </div>`).join('');
+  } else { 
+    exEl.innerHTML = ''; 
+  }
+
+  const tipEl = document.getElementById('modalTip');
+  if (w.exam_tips && w.exam_tips.length) {
+    tipEl.innerHTML = `<div class="modal-section-title" style="margin-top:1rem;">考試提示</div>` +
+      w.exam_tips.map(tip => {
+        let cleanTip = tip.replace(/^·\s*/, '');
+        return `<div class="modal-tip">💡 ${escHtml(cleanTip)}</div>`;
+      }).join('');
+  } else { 
+    tipEl.innerHTML = ''; 
+  }
+
+  document.getElementById('wordModalOverlay').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeWordModal(e) {
+  if (e && e.target !== document.getElementById('wordModalOverlay')) return;
+  document.getElementById('wordModalOverlay').classList.remove('open');
+  document.body.style.overflow = '';
+}
+
+// 綁定 ESC 鍵關閉彈窗
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') closeWordModal();
+});
+</script>
