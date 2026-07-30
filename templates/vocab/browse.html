@@ -165,10 +165,24 @@ let userProgress = {};
 async function init() {
   // Load progress first (non-blocking)
   fetch('/vocab/api/progress').then(r => r.json()).then(p => { userProgress = p; renderWords(); });
-  await loadWords();
+  
+  const savedLoaded = parseInt(sessionStorage.getItem('browse_loaded'), 10);
+  const initialLength = (savedLoaded && savedLoaded > PAGE_SIZE) ? savedLoaded : PAGE_SIZE;
+  
+  await loadWords(initialLength);
+  
+  const savedScroll = parseInt(sessionStorage.getItem('browse_scrollY'), 10);
+  if (savedScroll) {
+    setTimeout(() => window.scrollTo(0, savedScroll), 100);
+  }
 }
 
-async function loadWords() {
+window.addEventListener('beforeunload', () => {
+  sessionStorage.setItem('browse_scrollY', window.scrollY);
+  sessionStorage.setItem('browse_loaded', allWords.length);
+});
+
+async function loadWords(overrideLength = null) {
   if (loading) return;
   loading = true;
 
@@ -177,7 +191,8 @@ async function loadWords() {
   const score = document.getElementById('filterScore').value;
   const searchQ = document.getElementById('searchInput').value.trim();
 
-  let url = `/vocab/api/words?offset=${offset}&length=${PAGE_SIZE}`;
+  const fetchLength = overrideLength || PAGE_SIZE;
+  let url = `/vocab/api/words?offset=${offset}&length=${fetchLength}`;
   if (star) url += `&star=${star}`;
   if (category) url += `&category=${encodeURIComponent(category)}`;
   if (score) url += `&score_range=${encodeURIComponent(score)}`;
@@ -190,7 +205,7 @@ async function loadWords() {
 
     allWords = allWords.concat(data.words);
     totalAvailable = data.total;
-    offset += PAGE_SIZE;
+    offset += fetchLength;
 
     document.getElementById('loadingState').style.display = 'none';
     displayedWords = allWords; // 直接顯示後端返回的所有結果
@@ -213,6 +228,8 @@ function debounceSearch() {
 }
 
 function resetAndLoad() {
+  sessionStorage.removeItem('browse_scrollY');
+  sessionStorage.removeItem('browse_loaded');
   allWords = []; displayedWords = []; offset = 0;
   document.getElementById('wordsGrid').innerHTML = '';
   document.getElementById('btnLoadMore').style.display = 'none';
