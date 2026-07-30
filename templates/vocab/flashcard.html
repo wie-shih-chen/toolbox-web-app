@@ -310,15 +310,15 @@
       <div class="card-3d" id="card3d">
         <div class="card-face card-front">
           <div class="star-rating" id="cardStar"></div>
-          <div class="word" style="display: flex; align-items: center; justify-content: center; gap: 8px;">
-            <span id="cardWord"></span>
-            <button class="official-badge" id="cardTipBtn" onclick="openFlashcardModal(event)" style="display:none;" title="考試提示">i</button>
-          </div>
+          <div class="word" id="cardWord"></div>
           <div class="pos-badge" id="cardPos"></div>
           <div class="hint">點擊查看中文意思</div>
         </div>
         <div class="card-face card-back">
-          <div class="word-small" id="cardWordBack"></div>
+          <div class="word-small" style="display: flex; align-items: center; justify-content: center; gap: 8px;">
+            <span id="cardWordBack"></span>
+            <button class="official-badge" id="cardTipBtn" onclick="openFlashcardModal(event)" style="display:none;" title="考試提示">i</button>
+          </div>
           <div class="definition" id="cardDef"></div>
           <div class="example" id="cardExample"></div>
         </div>
