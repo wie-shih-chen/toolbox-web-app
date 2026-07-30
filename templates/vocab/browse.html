@@ -3,7 +3,7 @@
 
 {% block extra_css %}
 <style>
-  .browse-container { max-width: 900px; margin: 0 auto; padding: 1.5rem 1rem; }
+  .browse-container { width: 100%; max-width: 900px; margin: 0 auto; padding: 1.5rem 1rem; box-sizing: border-box; }
   .browse-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 0.5rem; }
   .browse-header a { 
     text-decoration: none; 
@@ -51,6 +51,9 @@
     position: relative;
     display: flex;
     flex-direction: column;
+    overflow-wrap: break-word;
+    word-wrap: break-word;
+    word-break: break-word;
   }
   .word-card:hover { transform: translateY(-4px); box-shadow: 0 8px 25px rgba(0,0,0,0.08); }
 
@@ -98,6 +101,7 @@
     border: 1px solid rgba(250, 112, 154, 0.2);
     color: #f472b6; font-size: 1rem; font-weight: 700;
     cursor: pointer; transition: all 0.2s;
+    box-sizing: border-box;
   }
   .load-more-btn:hover { background: linear-gradient(135deg, rgba(250, 112, 154, 0.15), rgba(254, 225, 64, 0.15)); transform: translateY(-2px); }
   .load-more-btn:disabled { opacity: 0.5; cursor: default; transform: none; }
@@ -112,7 +116,7 @@
 
   @media (max-width: 600px) {
     .filter-bar { flex-direction: column; align-items: stretch; gap: 0.6rem; }
-    .filter-bar input, .filter-bar select { min-width: 100%; }
+    .filter-bar input, .filter-bar select { width: 100%; box-sizing: border-box; }
     .words-grid { grid-template-columns: 1fr; gap: 1rem; }
     .word-card { padding: 1.2rem; }
   }
