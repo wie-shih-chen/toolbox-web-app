@@ -43,7 +43,10 @@ def _load_vocab():
 @login_required
 def index():
     """學習中心主頁"""
-    today_start = datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0)
+    from datetime import timedelta
+    tw_now = datetime.utcnow() + timedelta(hours=8)
+    tw_midnight = tw_now.replace(hour=0, minute=0, second=0, microsecond=0)
+    today_start = tw_midnight - timedelta(hours=8)
     
     today_reviewed = VocabProgress.query.filter(
         VocabProgress.user_id == current_user.id,
@@ -142,9 +145,11 @@ def history():
     logs = VocabHistoryLog.query.filter_by(user_id=current_user.id).order_by(VocabHistoryLog.created_at.desc()).all()
     
     history_data = {}
+    from datetime import timedelta
     for log in logs:
-        # local time representation via UTC
-        date_str = log.created_at.strftime('%Y-%m-%d')
+        # Convert UTC to local time (UTC+8)
+        local_time = log.created_at + timedelta(hours=8)
+        date_str = local_time.strftime('%Y-%m-%d')
         if date_str not in history_data:
             history_data[date_str] = {'correct': 0, 'incorrect': 0, 'words': {}}
             
@@ -196,8 +201,9 @@ def api_words():
     
     # 歷史複習過濾
     if review_date:
+        from datetime import timedelta
         logs = VocabHistoryLog.query.filter_by(user_id=current_user.id).all()
-        reviewed_words = {log.word for log in logs if log.created_at.strftime('%Y-%m-%d') == review_date}
+        reviewed_words = {log.word for log in logs if (log.created_at + timedelta(hours=8)).strftime('%Y-%m-%d') == review_date}
         all_words = [w for w in all_words if w['word'] in reviewed_words]
     
     # 常規過濾
@@ -323,7 +329,10 @@ def api_batch_lookup():
 @vocab_bp.route('/api/stats')
 @login_required
 def api_stats():
-    today_start = datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0)
+    from datetime import timedelta
+    tw_now = datetime.utcnow() + timedelta(hours=8)
+    tw_midnight = tw_now.replace(hour=0, minute=0, second=0, microsecond=0)
+    today_start = tw_midnight - timedelta(hours=8)
     
     today_reviewed = VocabProgress.query.filter(
         VocabProgress.user_id == current_user.id,
