@@ -100,13 +100,17 @@ def flashcard():
 @vocab_bp.route('/quiz')
 @login_required
 def quiz():
-    return render_template('vocab/quiz.html')
+    settings = UserSettings.query.filter_by(user_id=current_user.id).first()
+    daily_goal = settings.vocab_daily_goal if settings else 20
+    return render_template('vocab/quiz.html', daily_goal=daily_goal)
 
 
 @vocab_bp.route('/spelling')
 @login_required
 def spelling():
-    return render_template('vocab/spelling.html')
+    settings = UserSettings.query.filter_by(user_id=current_user.id).first()
+    daily_goal = settings.vocab_daily_goal if settings else 20
+    return render_template('vocab/spelling.html', daily_goal=daily_goal)
 
 
 @vocab_bp.route('/settings', methods=['GET', 'POST'])

@@ -285,8 +285,9 @@ async function loadWords() {
       if (!data.error) allWords = data.words;
     } catch(e) { console.error(e); }
   }
-  words = shuffle(allWords);
-  shuffled = words;
+  const dailyGoal = {{ daily_goal | default(20) }};
+  words = shuffle([...allWords]).slice(0, dailyGoal);
+  shuffled = [...words];
   document.getElementById('loadingState').style.display = 'none';
   if (words.length === 0) {
     document.getElementById('spellingArea').style.display = 'block';
