@@ -355,17 +355,17 @@
 
   /* ─── RWD ───────────────────────────────── */
 
-  /* 768px: 隱藏詞性、例句欄，讓版面能在平板上正常顯示 */
+  /* 768px: 隱藏次要欄位，讓版面能在平板上正常顯示 */
   @media (max-width: 768px) {
-    .custom-wrap { padding-top: 4.5rem; } /* 避免被固定導覽列遮擋 */
+    .custom-wrap { padding-top: 5.5rem; } /* 避免被固定導覽列遮擋 */
     
-    /* 隱藏次要欄位 */
-    td.td-pos, thead th:nth-child(5) { display: none; }
+    /* 隱藏部分欄位，備註也隱藏以節省空間 */
+    td.td-pos, thead th:nth-child(5), td.td-note, thead th:nth-child(7) { display: none; }
 
     /* 頂欄：按鈕換行到第二行 */
     .top-bar { flex-direction: column; align-items: flex-start; gap: 0.7rem; }
     .list-name-input { font-size: 1.25rem; width: 100%; }
-    .top-actions { width: 100%; justify-content: flex-start; }
+    .top-actions { width: 100%; justify-content: flex-start; flex-wrap: wrap; }
 
     /* 工具列滿版 */
     .toolbar-search { max-width: 100%; }
@@ -399,26 +399,34 @@
       border: none;
     }
 
-    /* 隱藏 checkbox、編號欄、例句、詞性 */
-    td.td-check, td.td-num, td.td-ex, td.td-pos { display: none !important; }
+    /* 隱藏 checkbox、編號欄 */
+    td.td-check, td.td-num { display: none !important; }
 
-    /* 單字欄維持 flex 排列讓徽章對齊，並加大字體 */
+    /* 單字欄與操作按鈕放在同一行，使用 Flex 置頂並分開 */
     td.td-word { 
       display: flex !important; 
+      justify-content: space-between;
+      align-items: flex-start;
       font-size: 1.25rem; 
-      margin-bottom: 0.3rem; 
+      margin-bottom: 0.3rem;
+      width: 100%;
     }
+    .word-cell-content { flex: 1; display: flex; align-items: center; gap: 6px; }
     
-    td.td-def { font-size: 0.95rem; color: rgba(255,255,255,0.75); margin-bottom: 0.4rem; }
-
-    /* 操作按鈕固定在卡片右上角 */
-    td.td-actions {
-      position: absolute;
-      top: 0.8rem;
-      right: 0.6rem;
-      width: auto;
+    /* 將原本放在右側的操作按鈕移至卡片右上角同一列，不再疊加 */
+    td.td-actions { display: none; } /* 隱藏原本的獨立操作欄 */
+    
+    /* 定義、詞性、例句、備註的版面微調 */
+    td.td-def { font-size: 0.95rem; color: rgba(255,255,255,0.75); margin-bottom: 0.2rem; }
+    td.td-pos, td.td-ex, td.td-note {
+      display: block !important;
+      font-size: 0.85rem;
+      color: rgba(255,255,255,0.5);
+      margin-bottom: 0.2rem;
     }
-    .row-actions { opacity: 1 !important; } /* 手機上永遠顯示 */
+    td.td-pos::before { content: "詞性: "; color: #667eea; font-weight: bold; }
+    td.td-ex::before { content: "例句: "; color: #667eea; font-weight: bold; }
+    td.td-note::before { content: "備註: "; color: #f59e0b; font-weight: bold; }
 
     /* 新增列欄位垂直堆疊 */
     .add-row-inner { flex-direction: column; align-items: stretch; gap: 0.4rem; }
@@ -625,6 +633,7 @@
           <th onclick="sortTable('definition')">中文意思</th>
           <th>詞性</th>
           <th>英文例句</th>
+          <th>備註</th>
           <th style="width:90px;"></th>
         </tr>
       </thead>
@@ -884,11 +893,19 @@ function renderTable() {
           <span class="editable-cell" contenteditable="true" data-placeholder="單字…" onblur="onCellEdit(${realIdx},'word',this)" onkeydown="handleCellKey(event,${realIdx},'word',this)">${escHtml(w.word || '')}</span>
           ${hasMatch ? `<button class="official-badge" onclick="openWordModal('${escHtml(w.word)}')" title="在官方 TOEIC 字庫中有此字！點擊查看詳情">i</button>` : ''}
         </div>
+        
+        <!-- 手機版右側操作鈕（在電腦版會隱藏或不起作用，主要靠 css 排版） -->
+        <div class="row-actions mobile-actions" style="display: none;">
+          <button class="btn-row btn-bookmark-row ${isBookmark ? 'active' : ''}" onclick="setBookmark(${realIdx})">🔖</button>
+          <button class="btn-row btn-del-row" onclick="deleteRow(${realIdx})">🗑</button>
+        </div>
+
         ${isBookmark ? `<div class="bookmark-label-wrap"><span class="bookmark-label" style="margin-left: 0;">🔖 書籤進度</span></div>` : ''}
       </td>
       <td class="td-def"><span class="editable-cell" contenteditable="true" data-placeholder="中文意思…" onblur="onCellEdit(${realIdx},'definition',this)" onkeydown="handleCellKey(event,${realIdx},'definition',this)">${escHtml(w.definition || '')}</span></td>
       <td class="td-pos"><span class="editable-cell" contenteditable="true" data-placeholder="v., n.…" onblur="onCellEdit(${realIdx},'pos',this)" onkeydown="handleCellKey(event,${realIdx},'pos',this)">${escHtml(pos)}</span></td>
       <td class="td-ex"><span class="editable-cell" contenteditable="true" data-placeholder="英文例句…" onblur="onCellEdit(${realIdx},'example_en',this)" onkeydown="handleCellKey(event,${realIdx},'example_en',this)">${escHtml(exEn)}</span></td>
+      <td class="td-note"><span class="editable-cell" contenteditable="true" data-placeholder="備註…" onblur="onCellEdit(${realIdx},'exam_tip',this)" onkeydown="handleCellKey(event,${realIdx},'exam_tip',this)">${escHtml(w.exam_tip || '')}</span></td>
       <td class="td-actions">
         <div class="row-actions">
           <button class="btn-row btn-bookmark-row ${isBookmark ? 'active' : ''}" title="設為今日進度書籤" onclick="setBookmark(${realIdx})">🔖</button>
@@ -903,11 +920,12 @@ function renderTable() {
   const addRow = document.createElement('tr');
   addRow.className = 'add-row';
   addRow.innerHTML = `
-    <td colspan="7">
+    <td colspan="8">
       <div class="add-row-inner">
         <input class="inp-word"  id="newWord"  placeholder="新增單字…" onkeydown="addRowKey(event)">
         <input class="inp-def"   id="newDef"   placeholder="中文意思…"  onkeydown="addRowKey(event)">
         <input class="inp-pos"   id="newPos"   placeholder="詞性…"      onkeydown="addRowKey(event)">
+        <input class="inp-note"  id="newNote"  placeholder="備註…"      onkeydown="addRowKey(event)">
         <button class="btn-add-confirm" onclick="addNewRow()">+ 新增</button>
       </div>
     </td>
@@ -986,9 +1004,10 @@ function addNewRow() {
     parts_of_speech: document.getElementById('newPos').value.trim()
       ? document.getElementById('newPos').value.trim().split(/[,/]/).map(p => p.trim()) : [],
     examples: [],
+    exam_tip: document.getElementById('newNote').value.trim(),
     created_at: new Date().toLocaleDateString('en-CA') // YYYY-MM-DD local time
   });
-  ['newWord','newDef','newPos'].forEach(id => document.getElementById(id).value = '');
+  ['newWord','newDef','newPos','newNote'].forEach(id => document.getElementById(id).value = '');
   markDirty();
   renderTable();
   // 比對新單字是否在官方字庫
