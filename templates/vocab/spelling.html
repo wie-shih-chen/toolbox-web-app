@@ -178,7 +178,7 @@
     <input type="hidden" id="filterReviewDate">
     <div id="reviewDateBadge" style="display: none; padding: 0.5rem 1rem; background: rgba(78, 205, 196, 0.15); color: var(--accent-color, #4ecdc4); border-radius: 20px; font-weight: 600; font-size: 0.9rem; align-items: center; gap: 0.5rem; border: 1px solid rgba(78, 205, 196, 0.3);">
       📅 限定複習: <span id="reviewDateText"></span> 
-      <a href="?" title="取消特定日期過濾" style="color: var(--danger-color, #ff6b6b); text-decoration: none; margin-left: 0.8rem; font-weight: bold; background: rgba(255,107,107,0.15); width: 24px; height: 24px; display: inline-flex; align-items: center; justify-content: center; border-radius: 50%; transition: transform 0.2s;">✕</a>
+      <a href="?" id="clearBadgeBtn" title="取消特定過濾" style="color: var(--danger-color, #ff6b6b); text-decoration: none; margin-left: 0.8rem; font-weight: bold; background: rgba(255,107,107,0.15); width: 24px; height: 24px; display: inline-flex; align-items: center; justify-content: center; border-radius: 50%; transition: transform 0.2s;">✕</a>
     </div>
   </div>
 
@@ -227,21 +227,57 @@ let hintsRevealed = 0;
 let currentWord = '';
 
 async function loadWords() {
-  const star = document.getElementById('filterStar').value;
-  const category = document.getElementById('filterCategory').value;
-  const score = document.getElementById('filterScore').value;
-  const reviewDate = document.getElementById('filterReviewDate') ? document.getElementById('filterReviewDate').value : '';
-  let url = `/vocab/api/words?offset=0&length=100`;
-  if (star) url += `&star=${star}`;
-  if (category) url += `&category=${encodeURIComponent(category)}`;
-  if (score) url += `&score_range=${encodeURIComponent(score)}`;
-  if (reviewDate) url += `&review_date=${encodeURIComponent(reviewDate)}`;
+  const source = _urlParams.get('source');
   let allWords = [];
-  try {
-    const res = await fetch(url);
-    const data = await res.json();
-    if (!data.error) allWords = data.words;
-  } catch(e) { console.error(e); }
+  
+  if (source === 'custom') {
+    // Hide filters for custom words
+    document.querySelectorAll('.filter-bar select').forEach(el => el.style.display = 'none');
+    const clearBtn = document.getElementById('clearBadgeBtn');
+    if (clearBtn) clearBtn.href = '?source=custom';
+    
+    try {
+      const res = await fetch('/vocab/api/custom/words');
+      const data = await res.json();
+      if (data && data.words) {
+        allWords = data.words;
+        
+        // Filter by date or range
+        const cDate = _urlParams.get('date');
+        const cStart = _urlParams.get('start');
+        const cEnd = _urlParams.get('end');
+        
+        if (cDate) {
+          allWords = allWords.filter(w => (w.created_at || '以前加入的單字') === cDate);
+          const badge = document.getElementById('reviewDateBadge');
+          if (badge) { badge.style.display = 'flex'; document.getElementById('reviewDateText').textContent = cDate; }
+        } else if (cStart && cEnd) {
+          const sIdx = parseInt(cStart) - 1;
+          const eIdx = parseInt(cEnd);
+          allWords = allWords.slice(sIdx, eIdx);
+          const badge = document.getElementById('reviewDateBadge');
+          if (badge) { badge.style.display = 'flex'; document.getElementById('reviewDateText').textContent = `編號 ${cStart} ~ ${cEnd}`; }
+        }
+      }
+    } catch (e) { console.error('Error loading custom words:', e); }
+  } else {
+    // Original official logic
+    const star = document.getElementById('filterStar').value;
+    const category = document.getElementById('filterCategory').value;
+    const score = document.getElementById('filterScore').value;
+    const reviewDate = document.getElementById('filterReviewDate') ? document.getElementById('filterReviewDate').value : '';
+    let url = `/vocab/api/words?offset=0&length=100`;
+    if (star) url += `&star=${star}`;
+    if (category) url += `&category=${encodeURIComponent(category)}`;
+    if (score) url += `&score_range=${encodeURIComponent(score)}`;
+    if (reviewDate) url += `&review_date=${encodeURIComponent(reviewDate)}`;
+    
+    try {
+      const res = await fetch(url);
+      const data = await res.json();
+      if (!data.error) allWords = data.words;
+    } catch(e) { console.error(e); }
+  }
   words = shuffle(allWords);
   shuffled = words;
   document.getElementById('loadingState').style.display = 'none';
@@ -361,11 +397,13 @@ function checkAnswer() {
   document.getElementById('btnNext').style.display = 'block';
   updateScore();
 
-  fetch('/vocab/api/progress', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ word: currentWord, result: isCorrect ? 'correct' : 'incorrect' })
-  });
+  if (_urlParams.get('source') !== 'custom') {
+    fetch('/vocab/api/progress', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ word: currentWord, result: isCorrect ? 'correct' : 'incorrect' })
+    });
+  }
 }
 
 function nextQuestion() { currentIdx++; showQuestion(); }

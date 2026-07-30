@@ -149,6 +149,7 @@ def _parse_excel_bytes(file_bytes: bytes) -> list[dict]:
             'definition':       definition,
             'parts_of_speech':  pos_list,
             'examples':         examples,
+            'created_at':       datetime.now().strftime('%Y-%m-%d'),
         })
 
     wb.close()

@@ -232,7 +232,7 @@
     <div style="font-size: 3rem; margin-bottom: 1rem;">🍃</div>
     <h3>尚無歷史紀錄</h3>
     <p>快去測驗或拼字來累積你的學習進度吧！</p>
-    <a href="{{ url_for('vocab.quiz') }}" class="btn-primary" style="margin-top: 1rem; display: inline-block;">前往測驗</a>
+    <button onclick="openHistoryQuizModal('')" class="btn-primary" style="margin-top: 1rem; display: inline-block;">前往測驗</button>
   </div>
   {% else %}
   <div class="history-list">
@@ -282,9 +282,9 @@
         </div>
         
         <div class="action-footer">
-          <a href="{{ url_for('vocab.quiz') }}?review_date={{ date_str }}" class="btn-retest">
+          <button onclick="openHistoryQuizModal('{{ date_str }}')" class="btn-retest" style="border: none; cursor: pointer;">
             <span>▶️</span> 重新測驗此天單字
-          </a>
+          </button>
         </div>
       </div>
     </details>
@@ -292,4 +292,46 @@
   </div>
   {% endif %}
 </div>
+
+<!-- 歷史紀錄測驗設定彈窗 -->
+<div class="modal-overlay" id="historyQuizModal" style="display:none;" onclick="closeHistoryQuizModal(event)">
+  <div class="word-modal" style="transform: translateY(0); padding: 2rem;">
+    <div class="modal-close" onclick="closeHistoryQuizModal()" style="top: 15px; right: 15px;">&#10005;</div>
+    <h2 style="color: #4ecdc4; margin-bottom: 1.5rem; text-align: center; font-size: 1.4rem;">🎯 選擇測驗方式</h2>
+    <p id="historyQuizDateText" style="text-align: center; color: rgba(255,255,255,0.7); margin-bottom: 2rem;"></p>
+    
+    <div style="display: flex; gap: 1rem; justify-content: center;">
+      <button class="btn-primary" onclick="startHistoryQuiz('quiz')" style="padding: 0.8rem 1.5rem;">📝 選擇題</button>
+      <button class="btn-primary" onclick="startHistoryQuiz('spelling')" style="padding: 0.8rem 1.5rem; background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);">⌨️ 拼字測驗</button>
+    </div>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let currentHistoryDate = '';
+
+function openHistoryQuizModal(dateStr) {
+  currentHistoryDate = dateStr;
+  document.getElementById('historyQuizDateText').textContent = dateStr ? `即將複習：${dateStr}` : '開始隨機測驗';
+  document.getElementById('historyQuizModal').style.display = 'flex';
+  document.body.style.overflow = 'hidden';
+}
+
+function closeHistoryQuizModal(e) {
+  if (e && e.target !== document.getElementById('historyQuizModal') && !e.target.classList.contains('modal-close')) return;
+  document.getElementById('historyQuizModal').style.display = 'none';
+  document.body.style.overflow = 'auto';
+}
+
+function startHistoryQuiz(type) {
+  let url = type === 'quiz' ? '/vocab/quiz' : '/vocab/spelling';
+  if (currentHistoryDate) {
+    url += `?review_date=${encodeURIComponent(currentHistoryDate)}`;
+  }
+  window.location.href = url;
+}
+</script>
 {% endblock %}

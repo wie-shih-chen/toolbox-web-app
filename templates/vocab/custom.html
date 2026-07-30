@@ -527,6 +527,7 @@
     <a href="{{ url_for('vocab.index') }}" class="back-btn">← 返回</a>
     <input class="list-name-input" id="listNameInput" value="我的單字本" placeholder="單字本名稱…" title="點擊重新命名">
     <div class="top-actions">
+      <button class="btn-action" onclick="openQuizSetup()" title="進行測驗 (選擇題 / 拼字)" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; border: none; font-weight: 600;">🎯 開始測驗</button>
       <label class="btn-action btn-upload" title="上傳 Excel (支援欄位自動對齊)">
         📥 上傳 Excel
         <input type="file" id="fileInput" accept=".xlsx" style="display:none" onchange="handleFileUpload(this)">
@@ -582,6 +583,44 @@
 
 </div>
 
+<!-- 測驗設定彈窗 -->
+<div class="modal-overlay" id="quizSetupModal" style="display:none;" onclick="closeQuizSetup(event)">
+  <div class="word-modal" style="transform: translateY(0); padding-bottom: 2rem;">
+    <div class="modal-close" onclick="closeQuizSetup()" style="top: 15px; right: 15px;">&#10005;</div>
+    <h2 style="color: #4ecdc4; margin-bottom: 1.5rem; text-align: center; font-size: 1.4rem;">🎯 自訂測驗設定</h2>
+    
+    <div style="display: flex; gap: 1rem; margin-bottom: 1.5rem; justify-content: center;">
+      <label style="cursor:pointer; display:flex; align-items:center; gap:5px; color:#fff;">
+        <input type="radio" name="quizMode" value="date" checked onchange="toggleQuizMode()"> 依日期測驗
+      </label>
+      <label style="cursor:pointer; display:flex; align-items:center; gap:5px; color:#fff;">
+        <input type="radio" name="quizMode" value="range" onchange="toggleQuizMode()"> 依編號區間
+      </label>
+    </div>
+
+    <!-- 依日期設定 -->
+    <div id="quizDateBlock" style="text-align: center; margin-bottom: 1.5rem;">
+      <p style="color: #a5b4fc; margin-bottom: 0.5rem; font-size: 0.95rem;">選擇要測驗的日期範圍：</p>
+      <select id="quizDateSelect" class="list-name-input" style="width: 100%; max-width: 250px; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.2);"></select>
+    </div>
+
+    <!-- 依編號區間設定 -->
+    <div id="quizRangeBlock" style="text-align: center; margin-bottom: 1.5rem; display: none;">
+      <p style="color: #a5b4fc; margin-bottom: 0.5rem; font-size: 0.95rem;">請輸入單字編號範圍 (1 ~ <span id="maxWordIdx">0</span>)：</p>
+      <div style="display: flex; gap: 10px; justify-content: center; align-items: center;">
+        <input type="number" id="quizStartIdx" class="list-name-input" style="width: 80px; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.2);" min="1" value="1">
+        <span style="color: #fff;">至</span>
+        <input type="number" id="quizEndIdx" class="list-name-input" style="width: 80px; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.2);" min="1">
+      </div>
+    </div>
+
+    <div style="display: flex; gap: 1rem; justify-content: center; margin-top: 2rem;">
+      <button class="btn-primary" onclick="startCustomQuiz('quiz')" style="padding: 0.8rem 1.5rem;">📝 選擇題</button>
+      <button class="btn-primary" onclick="startCustomQuiz('spelling')" style="padding: 0.8rem 1.5rem; background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);">⌨️ 拼字測驗</button>
+    </div>
+  </div>
+</div>
+
 <!-- 浮動儲存按鈕 -->
 <button class="floating-save" id="floatSaveBtn" onclick="saveWords()">
   💾 儲存所有變更
@@ -608,6 +647,79 @@
 
 {% block extra_js %}
 <script>
+// ─── 測驗設定彈窗邏輯 ──────────────────────────────────────────────
+function openQuizSetup() {
+  if (allWords.length === 0) {
+    showToast('單字本是空的，請先新增單字！', 'error');
+    return;
+  }
+  
+  // Populate dates
+  const dateSelect = document.getElementById('quizDateSelect');
+  dateSelect.innerHTML = '';
+  const dates = [...new Set(allWords.map(w => w.created_at || '以前加入的單字'))];
+  dates.forEach(d => {
+    const opt = document.createElement('option');
+    opt.value = d;
+    opt.textContent = d;
+    dateSelect.appendChild(opt);
+  });
+  // Select the most recent date (last one if chronologically added)
+  if (dates.length > 0) {
+    dateSelect.value = dates[dates.length - 1];
+  }
+  
+  document.getElementById('maxWordIdx').textContent = allWords.length;
+  document.getElementById('quizEndIdx').value = allWords.length;
+  
+  document.getElementById('quizSetupModal').style.display = 'flex';
+  document.body.style.overflow = 'hidden';
+}
+
+function closeQuizSetup(e) {
+  if (e && e.target !== document.getElementById('quizSetupModal') && !e.target.classList.contains('modal-close')) return;
+  document.getElementById('quizSetupModal').style.display = 'none';
+  document.body.style.overflow = 'auto';
+}
+
+function toggleQuizMode() {
+  const mode = document.querySelector('input[name="quizMode"]:checked').value;
+  if (mode === 'date') {
+    document.getElementById('quizDateBlock').style.display = 'block';
+    document.getElementById('quizRangeBlock').style.display = 'none';
+  } else {
+    document.getElementById('quizDateBlock').style.display = 'none';
+    document.getElementById('quizRangeBlock').style.display = 'flex';
+  }
+}
+
+function startCustomQuiz(type) {
+  const mode = document.querySelector('input[name="quizMode"]:checked').value;
+  let url = type === 'quiz' ? '/vocab/quiz?source=custom' : '/vocab/spelling?source=custom';
+  
+  if (mode === 'date') {
+    const date = document.getElementById('quizDateSelect').value;
+    url += `&date=${encodeURIComponent(date)}`;
+  } else {
+    const start = parseInt(document.getElementById('quizStartIdx').value) || 1;
+    const end = parseInt(document.getElementById('quizEndIdx').value) || allWords.length;
+    if (start < 1 || start > allWords.length || end < start || end > allWords.length) {
+      showToast('請輸入正確的編號範圍', 'error');
+      return;
+    }
+    url += `&start=${start}&end=${end}`;
+  }
+  
+  if (dirty) {
+    // If unsaved changes, save first before navigating
+    saveWords().then(() => {
+      window.location.href = url;
+    });
+  } else {
+    window.location.href = url;
+  }
+}
+
 // ─── 狀態 ──────────────────────────────────────────────────────────
 let allWords = [];          // 原始完整資料
 let displayWords = [];      // 目前顯示的（搜尋後）
@@ -656,8 +768,26 @@ function renderTable() {
 
   const tbody = document.getElementById('vocabTbody');
   tbody.innerHTML = '';
+  
+  let lastDate = null;
 
   displayWords.forEach((w, i) => {
+    // 插入日期分隔線
+    const wDate = w.created_at || '以前加入的單字';
+    if (wDate !== lastDate) {
+      const divTr = document.createElement('tr');
+      divTr.className = 'date-divider-row';
+      divTr.innerHTML = `<td colspan="7">
+        <div style="display: flex; align-items: center; text-align: center; color: rgba(255,255,255,0.4); font-size: 0.85rem; margin: 10px 0;">
+          <div style="flex: 1; border-bottom: 1px solid rgba(255,255,255,0.1);"></div>
+          <span style="padding: 0 10px;">🗓 ${wDate}</span>
+          <div style="flex: 1; border-bottom: 1px solid rgba(255,255,255,0.1);"></div>
+        </div>
+      </td>`;
+      tbody.appendChild(divTr);
+      lastDate = wDate;
+    }
+
     const realIdx = allWords.indexOf(w);
     const isBookmark = realIdx === bookmarkIdx;
     const tr = document.createElement('tr');
@@ -776,7 +906,8 @@ function addNewRow() {
     definition: document.getElementById('newDef').value.trim(),
     parts_of_speech: document.getElementById('newPos').value.trim()
       ? document.getElementById('newPos').value.trim().split(/[,/]/).map(p => p.trim()) : [],
-    examples: []
+    examples: [],
+    created_at: new Date().toLocaleDateString('en-CA') // YYYY-MM-DD local time
   });
   ['newWord','newDef','newPos'].forEach(id => document.getElementById(id).value = '');
   markDirty();

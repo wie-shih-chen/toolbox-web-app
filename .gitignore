@@ -8,4 +8,3 @@ downloads/
 .env
 app.db
 instance/
-static/data/toeic_vocabulary.json
