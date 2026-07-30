@@ -67,11 +67,18 @@
     line-height: 1.6; 
     border-top: 1px solid rgba(128,128,128,0.2); 
     padding-top: 0.8rem; 
-    margin-top: auto; 
+    margin-top: 0.8rem; 
   }
   .word-card .wc-example em { color: var(--text-primary, #444); font-weight: 600; font-style: normal; display: block; margin-bottom: 0.2rem; }
   
-  .word-card .wc-cat { font-size: 0.75rem; color: var(--text-secondary); position: absolute; bottom: 1rem; right: 1.2rem; font-weight: 500; }
+  .word-card .wc-cat { 
+    font-size: 0.75rem; 
+    color: var(--text-secondary); 
+    font-weight: 500; 
+    margin-top: auto;
+    align-self: flex-end;
+    padding-top: 0.5rem;
+  }
 
   /* Progress dot */
   .progress-dot {
