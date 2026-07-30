@@ -142,7 +142,18 @@
     .prompt-card .definition { font-size: 1.6rem; }
     .letter-box { width: 1.8rem; height: 2.2rem; font-size: 1.1rem; }
     .spell-input { font-size: 1.2rem; padding: 1rem; }
-    .btn-submit, .btn-hint { padding: 1rem; }
+    .btn-submit { padding: 1rem; font-size: 1rem; }
+    .btn-hint { padding: 1rem; }
+    
+    .btn-next {
+      position: fixed;
+      bottom: 80px;
+      left: 15px;
+      width: calc(100% - 30px);
+      z-index: 1000;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.25);
+    }
+    .feedback-box { margin-bottom: 90px; }
   }
 </style>
 {% endblock %}
@@ -396,13 +407,20 @@ function checkAnswer() {
     sessionCorrect++;
     feedback.className = 'feedback-box correct';
     feedback.innerHTML = `✅ 答對了！${currentWord}`;
+    feedback.style.display = 'block';
+    
+    setTimeout(() => { nextQuestion(); }, 1200);
   } else {
     sessionWrong++;
     feedback.className = 'feedback-box wrong';
     feedback.innerHTML = `❌ 正確答案是：<strong>${currentWord}</strong>`;
+    feedback.style.display = 'block';
+    document.getElementById('btnNext').style.display = 'block';
+    
+    setTimeout(() => {
+      window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+    }, 100);
   }
-  feedback.style.display = 'block';
-  document.getElementById('btnNext').style.display = 'block';
   updateScore();
 
   if (_urlParams.get('source') !== 'custom') {

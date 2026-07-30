@@ -152,6 +152,16 @@
     .question-card .q-word { font-size: 2rem; }
     .options-grid { grid-template-columns: 1fr; gap: 0.8rem; }
     .opt-btn { padding: 1rem; font-size: 0.95rem; }
+    
+    .btn-next {
+      position: fixed;
+      bottom: 80px;
+      left: 15px;
+      width: calc(100% - 30px);
+      z-index: 1000;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.25);
+    }
+    .feedback-box { margin-bottom: 90px; }
   }
 </style>
 {% endblock %}
@@ -361,15 +371,22 @@ function selectAnswer(btn, isCorrect, w) {
     sessionCorrect++;
     feedback.className = 'feedback-box correct';
     feedback.innerHTML = `✅ 正確！<br>${w.word} = ${w.definition}`;
+    feedback.style.display = 'block';
+    
+    setTimeout(() => { nextQuestion(); }, 1200);
   } else {
     btn.classList.add('wrong');
     sessionWrong++;
     feedback.className = 'feedback-box wrong';
     feedback.innerHTML = `❌ 答錯了！正確答案是：<strong>${w.definition}</strong>`;
+    feedback.style.display = 'block';
+    document.getElementById('btnNext').style.display = 'block';
+    
+    setTimeout(() => {
+      window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+    }, 100);
   }
   
-  feedback.style.display = 'block';
-  document.getElementById('btnNext').style.display = 'block';
   updateScore();
   
   // Record progress (only for official words)
