@@ -215,6 +215,29 @@
       justify-content: center;
     }
   }
+  .word-modal-overlay {
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(0,0,0,0.6); z-index: 2000;
+    opacity: 0; pointer-events: none; transition: opacity 0.3s;
+    display: flex; flex-direction: column; justify-content: flex-end;
+  }
+  .word-modal-overlay.open { opacity: 1; pointer-events: all; }
+  .word-modal {
+    background: var(--card-bg, #2d2d2d);
+    border-top-left-radius: 24px; border-top-right-radius: 24px;
+    padding: 1.5rem; max-height: 80vh; overflow-y: auto;
+    transform: translateY(100%); transition: transform 0.3s;
+    position: relative;
+  }
+  .word-modal-overlay.open .word-modal { transform: translateY(0); }
+  .modal-close {
+    position: absolute; top: 15px; right: 15px;
+    background: rgba(255,255,255,0.1); border: none; border-radius: 50%;
+    width: 32px; height: 32px; color: #fff; font-size: 1rem;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; transition: background 0.2s;
+  }
+  .modal-close:hover { background: rgba(255,255,255,0.2); }
 </style>
 {% endblock %}
 
@@ -294,8 +317,8 @@
 </div>
 
 <!-- 歷史紀錄測驗設定彈窗 -->
-<div class="modal-overlay" id="historyQuizModal" style="display:none;" onclick="closeHistoryQuizModal(event)">
-  <div class="word-modal" style="transform: translateY(0); padding: 2rem;">
+<div class="word-modal-overlay" id="historyQuizModal" onclick="closeHistoryQuizModal(event)">
+  <div class="word-modal" style="padding: 2rem; border-top-left-radius: 24px; border-top-right-radius: 24px;">
     <div class="modal-close" onclick="closeHistoryQuizModal()" style="top: 15px; right: 15px;">&#10005;</div>
     <h2 style="color: #4ecdc4; margin-bottom: 1.5rem; text-align: center; font-size: 1.4rem;">🎯 選擇測驗方式</h2>
     <p id="historyQuizDateText" style="text-align: center; color: rgba(255,255,255,0.7); margin-bottom: 2rem;"></p>
@@ -316,13 +339,13 @@ let currentHistoryDate = '';
 function openHistoryQuizModal(dateStr) {
   currentHistoryDate = dateStr;
   document.getElementById('historyQuizDateText').textContent = dateStr ? `即將複習：${dateStr}` : '開始隨機測驗';
-  document.getElementById('historyQuizModal').style.display = 'flex';
+  document.getElementById('historyQuizModal').classList.add('open');
   document.body.style.overflow = 'hidden';
 }
 
 function closeHistoryQuizModal(e) {
   if (e && e.target !== document.getElementById('historyQuizModal') && !e.target.classList.contains('modal-close')) return;
-  document.getElementById('historyQuizModal').style.display = 'none';
+  document.getElementById('historyQuizModal').classList.remove('open');
   document.body.style.overflow = 'auto';
 }
 

@@ -584,8 +584,8 @@
 </div>
 
 <!-- 測驗設定彈窗 -->
-<div class="modal-overlay" id="quizSetupModal" style="display:none;" onclick="closeQuizSetup(event)">
-  <div class="word-modal" style="transform: translateY(0); padding-bottom: 2rem;">
+<div class="word-modal-overlay" id="quizSetupModal" onclick="closeQuizSetup(event)">
+  <div class="word-modal" style="padding-bottom: 2rem;">
     <div class="modal-close" onclick="closeQuizSetup()" style="top: 15px; right: 15px;">&#10005;</div>
     <h2 style="color: #4ecdc4; margin-bottom: 1.5rem; text-align: center; font-size: 1.4rem;">🎯 自訂測驗設定</h2>
     
@@ -672,13 +672,13 @@ function openQuizSetup() {
   document.getElementById('maxWordIdx').textContent = allWords.length;
   document.getElementById('quizEndIdx').value = allWords.length;
   
-  document.getElementById('quizSetupModal').style.display = 'flex';
+  document.getElementById('quizSetupModal').classList.add('open');
   document.body.style.overflow = 'hidden';
 }
 
 function closeQuizSetup(e) {
   if (e && e.target !== document.getElementById('quizSetupModal') && !e.target.classList.contains('modal-close')) return;
-  document.getElementById('quizSetupModal').style.display = 'none';
+  document.getElementById('quizSetupModal').classList.remove('open');
   document.body.style.overflow = 'auto';
 }
 
