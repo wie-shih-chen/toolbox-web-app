@@ -195,7 +195,35 @@
     padding-bottom: 100px; /* Leave space for sticky CTA */
   }
 
+  
+  .center-modal-overlay {
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.65); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
+    z-index: 2000;
+    display: flex; align-items: center; justify-content: center;
+    opacity: 0; pointer-events: none; transition: opacity 0.3s;
+    padding: 1rem;
+  }
+  .center-modal-overlay.open { opacity: 1; pointer-events: all; }
+  .center-modal {
+    width: 100%; max-width: 400px;
+    background: linear-gradient(160deg, #1a1a2e 0%, #16213e 100%);
+    border-radius: 24px;
+    padding: 2rem 1.5rem;
+    transform: scale(0.95); opacity: 0;
+    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    border: 1px solid rgba(255,255,255,0.1);
+    box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+  }
+  .center-modal-overlay.open .center-modal { transform: scale(1); opacity: 1; }
+  .modal-btn-group { display: flex; gap: 0.8rem; margin-top: 1.5rem; }
+  .modal-btn {
+    flex: 1; padding: 0.8rem; border-radius: 12px; font-weight: 600;
+    border: none; cursor: pointer; transition: all 0.2s; color: white;
+  }
+  .modal-btn:hover { transform: translateY(-2px); }
   @media (max-width: 600px) {
+
     .dashboard-header { padding: 1.5rem 1rem; }
     .dashboard-header h1 { font-size: 1.5rem !important; }
     .podium-item { width: 33%; }
@@ -223,6 +251,10 @@
         歷史紀錄
       </a>
       {% if current_user.id == group.owner_id %}
+      <button onclick="openSettingsModal()" class="btn btn-outline-light btn-sm" style="border-radius: 20px; display: flex; align-items: center; gap: 0.3rem;">
+        <span class="material-icons" style="font-size: 16px;">settings</span>
+        設定
+      </button>
       <form action="{{ url_for('group.delete_group', group_id=group.id) }}" method="POST" onsubmit="return confirm('確定要解散並刪除這個群組嗎？此操作將無法復原！');" style="margin: 0;">
         <button type="submit" class="btn btn-outline-danger btn-sm" style="border-radius: 20px; display: flex; align-items: center; gap: 0.3rem;">
           <span class="material-icons" style="font-size: 16px;">delete</span>

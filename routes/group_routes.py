@@ -424,4 +424,22 @@ def api_mark_studied(group_id):
         record.words_studied = group.daily_goal
         db.session.commit()
         return jsonify({'success': True})
-    return jsonify({'success': False, 'error': '找不到記錄'})
+    return jsonify({'error': 'Record not found'}), 404
+
+@group_bp.route('/<int:group_id>/settings', methods=['POST'])
+@login_required
+def update_settings(group_id):
+    group = StudyGroup.query.get_or_404(group_id)
+    if group.owner_id != current_user.id:
+        flash('只有群主可以修改設定！', 'danger')
+        return redirect(url_for('group.dashboard', group_id=group.id))
+        
+    new_goal = request.form.get('daily_goal', type=int)
+    if new_goal and 5 <= new_goal <= 100:
+        group.daily_goal = new_goal
+        db.session.commit()
+        flash('群組設定已更新！', 'success')
+    else:
+        flash('每日目標必須在 5 到 100 之間！', 'warning')
+        
+    return redirect(url_for('group.dashboard', group_id=group.id))
