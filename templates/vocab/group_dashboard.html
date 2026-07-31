@@ -181,6 +181,9 @@
   .btn-study {
     background: linear-gradient(135deg, #667eea, #764ba2);
   }
+  .btn-review {
+    background: linear-gradient(135deg, #434343, #000000);
+  }
   .btn-quiz {
     background: linear-gradient(135deg, #ff0844, #ffb199);
     animation: pulse 2s infinite;
@@ -361,10 +364,16 @@
       去背單字 ({{ current_user_record.words_studied }}/{{ group.daily_goal }})
     </a>
     {% else %}
-    <a href="{{ url_for('group.take_quiz', group_id=group.id) }}" class="btn-cta btn-quiz">
-      <span class="material-icons">sports_esports</span>
-      {% if not current_user_record.quiz_taken %}開始今日總測驗{% else %}再次測驗 (不計分){% endif %}
-    </a>
+    <div style="display: flex; gap: 0.8rem; width: 100%;">
+      <a href="{{ url_for('group.take_quiz', group_id=group.id) }}" class="btn-cta btn-quiz" style="flex: 2; padding: 1rem 0.5rem; font-size: 1rem;">
+        <span class="material-icons" style="font-size: 1.2rem;">sports_esports</span>
+        {% if not current_user_record.quiz_taken %}今日測驗{% else %}再次測驗{% endif %}
+      </a>
+      <a href="{{ url_for('group.group_study', group_id=group.id) }}?review=1" class="btn-cta btn-review" style="flex: 1; padding: 1rem 0.5rem; font-size: 1rem;">
+        <span class="material-icons" style="font-size: 1.2rem;">replay</span>
+        複習
+      </a>
+    </div>
     {% endif %}
   </div>
 
