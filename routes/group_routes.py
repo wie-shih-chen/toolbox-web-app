@@ -211,7 +211,7 @@ def dashboard(group_id):
             if full_date_str in record_dict:
                 chart_data.append(record_dict[full_date_str])
             else:
-                chart_data.append(0)
+                chart_data.append(None)
         
         data = {
             'user': user,
