@@ -580,8 +580,16 @@ def api_clear_all_records(group_id):
     if group.owner_id != current_user.id:
         return jsonify({'error': '只有群主可以清除所有紀錄！'}), 403
         
+    source_name = f'group_{group.id}'
+    
     GroupDailyAssignment.query.filter_by(group_id=group.id).delete()
     GroupDailyRecord.query.filter_by(group_id=group.id).delete()
+    VocabHistoryLog.query.filter_by(source=source_name).delete()
+    VocabProgress.query.filter_by(source=source_name).delete()
+    
+    group.vocab_filter_config = None
+    group.daily_goal = 20
+    
     db.session.commit()
     
     return jsonify({'success': True})
