@@ -22,12 +22,62 @@ def get_tw_today_start_utc():
 def generate_invite_code():
     return ''.join(random.choices(string.ascii_uppercase + string.digits, k=6))
 
+def apply_vocab_pipeline(group, words_list, pipeline_config):
+    if not pipeline_config:
+        random.shuffle(words_list)
+        return words_list
+
+    current_list = list(words_list)
+    
+    for block in pipeline_config:
+        b_type = block.get('type')
+        b_val = block.get('value')
+        
+        if b_type == 'exclude_learned':
+            past = GroupDailyAssignment.query.filter_by(group_id=group.id).all()
+            past_words = set()
+            for p in past:
+                w_list = json.loads(p.words_json)
+                for w in w_list:
+                    past_words.add(w['word'])
+            current_list = [w for w in current_list if w['word'] not in past_words]
+            
+        elif b_type == 'score':
+            score_order = {'0-400': 1, '400-600': 2, '600-780': 3, '780-900': 4, '900+': 5}
+            if b_val == 'sort_asc':
+                current_list.sort(key=lambda x: score_order.get(x.get('score_range', ''), 0))
+            elif b_val == 'sort_desc':
+                current_list.sort(key=lambda x: score_order.get(x.get('score_range', ''), 0), reverse=True)
+            elif isinstance(b_val, list) and len(b_val) > 0:
+                current_list = [w for w in current_list if w.get('score_range') in b_val]
+                
+        elif b_type == 'star':
+            if b_val == 'sort_asc':
+                current_list.sort(key=lambda x: int(x.get('star', 0)))
+            elif b_val == 'sort_desc':
+                current_list.sort(key=lambda x: int(x.get('star', 0)), reverse=True)
+            elif isinstance(b_val, list) and len(b_val) > 0:
+                stars = [int(v) for v in b_val]
+                current_list = [w for w in current_list if int(w.get('star', 0)) in stars]
+                
+        elif b_type == 'category':
+            if isinstance(b_val, list) and len(b_val) > 0:
+                current_list = [w for w in current_list if w.get('category') in b_val]
+                
+        elif b_type == 'pos':
+            if isinstance(b_val, list) and len(b_val) > 0:
+                current_list = [w for w in current_list if any(p in b_val for p in w.get('parts_of_speech', []))]
+                
+        elif b_type == 'shuffle':
+            random.shuffle(current_list)
+
+    return current_list
+
 def get_or_create_daily_assignment(group, date_str):
     assignment = GroupDailyAssignment.query.filter_by(group_id=group.id, date=date_str).first()
     if not assignment:
         all_words = _load_vocab()
         
-        # Filter out duplicates by English word
         unique_words_list = []
         seen = set()
         for w in all_words:
@@ -35,9 +85,20 @@ def get_or_create_daily_assignment(group, date_str):
                 seen.add(w['word'])
                 unique_words_list.append(w)
                 
-        # Ensure we have enough words
-        num_words = min(group.daily_goal, len(unique_words_list))
-        selected_words = random.sample(unique_words_list, num_words) if num_words > 0 else []
+        pipeline_config = None
+        if group.vocab_filter_config:
+            try:
+                pipeline_config = json.loads(group.vocab_filter_config)
+            except Exception:
+                pass
+                
+        filtered_words = apply_vocab_pipeline(group, unique_words_list, pipeline_config)
+        
+        num_words = min(group.daily_goal, len(filtered_words))
+        # Since pipeline might have sorted it, we just take the first N elements!
+        # If it's pure random, apply_vocab_pipeline already shuffled it or we can just take the first N.
+        selected_words = filtered_words[:num_words] if num_words > 0 else []
+        
         assignment = GroupDailyAssignment(
             group_id=group.id,
             date=date_str,
@@ -457,9 +518,13 @@ def update_settings(group_id):
         
     new_goal = request.form.get('daily_goal', type=int)
     new_name = request.form.get('name', '').strip()
+    vocab_filter_config = request.form.get('vocab_filter_config')
     
     if new_name:
         group.name = new_name
+        
+    if vocab_filter_config is not None:
+        group.vocab_filter_config = vocab_filter_config
         
     if new_goal and 5 <= new_goal <= 100:
         group.daily_goal = new_goal
@@ -468,8 +533,42 @@ def update_settings(group_id):
     else:
         db.session.commit()
         if not new_goal or new_goal < 5 or new_goal > 100:
-            flash('群組名稱已更新，但每日目標必須在 5 到 100 之間！', 'warning')
+            flash('設定已儲存，但每日目標必須在 5 到 100 之間！', 'warning')
         else:
             flash('群組設定已更新！', 'success')
             
     return redirect(url_for('group.dashboard', group_id=group.id))
+
+@group_bp.route('/<int:group_id>/api/filter_preview', methods=['POST'])
+@login_required
+def api_filter_preview(group_id):
+    group = StudyGroup.query.get_or_404(group_id)
+    pipeline_config = request.json.get('pipeline', [])
+    
+    all_words = _load_vocab()
+    unique_words_list = []
+    seen = set()
+    for w in all_words:
+        if w['word'] not in seen:
+            seen.add(w['word'])
+            unique_words_list.append(w)
+            
+    filtered_words = apply_vocab_pipeline(group, unique_words_list, pipeline_config)
+    
+    return jsonify({
+        'success': True,
+        'count': len(filtered_words)
+    })
+
+@group_bp.route('/<int:group_id>/api/reset_history', methods=['POST'])
+@login_required
+def api_reset_history(group_id):
+    group = StudyGroup.query.get_or_404(group_id)
+    if group.owner_id != current_user.id:
+        return jsonify({'error': '只有群主可以重置紀錄！'}), 403
+        
+    # Delete all assignments for this group
+    GroupDailyAssignment.query.filter_by(group_id=group.id).delete()
+    db.session.commit()
+    
+    return jsonify({'success': True})

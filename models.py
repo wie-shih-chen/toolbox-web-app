@@ -427,6 +427,7 @@ class StudyGroup(db.Model):
     invite_code = db.Column(db.String(10), unique=True, nullable=False)
     owner_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     daily_goal = db.Column(db.Integer, default=10) # 每日背單字目標
+    vocab_filter_config = db.Column(db.Text, nullable=True) # 單字漏斗設定 (JSON 格式)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
 class GroupMember(db.Model):

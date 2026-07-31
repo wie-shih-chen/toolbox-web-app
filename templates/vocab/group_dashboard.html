@@ -448,6 +448,20 @@ function openSettingsModal() { document.getElementById('settingsModal').classLis
 function closeSettingsModal() { document.getElementById('settingsModal').classList.remove('open'); }
 </script>
 
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
+<style>
+.pipeline-container { display: flex; gap: 1rem; margin-top: 1rem; }
+.block-list { flex: 1; background: rgba(0,0,0,0.2); border: 1px dashed rgba(255,255,255,0.2); border-radius: 8px; padding: 0.5rem; min-height: 200px; display: flex; flex-direction: column; gap: 0.5rem; max-height: 400px; overflow-y: auto; }
+.block-list-title { color: #aaa; font-size: 0.9rem; text-align: center; margin-bottom: 0.5rem; }
+.filter-block { background: #333; padding: 0.5rem; border-radius: 6px; cursor: grab; user-select: none; border: 1px solid rgba(255,255,255,0.1); }
+.filter-block:active { cursor: grabbing; }
+.filter-block-header { display: flex; justify-content: space-between; align-items: center; color: white; }
+.filter-block-body { display: none; margin-top: 0.5rem; padding-top: 0.5rem; border-top: 1px solid rgba(255,255,255,0.1); }
+.block-list.active-pipeline .filter-block-body { display: block; }
+.preview-badge { background: #ffcc00; color: #000; padding: 0.2rem 0.5rem; border-radius: 20px; font-size: 0.8rem; font-weight: bold; display: none; }
+.center-modal { max-width: 800px; width: 95%; max-height: 90vh; overflow-y: auto; }
+</style>
+
 <div id="settingsModal" class="center-modal-overlay" onclick="if(event.target===this) closeSettingsModal()">
   <div class="center-modal">
     <h3 style="margin-top: 0; color: white; text-align: center;">群組設定</h3>
@@ -460,11 +474,257 @@ function closeSettingsModal() { document.getElementById('settingsModal').classLi
         <label style="color: #ccc; margin-bottom: 0.5rem; display: block;">每日背單字目標數量</label>
         <input type="number" name="daily_goal" class="form-control" value="{{ group.daily_goal }}" min="5" max="100" required style="background: rgba(255,255,255,0.1); color: white; border: 1px solid rgba(255,255,255,0.2); border-radius: 12px; padding: 0.8rem;">
       </div>
-      <div class="modal-btn-group">
+      
+      <div class="form-group" style="margin-top: 1.5rem;">
+          <label style="color: #ccc; margin-bottom: 0.5rem; display: flex; justify-content: space-between; align-items: center;">
+              單字漏斗 (Filter Pipeline) 拖曳積木來設定出題邏輯
+              <span class="preview-badge" id="previewBadge">符合字數: 載入中...</span>
+          </label>
+          
+          <div class="pipeline-container">
+              <!-- Available Blocks -->
+              <div class="block-list" id="availableBlocks">
+                  <div class="block-list-title">可用積木 (拖曳至右側)</div>
+                  
+                  <div class="filter-block" data-type="score">
+                      <div class="filter-block-header">🎯 目標分數 <span class="material-icons" style="font-size: 1rem;">drag_indicator</span></div>
+                      <div class="filter-block-body">
+                          <select class="form-control" multiple data-prop="value" style="background: #222; color: white; height: 120px;">
+                              <option value="0-400">0-400</option>
+                              <option value="400-600">400-600</option>
+                              <option value="600-780">600-780</option>
+                              <option value="780-900">780-900</option>
+                              <option value="900+">900+</option>
+                              <option value="sort_asc">由低到高排序</option>
+                              <option value="sort_desc">由高到低排序</option>
+                          </select>
+                      </div>
+                  </div>
+                  
+                  <div class="filter-block" data-type="star">
+                      <div class="filter-block-header">⭐ 星級優先 <span class="material-icons" style="font-size: 1rem;">drag_indicator</span></div>
+                      <div class="filter-block-body">
+                          <select class="form-control" multiple data-prop="value" style="background: #222; color: white; height: 120px;">
+                              <option value="1">1 顆星</option>
+                              <option value="2">2 顆星</option>
+                              <option value="3">3 顆星</option>
+                              <option value="4">4 顆星</option>
+                              <option value="5">5 顆星</option>
+                              <option value="sort_asc">由少到多排序</option>
+                              <option value="sort_desc">由多到少排序</option>
+                          </select>
+                      </div>
+                  </div>
+                  
+                  <div class="filter-block" data-type="category">
+                      <div class="filter-block-header">🏢 情境分類 <span class="material-icons" style="font-size: 1rem;">drag_indicator</span></div>
+                      <div class="filter-block-body">
+                          <select class="form-control" multiple data-prop="value" style="background: #222; color: white; height: 120px;">
+                              <option value="一般專業">一般專業</option>
+                              <option value="人力資源">人力資源</option>
+                              <option value="住宿與餐飲">住宿與餐飲</option>
+                              <option value="客戶服務">客戶服務</option>
+                              <option value="採購與物流">採購與物流</option>
+                              <option value="旅遊與交通">旅遊與交通</option>
+                              <option value="會議與簡報">會議與簡報</option>
+                              <option value="法務合規與安全">法務合規與安全</option>
+                              <option value="溝通互動">溝通互動</option>
+                              <option value="營運管理">營運管理</option>
+                              <option value="物業與不動產">物業與不動產</option>
+                              <option value="科技與技術支援">科技與技術支援</option>
+                              <option value="行銷與銷售">行銷與銷售</option>
+                              <option value="辦公日常">辦公日常</option>
+                              <option value="金融與會計">金融與會計</option>
+                          </select>
+                      </div>
+                  </div>
+                  
+                  <div class="filter-block" data-type="pos">
+                      <div class="filter-block-header">📝 詞性篩選 <span class="material-icons" style="font-size: 1rem;">drag_indicator</span></div>
+                      <div class="filter-block-body">
+                          <select class="form-control" multiple data-prop="value" style="background: #222; color: white; height: 120px;">
+                              <option value="noun">名詞 (noun)</option>
+                              <option value="verb">動詞 (verb)</option>
+                              <option value="adjective">形容詞 (adjective)</option>
+                              <option value="adverb">副詞 (adverb)</option>
+                              <option value="preposition">介系詞 (preposition)</option>
+                              <option value="conjunction">連接詞 (conjunction)</option>
+                              <option value="pronoun">代名詞 (pronoun)</option>
+                          </select>
+                      </div>
+                  </div>
+      
+                  <div class="filter-block" data-type="exclude_learned">
+                      <div class="filter-block-header">🚫 排除已考過 <span class="material-icons" style="font-size: 1rem;">drag_indicator</span></div>
+                      <div class="filter-block-body" style="font-size: 0.8rem; color: #888;">
+                          此積木無選項，自動過濾群組歷史考過的單字。
+                      </div>
+                  </div>
+                  
+                  <div class="filter-block" data-type="shuffle">
+                      <div class="filter-block-header">🔀 隨機打亂 <span class="material-icons" style="font-size: 1rem;">drag_indicator</span></div>
+                      <div class="filter-block-body" style="font-size: 0.8rem; color: #888;">
+                          此積木無選項，會將目前的單字隨機洗牌。
+                      </div>
+                  </div>
+              </div>
+              
+              <!-- Active Pipeline -->
+              <div class="block-list active-pipeline" id="activePipeline">
+                  <div class="block-list-title" style="color: #4ecdc4;">生效漏斗 (過濾順序由上而下)</div>
+                  <!-- Initialized via JS -->
+              </div>
+          </div>
+          
+          <input type="hidden" name="vocab_filter_config" id="vocabFilterConfig">
+      </div>
+      
+      <div style="margin-top: 1rem; text-align: right;">
+          <button type="button" class="btn btn-sm btn-outline-danger" onclick="resetGroupHistory()" style="font-size: 0.8rem; background: transparent; border: 1px solid #ff4d4f; color: #ff4d4f; border-radius: 4px; padding: 4px 8px;">🔄 重置出題紀錄</button>
+      </div>
+
+      <div class="modal-btn-group" style="margin-top: 1.5rem;">
         <button type="button" class="modal-btn" style="background: rgba(255,255,255,0.1);" onclick="closeSettingsModal()">取消</button>
         <button type="submit" class="modal-btn" style="background: var(--accent-color, #4ecdc4); color: #000;">儲存設定</button>
       </div>
     </form>
   </div>
 </div>
+
+<script>
+function openSettingsModal() { 
+  document.getElementById('settingsModal').classList.add('open'); 
+  initPipeline();
+}
+function closeSettingsModal() { 
+  document.getElementById('settingsModal').classList.remove('open'); 
+}
+
+function initPipeline() {
+    if(window.pipelineInitialized) return;
+    window.pipelineInitialized = true;
+    
+    new Sortable(document.getElementById('availableBlocks'), {
+        group: { name: 'shared', pull: 'clone', put: false },
+        animation: 150,
+        sort: false
+    });
+    
+    new Sortable(document.getElementById('activePipeline'), {
+        group: { name: 'shared' },
+        animation: 150,
+        onAdd: function(evt) {
+            let type = evt.item.dataset.type;
+            let dupes = document.querySelectorAll(`#activePipeline .filter-block[data-type="${type}"]`);
+            if(dupes.length > 1) {
+                evt.item.remove();
+                alert("此篩選器已在漏斗中！您可以直接在原來的積木裡複選條件。");
+                return;
+            }
+            
+            let selects = evt.item.querySelectorAll('select');
+            selects.forEach(s => s.addEventListener('change', updatePipelinePreview));
+            
+            let header = evt.item.querySelector('.filter-block-header');
+            if(!header.querySelector('.btn-del-block')) {
+                let delBtn = document.createElement('span');
+                delBtn.className = 'material-icons btn-del-block';
+                delBtn.style.cssText = 'font-size:1rem; color:#ff4d4f; cursor:pointer; margin-left:8px;';
+                delBtn.innerText = 'close';
+                delBtn.onclick = function() {
+                    evt.item.remove();
+                    updatePipelinePreview();
+                };
+                header.appendChild(delBtn);
+            }
+            updatePipelinePreview();
+        },
+        onUpdate: updatePipelinePreview,
+        onRemove: updatePipelinePreview
+    });
+    
+    let rawConfig = `{{ group.vocab_filter_config | safe if group.vocab_filter_config else '[]' }}`;
+    try {
+        let config = JSON.parse(rawConfig || '[]');
+        config.forEach(c => {
+            let original = document.querySelector(`#availableBlocks .filter-block[data-type="${c.type}"]`);
+            if(original) {
+                let clone = original.cloneNode(true);
+                let select = clone.querySelector('select');
+                if(select && c.value) {
+                    let vals = Array.isArray(c.value) ? c.value : [c.value];
+                    Array.from(select.options).forEach(opt => {
+                        if(vals.includes(opt.value)) opt.selected = true;
+                    });
+                }
+                
+                let header = clone.querySelector('.filter-block-header');
+                let delBtn = document.createElement('span');
+                delBtn.className = 'material-icons btn-del-block';
+                delBtn.style.cssText = 'font-size:1rem; color:#ff4d4f; cursor:pointer; margin-left:8px;';
+                delBtn.innerText = 'close';
+                delBtn.onclick = function() {
+                    clone.remove();
+                    updatePipelinePreview();
+                };
+                header.appendChild(delBtn);
+                
+                document.getElementById('activePipeline').appendChild(clone);
+                if(select) select.addEventListener('change', updatePipelinePreview);
+            }
+        });
+    } catch(e) {}
+    
+    updatePipelinePreview();
+}
+
+function updatePipelinePreview() {
+    let pipeline = [];
+    document.querySelectorAll('#activePipeline .filter-block').forEach(block => {
+        let type = block.dataset.type;
+        let select = block.querySelector('select');
+        let val = null;
+        if(select) {
+            val = Array.from(select.selectedOptions).map(o => o.value);
+            if(val.length === 1 && (val[0].startsWith('sort_'))) {
+                val = val[0]; 
+            }
+        }
+        pipeline.push({ type: type, value: val });
+    });
+    
+    document.getElementById('vocabFilterConfig').value = JSON.stringify(pipeline);
+    
+    $('#previewBadge').show().text('計算中...').css('background', '#666');
+    fetch("{{ url_for('group.api_filter_preview', group_id=group.id) }}", {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ pipeline: pipeline })
+    })
+    .then(r => r.json())
+    .then(data => {
+        if(data.success) {
+            let color = data.count < parseInt(document.querySelector('input[name="daily_goal"]').value) ? '#ff4d4f' : '#ffcc00';
+            $('#previewBadge').css({'background': color, 'color': '#000'}).text(`符合字數: ${data.count}`);
+        }
+    });
+}
+
+function resetGroupHistory() {
+    if(confirm('確定要清空出題紀錄嗎？這樣之前背過的單字又會重新出現喔！')) {
+        fetch("{{ url_for('group.api_reset_history', group_id=group.id) }}", {
+            method: 'POST'
+        })
+        .then(r => r.json())
+        .then(data => {
+            if(data.success) {
+                alert('已清空出題紀錄！');
+                updatePipelinePreview();
+            }
+        });
+    }
+}
+
+document.querySelector('input[name="daily_goal"]').addEventListener('change', updatePipelinePreview);
+</script>
 {% endblock %}
