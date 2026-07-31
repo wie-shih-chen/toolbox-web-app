@@ -275,6 +275,17 @@ def group_study(group_id):
         db.session.add(record)
         db.session.commit()
 
+    # Calculate words studied today so far to resume correctly
+    today_start_utc = get_tw_today_start_utc()
+    logs = VocabHistoryLog.query.filter(
+        VocabHistoryLog.user_id == current_user.id,
+        VocabHistoryLog.source == f'group_{group.id}',
+        VocabHistoryLog.created_at >= today_start_utc
+    ).all()
+    unique_words = {log.word for log in logs}
+    record.words_studied = len(unique_words)
+    db.session.commit()
+
     assignment = get_or_create_daily_assignment(group, today_str)
     
     return render_template('vocab/group_study.html', group=group, record=record, words=assignment)
