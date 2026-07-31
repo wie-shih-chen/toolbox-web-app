@@ -322,7 +322,7 @@ def group_history(group_id):
                 vp = vp_dict.get(word_str)
                 decorated_words.append({
                     'word': word_str,
-                    'translation': w.get('translation', ''),
+                    'translation': w.get('definition', ''),
                     'correct': vp.correct if vp else 0,
                     'incorrect': vp.incorrect if vp else 0
                 })
