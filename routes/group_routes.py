@@ -440,11 +440,20 @@ def update_settings(group_id):
         return redirect(url_for('group.dashboard', group_id=group.id))
         
     new_goal = request.form.get('daily_goal', type=int)
+    new_name = request.form.get('name', '').strip()
+    
+    if new_name:
+        group.name = new_name
+        
     if new_goal and 5 <= new_goal <= 100:
         group.daily_goal = new_goal
         db.session.commit()
         flash('群組設定已更新！', 'success')
     else:
-        flash('每日目標必須在 5 到 100 之間！', 'warning')
-        
+        db.session.commit()
+        if not new_goal or new_goal < 5 or new_goal > 100:
+            flash('群組名稱已更新，但每日目標必須在 5 到 100 之間！', 'warning')
+        else:
+            flash('群組設定已更新！', 'success')
+            
     return redirect(url_for('group.dashboard', group_id=group.id))

@@ -444,6 +444,10 @@ function closeSettingsModal() { document.getElementById('settingsModal').classLi
     <h3 style="margin-top: 0; color: white; text-align: center;">群組設定</h3>
     <form action="{{ url_for('group.update_settings', group_id=group.id) }}" method="POST">
       <div class="form-group" style="margin-top: 1.5rem;">
+        <label style="color: #ccc; margin-bottom: 0.5rem; display: block;">群組名稱</label>
+        <input type="text" name="name" class="form-control" value="{{ group.name }}" required style="background: rgba(255,255,255,0.1); color: white; border: 1px solid rgba(255,255,255,0.2); border-radius: 12px; padding: 0.8rem;">
+      </div>
+      <div class="form-group" style="margin-top: 1rem;">
         <label style="color: #ccc; margin-bottom: 0.5rem; display: block;">每日背單字目標數量</label>
         <input type="number" name="daily_goal" class="form-control" value="{{ group.daily_goal }}" min="5" max="100" required style="background: rgba(255,255,255,0.1); color: white; border: 1px solid rgba(255,255,255,0.2); border-radius: 12px; padding: 0.8rem;">
       </div>
