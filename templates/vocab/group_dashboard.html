@@ -460,8 +460,8 @@ function closeSettingsModal() { document.getElementById('settingsModal').classLi
 .block-list.active-pipeline .filter-block-body { display: block; }
 .preview-badge { background: #ffcc00; color: #000; padding: 0.2rem 0.5rem; border-radius: 20px; font-size: 0.8rem; font-weight: bold; display: none; }
 .center-modal { max-width: 800px; width: 95%; max-height: 90vh; overflow-y: auto; }
-.checkbox-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; padding: 0.5rem; }
-.checkbox-grid label { display: flex; align-items: center; gap: 0.4rem; font-size: 0.85rem; cursor: pointer; color: #ccc; background: rgba(255,255,255,0.05); padding: 0.4rem; border-radius: 4px; margin: 0; }
+.checkbox-grid { display: flex; flex-wrap: wrap; gap: 0.5rem; padding: 0.5rem; }
+.checkbox-grid label { display: flex; align-items: center; gap: 0.4rem; font-size: 0.85rem; cursor: pointer; color: #ccc; background: rgba(255,255,255,0.05); padding: 0.4rem 0.6rem; border-radius: 4px; margin: 0; white-space: nowrap; }
 .selection-count { font-size: 0.75rem; color: #4ecdc4; margin-left: auto; margin-right: 8px; font-weight: normal; }
 </style>
 
