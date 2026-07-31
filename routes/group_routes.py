@@ -26,9 +26,18 @@ def get_or_create_daily_assignment(group, date_str):
     assignment = GroupDailyAssignment.query.filter_by(group_id=group.id, date=date_str).first()
     if not assignment:
         all_words = _load_vocab()
+        
+        # Filter out duplicates by English word
+        unique_words_list = []
+        seen = set()
+        for w in all_words:
+            if w['word'] not in seen:
+                seen.add(w['word'])
+                unique_words_list.append(w)
+                
         # Ensure we have enough words
-        num_words = min(group.daily_goal, len(all_words))
-        selected_words = random.sample(all_words, num_words) if num_words > 0 else []
+        num_words = min(group.daily_goal, len(unique_words_list))
+        selected_words = random.sample(unique_words_list, num_words) if num_words > 0 else []
         assignment = GroupDailyAssignment(
             group_id=group.id,
             date=date_str,
@@ -171,7 +180,14 @@ def dashboard(group_id):
         ).all()
         unique_words = {log.word for log in logs}
         
-        record.words_studied = len(unique_words)
+        assignment = get_or_create_daily_assignment(group, today_str)
+        assignment_words = {w['word'] for w in assignment}
+        
+        # If user has studied all unique words in today's assignment, they reached the goal.
+        if len(assignment_words) > 0 and unique_words.issuperset(assignment_words):
+            record.words_studied = group.daily_goal
+        else:
+            record.words_studied = len(unique_words)
         db.session.commit()
         
         # Calculate all-time group stats for this user
