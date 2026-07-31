@@ -343,7 +343,7 @@
     <p id="sessionResult" style="color:var(--text-secondary);"></p>
     <div class="btn-group-finish">
       <button class="btn-finish" onclick="window.location.href='{{ url_for('group.take_quiz', group_id=group.id) }}'">前往今日測驗</button>
-      <button class="btn-restart" onclick="location.reload()">再複習一次</button>
+      <button class="btn-restart" onclick="window.location.href='?review=1'">再複習一次</button>
     </div>
   </div>
 </div>
@@ -353,9 +353,10 @@
 
 {% block extra_js %}
 <script>
+const _urlParams = new URLSearchParams(window.location.search);
 let words = {{ words | tojson }};
 let filtered = [];
-let currentIdx = 0;
+let currentIdx = _urlParams.has('review') ? 0 : Math.min({{ record.words_studied }}, words.length);
 let isFlipped = false;
 let sessionCorrect = 0;
 let sessionIncorrect = 0;
@@ -485,7 +486,6 @@ function restartStudy() {
   showCard();
 }
 // Init
-const _urlParams = new URLSearchParams(window.location.search);
 if (_urlParams.has('review_date')) {
   if (document.getElementById('filterReviewDate')) {
     document.getElementById('filterReviewDate').value = _urlParams.get('review_date');
