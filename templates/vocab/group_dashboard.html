@@ -209,10 +209,20 @@
       <span class="material-icons" style="font-size: 16px; vertical-align: middle;">arrow_back</span>
       群組列表
     </a>
-    <a href="{{ url_for('group.group_history', group_id=group.id) }}" class="btn btn-outline-primary btn-sm" style="border-radius: 20px; display: flex; align-items: center; gap: 0.3rem;">
-      <span class="material-icons" style="font-size: 16px;">history</span>
-      歷史紀錄
-    </a>
+    <div style="display: flex; gap: 0.5rem;">
+      <a href="{{ url_for('group.group_history', group_id=group.id) }}" class="btn btn-outline-primary btn-sm" style="border-radius: 20px; display: flex; align-items: center; gap: 0.3rem;">
+        <span class="material-icons" style="font-size: 16px;">history</span>
+        歷史紀錄
+      </a>
+      {% if current_user.id == group.owner_id %}
+      <form action="{{ url_for('group.delete_group', group_id=group.id) }}" method="POST" onsubmit="return confirm('確定要解散並刪除這個群組嗎？此操作將無法復原！');" style="margin: 0;">
+        <button type="submit" class="btn btn-outline-danger btn-sm" style="border-radius: 20px; display: flex; align-items: center; gap: 0.3rem;">
+          <span class="material-icons" style="font-size: 16px;">delete</span>
+          刪除群組
+        </button>
+      </form>
+      {% endif %}
+    </div>
   </div>
 
   <div class="dashboard-header">

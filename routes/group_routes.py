@@ -79,6 +79,37 @@ def create_group():
     flash(f'群組「{name}」建立成功！邀請碼為：{code}', 'success')
     return redirect(url_for('group.index'))
 
+@group_bp.route('/<int:group_id>/delete', methods=['POST'])
+@login_required
+def delete_group(group_id):
+    group = StudyGroup.query.get_or_404(group_id)
+    
+    if group.owner_id != current_user.id:
+        flash('只有群組建立者可以刪除群組！', 'error')
+        return redirect(url_for('group.dashboard', group_id=group.id))
+        
+    source_name = f'group_{group.id}'
+    
+    try:
+        # Delete related data
+        GroupMember.query.filter_by(group_id=group.id).delete()
+        GroupDailyRecord.query.filter_by(group_id=group.id).delete()
+        GroupDailyAssignment.query.filter_by(group_id=group.id).delete()
+        
+        # Delete related vocab progress and history
+        VocabProgress.query.filter_by(source=source_name).delete()
+        VocabHistoryLog.query.filter_by(source=source_name).delete()
+        
+        # Delete the group itself
+        db.session.delete(group)
+        db.session.commit()
+        flash(f'群組「{group.name}」已成功刪除。', 'success')
+    except Exception as e:
+        db.session.rollback()
+        flash('刪除群組時發生錯誤，請稍後再試。', 'error')
+        
+    return redirect(url_for('group.index'))
+
 @group_bp.route('/join', methods=['POST'])
 @login_required
 def join_group():
