@@ -342,7 +342,7 @@
     <h2>這批單字全部完成！</h2>
     <p id="sessionResult" style="color:var(--text-secondary);"></p>
     <div class="btn-group-finish">
-      <button class="btn-finish" onclick="window.location.href='{{ url_for('group.take_quiz', group_id=group.id) }}'">前往今日測驗</button>
+      <button class="btn-finish" onclick="window.location.href='{{ url_for(\"group.take_quiz\", group_id=group.id) }}'">前往今日測驗</button>
       <button class="btn-restart" onclick="window.location.href='?review=1'">再複習一次</button>
     </div>
   </div>
@@ -356,7 +356,7 @@
 const _urlParams = new URLSearchParams(window.location.search);
 let words = {{ words | tojson }};
 let filtered = [];
-let currentIdx = _urlParams.has('review') ? 0 : Math.min({{ record.words_studied }}, words.length);
+let currentIdx = _urlParams.has('review') ? 0 : Math.min({{ record.words_studied or 0 }}, words.length);
 let isFlipped = false;
 let sessionCorrect = 0;
 let sessionIncorrect = 0;
