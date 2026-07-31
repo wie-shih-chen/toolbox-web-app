@@ -572,3 +572,16 @@ def api_reset_history(group_id):
     db.session.commit()
     
     return jsonify({'success': True})
+
+@group_bp.route('/<int:group_id>/api/clear_all_records', methods=['POST'])
+@login_required
+def api_clear_all_records(group_id):
+    group = StudyGroup.query.get_or_404(group_id)
+    if group.owner_id != current_user.id:
+        return jsonify({'error': '只有群主可以清除所有紀錄！'}), 403
+        
+    GroupDailyAssignment.query.filter_by(group_id=group.id).delete()
+    GroupDailyRecord.query.filter_by(group_id=group.id).delete()
+    db.session.commit()
+    
+    return jsonify({'success': True})

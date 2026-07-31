@@ -584,8 +584,9 @@ function closeSettingsModal() { document.getElementById('settingsModal').classLi
           <input type="hidden" name="vocab_filter_config" id="vocabFilterConfig">
       </div>
       
-      <div style="margin-top: 1rem; text-align: right;">
+      <div style="margin-top: 1rem; text-align: right; display: flex; justify-content: flex-end; gap: 0.5rem;">
           <button type="button" class="btn btn-sm btn-outline-danger" onclick="resetGroupHistory()" style="font-size: 0.8rem; background: transparent; border: 1px solid #ff4d4f; color: #ff4d4f; border-radius: 4px; padding: 4px 8px;">🔄 重置出題紀錄</button>
+          <button type="button" class="btn btn-sm btn-outline-danger" onclick="clearAllGroupRecords()" style="font-size: 0.8rem; background: transparent; border: 1px solid #ff4d4f; color: #ff4d4f; border-radius: 4px; padding: 4px 8px;">🗑️ 清除所有紀錄</button>
       </div>
 
       <div class="modal-btn-group" style="margin-top: 1.5rem;">
@@ -732,6 +733,21 @@ function resetGroupHistory() {
             if(data.success) {
                 alert('已清空出題紀錄！');
                 updatePipelinePreview();
+            }
+        });
+    }
+}
+
+function clearAllGroupRecords() {
+    if(confirm('【警告】確定要清除群組的「所有紀錄」嗎？\n這將會刪除所有成員的測驗分數、參與紀錄與出題紀錄，且無法復原！')) {
+        fetch("{{ url_for('group.api_clear_all_records', group_id=group.id) }}", {
+            method: 'POST'
+        })
+        .then(r => r.json())
+        .then(data => {
+            if(data.success) {
+                alert('已成功清除群組所有紀錄！');
+                location.reload();
             }
         });
     }
