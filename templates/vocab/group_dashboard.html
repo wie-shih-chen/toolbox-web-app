@@ -460,6 +460,9 @@ function closeSettingsModal() { document.getElementById('settingsModal').classLi
 .block-list.active-pipeline .filter-block-body { display: block; }
 .preview-badge { background: #ffcc00; color: #000; padding: 0.2rem 0.5rem; border-radius: 20px; font-size: 0.8rem; font-weight: bold; display: none; }
 .center-modal { max-width: 800px; width: 95%; max-height: 90vh; overflow-y: auto; }
+.checkbox-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; padding: 0.5rem; }
+.checkbox-grid label { display: flex; align-items: center; gap: 0.4rem; font-size: 0.85rem; cursor: pointer; color: #ccc; background: rgba(255,255,255,0.05); padding: 0.4rem; border-radius: 4px; margin: 0; }
+.selection-count { font-size: 0.75rem; color: #4ecdc4; margin-left: auto; margin-right: 8px; font-weight: normal; }
 </style>
 
 <div id="settingsModal" class="center-modal-overlay" onclick="if(event.target===this) closeSettingsModal()">
@@ -487,70 +490,70 @@ function closeSettingsModal() { document.getElementById('settingsModal').classLi
                   <div class="block-list-title">可用積木 (拖曳至右側)</div>
                   
                   <div class="filter-block" data-type="score">
-                      <div class="filter-block-header">🎯 目標分數 <span class="material-icons" style="font-size: 1rem;">drag_indicator</span></div>
+                      <div class="filter-block-header">🎯 目標分數 <span class="selection-count"></span><span class="material-icons" style="font-size: 1rem;">drag_indicator</span></div>
                       <div class="filter-block-body">
-                          <select class="form-control" multiple data-prop="value" style="background: #222; color: white; height: 120px;">
-                              <option value="0-400">0-400</option>
-                              <option value="400-600">400-600</option>
-                              <option value="600-780">600-780</option>
-                              <option value="780-900">780-900</option>
-                              <option value="900+">900+</option>
-                              <option value="sort_asc">由低到高排序</option>
-                              <option value="sort_desc">由高到低排序</option>
-                          </select>
+                          <div class="checkbox-grid">
+                              <label><input type="checkbox" value="0-400"> 0-400</label>
+                              <label><input type="checkbox" value="400-600"> 400-600</label>
+                              <label><input type="checkbox" value="600-780"> 600-780</label>
+                              <label><input type="checkbox" value="780-900"> 780-900</label>
+                              <label><input type="checkbox" value="900+"> 900+</label>
+                              <label><input type="checkbox" value="sort_asc"> 由低到高排序</label>
+                              <label><input type="checkbox" value="sort_desc"> 由高到低排序</label>
+                          </div>
                       </div>
                   </div>
                   
                   <div class="filter-block" data-type="star">
-                      <div class="filter-block-header">⭐ 星級優先 <span class="material-icons" style="font-size: 1rem;">drag_indicator</span></div>
+                      <div class="filter-block-header">⭐ 星級優先 <span class="selection-count"></span><span class="material-icons" style="font-size: 1rem;">drag_indicator</span></div>
                       <div class="filter-block-body">
-                          <select class="form-control" multiple data-prop="value" style="background: #222; color: white; height: 120px;">
-                              <option value="1">1 顆星</option>
-                              <option value="2">2 顆星</option>
-                              <option value="3">3 顆星</option>
-                              <option value="4">4 顆星</option>
-                              <option value="5">5 顆星</option>
-                              <option value="sort_asc">由少到多排序</option>
-                              <option value="sort_desc">由多到少排序</option>
-                          </select>
+                          <div class="checkbox-grid">
+                              <label><input type="checkbox" value="1"> 1 顆星</label>
+                              <label><input type="checkbox" value="2"> 2 顆星</label>
+                              <label><input type="checkbox" value="3"> 3 顆星</label>
+                              <label><input type="checkbox" value="4"> 4 顆星</label>
+                              <label><input type="checkbox" value="5"> 5 顆星</label>
+                              <label><input type="checkbox" value="sort_asc"> 由少到多排序</label>
+                              <label><input type="checkbox" value="sort_desc"> 由多到少排序</label>
+                          </div>
                       </div>
                   </div>
                   
                   <div class="filter-block" data-type="category">
-                      <div class="filter-block-header">🏢 情境分類 <span class="material-icons" style="font-size: 1rem;">drag_indicator</span></div>
+                      <div class="filter-block-header">🏢 情境分類 <span class="selection-count"></span><span class="material-icons" style="font-size: 1rem;">drag_indicator</span></div>
                       <div class="filter-block-body">
-                          <select class="form-control" multiple data-prop="value" style="background: #222; color: white; height: 120px;">
-                              <option value="一般專業">一般專業</option>
-                              <option value="人力資源">人力資源</option>
-                              <option value="住宿與餐飲">住宿與餐飲</option>
-                              <option value="客戶服務">客戶服務</option>
-                              <option value="採購與物流">採購與物流</option>
-                              <option value="旅遊與交通">旅遊與交通</option>
-                              <option value="會議與簡報">會議與簡報</option>
-                              <option value="法務合規與安全">法務合規與安全</option>
-                              <option value="溝通互動">溝通互動</option>
-                              <option value="營運管理">營運管理</option>
-                              <option value="物業與不動產">物業與不動產</option>
-                              <option value="科技與技術支援">科技與技術支援</option>
-                              <option value="行銷與銷售">行銷與銷售</option>
-                              <option value="辦公日常">辦公日常</option>
-                              <option value="金融與會計">金融與會計</option>
-                          </select>
+                          <div class="checkbox-grid">
+                              <label><input type="checkbox" value="一般專業"> 一般專業</label>
+                              <label><input type="checkbox" value="人力資源"> 人力資源</label>
+                              <label><input type="checkbox" value="住宿與餐飲"> 住宿與餐飲</label>
+                              <label><input type="checkbox" value="客戶服務"> 客戶服務</label>
+                              <label><input type="checkbox" value="採購與物流"> 採購與物流</label>
+                              <label><input type="checkbox" value="旅遊與交通"> 旅遊與交通</label>
+                              <label><input type="checkbox" value="會議與簡報"> 會議與簡報</label>
+                              <label><input type="checkbox" value="法務合規與安全"> 法務合規與安全</label>
+                              <label><input type="checkbox" value="溝通互動"> 溝通互動</label>
+                              <label><input type="checkbox" value="營運管理"> 營運管理</label>
+                              <label><input type="checkbox" value="物業與不動產"> 物業與不動產</label>
+                              <label><input type="checkbox" value="科技與技術支援"> 科技與技術支援</label>
+                              <label><input type="checkbox" value="行銷與銷售"> 行銷與銷售</label>
+                              <label><input type="checkbox" value="辦公日常"> 辦公日常</label>
+                              <label><input type="checkbox" value="金融與會計"> 金融與會計</label>
+                          </div>
                       </div>
                   </div>
                   
                   <div class="filter-block" data-type="pos">
-                      <div class="filter-block-header">📝 詞性篩選 <span class="material-icons" style="font-size: 1rem;">drag_indicator</span></div>
+                      <div class="filter-block-header">📝 詞性篩選 <span class="selection-count"></span><span class="material-icons" style="font-size: 1rem;">drag_indicator</span></div>
                       <div class="filter-block-body">
-                          <select class="form-control" multiple data-prop="value" style="background: #222; color: white; height: 120px;">
-                              <option value="noun">名詞 (noun)</option>
-                              <option value="verb">動詞 (verb)</option>
-                              <option value="adjective">形容詞 (adjective)</option>
-                              <option value="adverb">副詞 (adverb)</option>
-                              <option value="preposition">介系詞 (preposition)</option>
-                              <option value="conjunction">連接詞 (conjunction)</option>
-                              <option value="pronoun">代名詞 (pronoun)</option>
-                          </select>
+                          <div class="checkbox-grid">
+                              <label><input type="checkbox" value="noun"> 名詞 (noun)</label>
+                              <label><input type="checkbox" value="verb"> 動詞 (verb)</label>
+                              <label><input type="checkbox" value="adjective"> 形容詞 (adjective)</label>
+                              <label><input type="checkbox" value="adverb"> 副詞 (adverb)</label>
+                              <label><input type="checkbox" value="preposition"> 介系詞 (prep)</label>
+                              <label><input type="checkbox" value="conjunction"> 連接詞 (conj)</label>
+                              <label><input type="checkbox" value="pronoun"> 代名詞 (pronoun)</label>
+                          </div>
                       </div>
                   </div>
       
@@ -622,8 +625,8 @@ function initPipeline() {
                 return;
             }
             
-            let selects = evt.item.querySelectorAll('select');
-            selects.forEach(s => s.addEventListener('change', updatePipelinePreview));
+            let checkboxes = evt.item.querySelectorAll('input[type="checkbox"]');
+            checkboxes.forEach(s => s.addEventListener('change', updatePipelinePreview));
             
             let header = evt.item.querySelector('.filter-block-header');
             if(!header.querySelector('.btn-del-block')) {
@@ -650,11 +653,11 @@ function initPipeline() {
             let original = document.querySelector(`#availableBlocks .filter-block[data-type="${c.type}"]`);
             if(original) {
                 let clone = original.cloneNode(true);
-                let select = clone.querySelector('select');
-                if(select && c.value) {
+                let checkboxes = clone.querySelectorAll('input[type="checkbox"]');
+                if(checkboxes.length > 0 && c.value) {
                     let vals = Array.isArray(c.value) ? c.value : [c.value];
-                    Array.from(select.options).forEach(opt => {
-                        if(vals.includes(opt.value)) opt.selected = true;
+                    checkboxes.forEach(cb => {
+                        if(vals.includes(cb.value)) cb.checked = true;
                     });
                 }
                 
@@ -670,7 +673,9 @@ function initPipeline() {
                 header.appendChild(delBtn);
                 
                 document.getElementById('activePipeline').appendChild(clone);
-                if(select) select.addEventListener('change', updatePipelinePreview);
+                if(checkboxes.length > 0) {
+                    checkboxes.forEach(cb => cb.addEventListener('change', updatePipelinePreview));
+                }
             }
         });
     } catch(e) {}
@@ -682,12 +687,17 @@ function updatePipelinePreview() {
     let pipeline = [];
     document.querySelectorAll('#activePipeline .filter-block').forEach(block => {
         let type = block.dataset.type;
-        let select = block.querySelector('select');
+        let checkboxes = block.querySelectorAll('input[type="checkbox"]');
         let val = null;
-        if(select) {
-            val = Array.from(select.selectedOptions).map(o => o.value);
+        if(checkboxes.length > 0) {
+            val = Array.from(checkboxes).filter(cb => cb.checked).map(cb => cb.value);
             if(val.length === 1 && (val[0].startsWith('sort_'))) {
                 val = val[0]; 
+            }
+            let badge = block.querySelector('.selection-count');
+            if(badge) {
+                let actualLength = (val && !Array.isArray(val) && val.startsWith('sort_')) ? 1 : (val ? val.length : 0);
+                badge.innerText = actualLength > 0 ? `(已選 ${actualLength} 項)` : '';
             }
         }
         pipeline.push({ type: type, value: val });
