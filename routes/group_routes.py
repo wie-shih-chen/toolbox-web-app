@@ -191,31 +191,25 @@ def dashboard(group_id):
         start_date = tw_now - timedelta(days=6)
         start_utc = start_date.replace(hour=0, minute=0, second=0, microsecond=0) - timedelta(hours=8)
         
-        recent_logs = VocabHistoryLog.query.filter(
-            VocabHistoryLog.user_id == user.id,
-            VocabHistoryLog.source == f'group_{group.id}',
-            VocabHistoryLog.created_at >= start_utc
+        # Use quiz_score from GroupDailyRecord for the line chart
+        recent_records = GroupDailyRecord.query.filter(
+            GroupDailyRecord.group_id == group.id,
+            GroupDailyRecord.user_id == user.id,
+            GroupDailyRecord.date >= (tw_now - timedelta(days=6)).strftime('%Y-%m-%d')
         ).all()
         
-        daily_stats = {}
-        for log in recent_logs:
-            tw_time = log.created_at + timedelta(hours=8)
-            day_str = tw_time.strftime('%m/%d')
-            if day_str not in daily_stats:
-                daily_stats[day_str] = {'correct': 0, 'total': 0}
-            daily_stats[day_str]['total'] += 1
-            if log.result == 'correct':
-                daily_stats[day_str]['correct'] += 1
-                
+        record_dict = {r.date: r.quiz_score for r in recent_records if r.quiz_taken}
+        
         chart_labels = []
         chart_data = []
         for i in range(6, -1, -1):
-            day_str = (tw_now - timedelta(days=i)).strftime('%m/%d')
+            day_obj = tw_now - timedelta(days=i)
+            day_str = day_obj.strftime('%m/%d')
+            full_date_str = day_obj.strftime('%Y-%m-%d')
+            
             chart_labels.append(day_str)
-            if day_str in daily_stats:
-                st = daily_stats[day_str]
-                acc = round(st['correct'] / st['total'] * 100) if st['total'] > 0 else 0
-                chart_data.append(acc)
+            if full_date_str in record_dict:
+                chart_data.append(record_dict[full_date_str])
             else:
                 chart_data.append(0)
         
