@@ -375,13 +375,13 @@ def update_progress(group_id):
     # Update VocabProgress for this group
     vp = VocabProgress.query.filter_by(user_id=current_user.id, word=word, source=source).first()
     if not vp:
-        vp = VocabProgress(user_id=current_user.id, word=word, source=source)
+        vp = VocabProgress(user_id=current_user.id, word=word, source=source, correct=0, incorrect=0)
         db.session.add(vp)
         
     if result == 'correct':
-        vp.correct += 1
+        vp.correct = (vp.correct or 0) + 1
     else:
-        vp.incorrect += 1
+        vp.incorrect = (vp.incorrect or 0) + 1
     vp.last_reviewed = datetime.utcnow()
     
     # Add history log
