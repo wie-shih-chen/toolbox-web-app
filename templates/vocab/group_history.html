@@ -270,7 +270,10 @@
     <a href="{{ url_for('group.dashboard', group_id=group.id) }}" style="text-decoration: none; color: var(--text-secondary); display: flex; align-items: center; justify-content: center; width: 40px; height: 40px; border-radius: 50%; background: rgba(255,255,255,0.05); transition: background 0.2s;">
       <span class="material-icons">arrow_back</span>
     </a>
-    <h2>群組專屬紀錄 - {{ g  {% if not history_data %}
+    <h2>群組專屬紀錄 - {{ group.name }}</h2>
+  </div>
+
+  {% if not history_data %}
   <div class="empty-state">
     <div style="font-size: 3rem; margin-bottom: 1rem;">🍃</div>
     <h3>尚無歷史紀錄</h3>
