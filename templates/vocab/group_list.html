@@ -83,6 +83,59 @@
   .group-arrow {
     color: #667eea;
   }
+
+  /* Custom overrides for modals without Bootstrap CSS */
+  .modal { display: none; }
+  .modal.show { display: flex; }
+  .custom-modal-content {
+    background: var(--card-bg, #2d2d2d);
+    color: var(--text-primary, #fff);
+    border-radius: 24px;
+    width: 100%;
+    max-width: 400px;
+    padding: 1.5rem;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+  }
+  .custom-modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+  }
+  .custom-modal-header h5 {
+    margin: 0;
+    font-size: 1.3rem;
+    font-weight: 800;
+  }
+  .close-btn {
+    background: none;
+    border: none;
+    color: var(--text-secondary);
+    font-size: 1.5rem;
+    cursor: pointer;
+  }
+  .form-control-custom {
+    width: 100%;
+    padding: 1rem;
+    border-radius: 12px;
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.1);
+    color: white;
+    font-size: 1rem;
+    margin-bottom: 1.2rem;
+    transition: border-color 0.2s;
+  }
+  .form-control-custom:focus {
+    outline: none;
+    border-color: #667eea;
+  }
+  
+  @media (max-width: 600px) {
+    .actions-row { flex-direction: column; }
+    .group-hero { padding: 1.5rem 1rem; }
+    .group-hero h1 { font-size: 1.8rem; }
+    .btn-action { padding: 1rem; font-size: 1rem; }
+  }
 </style>
 {% endblock %}
 
@@ -101,10 +154,10 @@
   </div>
 
   <div class="actions-row">
-    <button class="btn-action btn-create" data-toggle="modal" data-target="#createGroupModal">
+    <button class="btn-action btn-create" onclick="openModal('createGroupModal')">
       <span class="material-icons">add_circle</span> 建立群組
     </button>
-    <button class="btn-action btn-join" data-toggle="modal" data-target="#joinGroupModal">
+    <button class="btn-action btn-join" onclick="openModal('joinGroupModal')">
       <span class="material-icons">group_add</span> 加入群組
     </button>
   </div>
@@ -132,48 +185,48 @@
 </div>
 
 <!-- Create Group Modal -->
-<div class="modal fade" id="createGroupModal" tabindex="-1">
-  <div class="modal-dialog modal-dialog-centered">
-    <div class="modal-content" style="border-radius: 24px;">
-      <div class="modal-header border-0 pb-0">
-        <h5 class="modal-title font-weight-bold">建立群組</h5>
-        <button type="button" class="close" data-dismiss="modal">&times;</button>
-      </div>
-      <div class="modal-body">
-        <form action="{{ url_for('group.create_group') }}" method="POST">
-          <div class="form-group">
-            <label>群組名稱</label>
-            <input type="text" name="name" class="form-control form-control-lg" required placeholder="例如：多益必勝小隊">
-          </div>
-          <div class="form-group">
-            <label>每日背單字目標 (最少 10 個)</label>
-            <input type="number" name="daily_goal" class="form-control form-control-lg" value="30" min="10" required>
-          </div>
-          <button type="submit" class="btn btn-primary btn-block btn-lg mt-4" style="border-radius: 16px;">建立</button>
-        </form>
-      </div>
+<div class="modal" id="createGroupModal">
+  <div class="custom-modal-content">
+    <div class="custom-modal-header">
+      <h5>建立群組</h5>
+      <button type="button" class="close-btn" onclick="closeModal('createGroupModal')">&times;</button>
     </div>
+    <form action="{{ url_for('group.create_group') }}" method="POST">
+      <label style="display:block; margin-bottom:0.5rem; font-size:0.9rem; color:var(--text-secondary);">群組名稱</label>
+      <input type="text" name="name" class="form-control-custom" required placeholder="例如：多益必勝小隊">
+      
+      <label style="display:block; margin-bottom:0.5rem; font-size:0.9rem; color:var(--text-secondary);">每日背單字目標 (最少 10 個)</label>
+      <input type="number" name="daily_goal" class="form-control-custom" value="30" min="10" required>
+      
+      <button type="submit" class="btn btn-primary" style="width: 100%; border-radius: 12px; padding: 1rem; font-size: 1.1rem;">建立</button>
+    </form>
   </div>
 </div>
 
 <!-- Join Group Modal -->
-<div class="modal fade" id="joinGroupModal" tabindex="-1">
-  <div class="modal-dialog modal-dialog-centered">
-    <div class="modal-content" style="border-radius: 24px;">
-      <div class="modal-header border-0 pb-0">
-        <h5 class="modal-title font-weight-bold">加入群組</h5>
-        <button type="button" class="close" data-dismiss="modal">&times;</button>
-      </div>
-      <div class="modal-body">
-        <form action="{{ url_for('group.join_group') }}" method="POST">
-          <div class="form-group">
-            <label>邀請碼</label>
-            <input type="text" name="invite_code" class="form-control form-control-lg" required placeholder="請輸入 6 碼英數字" style="text-transform: uppercase;">
-          </div>
-          <button type="submit" class="btn btn-primary btn-block btn-lg mt-4" style="border-radius: 16px;">加入</button>
-        </form>
-      </div>
+<div class="modal" id="joinGroupModal">
+  <div class="custom-modal-content">
+    <div class="custom-modal-header">
+      <h5>加入群組</h5>
+      <button type="button" class="close-btn" onclick="closeModal('joinGroupModal')">&times;</button>
     </div>
+    <form action="{{ url_for('group.join_group') }}" method="POST">
+      <label style="display:block; margin-bottom:0.5rem; font-size:0.9rem; color:var(--text-secondary);">邀請碼</label>
+      <input type="text" name="invite_code" class="form-control-custom" required placeholder="請輸入 6 碼英數字" style="text-transform: uppercase;">
+      
+      <button type="submit" class="btn btn-primary" style="width: 100%; border-radius: 12px; padding: 1rem; font-size: 1.1rem;">加入</button>
+    </form>
   </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  function openModal(id) {
+    document.getElementById(id).classList.add('show');
+  }
+  function closeModal(id) {
+    document.getElementById(id).classList.remove('show');
+  }
+</script>
 {% endblock %}
