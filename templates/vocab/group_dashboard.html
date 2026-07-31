@@ -306,6 +306,11 @@
             <span class="m-stat-val">{{ data.accuracy }}<small>%</small></span>
           </div>
         </div>
+        
+        <!-- Accuracy Sparkline -->
+        <div style="margin-top: 1rem; width: 100%; height: 60px;">
+          <canvas id="chart-{{ data.user.id }}"></canvas>
+        </div>
       </div>
       
       <div class="score-badge">
@@ -336,11 +341,65 @@
 
 {% block extra_js %}
 <script>
-  function copyInviteCode() {
-    const code = document.getElementById('inviteCode').innerText;
-    navigator.clipboard.writeText(code).then(() => {
-      alert('邀請碼 ' + code + ' 已複製！');
+document.addEventListener('DOMContentLoaded', function() {
+  {% for data in dashboard_data %}
+  (function() {
+    const ctx = document.getElementById('chart-{{ data.user.id }}').getContext('2d');
+    const isMe = {{ 'true' if data.is_me else 'false' }};
+    const gradient = ctx.createLinearGradient(0, 0, 0, 60);
+    if (isMe) {
+      gradient.addColorStop(0, 'rgba(102, 126, 234, 0.4)');
+      gradient.addColorStop(1, 'rgba(102, 126, 234, 0)');
+    } else {
+      gradient.addColorStop(0, 'rgba(78, 205, 196, 0.4)');
+      gradient.addColorStop(1, 'rgba(78, 205, 196, 0)');
+    }
+    
+    new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: {{ data.chart_labels | tojson }},
+        datasets: [{
+          data: {{ data.chart_data | tojson }},
+          borderColor: isMe ? '#667eea' : '#4ecdc4',
+          backgroundColor: gradient,
+          borderWidth: 2,
+          pointRadius: 2,
+          pointBackgroundColor: isMe ? '#667eea' : '#4ecdc4',
+          fill: true,
+          tension: 0.3
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            callbacks: {
+              label: function(context) { return context.parsed.y + '%'; }
+            }
+          }
+        },
+        scales: {
+          x: { display: false },
+          y: { 
+            display: false,
+            min: 0,
+            max: 100
+          }
+        },
+        interaction: { intersect: false, mode: 'index' }
+      }
     });
-  }
+  })();
+  {% endfor %}
+});
+function copyInviteCode() {
+  const code = document.getElementById('inviteCode').innerText;
+  navigator.clipboard.writeText(code).then(() => {
+    alert('邀請碼已複製！');
+  });
+}
 </script>
 {% endblock %}

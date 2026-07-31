@@ -186,12 +186,47 @@ def dashboard(group_id):
         total_answers = total_correct + total_incorrect
         accuracy = round(total_correct / total_answers * 100) if total_answers > 0 else 0
         
+        # Calculate past 7 days accuracy for chart
+        tw_now = datetime.utcnow() + timedelta(hours=8)
+        start_date = tw_now - timedelta(days=6)
+        start_utc = start_date.replace(hour=0, minute=0, second=0, microsecond=0) - timedelta(hours=8)
+        
+        recent_logs = VocabHistoryLog.query.filter(
+            VocabHistoryLog.user_id == user.id,
+            VocabHistoryLog.source == f'group_{group.id}',
+            VocabHistoryLog.created_at >= start_utc
+        ).all()
+        
+        daily_stats = {}
+        for log in recent_logs:
+            tw_time = log.created_at + timedelta(hours=8)
+            day_str = tw_time.strftime('%m/%d')
+            if day_str not in daily_stats:
+                daily_stats[day_str] = {'correct': 0, 'total': 0}
+            daily_stats[day_str]['total'] += 1
+            if log.result == 'correct':
+                daily_stats[day_str]['correct'] += 1
+                
+        chart_labels = []
+        chart_data = []
+        for i in range(6, -1, -1):
+            day_str = (tw_now - timedelta(days=i)).strftime('%m/%d')
+            chart_labels.append(day_str)
+            if day_str in daily_stats:
+                st = daily_stats[day_str]
+                acc = round(st['correct'] / st['total'] * 100) if st['total'] > 0 else 0
+                chart_data.append(acc)
+            else:
+                chart_data.append(0)
+        
         data = {
             'user': user,
             'record': record,
             'is_me': user.id == current_user.id,
             'total_vocab': total_vocab,
-            'accuracy': accuracy
+            'accuracy': accuracy,
+            'chart_labels': chart_labels,
+            'chart_data': chart_data
         }
         dashboard_data.append(data)
         
