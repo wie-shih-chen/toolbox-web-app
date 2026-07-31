@@ -325,7 +325,6 @@
   function checkSpelling() {
     if(isAnswered) return;
     let typed = $('#spellInput').val().trim().toLowerCase();
-    if(!typed) return;
     
     isAnswered = true;
     let w = words[currentIndex];
