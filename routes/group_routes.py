@@ -186,7 +186,7 @@ def dashboard(group_id):
         # If user has studied all unique words in today's assignment, they reached the goal.
         if len(assignment_words) > 0 and unique_words.issuperset(assignment_words):
             record.words_studied = group.daily_goal
-        else:
+        elif len(unique_words) > (record.words_studied or 0):
             record.words_studied = len(unique_words)
         db.session.commit()
         
