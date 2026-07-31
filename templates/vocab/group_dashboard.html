@@ -334,8 +334,8 @@
             <span class="m-stat-val">{{ data.total_vocab }}</span>
           </div>
           <div class="m-stat">
-            <span class="m-stat-label">總答對率</span>
-            <span class="m-stat-val">{{ data.accuracy }}<small>%</small></span>
+            <span class="m-stat-label">測驗答對率</span>
+            <span class="m-stat-val">{{ data.accuracy if data.accuracy is not none else '--' }}<small>%</small></span>
           </div>
         </div>
         

@@ -181,10 +181,13 @@ def dashboard(group_id):
         ).all()
         
         total_vocab = len(all_time)
-        total_correct = sum(p.correct for p in all_time)
-        total_incorrect = sum(p.incorrect for p in all_time)
-        total_answers = total_correct + total_incorrect
-        accuracy = round(total_correct / total_answers * 100) if total_answers > 0 else 0
+        
+        # Calculate overall accuracy based on QUIZ scores, not study progress
+        all_quizzes = GroupDailyRecord.query.filter_by(group_id=group.id, user_id=user.id, quiz_taken=True).all()
+        if all_quizzes:
+            accuracy = round(sum(q.quiz_score for q in all_quizzes) / len(all_quizzes))
+        else:
+            accuracy = None
         
         # Calculate past 7 days accuracy for chart
         tw_now = datetime.utcnow() + timedelta(hours=8)
