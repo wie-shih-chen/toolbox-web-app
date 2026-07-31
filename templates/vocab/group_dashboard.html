@@ -306,7 +306,7 @@
   <!-- Floating CTA -->
   <div class="cta-section">
     {% if current_user_record.words_studied < group.daily_goal %}
-    <a href="{{ url_for('vocab.index') }}" class="btn-cta btn-study">
+    <a href="{{ url_for('group.group_study', group_id=group.id) }}" class="btn-cta btn-study">
       <span class="material-icons">menu_book</span>
       去背單字 ({{ current_user_record.words_studied }}/{{ group.daily_goal }})
     </a>
