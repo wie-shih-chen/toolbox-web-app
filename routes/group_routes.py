@@ -300,7 +300,8 @@ def group_history(group_id):
             record = GroupDailyRecord.query.filter_by(group_id=group.id, user_id=current_user.id, date=date_str).first()
             
             # Fetch VocabProgress for these words
-            words_list = assignment.words_json
+            import json
+            words_list = json.loads(assignment.words_json) if isinstance(assignment.words_json, str) else assignment.words_json
             word_strings = [w['word'] for w in words_list]
             
             vps = VocabProgress.query.filter(
