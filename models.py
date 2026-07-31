@@ -416,3 +416,30 @@ class VocabHistoryLog(db.Model):
     word = db.Column(db.String(100), nullable=False)
     result = db.Column(db.String(20), nullable=False)   # 'correct' or 'incorrect'
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+# ─── 學習群組模組 ──────────────────────────────────────────────────
+class StudyGroup(db.Model):
+    __tablename__ = 'study_groups'
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(100), nullable=False)
+    invite_code = db.Column(db.String(10), unique=True, nullable=False)
+    owner_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    daily_goal = db.Column(db.Integer, default=10) # 每日背單字目標
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+class GroupMember(db.Model):
+    __tablename__ = 'group_members'
+    id = db.Column(db.Integer, primary_key=True)
+    group_id = db.Column(db.Integer, db.ForeignKey('study_groups.id'), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    joined_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+class GroupDailyRecord(db.Model):
+    __tablename__ = 'group_daily_records'
+    id = db.Column(db.Integer, primary_key=True)
+    group_id = db.Column(db.Integer, db.ForeignKey('study_groups.id'), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    date = db.Column(db.String(10), nullable=False) # YYYY-MM-DD
+    words_studied = db.Column(db.Integer, default=0) # 當日已背數量
+    quiz_score = db.Column(db.Integer, default=0) # 當日測驗分數 (最高分)
+    quiz_taken = db.Column(db.Boolean, default=False) # 是否完成當日測驗

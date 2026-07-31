@@ -101,6 +101,7 @@
   .mode-card.spelling  { background: linear-gradient(135deg, #43e97b, #38f9d7); }
   .mode-card.browse    { background: linear-gradient(135deg, #fa709a, #fee140); }
   .mode-card.custom    { background: linear-gradient(135deg, #a18cd1, #fbc2eb); }
+  .mode-card.group     { background: linear-gradient(135deg, #ff9a9e, #fecfef); color: #333; }
 
   /* 字庫切換按鈕 */
   .source-switch {
@@ -226,10 +227,15 @@
       <div>瀏覽模式</div>
       <div class="mode-desc">捲動看所有單字</div>
     </a>
-    <a href="{{ url_for('custom_vocab.custom_editor') }}" class="mode-card custom" style="grid-column: span 2;">
+    <a href="{{ url_for('custom_vocab.custom_editor') }}" class="mode-card custom">
       <div class="mode-icon">✏️</div>
       <div>自訂單字本</div>
-      <div class="mode-desc">上傳 Excel · 線上編輯·書簽進度</div>
+      <div class="mode-desc">上傳 Excel · 線上編輯</div>
+    </a>
+    <a href="{{ url_for('group.index') }}" class="mode-card group">
+      <div class="mode-icon">👥</div>
+      <div>學習群組</div>
+      <div class="mode-desc">共同目標 · 測驗對戰</div>
     </a>
   </div>
 

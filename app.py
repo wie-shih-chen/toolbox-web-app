@@ -86,6 +86,9 @@ with app.app_context():
     from routes.custom_vocab_routes import custom_vocab_bp
     app.register_blueprint(custom_vocab_bp, url_prefix='/vocab')
 
+    from routes.group_routes import group_bp
+    app.register_blueprint(group_bp, url_prefix='/group')
+
 
 
     # Initialize Scheduler

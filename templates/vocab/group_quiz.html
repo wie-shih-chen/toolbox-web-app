@@ -1,0 +1,361 @@
+{% extends 'base.html' %}
+{% block title %}今日總測驗 - {{ group.name }}{% endblock %}
+
+{% block extra_css %}
+<style>
+  .quiz-container { max-width: 640px; margin: 0 auto; padding: 1.5rem 1rem; }
+  .quiz-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.5rem; }
+  .quiz-header a { 
+    text-decoration: none; 
+    color: var(--text-secondary); 
+    font-size: 0.95rem; 
+    font-weight: 500;
+  }
+
+  .score-bar { 
+    display: flex; gap: 1.5rem; font-size: 0.95rem; 
+    background: var(--card-bg, #fff);
+    padding: 0.5rem 1.2rem;
+    border-radius: 100px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+  }
+  .score-correct { color: #22c55e; font-weight: 700; }
+  .score-wrong { color: #ef4444; font-weight: 700; }
+
+  /* Question Card */
+  .question-card {
+    background: linear-gradient(135deg, #ff0844 0%, #ffb199 100%);
+    border-radius: 24px;
+    padding: 2.5rem 2rem;
+    color: white;
+    text-align: center;
+    margin-bottom: 1.5rem;
+    min-height: 180px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 12px 35px rgba(255, 8, 68, 0.25);
+  }
+  .q-word { font-size: 2.5rem; font-weight: 800; line-height: 1.2; }
+  .q-num { font-size: 0.85rem; opacity: 0.85; margin-bottom: 0.8rem; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; }
+  
+  /* Options Grid (Choice) */
+  .options-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.5rem; }
+  .opt-btn {
+    padding: 1.2rem;
+    border-radius: 16px;
+    border: 2px solid rgba(128,128,128,0.25);
+    background: var(--card-bg, #fff);
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .opt-btn.correct { border-color: #22c55e; background: #dcfce7; color: #15803d; }
+  .opt-btn.wrong { border-color: #ef4444; background: #fee2e2; color: #b91c1c; }
+
+  /* Input Area (Spelling) */
+  .input-area {
+    margin-bottom: 1.5rem;
+    display: none;
+    flex-direction: column;
+    gap: 1rem;
+  }
+  .spell-input {
+    width: 100%;
+    padding: 1.2rem;
+    font-size: 1.5rem;
+    text-align: center;
+    border: 2px solid rgba(128,128,128,0.25);
+    border-radius: 16px;
+    background: var(--card-bg, #fff);
+    font-family: 'Inter', sans-serif;
+    font-weight: 600;
+    letter-spacing: 2px;
+  }
+  .spell-input:focus { border-color: #ff0844; outline: none; box-shadow: 0 0 0 4px rgba(255,8,68,0.1); }
+  .spell-input.correct { border-color: #22c55e; background: #dcfce7; color: #15803d; }
+  .spell-input.wrong { border-color: #ef4444; background: #fee2e2; color: #b91c1c; }
+  
+  .btn-submit-spell {
+    width: 100%;
+    padding: 1.2rem;
+    border-radius: 16px;
+    border: none;
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    color: white;
+    font-size: 1.1rem;
+    font-weight: bold;
+  }
+
+  .feedback-box {
+    border-radius: 16px;
+    padding: 1.2rem 1.5rem;
+    margin-bottom: 1.5rem;
+    display: none;
+    font-size: 0.95rem;
+    line-height: 1.6;
+    font-weight: 500;
+  }
+  .feedback-box.correct { background: #dcfce7; border: 1px solid #bbf7d0; color: #15803d; }
+  .feedback-box.wrong { background: #fee2e2; border: 1px solid #fecaca; color: #b91c1c; }
+
+  .btn-next {
+    width: 100%; padding: 1.2rem; border-radius: 16px;
+    background: #333; color: white; border: none; font-size: 1.1rem;
+    font-weight: 700; cursor: pointer; display: none; margin-bottom: 2rem;
+  }
+  
+  /* Result View */
+  .result-view { text-align: center; padding: 3rem 1rem; display: none; }
+  .final-score { font-size: 4rem; font-weight: 900; background: linear-gradient(135deg, #ff0844, #ffb199); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+  
+  @media (max-width: 768px) {
+    .btn-next {
+      position: fixed;
+      bottom: 20px;
+      left: 5%;
+      width: 90%;
+      box-shadow: 0 -4px 20px rgba(0,0,0,0.15);
+      z-index: 1000;
+    }
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="quiz-container">
+  <div class="quiz-header">
+    <a href="{{ url_for('group.dashboard', group_id=group.id) }}" id="btnLeave">
+      <span class="material-icons" style="font-size: 16px; vertical-align: middle;">arrow_back</span>
+      放棄測驗
+    </a>
+    <div class="score-bar">
+      <div class="score-correct"><span class="material-icons" style="font-size:14px;">check_circle</span> <span id="correctCount">0</span></div>
+      <div class="score-wrong"><span class="material-icons" style="font-size:14px;">cancel</span> <span id="wrongCount">0</span></div>
+    </div>
+  </div>
+
+  <div id="loadingView" class="text-center py-5">
+    <div class="spinner-border text-primary" role="status"></div>
+    <div class="mt-3 font-weight-bold" style="color: #666;">正在準備考卷...</div>
+  </div>
+
+  <!-- Quiz View -->
+  <div id="quizView" style="display: none;">
+    <div class="question-card">
+      <div class="q-num">Question <span id="qIdx">1</span> / <span id="qTotal">10</span></div>
+      <div class="q-word nowrap-scroll" id="qWord">Word</div>
+      <div class="q-num mt-2" id="qTypeBadge" style="background: rgba(255,255,255,0.2); padding: 4px 10px; border-radius: 20px; font-size: 0.8rem;"></div>
+    </div>
+
+    <!-- Options for Choice -->
+    <div class="options-grid" id="optionsContainer">
+      <button class="opt-btn" onclick="checkChoice(0)" id="opt0">Opt 1</button>
+      <button class="opt-btn" onclick="checkChoice(1)" id="opt1">Opt 2</button>
+      <button class="opt-btn" onclick="checkChoice(2)" id="opt2">Opt 3</button>
+      <button class="opt-btn" onclick="checkChoice(3)" id="opt3">Opt 4</button>
+    </div>
+
+    <!-- Input for Spelling -->
+    <div class="input-area" id="spellingContainer">
+      <input type="text" class="spell-input" id="spellInput" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" placeholder="Type here...">
+      <button class="btn-submit-spell" id="btnSubmitSpell">送出答案</button>
+    </div>
+
+    <div class="feedback-box" id="feedbackBox"></div>
+    
+    <button class="btn-next" id="btnNext" onclick="nextQuestion()">下一題</button>
+  </div>
+  
+  <!-- Result View -->
+  <div class="result-view" id="resultView">
+    <h2 style="font-weight: 800; margin-bottom: 1rem;">測驗完成！</h2>
+    <div class="final-score" id="finalScore">100</div>
+    <div style="font-size: 1.2rem; font-weight: 600; color: #666; margin-bottom: 2rem;">分</div>
+    <p id="submitStatus" style="color: #888; font-weight: 500; margin-bottom: 2rem;"></p>
+    <a href="{{ url_for('group.dashboard', group_id=group.id) }}" class="btn btn-primary btn-lg" style="border-radius: 100px; padding: 1rem 3rem; font-weight: bold;">
+      回儀表板查看排名
+    </a>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  let words = [];
+  let currentIndex = 0;
+  let correctCount = 0;
+  let wrongCount = 0;
+  let currentMode = 'choice'; // 'choice' or 'spelling'
+  let currentOptions = [];
+  let isAnswered = false;
+
+  $(document).ready(function() {
+    loadQuizData();
+    
+    $('#spellInput').keypress(function(e) {
+      if(e.which == 13) {
+        checkSpelling();
+      }
+    });
+    $('#btnSubmitSpell').click(function() {
+      checkSpelling();
+    });
+  });
+
+  function loadQuizData() {
+    $.getJSON("{{ url_for('group.api_quiz_words', group_id=group.id) }}", function(data) {
+      words = data.words;
+      if(!words || words.length === 0) {
+        alert("今日尚未學習足夠的單字，無法產生考卷！");
+        window.location.href = "{{ url_for('group.dashboard', group_id=group.id) }}";
+        return;
+      }
+      $('#loadingView').hide();
+      $('#quizView').show();
+      showQuestion();
+    });
+  }
+
+  function showQuestion() {
+    if(currentIndex >= words.length) {
+      showResult();
+      return;
+    }
+
+    let w = words[currentIndex];
+    isAnswered = false;
+    $('#qIdx').text(currentIndex + 1);
+    $('#qTotal').text(words.length);
+    
+    // Reset UI
+    $('.opt-btn').removeClass('correct wrong').prop('disabled', false);
+    $('#spellInput').removeClass('correct wrong').prop('disabled', false).val('');
+    $('#feedbackBox').hide().removeClass('correct wrong');
+    $('#btnNext').hide();
+    $('#btnLeave').show();
+
+    // Determine Mode
+    let halfPoint = Math.ceil(words.length / 2);
+    if(currentIndex < halfPoint) {
+      currentMode = 'choice';
+      $('#qTypeBadge').text('選擇題');
+      $('#qWord').text(w.word); // show english
+      $('#optionsContainer').show();
+      $('#spellingContainer').hide();
+      
+      // Generate options (dummy options from pool)
+      let options = [w.definition];
+      let pool = words.filter(x => x.word !== w.word);
+      pool.sort(() => 0.5 - Math.random());
+      for(let i=0; i<3 && i<pool.length; i++) {
+        options.push(pool[i].definition);
+      }
+      options.sort(() => 0.5 - Math.random());
+      currentOptions = options;
+      
+      for(let i=0; i<4; i++) {
+        $('#opt'+i).text(options[i] || '').toggle(!!options[i]);
+      }
+    } else {
+      currentMode = 'spelling';
+      $('#qTypeBadge').text('拼字題');
+      $('#qWord').text(w.definition); // show chinese
+      $('#optionsContainer').hide();
+      $('#spellingContainer').show();
+      setTimeout(() => $('#spellInput').focus(), 100);
+    }
+  }
+
+  function checkChoice(idx) {
+    if(isAnswered) return;
+    isAnswered = true;
+    
+    let w = words[currentIndex];
+    let selected = currentOptions[idx];
+    let isCorrect = (selected === w.definition);
+    
+    $('.opt-btn').prop('disabled', true);
+    $('#btnLeave').hide();
+    
+    if(isCorrect) {
+      $('#opt'+idx).addClass('correct');
+      correctCount++;
+      $('#correctCount').text(correctCount);
+      $('#feedbackBox').text('答對了！').addClass('correct').show();
+      
+      setTimeout(nextQuestion, 1200);
+    } else {
+      $('#opt'+idx).addClass('wrong');
+      // find correct and highlight
+      for(let i=0; i<4; i++) {
+        if(currentOptions[i] === w.definition) $('#opt'+i).addClass('correct');
+      }
+      wrongCount++;
+      $('#wrongCount').text(wrongCount);
+      $('#feedbackBox').html(`正確解答應為：<br><b>${w.definition}</b>`).addClass('wrong').show();
+      $('#btnNext').show();
+    }
+  }
+
+  function checkSpelling() {
+    if(isAnswered) return;
+    let typed = $('#spellInput').val().trim().toLowerCase();
+    if(!typed) return;
+    
+    isAnswered = true;
+    let w = words[currentIndex];
+    let correctWord = w.word.toLowerCase();
+    let isCorrect = (typed === correctWord);
+    
+    $('#spellInput').prop('disabled', true);
+    $('#btnSubmitSpell').prop('disabled', true);
+    $('#btnLeave').hide();
+    
+    if(isCorrect) {
+      $('#spellInput').addClass('correct');
+      correctCount++;
+      $('#correctCount').text(correctCount);
+      $('#feedbackBox').text('拼寫正確！').addClass('correct').show();
+      
+      setTimeout(nextQuestion, 1200);
+    } else {
+      $('#spellInput').addClass('wrong');
+      wrongCount++;
+      $('#wrongCount').text(wrongCount);
+      $('#feedbackBox').html(`正確拼法為：<br><b style="font-size:1.2rem; letter-spacing:1px;">${w.word}</b><br><br>${w.definition}`).addClass('wrong').show();
+      $('#btnNext').show();
+    }
+  }
+
+  function nextQuestion() {
+    currentIndex++;
+    showQuestion();
+  }
+
+  function showResult() {
+    $('#quizView').hide();
+    $('#resultView').show();
+    
+    let score = Math.round((correctCount / words.length) * 100);
+    $('#finalScore').text(score);
+    $('#submitStatus').text('正在記錄成績...');
+    
+    $.ajax({
+      url: "{{ url_for('group.submit_quiz', group_id=group.id) }}",
+      type: "POST",
+      contentType: "application/json",
+      data: JSON.stringify({ score: score }),
+      success: function(res) {
+        if(res.success) {
+          $('#submitStatus').text(res.message);
+        } else {
+          $('#submitStatus').text("成績上傳失敗");
+        }
+      }
+    });
+  }
+</script>
+{% endblock %}
