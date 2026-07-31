@@ -332,7 +332,8 @@ def group_history(group_id):
             
         current_date -= timedelta(days=1)
         
-    return render_template('vocab/group_history.html', group=group, history_data=history_data)
+    today_str = get_tw_today_str()
+    return render_template('vocab/group_history.html', group=group, history_data=history_data, today_str=today_str)
 
 @group_bp.route('/<int:group_id>/api/quiz_words')
 @login_required

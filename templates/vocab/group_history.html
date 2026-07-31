@@ -285,19 +285,33 @@
       {% set record = data.record %}
       {% set words = data.words %}
       
-      <div class="history-day-card">
-        <details class="history-summary">
-          <summary style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
-            <div class="history-date" style="flex: 1;">
-              📅 {{ data.date }}
-              {% if record %}
-                <span class="history-count" style="margin-left: 0.5rem;">{{ record.words_studied }}/{{ group.daily_goal }}</span>
+      <details class="history-day-card" style="width: 100%;">
+        <summary class="history-summary">
+          <div class="history-date">
+            📅 {{ data.date }}
+            {% if data.date == today_str %}
+              <span style="font-size: 0.8rem; background: rgba(78, 205, 196, 0.2); color: #4ecdc4; padding: 2px 8px; border-radius: 10px; margin-left: 0.5rem;">今日</span>
+            {% endif %}
+            {% if record %}
+              <span class="history-count" style="margin-left: 0.5rem;">{{ record.words_studied }}/{{ group.daily_goal }}</span>
+            {% else %}
+              <span class="history-count" style="margin-left: 0.5rem;">0/{{ group.daily_goal }}</span>
+            {% endif %}
+          </div>
+          
+          <div style="display: flex; align-items: center; gap: 1rem;">
+            {% if data.date == today_str %}
+              {% if record and record.quiz_taken %}
+                <div class="stat-badge" style="background: rgba(255, 215, 0, 0.15); color: gold;">測驗: {{ record.quiz_score }}分</div>
+                <a href="{{ url_for('group.group_study', group_id=group.id, date=data.date, review=1) }}" class="btn btn-sm btn-outline-light" style="border-radius: 20px;">再次複習</a>
+              {% elif record and record.words_studied >= group.daily_goal %}
+                <div class="stat-badge" style="background: rgba(46, 213, 115, 0.15); color: #2ed573;">可測驗</div>
+                <a href="{{ url_for('group.take_quiz', group_id=group.id, date=data.date) }}" class="btn btn-sm btn-success" style="border-radius: 20px;">進入測驗</a>
               {% else %}
-                <span class="history-count" style="margin-left: 0.5rem;">0/{{ group.daily_goal }}</span>
+                <div class="stat-badge" style="background: rgba(255, 255, 255, 0.1); color: #ccc;">進行中</div>
+                <a href="{{ url_for('group.group_study', group_id=group.id, date=data.date) }}" class="btn btn-sm btn-primary" style="border-radius: 20px;">繼續任務</a>
               {% endif %}
-            </div>
-            
-            <div style="display: flex; align-items: center; gap: 1rem;">
+            {% else %}
               {% if record and record.quiz_taken %}
                 <div class="stat-badge" style="background: rgba(255, 215, 0, 0.15); color: gold;">測驗: {{ record.quiz_score }}分</div>
                 <a href="{{ url_for('group.group_study', group_id=group.id, date=data.date, review=1) }}" class="btn btn-sm btn-outline-light" style="border-radius: 20px;">再次複習</a>
@@ -308,8 +322,9 @@
                 <div class="stat-badge" style="background: rgba(255, 107, 107, 0.15); color: #ff6b6b;">未完成</div>
                 <a href="{{ url_for('group.group_study', group_id=group.id, date=data.date) }}" class="btn btn-sm btn-primary" style="border-radius: 20px;">補齊進度</a>
               {% endif %}
-            </div>
-          </summary>
+            {% endif %}
+          </div>
+        </summary>
           
           <div class="history-content">
             <table class="history-table">
@@ -334,7 +349,6 @@
             </table>
           </div>
         </details>
-      </div>
     {% endfor %}
   </div>
   {% endif %}
