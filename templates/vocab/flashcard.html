@@ -248,25 +248,39 @@
     transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
   }
 
-  @media (max-width: 768px) {
-    .flashcard-container { padding-top: 5.5rem; }
-  }
-
-  /* Swipe hint arrows */
-  .swipe-hint {
+  /* Swipe hint arrows - shown above card scene */
+  .swipe-nav {
     display: flex;
     justify-content: space-between;
     align-items: center;
     width: 100%;
     max-width: 600px;
-    padding: 0 0.5rem;
-    margin-bottom: -0.5rem;
-    margin-top: 0;
-    color: rgba(255,255,255,0.35);
+    margin-bottom: 0.6rem;
+    color: var(--text-secondary, #aaa);
     font-size: 0.8rem;
-    pointer-events: none;
   }
-  .swipe-hint span { display: flex; align-items: center; gap: 0.3rem; }
+  .swipe-nav button {
+    background: var(--card-bg, rgba(255,255,255,0.08));
+    border: 1px solid rgba(255,255,255,0.15);
+    color: var(--text-secondary, #aaa);
+    border-radius: 100px;
+    padding: 0.3rem 1rem;
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: all 0.18s;
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+  }
+  .swipe-nav button:hover { background: rgba(102,126,234,0.15); color: #a5b4fc; }
+  .swipe-nav button:disabled { opacity: 0.3; cursor: default; }
+  .swipe-nav .center-hint { font-size: 0.75rem; opacity: 0.45; }
+
+  /* Card slide animations */
+  @keyframes slideInLeft  { from { transform: translateX(-80px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+  @keyframes slideInRight { from { transform: translateX( 80px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+  .card-slide-left  { animation: slideInLeft  0.28s cubic-bezier(0.22,1,0.36,1); }
+  .card-slide-right { animation: slideInRight 0.28s cubic-bezier(0.22,1,0.36,1); }
 
   @media (max-width: 600px) {
     .card-scene { height: 320px; }
@@ -326,13 +340,16 @@
 
   <!-- Card -->
   <div id="mainContent" style="display:none; width:100%; max-width:600px;">
-    <div class="swipe-hint" id="swipeHint" style="display:none;">
-      <span>← 上一張</span>
-      <span style="opacity: 0.5; font-size: 0.75rem;">左右滑動切換</span>
-      <span>下一張 →</span>
+    
+    <!-- Prev / Next navigation -->
+    <div class="swipe-nav" id="swipeNav" style="display:none;">
+      <button id="btnPrev" onclick="navigateCard(-1)">← 上一張</button>
+      <span class="center-hint">🖑 滑動 · ←→ 鍵盤 · 滑鼠拖曳</span>
+      <button id="btnNext" onclick="navigateCard(1)">下一張 →</button>
     </div>
-    <div class="card-scene" onclick="flipCard()" id="cardScene">
-      <div class="card-3d" id="card3d">
+
+    <div class="card-scene" id="cardScene">
+      <div class="card-3d" id="card3d" onclick="flipCard()">
         <div class="card-face card-front">
           <div class="star-rating" id="cardStar"></div>
           <div class="word" id="cardWord"></div>
@@ -518,62 +535,73 @@ function showCard() {
   updateProgress();
   
   document.getElementById('mainContent').style.display = 'block';
-  
-  // Show swipe hint once we have more than 1 card
   if (filtered.length > 1) {
-    document.getElementById('swipeHint').style.display = 'flex';
+    document.getElementById('swipeNav').style.display = 'flex';
   }
+  // Update prev/next button state
+  document.getElementById('btnPrev').disabled = currentIdx <= 0;
+  document.getElementById('btnNext').disabled = currentIdx >= filtered.length - 1;
+}
+
+function animateCard(direction) {
+  const card3d = document.getElementById('card3d');
+  const cls = direction > 0 ? 'card-slide-left' : 'card-slide-right';
+  card3d.classList.remove('card-slide-left', 'card-slide-right');
+  void card3d.offsetWidth; // reflow
+  card3d.classList.add(cls);
+  card3d.addEventListener('animationend', () => card3d.classList.remove(cls), { once: true });
+}
+
+function navigateCard(direction) {
+  const newIdx = currentIdx + direction;
+  if (newIdx < 0 || newIdx >= filtered.length) return;
+  animateCard(direction);
+  currentIdx = newIdx;
+  showCard();
 }
 
 function flipCard() {
   isFlipped = !isFlipped;
   document.getElementById('card3d').classList.toggle('flipped', isFlipped);
-  
   if (isFlipped && !answered) {
     document.getElementById('btnKnow').disabled = false;
     document.getElementById('btnUnknown').disabled = false;
   }
 }
 
-// --- Swipe Navigation ---
-let _touchStartX = 0;
-let _touchStartY = 0;
+// --- Universal navigation: touch, mouse drag, keyboard ---
+(function() {
+  let startX = 0, startY = 0, dragging = false;
 
-document.addEventListener('DOMContentLoaded', function() {
-  const scene = document.getElementById('cardScene');
-  scene.addEventListener('touchstart', function(e) {
-    _touchStartX = e.changedTouches[0].screenX;
-    _touchStartY = e.changedTouches[0].screenY;
-  }, { passive: true });
-
-  scene.addEventListener('touchend', function(e) {
-    const dx = e.changedTouches[0].screenX - _touchStartX;
-    const dy = e.changedTouches[0].screenY - _touchStartY;
-    
-    // Only trigger if horizontal swipe dominates (not a vertical scroll)
+  function onStart(x, y) { startX = x; startY = y; dragging = true; }
+  function onEnd(x, y) {
+    if (!dragging) return;
+    dragging = false;
+    const dx = x - startX;
+    const dy = y - startY;
     if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 50) {
-      if (dx < 0) {
-        // Left swipe → next card
-        if (!answered) {
-          // Skip current (mark as not answered but advance)
-          currentIdx++;
-          showCard();
-        } else {
-          currentIdx++;
-          showCard();
-        }
-      } else {
-        // Right swipe → previous card
-        if (currentIdx > 0) {
-          currentIdx--;
-          showCard();
-        }
-      }
-    } else if (Math.abs(dx) < 10 && Math.abs(dy) < 10) {
-      // It was a tap — let onclick handle it (flip)
+      navigateCard(dx < 0 ? 1 : -1);
     }
-  }, { passive: true });
-});
+  }
+
+  document.addEventListener('DOMContentLoaded', function() {
+    const scene = document.getElementById('cardScene');
+    // Touch
+    scene.addEventListener('touchstart', e => onStart(e.changedTouches[0].screenX, e.changedTouches[0].screenY), { passive: true });
+    scene.addEventListener('touchend',   e => onEnd(e.changedTouches[0].screenX, e.changedTouches[0].screenY), { passive: true });
+    // Mouse drag
+    scene.addEventListener('mousedown', e => { onStart(e.clientX, e.clientY); e.preventDefault(); });
+    window.addEventListener('mouseup',  e => onEnd(e.clientX, e.clientY));
+  });
+
+  // Keyboard
+  document.addEventListener('keydown', function(e) {
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+    if (e.key === 'ArrowLeft')  navigateCard(-1);
+    if (e.key === 'ArrowRight') navigateCard(1);
+    if (e.key === ' ' || e.key === 'Enter') { e.preventDefault(); flipCard(); }
+  });
+})();
 
 async function answer(result) {
   if (answered) return;
