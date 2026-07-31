@@ -60,23 +60,43 @@
   }
   .filter-bar select:hover { border-color: #667eea; }
 
-  /* 3D Card */
-  .card-scene {
+  /* Card Stack Fan */
+  .card-stack-scene {
     width: 100%;
     max-width: 600px;
-    height: 380px;
-    perspective: 1000px;
-    cursor: pointer;
+    height: 420px;
+    perspective: 1100px;
+    position: relative;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
     margin-bottom: 1.5rem;
   }
-  .card-3d {
+  .stack-card {
+    position: absolute;
+    bottom: 0;
+    width: min(520px, 92vw);
+    height: min(320px, 58vw);
+    border-radius: 28px;
+    overflow: hidden;
+    box-shadow: 0 16px 40px rgba(0,0,0,0.22);
+    transform-style: preserve-3d;
+    transition: transform 0.45s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.35s;
+    user-select: none;
+    will-change: transform, opacity;
+  }
+  .stack-card.is-active { cursor: grab; }
+  .stack-card.is-active.dragging { cursor: grabbing; transition: none; }
+  .stack-card.is-inactive { cursor: pointer; }
+  /* Active card flip wrapper */
+  .stack-card .card-3d {
     width: 100%;
     height: 100%;
     position: relative;
     transform-style: preserve-3d;
     transition: transform 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
   }
-  .card-3d.flipped { transform: rotateY(180deg); }
+  .stack-card .card-3d.flipped { transform: rotateY(180deg); }
   .card-face {
     position: absolute;
     inset: 0;
@@ -90,6 +110,38 @@
     -webkit-backface-visibility: hidden;
     box-shadow: 0 16px 40px rgba(0,0,0,0.12);
   }
+  /* Simple face for non-active stacked cards */
+  .stack-face-simple {
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    gap: 0.6rem;
+    position: relative;
+    border-radius: 28px;
+  }
+  .stack-face-simple::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: rgba(0,0,0,0.28);
+    border-radius: 28px;
+  }
+  .stack-face-simple .sc-star,
+  .stack-face-simple .sc-word { position: relative; z-index: 1; }
+  .stack-face-simple .sc-word {
+    font-size: 1.8rem;
+    font-weight: 800;
+    text-align: center;
+    max-width: 80%;
+    line-height: 1.2;
+    letter-spacing: -0.5px;
+  }
+  .stack-face-simple .sc-star { font-size: 0.9rem; opacity: 0.8; }
   .card-front {
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     color: white;
@@ -348,21 +400,38 @@
       <button id="btnNext" onclick="navigateCard(1)">下一張 →</button>
     </div>
 
-    <div class="card-scene" id="cardScene">
-      <div class="card-3d" id="card3d" onclick="flipCard()">
-        <div class="card-face card-front">
-          <div class="star-rating" id="cardStar"></div>
-          <div class="word" id="cardWord"></div>
-          <div class="pos-badge" id="cardPos"></div>
-          <div class="hint">點擊查看中文意思</div>
-        </div>
-        <div class="card-face card-back">
-          <div class="word-small" style="display: flex; align-items: center; justify-content: center; gap: 8px;">
-            <span id="cardWordBack"></span>
-            <button class="official-badge" id="cardTipBtn" onclick="openFlashcardModal(event)" style="display:none;" title="考試提示">i</button>
+    <!-- Card Stack (fan effect) -->
+    <div class="card-stack-scene" id="cardScene">
+      <!-- Inactive cards (behind): drawn back-to-front so z-order is correct -->
+      <div class="stack-card is-inactive" id="sc-n2" onclick="navigateCard(-2)" style="opacity:0;">
+        <div class="stack-face-simple"><div class="sc-star"></div><div class="sc-word"></div></div>
+      </div>
+      <div class="stack-card is-inactive" id="sc-p2" onclick="navigateCard(2)" style="opacity:0;">
+        <div class="stack-face-simple"><div class="sc-star"></div><div class="sc-word"></div></div>
+      </div>
+      <div class="stack-card is-inactive" id="sc-n1" onclick="navigateCard(-1)" style="opacity:0;">
+        <div class="stack-face-simple"><div class="sc-star"></div><div class="sc-word"></div></div>
+      </div>
+      <div class="stack-card is-inactive" id="sc-p1" onclick="navigateCard(1)" style="opacity:0;">
+        <div class="stack-face-simple"><div class="sc-star"></div><div class="sc-word"></div></div>
+      </div>
+      <!-- Active card (front, flippable) -->
+      <div class="stack-card is-active" id="sc-active">
+        <div class="card-3d" id="card3d" onclick="flipCard()">
+          <div class="card-face card-front">
+            <div class="star-rating" id="cardStar"></div>
+            <div class="word" id="cardWord"></div>
+            <div class="pos-badge" id="cardPos"></div>
+            <div class="hint">點擊查看中文意思</div>
           </div>
-          <div class="definition" id="cardDef"></div>
-          <div class="example" id="cardExample"></div>
+          <div class="card-face card-back">
+            <div class="word-small" style="display: flex; align-items: center; justify-content: center; gap: 8px;">
+              <span id="cardWordBack"></span>
+              <button class="official-badge" id="cardTipBtn" onclick="openFlashcardModal(event)" style="display:none;" title="考試提示">i</button>
+            </div>
+            <div class="definition" id="cardDef"></div>
+            <div class="example" id="cardExample"></div>
+          </div>
         </div>
       </div>
     </div>
@@ -538,29 +607,88 @@ function showCard() {
   if (filtered.length > 1) {
     document.getElementById('swipeNav').style.display = 'flex';
   }
-  // Update prev/next button state
   document.getElementById('btnPrev').disabled = currentIdx <= 0;
   document.getElementById('btnNext').disabled = currentIdx >= filtered.length - 1;
+
+  // Update card stack fan
+  updateStackContent();
+  updateStackPositions();
+}
+
+// ====== Card Stack Fan Logic ======
+const STACK = {
+  spreadDeg: 22,
+  depthPx: 80,
+  tiltXDeg: 7,
+  activeLift: 24,
+  activeScale: 1.03,
+  inactiveScale: 0.94,
+};
+
+function getStackSpacing() {
+  return Math.min(520, window.innerWidth * 0.92) * 0.52;
+}
+
+function applyStackTransform(el, offset, extraX = 0) {
+  if (!el) return;
+  const abs = Math.abs(offset);
+  const spacing = getStackSpacing();
+  const rotZ  = offset * STACK.spreadDeg;
+  const x     = offset * spacing + (offset === 0 ? extraX : 0);
+  const y     = abs * 10;
+  const z     = -abs * STACK.depthPx;
+  const scale = offset === 0 ? STACK.activeScale : STACK.inactiveScale;
+  const lift  = offset === 0 ? -STACK.activeLift : 0;
+  const rotX  = offset === 0 ? 0 : STACK.tiltXDeg;
+  el.style.zIndex   = 100 - abs;
+  el.style.transform = `translateX(${x}px) translateY(${y + lift}px) translateZ(${z}px) rotateZ(${rotZ}deg) rotateX(${rotX}deg) scale(${scale})`;
+}
+
+function updateStackPositions(dragX = 0) {
+  applyStackTransform(document.getElementById('sc-n2'), -2);
+  applyStackTransform(document.getElementById('sc-n1'), -1);
+  applyStackTransform(document.getElementById('sc-active'), 0, dragX);
+  applyStackTransform(document.getElementById('sc-p1'), 1);
+  applyStackTransform(document.getElementById('sc-p2'), 2);
+}
+
+function updateStackContent() {
+  const slots = [
+    { id: 'sc-n2', off: -2 },
+    { id: 'sc-n1', off: -1 },
+    { id: 'sc-p1', off:  1 },
+    { id: 'sc-p2', off:  2 },
+  ];
+  slots.forEach(({ id, off }) => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    const idx = currentIdx + off;
+    if (idx < 0 || idx >= filtered.length) {
+      el.style.opacity = '0';
+      el.style.pointerEvents = 'none';
+      return;
+    }
+    const w = filtered[idx];
+    el.style.opacity = '1';
+    el.style.pointerEvents = 'auto';
+    el.querySelector('.sc-star').textContent = '⭐'.repeat(w.star || 0);
+    el.querySelector('.sc-word').textContent = w.word;
+  });
 }
 
 function animateCard(direction) {
-  const card3d = document.getElementById('card3d');
-  const cls = direction > 0 ? 'card-slide-left' : 'card-slide-right';
-  card3d.classList.remove('card-slide-left', 'card-slide-right');
-  void card3d.offsetWidth; // reflow
-  card3d.classList.add(cls);
-  card3d.addEventListener('animationend', () => card3d.classList.remove(cls), { once: true });
+  // Handled by CSS spring transition
 }
 
 function navigateCard(direction) {
   const newIdx = currentIdx + direction;
   if (newIdx < 0 || newIdx >= filtered.length) return;
-  animateCard(direction);
   currentIdx = newIdx;
   showCard();
 }
 
 function flipCard() {
+  if (_wasDragging) { _wasDragging = false; return; }
   isFlipped = !isFlipped;
   document.getElementById('card3d').classList.toggle('flipped', isFlipped);
   if (isFlipped && !answered) {
@@ -569,32 +697,53 @@ function flipCard() {
   }
 }
 
-// --- Universal navigation: touch, mouse drag, keyboard ---
-(function() {
-  let startX = 0, startY = 0, dragging = false;
+// ====== Drag / Swipe / Keyboard ======
+let _wasDragging = false;
 
-  function onStart(x, y) { startX = x; startY = y; dragging = true; }
-  function onEnd(x, y) {
-    if (!dragging) return;
-    dragging = false;
+(function() {
+  let startX = 0, startY = 0, isDragging = false;
+  const THRESHOLD = 55;
+
+  function onStart(x, y) {
+    startX = x; startY = y; isDragging = true;
+    const ac = document.getElementById('sc-active');
+    if (ac) ac.classList.add('dragging');
+  }
+
+  function onMove(x, y) {
+    if (!isDragging) return;
     const dx = x - startX;
     const dy = y - startY;
-    if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 50) {
+    if (Math.abs(dx) > Math.abs(dy)) {
+      updateStackPositions(dx * 0.55);
+      if (Math.abs(dx) > 8) _wasDragging = true;
+    }
+  }
+
+  function onEnd(x, y) {
+    if (!isDragging) return;
+    isDragging = false;
+    const ac = document.getElementById('sc-active');
+    if (ac) ac.classList.remove('dragging');
+    const dx = x - startX;
+    const dy = y - startY;
+    if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > THRESHOLD) {
       navigateCard(dx < 0 ? 1 : -1);
+    } else {
+      updateStackPositions(0);
     }
   }
 
   document.addEventListener('DOMContentLoaded', function() {
     const scene = document.getElementById('cardScene');
-    // Touch
-    scene.addEventListener('touchstart', e => onStart(e.changedTouches[0].screenX, e.changedTouches[0].screenY), { passive: true });
-    scene.addEventListener('touchend',   e => onEnd(e.changedTouches[0].screenX, e.changedTouches[0].screenY), { passive: true });
-    // Mouse drag
+    scene.addEventListener('touchstart', e => onStart(e.changedTouches[0].clientX, e.changedTouches[0].clientY), { passive: true });
+    scene.addEventListener('touchmove',  e => onMove(e.changedTouches[0].clientX, e.changedTouches[0].clientY), { passive: true });
+    scene.addEventListener('touchend',   e => onEnd(e.changedTouches[0].clientX, e.changedTouches[0].clientY), { passive: true });
     scene.addEventListener('mousedown', e => { onStart(e.clientX, e.clientY); e.preventDefault(); });
-    window.addEventListener('mouseup',  e => onEnd(e.clientX, e.clientY));
+    window.addEventListener('mousemove', e => onMove(e.clientX, e.clientY));
+    window.addEventListener('mouseup',   e => onEnd(e.clientX, e.clientY));
   });
 
-  // Keyboard
   document.addEventListener('keydown', function(e) {
     if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
     if (e.key === 'ArrowLeft')  navigateCard(-1);
