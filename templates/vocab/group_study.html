@@ -435,15 +435,14 @@ function showFinished() {
     `本次學習：答對 ${sessionCorrect} 個 · 答錯 ${sessionIncorrect} 個 · 正確率 ${acc}%`;
 }
 
+function restartStudy() {
   sessionCorrect = 0;
   sessionIncorrect = 0;
   currentIdx = 0;
-  words = shuffle([...filtered]);
-  filtered = words;
   document.getElementById('finishedState').style.display = 'none';
+  document.getElementById('mainContent').style.display = 'block';
   showCard();
 }
-
 // Init
 const _urlParams = new URLSearchParams(window.location.search);
 if (_urlParams.has('review_date')) {
@@ -463,6 +462,6 @@ function openFlashcardModal(e) {
   if (w) openWordModalByObj(w);
 }
 
-loadWords();
+
 </script>
 {% endblock %}
