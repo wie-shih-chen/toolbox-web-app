@@ -174,10 +174,24 @@ def dashboard(group_id):
         record.words_studied = len(unique_words)
         db.session.commit()
         
+        # Calculate all-time group stats for this user
+        all_time = VocabProgress.query.filter_by(
+            user_id=user.id,
+            source=f'group_{group.id}'
+        ).all()
+        
+        total_vocab = len(all_time)
+        total_correct = sum(p.correct for p in all_time)
+        total_incorrect = sum(p.incorrect for p in all_time)
+        total_answers = total_correct + total_incorrect
+        accuracy = round(total_correct / total_answers * 100) if total_answers > 0 else 0
+        
         data = {
             'user': user,
             'record': record,
-            'is_me': user.id == current_user.id
+            'is_me': user.id == current_user.id,
+            'total_vocab': total_vocab,
+            'accuracy': accuracy
         }
         dashboard_data.append(data)
         

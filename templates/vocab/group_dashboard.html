@@ -115,21 +115,29 @@
     align-items: center;
     gap: 0.5rem;
   }
-  .progress-bg {
-    background: #eee;
-    height: 8px;
-    border-radius: 4px;
-    overflow: hidden;
-    margin-top: 0.3rem;
+  .member-stats-grid {
+    display: flex;
+    gap: 1rem;
+    margin-top: 0.6rem;
   }
-  .progress-fill {
-    height: 100%;
-    background: #4facfe;
-    border-radius: 4px;
-    transition: width 0.5s ease;
+  .m-stat {
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
   }
-  .progress-fill.done {
-    background: #43e97b;
+  .m-stat-label {
+    font-size: 0.75rem;
+    color: #888;
+  }
+  .m-stat-val {
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--text-primary, #fff);
+  }
+  .m-stat-val small {
+    font-size: 0.75rem;
+    color: #888;
+    margin-left: 2px;
   }
   .score-badge {
     background: rgba(255,255,255,0.1);
@@ -284,14 +292,19 @@
           {{ data.user.username }}
           {% if data.is_me %}<span class="badge badge-primary">我</span>{% endif %}
         </div>
-        
-        <div style="font-size: 0.8rem; color: #888;">
-          進度: {{ data.record.words_studied }} / {{ group.daily_goal }}
-        </div>
-        <div class="progress-bg">
-          {% set progress_pct = (data.record.words_studied / group.daily_goal * 100) | round | int %}
-          {% if progress_pct > 100 %}{% set progress_pct = 100 %}{% endif %}
-          <div class="progress-fill {% if progress_pct == 100 %}done{% endif %}" style="width: {{ progress_pct }}%;"></div>
+        <div class="member-stats-grid">
+          <div class="m-stat">
+            <span class="m-stat-label">今日進度</span>
+            <span class="m-stat-val">{{ data.record.words_studied }}<small>/{{ group.daily_goal }}</small></span>
+          </div>
+          <div class="m-stat">
+            <span class="m-stat-label">累積單字</span>
+            <span class="m-stat-val">{{ data.total_vocab }}</span>
+          </div>
+          <div class="m-stat">
+            <span class="m-stat-label">總答對率</span>
+            <span class="m-stat-val">{{ data.accuracy }}<small>%</small></span>
+          </div>
         </div>
       </div>
       
