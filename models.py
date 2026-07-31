@@ -395,12 +395,13 @@ class VocabProgress(db.Model):
     __tablename__ = 'vocab_progress'
     id            = db.Column(db.Integer, primary_key=True)
     user_id       = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
-    word          = db.Column(db.String(100), nullable=False)   # 英文單字（唯一鍵）
+    word          = db.Column(db.String(100), nullable=False)   # 英文單字
+    source        = db.Column(db.String(50), default='system', nullable=False) # 來源: 'system', 'group_1', etc.
     correct       = db.Column(db.Integer, default=0)            # 答對次數
     incorrect     = db.Column(db.Integer, default=0)            # 答錯次數
     last_reviewed = db.Column(db.DateTime, default=datetime.utcnow)
 
-    __table_args__ = (db.UniqueConstraint('user_id', 'word', name='uq_user_word'),)
+    __table_args__ = (db.UniqueConstraint('user_id', 'word', 'source', name='uq_user_word_source'),)
 
     @property
     def accuracy(self):
@@ -414,6 +415,7 @@ class VocabHistoryLog(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     word = db.Column(db.String(100), nullable=False)
+    source = db.Column(db.String(50), default='system', nullable=False)
     result = db.Column(db.String(20), nullable=False)   # 'correct' or 'incorrect'
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
@@ -443,3 +445,12 @@ class GroupDailyRecord(db.Model):
     words_studied = db.Column(db.Integer, default=0) # 當日已背數量
     quiz_score = db.Column(db.Integer, default=0) # 當日測驗分數 (最高分)
     quiz_taken = db.Column(db.Boolean, default=False) # 是否完成當日測驗
+
+class GroupDailyAssignment(db.Model):
+    __tablename__ = 'group_daily_assignments'
+    id = db.Column(db.Integer, primary_key=True)
+    group_id = db.Column(db.Integer, db.ForeignKey('study_groups.id'), nullable=False)
+    date = db.Column(db.String(10), nullable=False) # YYYY-MM-DD
+    words_json = db.Column(db.Text, nullable=False) # JSON encoded list of word dicts: [{"word": "apple", "definition": "蘋果", ...}]
+
+    __table_args__ = (db.UniqueConstraint('group_id', 'date', name='uq_group_date'),)

@@ -293,6 +293,13 @@
       $('#correctCount').text(correctCount);
       $('#feedbackBox').text('答對了！').addClass('correct').show();
       
+      // log progress
+      fetch(`/group/{{ group.id }}/api/update_progress`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ word: w.word, result: 'correct' })
+      });
+      
       setTimeout(nextQuestion, 1200);
     } else {
       $('#opt'+idx).addClass('wrong');
@@ -303,6 +310,14 @@
       wrongCount++;
       $('#wrongCount').text(wrongCount);
       $('#feedbackBox').html(`正確解答應為：<br><b>${w.definition}</b>`).addClass('wrong').show();
+      
+      // log progress
+      fetch(`/group/{{ group.id }}/api/update_progress`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ word: w.word, result: 'incorrect' })
+      });
+
       $('#btnNext').show();
     }
   }
@@ -327,12 +342,27 @@
       $('#correctCount').text(correctCount);
       $('#feedbackBox').text('拼寫正確！').addClass('correct').show();
       
+      // log progress
+      fetch(`/group/{{ group.id }}/api/update_progress`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ word: w.word, result: 'correct' })
+      });
+
       setTimeout(nextQuestion, 1200);
     } else {
       $('#spellInput').addClass('wrong');
       wrongCount++;
       $('#wrongCount').text(wrongCount);
       $('#feedbackBox').html(`正確拼法為：<br><b style="font-size:1.2rem; letter-spacing:1px;">${w.word}</b><br><br>${w.definition}`).addClass('wrong').show();
+      
+      // log progress
+      fetch(`/group/{{ group.id }}/api/update_progress`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ word: w.word, result: 'incorrect' })
+      });
+
       $('#btnNext').show();
     }
   }

@@ -204,10 +204,14 @@
 
 {% block content %}
 <div class="max-w-2xl mx-auto relative">
-  <div class="mb-4">
+  <div class="mb-4" style="display: flex; justify-content: space-between; align-items: center;">
     <a href="{{ url_for('group.index') }}" class="btn btn-outline-secondary btn-sm" style="border-radius: 20px;">
       <span class="material-icons" style="font-size: 16px; vertical-align: middle;">arrow_back</span>
       群組列表
+    </a>
+    <a href="{{ url_for('group.group_history', group_id=group.id) }}" class="btn btn-outline-primary btn-sm" style="border-radius: 20px; display: flex; align-items: center; gap: 0.3rem;">
+      <span class="material-icons" style="font-size: 16px;">history</span>
+      歷史紀錄
     </a>
   </div>
 

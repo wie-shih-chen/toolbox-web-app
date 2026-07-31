@@ -4,7 +4,9 @@ import string
 from datetime import datetime, timedelta
 from flask import Blueprint, render_template, request, jsonify, flash, redirect, url_for
 from flask_login import login_required, current_user
-from models import db, User, StudyGroup, GroupMember, GroupDailyRecord, VocabHistoryLog, VocabProgress
+from models import db, User, StudyGroup, GroupMember, GroupDailyRecord, VocabHistoryLog, VocabProgress, GroupDailyAssignment
+import json
+from routes.vocab_routes import _load_vocab
 
 group_bp = Blueprint('group', __name__, url_prefix='/group')
 
@@ -19,6 +21,22 @@ def get_tw_today_start_utc():
 
 def generate_invite_code():
     return ''.join(random.choices(string.ascii_uppercase + string.digits, k=6))
+
+def get_or_create_daily_assignment(group, date_str):
+    assignment = GroupDailyAssignment.query.filter_by(group_id=group.id, date=date_str).first()
+    if not assignment:
+        all_words = _load_vocab()
+        # Ensure we have enough words
+        num_words = min(group.daily_goal, len(all_words))
+        selected_words = random.sample(all_words, num_words) if num_words > 0 else []
+        assignment = GroupDailyAssignment(
+            group_id=group.id,
+            date=date_str,
+            words_json=json.dumps(selected_words, ensure_ascii=False)
+        )
+        db.session.add(assignment)
+        db.session.commit()
+    return json.loads(assignment.words_json)
 
 @group_bp.route('/')
 @login_required
@@ -113,11 +131,11 @@ def dashboard(group_id):
             db.session.add(record)
             db.session.commit()
             
-        # Calculate words studied today for this user
-        # A word is counted if it has a VocabHistoryLog created >= today_start_utc
-        # We need unique words studied today
+        # Count words studied in group today
+        # Only count logs from this specific group source
         logs = VocabHistoryLog.query.filter(
             VocabHistoryLog.user_id == user.id,
+            VocabHistoryLog.source == f'group_{group.id}',
             VocabHistoryLog.created_at >= today_start_utc
         ).all()
         unique_words = {log.word for log in logs}
@@ -161,37 +179,68 @@ def take_quiz(group_id):
         
     return render_template('vocab/group_quiz.html', group=group, record=record)
 
+@group_bp.route('/<int:group_id>/study')
+@login_required
+def group_study(group_id):
+    group = StudyGroup.query.get_or_404(group_id)
+    member = GroupMember.query.filter_by(group_id=group.id, user_id=current_user.id).first()
+    if not member:
+        return redirect(url_for('group.index'))
+        
+    today_str = get_tw_today_str()
+    # Get or create daily record
+    record = GroupDailyRecord.query.filter_by(group_id=group.id, user_id=current_user.id, date=today_str).first()
+    if not record:
+        record = GroupDailyRecord(group_id=group.id, user_id=current_user.id, date=today_str)
+        db.session.add(record)
+        db.session.commit()
+
+    assignment = get_or_create_daily_assignment(group, today_str)
+    
+    return render_template('vocab/group_study.html', group=group, record=record, words=assignment)
+
+@group_bp.route('/<int:group_id>/history')
+@login_required
+def group_history(group_id):
+    group = StudyGroup.query.get_or_404(group_id)
+    member = GroupMember.query.filter_by(group_id=group.id, user_id=current_user.id).first()
+    if not member:
+        return redirect(url_for('group.index'))
+        
+    # Get logs from this group
+    logs = VocabHistoryLog.query.filter_by(
+        user_id=current_user.id,
+        source=f'group_{group.id}'
+    ).order_by(VocabHistoryLog.created_at.desc()).all()
+    
+    history_data = {}
+    for log in logs:
+        # Convert UTC to local time (UTC+8)
+        local_time = log.created_at + timedelta(hours=8)
+        date_str = local_time.strftime('%Y-%m-%d')
+        if date_str not in history_data:
+            history_data[date_str] = {'correct': 0, 'incorrect': 0, 'words': {}}
+            
+        history_data[date_str][log.result] += 1
+        
+        # Keep track of words studied this day
+        if log.word not in history_data[date_str]['words']:
+            history_data[date_str]['words'][log.word] = {'correct': 0, 'incorrect': 0}
+        history_data[date_str]['words'][log.word][log.result] += 1
+        
+    return render_template('vocab/group_history.html', group=group, history_data=history_data)
+
 @group_bp.route('/<int:group_id>/api/quiz_words')
 @login_required
 def api_quiz_words(group_id):
     group = StudyGroup.query.get_or_404(group_id)
-    today_start_utc = get_tw_today_start_utc()
+    today_str = get_tw_today_str()
     
-    # Get unique words studied today
-    logs = VocabHistoryLog.query.filter(
-        VocabHistoryLog.user_id == current_user.id,
-        VocabHistoryLog.created_at >= today_start_utc
-    ).all()
-    studied_words = list({log.word for log in logs})
+    # Get today's assignment
+    assignment = get_or_create_daily_assignment(group, today_str)
     
-    # If they studied more than daily_goal, just pick daily_goal amount randomly, or test all of them.
-    # The requirement is "對該天背的單字進行測驗". Testing all of them is fairer.
-    # We need to fetch the definitions for these words.
-    # Read from JSON
-    import json
-    try:
-        from routes.vocab_routes import _load_vocab
-        all_vocab = _load_vocab()
-    except:
-        all_vocab = []
-        
-    vocab_dict = {w['word'].lower(): w for w in all_vocab}
-    
-    quiz_pool = []
-    for w in studied_words:
-        w_lower = w.lower()
-        if w_lower in vocab_dict:
-            quiz_pool.append(vocab_dict[w_lower])
+    # The assignment is already a list of word dictionaries
+    quiz_pool = assignment.copy()
             
     # Shuffle
     random.shuffle(quiz_pool)
@@ -217,4 +266,50 @@ def submit_quiz(group_id):
         else:
             return jsonify({'success': True, 'message': '已完成過測驗，本次成績不計入排名。'})
             
+    return jsonify({'success': False, 'error': '找不到記錄'})
+
+@group_bp.route('/<int:group_id>/api/update_progress', methods=['POST'])
+@login_required
+def update_progress(group_id):
+    group = StudyGroup.query.get_or_404(group_id)
+    data = request.json
+    word = data.get('word')
+    result = data.get('result')  # 'correct' or 'incorrect'
+    
+    if not word or result not in ['correct', 'incorrect']:
+        return jsonify({'error': 'Invalid data'}), 400
+        
+    source = f'group_{group.id}'
+    
+    # Update VocabProgress for this group
+    vp = VocabProgress.query.filter_by(user_id=current_user.id, word=word, source=source).first()
+    if not vp:
+        vp = VocabProgress(user_id=current_user.id, word=word, source=source)
+        db.session.add(vp)
+        
+    if result == 'correct':
+        vp.correct += 1
+    else:
+        vp.incorrect += 1
+    vp.last_reviewed = datetime.utcnow()
+    
+    # Add history log
+    log = VocabHistoryLog(user_id=current_user.id, word=word, result=result, source=source)
+    db.session.add(log)
+    
+    db.session.commit()
+    return jsonify({'success': True})
+
+@group_bp.route('/<int:group_id>/api/mark_studied', methods=['POST'])
+@login_required
+def api_mark_studied(group_id):
+    group = StudyGroup.query.get_or_404(group_id)
+    today_str = get_tw_today_str()
+    record = GroupDailyRecord.query.filter_by(group_id=group.id, user_id=current_user.id, date=today_str).first()
+    
+    if record:
+        # User finished flipping all flashcards for today
+        record.words_studied = group.daily_goal
+        db.session.commit()
+        return jsonify({'success': True})
     return jsonify({'success': False, 'error': '找不到記錄'})
