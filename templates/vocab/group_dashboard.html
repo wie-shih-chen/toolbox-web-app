@@ -461,7 +461,8 @@ function closeSettingsModal() { document.getElementById('settingsModal').classLi
 .preview-badge { background: #ffcc00; color: #000; padding: 0.2rem 0.5rem; border-radius: 20px; font-size: 0.8rem; font-weight: bold; display: none; }
 .center-modal { max-width: 800px; width: 95%; max-height: 90vh; overflow-y: auto; }
 .checkbox-grid { display: flex; flex-wrap: wrap; gap: 0.5rem; padding: 0.5rem; }
-.checkbox-grid label { display: flex; align-items: center; gap: 0.4rem; font-size: 0.85rem; cursor: pointer; color: #ccc; background: rgba(255,255,255,0.05); padding: 0.4rem 0.6rem; border-radius: 4px; margin: 0; white-space: nowrap; }
+.checkbox-grid label { display: inline-flex !important; align-items: center; justify-content: flex-start; gap: 0.4rem; font-size: 0.85rem; cursor: pointer; color: #ccc; background: rgba(255,255,255,0.1); padding: 0.4rem 0.8rem; border-radius: 6px; margin: 0; white-space: nowrap; width: auto !important; flex: 0 0 auto; }
+.checkbox-grid input[type="checkbox"] { position: static !important; margin: 0 !important; opacity: 1 !important; appearance: auto !important; pointer-events: auto !important; }
 .selection-count { font-size: 0.75rem; color: #4ecdc4; margin-left: auto; margin-right: 8px; font-weight: normal; }
 </style>
 
