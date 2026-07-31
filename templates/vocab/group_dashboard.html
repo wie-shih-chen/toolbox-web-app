@@ -461,8 +461,9 @@ function closeSettingsModal() { document.getElementById('settingsModal').classLi
 .preview-badge { background: #ffcc00; color: #000; padding: 0.2rem 0.5rem; border-radius: 20px; font-size: 0.8rem; font-weight: bold; display: none; }
 .center-modal { max-width: 800px; width: 95%; max-height: 90vh; overflow-y: auto; }
 .checkbox-grid { display: flex; flex-wrap: wrap; gap: 0.5rem; padding: 0.5rem; }
-.checkbox-grid label { display: inline-flex !important; align-items: center; justify-content: flex-start; gap: 0.4rem; font-size: 0.85rem; cursor: pointer; color: #ccc; background: rgba(255,255,255,0.1); padding: 0.4rem 0.8rem; border-radius: 6px; margin: 0; white-space: nowrap; width: auto !important; flex: 0 0 auto; }
-.checkbox-grid input[type="checkbox"] { position: static !important; margin: 0 !important; opacity: 1 !important; appearance: auto !important; pointer-events: auto !important; }
+.checkbox-grid label { display: flex !important; align-items: center; justify-content: flex-start; gap: 0.5rem; font-size: 0.85rem; cursor: pointer; color: #ccc; background: rgba(255,255,255,0.1); padding: 0.5rem 0.8rem; border-radius: 6px; margin: 0; width: max-content !important; flex: 0 0 auto; box-sizing: border-box; overflow: hidden; }
+.checkbox-grid label span { white-space: nowrap; }
+.checkbox-grid input[type="checkbox"] { width: 1.2rem !important; height: 1.2rem !important; margin: 0 !important; opacity: 1 !important; flex-shrink: 0 !important; position: static !important; appearance: auto !important; pointer-events: auto !important; }
 .selection-count { font-size: 0.75rem; color: #4ecdc4; margin-left: auto; margin-right: 8px; font-weight: normal; }
 </style>
 
@@ -494,13 +495,13 @@ function closeSettingsModal() { document.getElementById('settingsModal').classLi
                       <div class="filter-block-header">🎯 目標分數 <span class="selection-count"></span><span class="material-icons" style="font-size: 1rem;">drag_indicator</span></div>
                       <div class="filter-block-body">
                           <div class="checkbox-grid">
-                              <label><input type="checkbox" value="0-400"> 0-400</label>
-                              <label><input type="checkbox" value="400-600"> 400-600</label>
-                              <label><input type="checkbox" value="600-780"> 600-780</label>
-                              <label><input type="checkbox" value="780-900"> 780-900</label>
-                              <label><input type="checkbox" value="900+"> 900+</label>
-                              <label><input type="checkbox" value="sort_asc"> 由低到高排序</label>
-                              <label><input type="checkbox" value="sort_desc"> 由高到低排序</label>
+                              <label><input type="checkbox" value="0-400"> <span>0-400</span></label>
+                              <label><input type="checkbox" value="400-600"> <span>400-600</span></label>
+                              <label><input type="checkbox" value="600-780"> <span>600-780</span></label>
+                              <label><input type="checkbox" value="780-900"> <span>780-900</span></label>
+                              <label><input type="checkbox" value="900+"> <span>900+</span></label>
+                              <label><input type="checkbox" value="sort_asc"> <span>由低到高排序</span></label>
+                              <label><input type="checkbox" value="sort_desc"> <span>由高到低排序</span></label>
                           </div>
                       </div>
                   </div>
@@ -509,13 +510,13 @@ function closeSettingsModal() { document.getElementById('settingsModal').classLi
                       <div class="filter-block-header">⭐ 星級優先 <span class="selection-count"></span><span class="material-icons" style="font-size: 1rem;">drag_indicator</span></div>
                       <div class="filter-block-body">
                           <div class="checkbox-grid">
-                              <label><input type="checkbox" value="1"> 1 顆星</label>
-                              <label><input type="checkbox" value="2"> 2 顆星</label>
-                              <label><input type="checkbox" value="3"> 3 顆星</label>
-                              <label><input type="checkbox" value="4"> 4 顆星</label>
-                              <label><input type="checkbox" value="5"> 5 顆星</label>
-                              <label><input type="checkbox" value="sort_asc"> 由少到多排序</label>
-                              <label><input type="checkbox" value="sort_desc"> 由多到少排序</label>
+                              <label><input type="checkbox" value="1"> <span>1 顆星</span></label>
+                              <label><input type="checkbox" value="2"> <span>2 顆星</span></label>
+                              <label><input type="checkbox" value="3"> <span>3 顆星</span></label>
+                              <label><input type="checkbox" value="4"> <span>4 顆星</span></label>
+                              <label><input type="checkbox" value="5"> <span>5 顆星</span></label>
+                              <label><input type="checkbox" value="sort_asc"> <span>由少到多排序</span></label>
+                              <label><input type="checkbox" value="sort_desc"> <span>由多到少排序</span></label>
                           </div>
                       </div>
                   </div>
@@ -524,21 +525,21 @@ function closeSettingsModal() { document.getElementById('settingsModal').classLi
                       <div class="filter-block-header">🏢 情境分類 <span class="selection-count"></span><span class="material-icons" style="font-size: 1rem;">drag_indicator</span></div>
                       <div class="filter-block-body">
                           <div class="checkbox-grid">
-                              <label><input type="checkbox" value="一般專業"> 一般專業</label>
-                              <label><input type="checkbox" value="人力資源"> 人力資源</label>
-                              <label><input type="checkbox" value="住宿與餐飲"> 住宿與餐飲</label>
-                              <label><input type="checkbox" value="客戶服務"> 客戶服務</label>
-                              <label><input type="checkbox" value="採購與物流"> 採購與物流</label>
-                              <label><input type="checkbox" value="旅遊與交通"> 旅遊與交通</label>
-                              <label><input type="checkbox" value="會議與簡報"> 會議與簡報</label>
-                              <label><input type="checkbox" value="法務合規與安全"> 法務合規與安全</label>
-                              <label><input type="checkbox" value="溝通互動"> 溝通互動</label>
-                              <label><input type="checkbox" value="營運管理"> 營運管理</label>
-                              <label><input type="checkbox" value="物業與不動產"> 物業與不動產</label>
-                              <label><input type="checkbox" value="科技與技術支援"> 科技與技術支援</label>
-                              <label><input type="checkbox" value="行銷與銷售"> 行銷與銷售</label>
-                              <label><input type="checkbox" value="辦公日常"> 辦公日常</label>
-                              <label><input type="checkbox" value="金融與會計"> 金融與會計</label>
+                              <label><input type="checkbox" value="一般專業"> <span>一般專業</span></label>
+                              <label><input type="checkbox" value="人力資源"> <span>人力資源</span></label>
+                              <label><input type="checkbox" value="住宿與餐飲"> <span>住宿與餐飲</span></label>
+                              <label><input type="checkbox" value="客戶服務"> <span>客戶服務</span></label>
+                              <label><input type="checkbox" value="採購與物流"> <span>採購與物流</span></label>
+                              <label><input type="checkbox" value="旅遊與交通"> <span>旅遊與交通</span></label>
+                              <label><input type="checkbox" value="會議與簡報"> <span>會議與簡報</span></label>
+                              <label><input type="checkbox" value="法務合規與安全"> <span>法務合規與安全</span></label>
+                              <label><input type="checkbox" value="溝通互動"> <span>溝通互動</span></label>
+                              <label><input type="checkbox" value="營運管理"> <span>營運管理</span></label>
+                              <label><input type="checkbox" value="物業與不動產"> <span>物業與不動產</span></label>
+                              <label><input type="checkbox" value="科技與技術支援"> <span>科技與技術支援</span></label>
+                              <label><input type="checkbox" value="行銷與銷售"> <span>行銷與銷售</span></label>
+                              <label><input type="checkbox" value="辦公日常"> <span>辦公日常</span></label>
+                              <label><input type="checkbox" value="金融與會計"> <span>金融與會計</span></label>
                           </div>
                       </div>
                   </div>
@@ -547,13 +548,13 @@ function closeSettingsModal() { document.getElementById('settingsModal').classLi
                       <div class="filter-block-header">📝 詞性篩選 <span class="selection-count"></span><span class="material-icons" style="font-size: 1rem;">drag_indicator</span></div>
                       <div class="filter-block-body">
                           <div class="checkbox-grid">
-                              <label><input type="checkbox" value="noun"> 名詞 (noun)</label>
-                              <label><input type="checkbox" value="verb"> 動詞 (verb)</label>
-                              <label><input type="checkbox" value="adjective"> 形容詞 (adjective)</label>
-                              <label><input type="checkbox" value="adverb"> 副詞 (adverb)</label>
-                              <label><input type="checkbox" value="preposition"> 介系詞 (prep)</label>
-                              <label><input type="checkbox" value="conjunction"> 連接詞 (conj)</label>
-                              <label><input type="checkbox" value="pronoun"> 代名詞 (pronoun)</label>
+                              <label><input type="checkbox" value="noun"> <span>名詞 (noun)</span></label>
+                              <label><input type="checkbox" value="verb"> <span>動詞 (verb)</span></label>
+                              <label><input type="checkbox" value="adjective"> <span>形容詞 (adjective)</span></label>
+                              <label><input type="checkbox" value="adverb"> <span>副詞 (adverb)</span></label>
+                              <label><input type="checkbox" value="preposition"> <span>介系詞 (prep)</span></label>
+                              <label><input type="checkbox" value="conjunction"> <span>連接詞 (conj)</span></label>
+                              <label><input type="checkbox" value="pronoun"> <span>代名詞 (pronoun)</span></label>
                           </div>
                       </div>
                   </div>
