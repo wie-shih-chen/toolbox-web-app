@@ -444,7 +444,12 @@ async function answer(result) {
   fetch(`/group/{{ group.id }}/api/update_progress`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ word: w.word, result: isKnown ? 'correct' : 'incorrect' })
+    body: JSON.stringify({ 
+      word: w.word, 
+      result: isKnown ? 'correct' : 'incorrect',
+      date: '{{ date }}',
+      index: currentIdx
+    })
   }).catch(e => console.error(e));
 
   document.getElementById('btnKnow').disabled = true;
@@ -468,7 +473,8 @@ function showFinished() {
   
   fetch(`/group/{{ group.id }}/api/mark_studied`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' }
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ date: '{{ date }}', index: currentIdx })
   }).catch(e => console.error(e));
 
   const total = sessionCorrect + sessionIncorrect;

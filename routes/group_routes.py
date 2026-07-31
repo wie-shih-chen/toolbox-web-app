@@ -244,14 +244,14 @@ def take_quiz(group_id):
     if not member:
         return redirect(url_for('group.index'))
         
-    today_str = get_tw_today_str()
-    record = GroupDailyRecord.query.filter_by(group_id=group.id, user_id=current_user.id, date=today_str).first()
+    date_str = request.args.get('date') or get_tw_today_str()
+    record = GroupDailyRecord.query.filter_by(group_id=group.id, user_id=current_user.id, date=date_str).first()
     
     if not record or record.words_studied < group.daily_goal:
-        flash(f'必須先背滿 {group.daily_goal} 個單字才能開始今日測驗喔！', 'warning')
+        flash(f'必須先背滿 {group.daily_goal} 個單字才能開始測驗喔！', 'warning')
         return redirect(url_for('group.dashboard', group_id=group.id))
         
-    return render_template('vocab/group_quiz.html', group=group, record=record)
+    return render_template('vocab/group_quiz.html', group=group, record=record, date=date_str)
 
 @group_bp.route('/<int:group_id>/study')
 @login_required
@@ -261,28 +261,17 @@ def group_study(group_id):
     if not member:
         return redirect(url_for('group.index'))
         
-    today_str = get_tw_today_str()
+    date_str = request.args.get('date') or get_tw_today_str()
     # Get or create daily record
-    record = GroupDailyRecord.query.filter_by(group_id=group.id, user_id=current_user.id, date=today_str).first()
+    record = GroupDailyRecord.query.filter_by(group_id=group.id, user_id=current_user.id, date=date_str).first()
     if not record:
-        record = GroupDailyRecord(group_id=group.id, user_id=current_user.id, date=today_str)
+        record = GroupDailyRecord(group_id=group.id, user_id=current_user.id, date=date_str)
         db.session.add(record)
         db.session.commit()
 
-    # Calculate words studied today so far to resume correctly
-    today_start_utc = get_tw_today_start_utc()
-    logs = VocabHistoryLog.query.filter(
-        VocabHistoryLog.user_id == current_user.id,
-        VocabHistoryLog.source == f'group_{group.id}',
-        VocabHistoryLog.created_at >= today_start_utc
-    ).all()
-    unique_words = {log.word for log in logs}
-    record.words_studied = len(unique_words)
-    db.session.commit()
-
-    assignment = get_or_create_daily_assignment(group, today_str)
+    assignment = get_or_create_daily_assignment(group, date_str)
     
-    return render_template('vocab/group_study.html', group=group, record=record, words=assignment)
+    return render_template('vocab/group_study.html', group=group, record=record, words=assignment, date=date_str)
 
 @group_bp.route('/<int:group_id>/history')
 @login_required
@@ -291,27 +280,56 @@ def group_history(group_id):
     member = GroupMember.query.filter_by(group_id=group.id, user_id=current_user.id).first()
     if not member:
         return redirect(url_for('group.index'))
-        
-    # Get logs from this group
-    logs = VocabHistoryLog.query.filter_by(
-        user_id=current_user.id,
-        source=f'group_{group.id}'
-    ).order_by(VocabHistoryLog.created_at.desc()).all()
+    tw_now = datetime.utcnow() + timedelta(hours=8)
+    group_tw_created = group.created_at + timedelta(hours=8)
+    start_date = group_tw_created.date()
+    end_date = tw_now.date()
     
-    history_data = {}
-    for log in logs:
-        # Convert UTC to local time (UTC+8)
-        local_time = log.created_at + timedelta(hours=8)
-        date_str = local_time.strftime('%Y-%m-%d')
-        if date_str not in history_data:
-            history_data[date_str] = {'correct': 0, 'incorrect': 0, 'words': {}}
-            
-        history_data[date_str][log.result] += 1
+    # Cap at 14 days maximum to avoid too long a page
+    if (end_date - start_date).days > 14:
+        start_date = end_date - timedelta(days=14)
         
-        # Keep track of words studied this day
-        if log.word not in history_data[date_str]['words']:
-            history_data[date_str]['words'][log.word] = {'correct': 0, 'incorrect': 0}
-        history_data[date_str]['words'][log.word][log.result] += 1
+    history_data = []
+    
+    current_date = end_date
+    while current_date >= start_date:
+        date_str = current_date.strftime('%Y-%m-%d')
+        
+        assignment = GroupDailyAssignment.query.filter_by(group_id=group.id, date=date_str).first()
+        if assignment:
+            record = GroupDailyRecord.query.filter_by(group_id=group.id, user_id=current_user.id, date=date_str).first()
+            
+            # Fetch VocabProgress for these words
+            words_list = assignment.words_json
+            word_strings = [w['word'] for w in words_list]
+            
+            vps = VocabProgress.query.filter(
+                VocabProgress.user_id == current_user.id,
+                VocabProgress.source == f'group_{group.id}',
+                VocabProgress.word.in_(word_strings)
+            ).all()
+            
+            vp_dict = {vp.word: vp for vp in vps}
+            
+            # Decorate words
+            decorated_words = []
+            for w in words_list:
+                word_str = w['word']
+                vp = vp_dict.get(word_str)
+                decorated_words.append({
+                    'word': word_str,
+                    'translation': w.get('translation', ''),
+                    'correct': vp.correct if vp else 0,
+                    'incorrect': vp.incorrect if vp else 0
+                })
+                
+            history_data.append({
+                'date': date_str,
+                'record': record,
+                'words': decorated_words
+            })
+            
+        current_date -= timedelta(days=1)
         
     return render_template('vocab/group_history.html', group=group, history_data=history_data)
 
@@ -338,9 +356,9 @@ def submit_quiz(group_id):
     group = StudyGroup.query.get_or_404(group_id)
     data = request.json
     score = data.get('score', 0)
+    date_str = data.get('date') or get_tw_today_str()
     
-    today_str = get_tw_today_str()
-    record = GroupDailyRecord.query.filter_by(group_id=group.id, user_id=current_user.id, date=today_str).first()
+    record = GroupDailyRecord.query.filter_by(group_id=group.id, user_id=current_user.id, date=date_str).first()
     
     if record:
         if not record.quiz_taken:
@@ -360,6 +378,8 @@ def update_progress(group_id):
     data = request.json
     word = data.get('word')
     result = data.get('result')  # 'correct' or 'incorrect'
+    date_str = data.get('date') or get_tw_today_str()
+    index = data.get('index', -1)
     
     if not word or result not in ['correct', 'incorrect']:
         return jsonify({'error': 'Invalid data'}), 400
@@ -382,6 +402,12 @@ def update_progress(group_id):
     log = VocabHistoryLog(user_id=current_user.id, word=word, result=result, source=source)
     db.session.add(log)
     
+    # Update words_studied to index + 1 if necessary
+    if index >= 0:
+        record = GroupDailyRecord.query.filter_by(group_id=group.id, user_id=current_user.id, date=date_str).first()
+        if record and record.words_studied < index + 1:
+            record.words_studied = index + 1
+            
     db.session.commit()
     return jsonify({'success': True})
 
@@ -389,8 +415,9 @@ def update_progress(group_id):
 @login_required
 def api_mark_studied(group_id):
     group = StudyGroup.query.get_or_404(group_id)
-    today_str = get_tw_today_str()
-    record = GroupDailyRecord.query.filter_by(group_id=group.id, user_id=current_user.id, date=today_str).first()
+    data = request.json or {}
+    date_str = data.get('date') or get_tw_today_str()
+    record = GroupDailyRecord.query.filter_by(group_id=group.id, user_id=current_user.id, date=date_str).first()
     
     if record:
         # User finished flipping all flashcards for today

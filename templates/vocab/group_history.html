@@ -270,65 +270,70 @@
     <a href="{{ url_for('group.dashboard', group_id=group.id) }}" style="text-decoration: none; color: var(--text-secondary); display: flex; align-items: center; justify-content: center; width: 40px; height: 40px; border-radius: 50%; background: rgba(255,255,255,0.05); transition: background 0.2s;">
       <span class="material-icons">arrow_back</span>
     </a>
-    <h2>群組專屬紀錄 - {{ group.name }}</h2>
-  </div>
-
-  {% if not history_data %}
+    <h2>群組專屬紀錄 - {{ g  {% if not history_data %}
   <div class="empty-state">
     <div style="font-size: 3rem; margin-bottom: 1rem;">🍃</div>
     <h3>尚無歷史紀錄</h3>
-    <p>快去測驗或拼字來累積你的學習進度吧！</p>
+    <p>快去進行測驗來累積你的學習進度吧！</p>
   </div>
   {% else %}
   <div class="history-list">
-    {% for date_str, data in history_data.items() %}
-    <details class="history-day-card">
-      <summary class="history-summary" onclick="toggleDay('{{ loop.index }}')">
-        <div class="history-date">
-          {{ date_str }}
-          <span class="history-count">複習了 {{ data.words|length }} 個單字</span>
-        </div>
-        <div class="history-stats">
-          <div class="stat-badge correct">
-            <span>✓</span>
-            <span>{{ data.correct }}</span>
-          </div>
-          <div class="stat-badge incorrect">
-            <span>✗</span>
-            <span>{{ data.incorrect }}</span>
-          </div>
-          <span id="icon-{{ loop.index }}" class="material-icons" style="transition: transform 0.2s;">expand_more</span>
-        </div>
-      </summary>
+    {% for data in history_data %}
+      {% set record = data.record %}
+      {% set words = data.words %}
       
-      <div class="history-content" id="content-{{ loop.index }}" style="display: none;">
-        <table class="history-table">
-            <thead>
-              <tr>
-                <th>單字 (Word)</th>
-                <th style="text-align: center;">答對 (Correct)</th>
-                <th style="text-align: center;">答錯 (Incorrect)</th>
-              </tr>
-            </thead>
-            <tbody>
-              {% for word, counts in data.words.items() %}
-              <tr>
-                <td>{{ word }}</td>
-                <td class="count-cell {% if counts.correct > 0 %}correct{% endif %}">
-                  {{ counts.correct if counts.correct > 0 else '-' }}
-                </td>
-                <td class="count-cell {% if counts.incorrect > 0 %}incorrect{% endif %}">
-                  {{ counts.incorrect if counts.incorrect > 0 else '-' }}
-                </td>
-              </tr>
-              {% endfor %}
-            </tbody>
-          </table>
+      <div class="history-day-card">
+        <details class="history-summary">
+          <summary style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+            <div class="history-date" style="flex: 1;">
+              📅 {{ data.date }}
+              {% if record %}
+                <span class="history-count" style="margin-left: 0.5rem;">{{ record.words_studied }}/{{ group.daily_goal }}</span>
+              {% else %}
+                <span class="history-count" style="margin-left: 0.5rem;">0/{{ group.daily_goal }}</span>
+              {% endif %}
+            </div>
+            
+            <div style="display: flex; align-items: center; gap: 1rem;">
+              {% if record and record.quiz_taken %}
+                <div class="stat-badge" style="background: rgba(255, 215, 0, 0.15); color: gold;">測驗: {{ record.quiz_score }}分</div>
+                <a href="{{ url_for('group.group_study', group_id=group.id, date=data.date, review=1) }}" class="btn btn-sm btn-outline-light" style="border-radius: 20px;">再次複習</a>
+              {% elif record and record.words_studied >= group.daily_goal %}
+                <div class="stat-badge" style="background: rgba(255, 107, 107, 0.15); color: #ff6b6b;">未測驗</div>
+                <a href="{{ url_for('group.take_quiz', group_id=group.id, date=data.date) }}" class="btn btn-sm btn-warning" style="border-radius: 20px;">進行補考</a>
+              {% else %}
+                <div class="stat-badge" style="background: rgba(255, 107, 107, 0.15); color: #ff6b6b;">未完成</div>
+                <a href="{{ url_for('group.group_study', group_id=group.id, date=data.date) }}" class="btn btn-sm btn-primary" style="border-radius: 20px;">補齊進度</a>
+              {% endif %}
+            </div>
+          </summary>
+          
+          <div class="history-content">
+            <table class="history-table">
+              <thead>
+                <tr>
+                  <th>單字</th>
+                  <th>翻譯</th>
+                  <th style="text-align: center;">熟悉次數</th>
+                  <th style="text-align: center;">不熟次數</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for w in words %}
+                <tr>
+                  <td>{{ w.word }}</td>
+                  <td>{{ w.translation }}</td>
+                  <td class="count-cell correct">{{ w.correct }}</td>
+                  <td class="count-cell incorrect">{{ w.incorrect }}</td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </details>
       </div>
-    </details>
     {% endfor %}
   </div>
-  {% endif %}
 </div>
 
 {% endblock %}
