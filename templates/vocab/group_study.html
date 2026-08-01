@@ -612,7 +612,7 @@ function playEntryAnimation() {
   getVisibleCards().forEach(({ id, off }, i) => {
     const el = document.getElementById(id);
     if (!el) return;
-    if (el.style.opacity === '0' && id !== 'sc-active') return;
+    if (el.style.visibility === 'hidden' && id !== 'sc-active') return;
     
     const p = calculateFanParams(off);
     gsap.fromTo(el,
