@@ -249,12 +249,12 @@
 
 {% block content %}
 <div class="max-w-2xl mx-auto relative">
-  <div class="mb-4" style="display: flex; justify-content: space-between; align-items: center;">
-    <a href="{{ url_for('group.index') }}" class="btn btn-outline-secondary btn-sm" style="border-radius: 20px;">
+  <div class="mb-4" style="display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem;">
+    <a href="{{ url_for('group.index') }}" class="btn btn-outline-secondary btn-sm" style="border-radius: 20px; white-space: nowrap; flex-shrink: 0;">
       <span class="material-icons" style="font-size: 16px; vertical-align: middle;">arrow_back</span>
       群組列表
     </a>
-    <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+    <div style="display: flex; gap: 0.5rem; flex-wrap: wrap; justify-content: flex-end;">
       <a href="{{ url_for('group.group_history', group_id=group.id) }}" class="btn btn-outline-light btn-sm" style="border-radius: 20px; display: flex; align-items: center; justify-content: center; gap: 0.3rem; background: rgba(255,255,255,0.1); border: none; color: white; height: 32px; padding: 0 12px; font-size: 13px;">
         <span class="material-icons" style="font-size: 16px;">history</span>
         歷史紀錄
