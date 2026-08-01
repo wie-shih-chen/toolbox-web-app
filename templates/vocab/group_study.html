@@ -524,8 +524,6 @@ function showCard() {
   document.getElementById('btnKnow').disabled = true;
   document.getElementById('btnUnknown').disabled = true;
   updateProgress();
-  document.getElementById('btnPrev').disabled = currentIdx <= 0;
-  document.getElementById('btnNext').disabled = currentIdx >= filtered.length - 1;
   updateStackContent();
   if (!_fanInitialized) playEntryAnimation();
   else updateStackPositions();
