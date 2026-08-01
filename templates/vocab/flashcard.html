@@ -42,7 +42,7 @@
     display: flex; 
     gap: 0.8rem; 
     flex-wrap: wrap; 
-    margin-bottom: 1.5rem; 
+    margin-bottom: 0.5rem; 
     width: 100%;
     max-width: 600px;
   }
@@ -70,7 +70,7 @@
     display: flex;
     align-items: flex-end;
     justify-content: center;
-    margin-bottom: 2rem;
+    margin-bottom: 0.5rem;
     touch-action: pan-y; /* Crucial: prevent horizontal scroll on mobile */
   }
   .stack-card {
@@ -249,19 +249,6 @@
     filter: grayscale(0.5);
   }
 
-  .btn-flip {
-    background: rgba(102, 126, 234, 0.1);
-    border: 2px solid rgba(102, 126, 234, 0.3);
-    color: #a5b4fc;
-    border-radius: 100px;
-    padding: 0.8rem 2.5rem;
-    font-size: 1rem;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.2s;
-    margin-bottom: 1.5rem;
-  }
-  .btn-flip:hover { background: rgba(102, 126, 234, 0.2); transform: translateY(-2px); }
 
   /* Loading */
   .loading-overlay {
@@ -423,7 +410,6 @@
       </div>
     </div>
 
-    <button class="btn-flip" onclick="flipCard()">🔄 翻轉</button>
 
     <div class="action-row">
       <button class="btn-unknown" id="btnUnknown" onclick="answer('incorrect')" disabled>😵 不認識</button>
@@ -609,21 +595,20 @@ function showCard() {
 
 // ====== GSAP Fan Card Logic (7 Cards) ======
 const FAN_SLOTS = [
-  { rot: -21, scale: 0.7756, x: -300, y: 35, zIndex: 1 },
-  { rot: -14, scale: 0.8498, x: -200, y: 18, zIndex: 2 },
-  { rot:  -7, scale: 0.9346, x: -100, y:  5, zIndex: 3 },
+  { rot: -21, scale: 0.7756, x: -480, y: 35, zIndex: 1 },
+  { rot: -14, scale: 0.8498, x: -320, y: 18, zIndex: 2 },
+  { rot:  -7, scale: 0.9346, x: -160, y:  5, zIndex: 3 },
   { rot:   0, scale: 1.0,    x:    0, y:  0, zIndex: 10 },
-  { rot:   7, scale: 0.9346, x:  100, y:  5, zIndex: 3 },
-  { rot:  14, scale: 0.8498, x:  200, y: 18, zIndex: 2 },
-  { rot:  21, scale: 0.7756, x:  300, y: 35, zIndex: 1 },
+  { rot:   7, scale: 0.9346, x:  160, y:  5, zIndex: 3 },
+  { rot:  14, scale: 0.8498, x:  320, y: 18, zIndex: 2 },
+  { rot:  21, scale: 0.7756, x:  480, y: 35, zIndex: 1 },
 ];
 
 function getFanMult() {
   const w = window.innerWidth;
-  if (w < 380) return 0.28;
-  if (w < 480) return 0.40;
-  if (w < 640) return 0.60;
-  if (w < 768) return 0.80;
+  if (w < 480) return 0.50; // Increased multiplier for mobile to ensure spread is visible
+  if (w < 640) return 0.70;
+  if (w < 768) return 0.85;
   if (w < 1024) return 0.95;
   return 1.1;
 }
