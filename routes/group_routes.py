@@ -202,6 +202,42 @@ def join_group():
     flash(f'成功加入群組「{group.name}」！', 'success')
     return redirect(url_for('group.dashboard', group_id=group.id))
 
+@group_bp.route('/<int:group_id>/leave', methods=['POST'])
+@login_required
+def leave_group(group_id):
+    group = StudyGroup.query.get_or_404(group_id)
+    if group.owner_id == current_user.id:
+        flash('群主不能退出群組，只能解散群組！', 'danger')
+        return redirect(url_for('group.dashboard', group_id=group.id))
+        
+    member = GroupMember.query.filter_by(group_id=group.id, user_id=current_user.id).first()
+    if member:
+        db.session.delete(member)
+        db.session.commit()
+        flash(f'已退出群組「{group.name}」', 'success')
+        
+    return redirect(url_for('group.index'))
+
+@group_bp.route('/<int:group_id>/remove_member/<int:user_id>', methods=['POST'])
+@login_required
+def remove_member(group_id, user_id):
+    group = StudyGroup.query.get_or_404(group_id)
+    if group.owner_id != current_user.id:
+        flash('只有群主可以刪除成員！', 'danger')
+        return redirect(url_for('group.dashboard', group_id=group.id))
+        
+    if group.owner_id == user_id:
+        flash('不能刪除群主自己！', 'danger')
+        return redirect(url_for('group.dashboard', group_id=group.id))
+        
+    member = GroupMember.query.filter_by(group_id=group.id, user_id=user_id).first()
+    if member:
+        db.session.delete(member)
+        db.session.commit()
+        flash('已將成員踢出群組', 'success')
+        
+    return redirect(url_for('group.dashboard', group_id=group.id))
+
 @group_bp.route('/<int:group_id>')
 @login_required
 def dashboard(group_id):
