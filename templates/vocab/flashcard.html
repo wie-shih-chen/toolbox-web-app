@@ -608,8 +608,6 @@ function showCard() {
   updateProgress();
   
   document.getElementById('mainContent').style.display = 'block';
-  document.getElementById('btnPrev').disabled = currentIdx <= 0;
-  document.getElementById('btnNext').disabled = currentIdx >= filtered.length - 1;
 
   // Update card stack fan
   updateStackContent();
