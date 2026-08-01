@@ -100,9 +100,8 @@
   .stack-card {
     position: absolute;
     bottom: 40px; /* Leave room for downward fan shift */
-    left: 0;
-    right: 0;
-    margin: 0 auto;
+    left: 50%;
+    transform: translateX(-50%);
     width: min(580px, 94vw);
     height: min(340px, 60vw);
     border-radius: 28px;
@@ -672,6 +671,7 @@ function updateStackPositions(dragX = 0, skipAnim = false) {
     const p = calculateFanParams(off);
 
     gsap.to(el, {
+      xPercent: -50,
       x: p.x + (drag ? dragX : 0),
       y: p.y,
       z: p.z,
@@ -702,8 +702,8 @@ function playEntryAnimation() {
     
     const p = calculateFanParams(off);
     gsap.fromTo(el,
-      { x: 0, y: 150, z: 0, rotationX: 0, rotationZ: 0, scale: 0.4, opacity: 0 },
-      { x: p.x, y: p.y, z: p.z, rotationX: p.rotX, rotationZ: p.rotZ, scale: p.scale, zIndex: p.zIndex,
+      { xPercent: -50, x: 0, y: 150, z: 0, rotationX: 0, rotationZ: 0, scale: 0.4, opacity: 0 },
+      { xPercent: -50, x: p.x, y: p.y, z: p.z, rotationX: p.rotX, rotationZ: p.rotZ, scale: p.scale, zIndex: p.zIndex,
         opacity: 1, duration: 1.2, ease: 'elastic.out(1.05, 0.78)',
         delay: 0.1 + Math.abs(3 - i) * 0.08 }
     );
