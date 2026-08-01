@@ -314,28 +314,6 @@
     justify-content: space-between;
     align-items: center;
     width: 100%;
-    max-width: 600px;
-    margin-bottom: 0.6rem;
-    color: var(--text-secondary, #aaa);
-    font-size: 0.8rem;
-  }
-  .swipe-nav button {
-    background: var(--card-bg, rgba(255,255,255,0.08));
-    border: 1px solid rgba(255,255,255,0.15);
-    color: var(--text-secondary, #aaa);
-    border-radius: 100px;
-    padding: 0.3rem 1rem;
-    font-size: 0.85rem;
-    cursor: pointer;
-    transition: all 0.18s;
-    display: flex;
-    align-items: center;
-    gap: 0.3rem;
-  }
-  .swipe-nav button:hover { background: rgba(102,126,234,0.15); color: #a5b4fc; }
-  .swipe-nav button:disabled { opacity: 0.3; cursor: default; }
-  .swipe-nav .center-hint { font-size: 0.75rem; opacity: 0.45; }
-
   /* Card slide animations */
   @keyframes slideInLeft  { from { transform: translateX(-80px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
   @keyframes slideInRight { from { transform: translateX( 80px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
@@ -401,12 +379,7 @@
   <!-- Card -->
   <div id="mainContent" style="display:none; width:100%; max-width:600px;">
     
-    <!-- Prev / Next navigation -->
-    <div class="swipe-nav" id="swipeNav" style="display:none;">
-      <button id="btnPrev" onclick="navigateCard(-1)">← 上一張</button>
-      <span class="center-hint">🖑 滑動 · ←→ 鍵盤 · 滑鼠拖曳</span>
-      <button id="btnNext" onclick="navigateCard(1)">下一張 →</button>
-    </div>
+    
 
     <!-- Card Stack (fan effect - 7 cards) -->
     <div class="card-stack-scene" id="cardScene">
