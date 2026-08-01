@@ -43,7 +43,7 @@
   .card-stack-scene {
     width: 100%;
     max-width: 640px;
-    height: calc(min(340px, 60vw) + 80px); /* Responsive height fitting the card */
+    height: calc(min(420px, 120vw) + 80px); /* Responsive height fitting the card */
     perspective: 1100px;
     position: relative;
     display: flex;
@@ -82,7 +82,7 @@
     left: 50%;
     transform: translateX(-50%);
     width: min(580px, 94vw);
-    height: min(340px, 60vw);
+    height: min(420px, 120vw);
     border-radius: 28px;
     border: 4px solid rgba(255, 255, 255, 0.1);
     overflow: hidden;
@@ -159,6 +159,9 @@
     color: var(--text-primary, #1a1a2e);
     transform: rotateY(180deg);
     border: 1px solid rgba(0,0,0,0.05);
+    justify-content: flex-start;
+    overflow-y: auto;
+    padding-top: 2.5rem;
   }
   .card-front .word {
     font-size: clamp(2.5rem, 6vw, 3.5rem);
@@ -187,7 +190,7 @@
   .card-front .star-rating { font-size: 1.2rem; margin-bottom: 1rem; opacity: 0.9; }
 
   .card-back .definition {
-    font-size: 1.8rem;
+    font-size: clamp(1.2rem, 5vw, 1.8rem);
     font-weight: 800;
     text-align: center;
     margin-bottom: 1.2rem;
@@ -201,7 +204,7 @@
     font-weight: 500;
   }
   .card-back .example {
-    font-size: 0.95rem;
+    font-size: clamp(0.85rem, 4vw, 0.95rem);
     color: var(--text-primary, #555);
     text-align: center;
     max-width: 460px;
