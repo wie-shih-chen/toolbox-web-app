@@ -44,4 +44,3 @@ icalendar
 google-genai
 PyJWT>=2.8.0
 Pillow
-pandas

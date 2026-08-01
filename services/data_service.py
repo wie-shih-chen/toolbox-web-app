@@ -1,7 +1,7 @@
 from models import db, SalaryRecord, ExpenseRecord
 from services.salary_service import SalaryService
 from services.expense_service import ExpenseService
-import pandas as pd
+import openpyxl
 import io
 from flask import send_file
 
@@ -16,47 +16,39 @@ class DataService:
         salary_records = SalaryRecord.query.filter_by(user_id=user_id).all()
         expense_records = ExpenseRecord.query.filter_by(user_id=user_id).all()
         
-        # Process Salary Data
-        salary_data = []
-        for r in salary_records:
-            salary_data.append({
-                "Date": r.date,
-                "Type": r.type,
-                "Amount": r.amount,
-                "Start Time": r.start_time,
-                "End Time": r.end_time,
-                "Hours": r.hours,
-                "Rate": r.rate,
-                "Note": r.note
-            })
-            
-        # Process Expense Data
-        expense_data = []
-        for r in expense_records:
-            expense_data.append({
-                "Timestamp": r.timestamp,
-                "Category": r.category,
-                "Amount": r.amount,
-                "Note": r.note
-            })
-            
-        # Create DataFrame
-        df_salary = pd.DataFrame(salary_data)
-        df_expense = pd.DataFrame(expense_data)
+        # Create Workbook
+        wb = openpyxl.Workbook()
         
-        # Write to Excel
+        # --- Salary Sheet ---
+        ws_salary = wb.active
+        ws_salary.title = "薪資紀錄"
+        
+        if salary_records:
+            headers = ["Date", "Type", "Amount", "Start Time", "End Time", "Hours", "Rate", "Note"]
+            ws_salary.append(headers)
+            for r in salary_records:
+                ws_salary.append([
+                    r.date, r.type, r.amount, r.start_time, r.end_time, r.hours, r.rate, r.note
+                ])
+        else:
+            ws_salary.append(["無資料"])
+            
+        # --- Expense Sheet ---
+        ws_expense = wb.create_sheet(title="記帳紀錄")
+        
+        if expense_records:
+            headers = ["Timestamp", "Category", "Amount", "Note"]
+            ws_expense.append(headers)
+            for r in expense_records:
+                ws_expense.append([
+                    r.timestamp, r.category, r.amount, r.note
+                ])
+        else:
+            ws_expense.append(["無資料"])
+                
+        # Save to BytesIO
         output = io.BytesIO()
-        with pd.ExcelWriter(output, engine='openpyxl') as writer:
-            if not df_salary.empty:
-                df_salary.to_excel(writer, sheet_name='薪資紀錄', index=False)
-            else:
-                pd.DataFrame(["無資料"]).to_excel(writer, sheet_name='薪資紀錄', index=False, header=False)
-                
-            if not df_expense.empty:
-                df_expense.to_excel(writer, sheet_name='記帳紀錄', index=False)
-            else:
-                pd.DataFrame(["無資料"]).to_excel(writer, sheet_name='記帳紀錄', index=False, header=False)
-                
+        wb.save(output)
         output.seek(0)
         return output
 
