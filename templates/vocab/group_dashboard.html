@@ -493,9 +493,8 @@ function closeSettingsModal() { document.getElementById('settingsModal').classLi
           </label>
           
           <div class="pipeline-container">
-              {% if current_user.id == group.owner_id %}
               <!-- Available Blocks -->
-              <div class="block-list" id="availableBlocks">
+              <div class="block-list" id="availableBlocks" {% if current_user.id != group.owner_id %}style="display: none;"{% endif %}>
                   <div class="block-list-title">可用積木 (拖曳至右側)</div>
                   
                   <div class="filter-block" data-type="score">
@@ -580,7 +579,6 @@ function closeSettingsModal() { document.getElementById('settingsModal').classLi
                       </div>
                   </div>
               </div>
-              {% endif %}
               
               <!-- Active Pipeline -->
               <div class="block-list active-pipeline" id="activePipeline">
