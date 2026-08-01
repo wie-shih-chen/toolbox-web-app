@@ -520,14 +520,25 @@ def update_settings(group_id):
     new_name = request.form.get('name', '').strip()
     vocab_filter_config = request.form.get('vocab_filter_config')
     
-    if new_name:
+    settings_changed = False
+    
+    if new_name and group.name != new_name:
         group.name = new_name
         
-    if vocab_filter_config is not None:
+    if vocab_filter_config is not None and group.vocab_filter_config != vocab_filter_config:
         group.vocab_filter_config = vocab_filter_config
+        settings_changed = True
+        
+    if new_goal and 5 <= new_goal <= 100 and group.daily_goal != new_goal:
+        group.daily_goal = new_goal
+        settings_changed = True
+        
+    if settings_changed:
+        # Clear today's assignment to apply changes immediately
+        today_str = get_tw_today_str()
+        GroupDailyAssignment.query.filter_by(group_id=group.id, date=today_str).delete()
         
     if new_goal and 5 <= new_goal <= 100:
-        group.daily_goal = new_goal
         db.session.commit()
         flash('群組設定已更新！', 'success')
     else:
