@@ -512,34 +512,30 @@ def api_mark_studied(group_id):
 @login_required
 def update_settings(group_id):
     group = StudyGroup.query.get_or_404(group_id)
-    is_owner = (group.owner_id == current_user.id)
-    
-    # All members can update the vocab filter pipeline
+    if group.owner_id != current_user.id:
+        flash('只有群主可以修改設定！', 'danger')
+        return redirect(url_for('group.dashboard', group_id=group.id))
+        
+    new_goal = request.form.get('daily_goal', type=int)
+    new_name = request.form.get('name', '').strip()
     vocab_filter_config = request.form.get('vocab_filter_config')
+    
+    if new_name:
+        group.name = new_name
+        
     if vocab_filter_config is not None:
         group.vocab_filter_config = vocab_filter_config
         
-    if is_owner:
-        new_goal = request.form.get('daily_goal', type=int)
-        new_name = request.form.get('name', '').strip()
-        
-        if new_name:
-            group.name = new_name
-            
-        if new_goal and 5 <= new_goal <= 100:
-            group.daily_goal = new_goal
-            db.session.commit()
-            flash('群組設定已更新！', 'success')
-        else:
-            db.session.commit()
-            if not new_goal or new_goal < 5 or new_goal > 100:
-                flash('設定已儲存，但每日目標必須在 5 到 100 之間！', 'warning')
-            else:
-                flash('群組設定已更新！', 'success')
-    else:
-        # Non-owners only update vocab_filter_config
+    if new_goal and 5 <= new_goal <= 100:
+        group.daily_goal = new_goal
         db.session.commit()
-        flash('單字漏斗設定已更新！', 'success')
+        flash('群組設定已更新！', 'success')
+    else:
+        db.session.commit()
+        if not new_goal or new_goal < 5 or new_goal > 100:
+            flash('設定已儲存，但每日目標必須在 5 到 100 之間！', 'warning')
+        else:
+            flash('群組設定已更新！', 'success')
             
     return redirect(url_for('group.dashboard', group_id=group.id))
 

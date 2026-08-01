@@ -493,6 +493,7 @@ function closeSettingsModal() { document.getElementById('settingsModal').classLi
           </label>
           
           <div class="pipeline-container">
+              {% if current_user.id == group.owner_id %}
               <!-- Available Blocks -->
               <div class="block-list" id="availableBlocks">
                   <div class="block-list-title">可用積木 (拖曳至右側)</div>
@@ -579,6 +580,7 @@ function closeSettingsModal() { document.getElementById('settingsModal').classLi
                       </div>
                   </div>
               </div>
+              {% endif %}
               
               <!-- Active Pipeline -->
               <div class="block-list active-pipeline" id="activePipeline">
@@ -598,8 +600,10 @@ function closeSettingsModal() { document.getElementById('settingsModal').classLi
       {% endif %}
 
       <div class="modal-btn-group" style="margin-top: 1.5rem;">
-        <button type="button" class="modal-btn" style="background: rgba(255,255,255,0.1);" onclick="closeSettingsModal()">取消</button>
+        <button type="button" class="modal-btn" style="background: rgba(255,255,255,0.1);" onclick="closeSettingsModal()">{% if current_user.id == group.owner_id %}取消{% else %}關閉{% endif %}</button>
+        {% if current_user.id == group.owner_id %}
         <button type="submit" class="modal-btn" style="background: var(--accent-color, #4ecdc4); color: #000;">儲存設定</button>
+        {% endif %}
       </div>
     </form>
   </div>
@@ -617,51 +621,56 @@ function closeSettingsModal() {
 function initPipeline() {
     if(window.pipelineInitialized) return;
     window.pipelineInitialized = true;
+    let isOwner = {{ 'true' if current_user.id == group.owner_id else 'false' }};
     
-    new Sortable(document.getElementById('availableBlocks'), {
-        group: { name: 'shared', pull: 'clone', put: false },
-        animation: 150,
-        sort: false
-    });
-    
-    new Sortable(document.getElementById('activePipeline'), {
-        group: { name: 'shared' },
-        animation: 150,
-        onAdd: function(evt) {
-            let type = evt.item.dataset.type;
-            let dupes = document.querySelectorAll(`#activePipeline .filter-block[data-type="${type}"]`);
-            if(dupes.length > 1) {
-                evt.item.remove();
-                alert("此篩選器已在漏斗中！您可以直接在原來的積木裡複選條件。");
-                return;
-            }
-            
-            let checkboxes = evt.item.querySelectorAll('input[type="checkbox"]');
-            checkboxes.forEach(s => s.addEventListener('change', updatePipelinePreview));
-            
-            let header = evt.item.querySelector('.filter-block-header');
-            if(!header.querySelector('.btn-del-block')) {
-                let delBtn = document.createElement('span');
-                delBtn.className = 'material-icons btn-del-block';
-                delBtn.style.cssText = 'font-size:1rem; color:#ff4d4f; cursor:pointer; margin-left:8px;';
-                delBtn.innerText = 'close';
-                delBtn.onclick = function() {
+    if (isOwner) {
+        new Sortable(document.getElementById('availableBlocks'), {
+            group: { name: 'shared', pull: 'clone', put: false },
+            animation: 150,
+            sort: false
+        });
+        
+        new Sortable(document.getElementById('activePipeline'), {
+            group: { name: 'shared' },
+            animation: 150,
+            onAdd: function(evt) {
+                let type = evt.item.dataset.type;
+                let dupes = document.querySelectorAll(`#activePipeline .filter-block[data-type="${type}"]`);
+                if(dupes.length > 1) {
                     evt.item.remove();
-                    updatePipelinePreview();
-                };
-                header.appendChild(delBtn);
-            }
-            updatePipelinePreview();
-        },
-        onUpdate: updatePipelinePreview,
-        onRemove: updatePipelinePreview
-    });
+                    alert("此篩選器已在漏斗中！您可以直接在原來的積木裡複選條件。");
+                    return;
+                }
+                
+                let checkboxes = evt.item.querySelectorAll('input[type="checkbox"]');
+                checkboxes.forEach(s => s.addEventListener('change', updatePipelinePreview));
+                
+                let header = evt.item.querySelector('.filter-block-header');
+                if(!header.querySelector('.btn-del-block')) {
+                    let delBtn = document.createElement('span');
+                    delBtn.className = 'material-icons btn-del-block';
+                    delBtn.style.cssText = 'font-size:1rem; color:#ff4d4f; cursor:pointer; margin-left:8px;';
+                    delBtn.innerText = 'close';
+                    delBtn.onclick = function() {
+                        evt.item.remove();
+                        updatePipelinePreview();
+                    };
+                    header.appendChild(delBtn);
+                }
+                updatePipelinePreview();
+            },
+            onUpdate: updatePipelinePreview,
+            onRemove: updatePipelinePreview
+        });
+    }
     
     let rawConfig = `{{ group.vocab_filter_config | safe if group.vocab_filter_config else '[]' }}`;
     try {
         let config = JSON.parse(rawConfig || '[]');
         config.forEach(c => {
             let original = document.querySelector(`#availableBlocks .filter-block[data-type="${c.type}"]`);
+            if(!original) original = document.querySelector(`[data-type="${c.type}"]`); // Fallback if owner sees it
+            
             if(original) {
                 let clone = original.cloneNode(true);
                 let checkboxes = clone.querySelectorAll('input[type="checkbox"]');
@@ -672,21 +681,30 @@ function initPipeline() {
                     });
                 }
                 
+                if (!isOwner) {
+                    checkboxes.forEach(cb => {
+                        cb.disabled = true;
+                        cb.style.opacity = '0.5';
+                    });
+                } else {
+                    checkboxes.forEach(s => s.addEventListener('change', updatePipelinePreview));
+                }
+                
                 let header = clone.querySelector('.filter-block-header');
-                let delBtn = document.createElement('span');
-                delBtn.className = 'material-icons btn-del-block';
-                delBtn.style.cssText = 'font-size:1rem; color:#ff4d4f; cursor:pointer; margin-left:8px;';
-                delBtn.innerText = 'close';
-                delBtn.onclick = function() {
-                    clone.remove();
-                    updatePipelinePreview();
-                };
-                header.appendChild(delBtn);
+                
+                if (isOwner) {
+                    let delBtn = document.createElement('span');
+                    delBtn.className = 'material-icons btn-del-block';
+                    delBtn.style.cssText = 'font-size:1rem; color:#ff4d4f; cursor:pointer; margin-left:8px;';
+                    delBtn.innerText = 'close';
+                    delBtn.onclick = function() {
+                        clone.remove();
+                        updatePipelinePreview();
+                    };
+                    header.appendChild(delBtn);
+                }
                 
                 document.getElementById('activePipeline').appendChild(clone);
-                if(checkboxes.length > 0) {
-                    checkboxes.forEach(cb => cb.addEventListener('change', updatePipelinePreview));
-                }
             }
         });
     } catch(e) {}
