@@ -139,12 +139,12 @@
         </div>
       </div>
       <div class="wc-word">{{ w.word }}</div>
-      <div class="wc-def">{{ w.translation }}</div>
+      <div class="wc-def">{{ w.definition }}</div>
       {% if w.examples and w.examples|length > 0 %}
         {% set ex = w.examples[0] %}
         <div class="wc-example">
-          <em>{{ ex.en }}</em>
-          {{ ex.zh }}
+          <em>{{ ex.english }}</em>
+          {{ ex.chinese }}
         </div>
       {% endif %}
     </div>
