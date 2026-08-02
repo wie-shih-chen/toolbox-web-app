@@ -207,6 +207,11 @@
   <h2 class="section-title">選擇學習模式</h2>
 
   <div class="mode-grid">
+    <a href="{{ url_for('group.index') }}" class="mode-card group">
+      <div class="mode-icon">👥</div>
+      <div>學習群組</div>
+      <div class="mode-desc">共同目標 · 測驗對戰</div>
+    </a>
     <a id="linkFlashcard" href="{{ url_for('vocab.flashcard') }}" class="mode-card flashcard">
       <div class="mode-icon">🃏</div>
       <div>卡片翻轉</div>
@@ -231,11 +236,6 @@
       <div class="mode-icon">✏️</div>
       <div>自訂單字本</div>
       <div class="mode-desc">上傳 Excel · 線上編輯</div>
-    </a>
-    <a href="{{ url_for('group.index') }}" class="mode-card group">
-      <div class="mode-icon">👥</div>
-      <div>學習群組</div>
-      <div class="mode-desc">共同目標 · 測驗對戰</div>
     </a>
   </div>
 
