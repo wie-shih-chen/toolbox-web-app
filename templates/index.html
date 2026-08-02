@@ -5,6 +5,19 @@
 
 {% block content %}
 
+<!-- CoreX Hero Banner (Desktop Only) -->
+<style>
+    .corex-desktop-hero { display: none; }
+    @media (min-width: 768px) {
+        .corex-desktop-hero { display: flex; }
+    }
+</style>
+<div class="corex-desktop-hero" style="align-items: center; justify-content: center; flex-direction: column; padding: 24px 20px 20px; background: linear-gradient(180deg, rgba(255,255,255,0.03) 0%, rgba(255,255,255,0) 100%); border-radius: 24px; margin-top: 8px; margin-bottom: 24px; text-align: center;">
+    <img src="{{ url_for('static', filename='apple-touch-icon.png') }}" alt="CoreX Logo" style="width: 84px; height: 84px; border-radius: 22px; box-shadow: 0 12px 30px rgba(0,0,0,0.4); margin-bottom: 16px; object-fit: cover; border: 1px solid rgba(255,255,255,0.1);">
+    <h2 style="font-size: 1.8rem; font-weight: 700; margin: 0 0 6px 0; color: white; letter-spacing: 1px;">CoreX</h2>
+    <p style="font-size: 0.95rem; color: var(--text-tertiary); margin: 0;">探索你的專屬功能</p>
+</div>
+
 {% if pinned_countdowns %}
 <div class="pinned-widgets-container" style="margin-top: 16px; margin-bottom: 24px;">
     {% for item in pinned_countdowns %}
