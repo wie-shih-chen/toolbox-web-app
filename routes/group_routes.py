@@ -491,10 +491,10 @@ def group_review_list(group_id):
 @login_required
 def api_quiz_words(group_id):
     group = StudyGroup.query.get_or_404(group_id)
-    today_str = get_tw_today_str()
+    date_str = request.args.get('date') or get_tw_today_str()
     
-    # Get today's assignment
-    assignment = get_or_create_daily_assignment(group, today_str)
+    # Get assignment
+    assignment = get_or_create_daily_assignment(group, date_str)
     
     # The assignment is already a list of word dictionaries
     quiz_pool = assignment.copy()

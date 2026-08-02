@@ -213,7 +213,7 @@
   });
 
   function loadQuizData() {
-    $.getJSON("{{ url_for('group.api_quiz_words', group_id=group.id) }}", function(data) {
+    $.getJSON("{{ url_for('group.api_quiz_words', group_id=group.id) }}?date={{ date }}", function(data) {
       words = data.words;
       if(!words || words.length === 0) {
         alert("今日尚未學習足夠的單字，無法產生考卷！");
@@ -384,7 +384,7 @@
       url: "{{ url_for('group.submit_quiz', group_id=group.id) }}",
       type: "POST",
       contentType: "application/json",
-      data: JSON.stringify({ score: score }),
+      data: JSON.stringify({ score: score, date: "{{ date }}" }),
       success: function(res) {
         if(res.success) {
           $('#submitStatus').text(res.message);
