@@ -22,6 +22,20 @@ def get_tw_today_start_utc():
 def generate_invite_code():
     return ''.join(random.choices(string.ascii_uppercase + string.digits, k=6))
 
+def decode_assignment_words(assignment):
+    if not assignment or not assignment.words_json:
+        return []
+    raw_list = json.loads(assignment.words_json) if isinstance(assignment.words_json, str) else assignment.words_json
+    if not raw_list:
+        return []
+    # If the first item is a dictionary, it's the old bloated format
+    if isinstance(raw_list[0], dict):
+        return raw_list
+    # Otherwise, it's the new space-saving format (list of string words)
+    all_words = _load_vocab()
+    word_dict = {w['word']: w for w in all_words}
+    return [word_dict[word] for word in raw_list if word in word_dict]
+
 def apply_vocab_pipeline(group, words_list, pipeline_config):
     if not pipeline_config:
         random.shuffle(words_list)
@@ -37,9 +51,12 @@ def apply_vocab_pipeline(group, words_list, pipeline_config):
             past = GroupDailyAssignment.query.filter_by(group_id=group.id).all()
             past_words = set()
             for p in past:
-                w_list = json.loads(p.words_json)
+                w_list = json.loads(p.words_json) if p.words_json else []
                 for w in w_list:
-                    past_words.add(w['word'])
+                    if isinstance(w, dict):
+                        past_words.add(w.get('word'))
+                    else:
+                        past_words.add(w)
             current_list = [w for w in current_list if w['word'] not in past_words]
             
         elif b_type == 'score':
@@ -99,14 +116,16 @@ def get_or_create_daily_assignment(group, date_str):
         # If it's pure random, apply_vocab_pipeline already shuffled it or we can just take the first N.
         selected_words = filtered_words[:num_words] if num_words > 0 else []
         
+        word_strings = [w['word'] for w in selected_words]
+        
         assignment = GroupDailyAssignment(
             group_id=group.id,
             date=date_str,
-            words_json=json.dumps(selected_words, ensure_ascii=False)
+            words_json=json.dumps(word_strings, ensure_ascii=False)
         )
         db.session.add(assignment)
         db.session.commit()
-    return json.loads(assignment.words_json)
+    return decode_assignment_words(assignment)
 
 @group_bp.route('/')
 @login_required
@@ -417,9 +436,7 @@ def group_history(group_id):
         if assignment:
             record = GroupDailyRecord.query.filter_by(group_id=group.id, user_id=current_user.id, date=date_str).first()
             
-            # Fetch VocabProgress for these words
-            import json
-            words_list = json.loads(assignment.words_json) if isinstance(assignment.words_json, str) else assignment.words_json
+            words_list = decode_assignment_words(assignment)
             word_strings = [w['word'] for w in words_list]
             
             vps = VocabProgress.query.filter(
@@ -465,8 +482,7 @@ def group_review_list(group_id):
     if not assignment:
         return redirect(url_for('group.group_history', group_id=group.id))
         
-    import json
-    words_list = json.loads(assignment.words_json) if isinstance(assignment.words_json, str) else assignment.words_json
+    words_list = decode_assignment_words(assignment)
     word_strings = [w['word'] for w in words_list]
     
     vps = VocabProgress.query.filter(
