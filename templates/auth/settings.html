@@ -529,11 +529,7 @@
             拖曳以排序首頁板塊，或自訂底部分頁導覽列 (Dock) 中的工具。
         </div>
 
-        <form id="layoutForm" method="POST" action="{{ url_for('auth.settings') }}">
-            <input type="hidden" name="action" value="update_layout">
-            <input type="hidden" name="dashboard_order" id="dashboardOrderInput">
-            <input type="hidden" name="dock_order" id="dockOrderInput">
-
+        <div>
             <div style="margin-bottom: 24px;">
                 <h4 style="margin-bottom: 12px; color: var(--text-secondary); font-size: 1rem;">首頁板塊排序</h4>
                 <div id="dashboardSortable" style="background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05); border-radius: 12px; padding: 12px;">
@@ -541,7 +537,7 @@
             </div>
 
             <div style="margin-bottom: 24px;">
-                <h4 style="margin-bottom: 12px; color: var(--text-secondary); font-size: 1rem;">底部導覽列 (Dock) - 建議放入 4 個</h4>
+                <h4 style="margin-bottom: 12px; color: var(--text-secondary); font-size: 1rem;">底部導覽列 (Dock) - 最多可放 5 個</h4>
                 <div style="display: flex; gap: 16px; align-items: flex-start; flex-wrap: wrap;">
                     <div style="flex: 1; min-width: 200px;">
                         <div style="font-size: 0.85rem; color: #4ecdc4; margin-bottom: 8px;">放在 Dock 中</div>
@@ -555,11 +551,7 @@
                     </div>
                 </div>
             </div>
-
-            <button type="button" onclick="saveLayouts()" class="btn btn-glow-cyan" style="width: 100%; padding: 12px; border-radius: 10px;">
-                <i class="fas fa-save" style="margin-right: 6px;"></i> 儲存版面設定
-            </button>
-        </form>
+        </div>
     </div>
 
     <!-- 5. Data Management -->
@@ -1123,21 +1115,53 @@
         });
 
         // Init Sortable
-        new Sortable(dashContainer, { animation: 150 });
-        new Sortable(dockContainer, { group: 'dock', animation: 150 });
-        new Sortable(dockAvailContainer, { group: 'dock', animation: 150 });
+        new Sortable(dashContainer, { 
+            animation: 150,
+            onEnd: saveLayouts 
+        });
+        
+        new Sortable(dockContainer, { 
+            group: 'dock', 
+            animation: 150,
+            onEnd: saveLayouts,
+            onAdd: function (evt) {
+                if (dockContainer.children.length > 5) {
+                    // Revert move if more than 5
+                    evt.from.insertBefore(evt.item, evt.from.children[evt.oldIndex]);
+                    showToast('⚠️ Dock 最多只能放 5 個工具', 'error');
+                } else {
+                    saveLayouts();
+                }
+            }
+        });
+        
+        new Sortable(dockAvailContainer, { 
+            group: 'dock', 
+            animation: 150,
+            onEnd: saveLayouts 
+        });
     }
 
-    function saveLayouts() {
-        // Collect dashboard order
+    async function saveLayouts() {
         const dashIds = Array.from(document.getElementById('dashboardSortable').children).map(el => el.getAttribute('data-id'));
-        document.getElementById('dashboardOrderInput').value = JSON.stringify(dashIds);
-
-        // Collect dock order
         const dockIds = Array.from(document.getElementById('dockSortable').children).map(el => el.getAttribute('data-id'));
-        document.getElementById('dockOrderInput').value = JSON.stringify(dockIds);
 
-        document.getElementById('layoutForm').submit();
+        try {
+            const res = await fetch('{{ url_for("auth.update_layout") }}', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ dashboard_order: dashIds, dock_order: dockIds })
+            });
+
+            if (res.ok) {
+                showToast('✅ 版面設定已自動儲存', 'success');
+            } else {
+                showToast('❌ 儲存版面失敗', 'error');
+            }
+        } catch (e) {
+            console.error(e);
+            showToast('❌ 網路錯誤', 'error');
+        }
     }
 
     document.addEventListener('DOMContentLoaded', initLayouts);

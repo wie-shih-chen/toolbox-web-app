@@ -159,3 +159,25 @@ def register_settings_api(auth_bp):
             print(f"[ERROR] Exception in update_quick_shortcuts: {str(e)}")
             db.session.rollback()
             return jsonify({'error': f'Server error: {str(e)}'}), 500
+
+    @auth_bp.route('/api/update_layout', methods=['POST'])
+    @login_required
+    def update_layout():
+        try:
+            data = request.json
+            dashboard_order = data.get('dashboard_order', [])
+            dock_order = data.get('dock_order', [])
+            
+            if not isinstance(dashboard_order, list) or not isinstance(dock_order, list):
+                return jsonify({'error': 'Invalid format: expected array'}), 400
+                
+            current_user.settings.dashboard_order = json.dumps(dashboard_order, ensure_ascii=False)
+            current_user.settings.dock_order = json.dumps(dock_order[:5], ensure_ascii=False) # max 5 items
+            db.session.commit()
+            
+            return jsonify({'success': True})
+            
+        except Exception as e:
+            print(f"[ERROR] Exception in update_layout: {str(e)}")
+            db.session.rollback()
+            return jsonify({'error': f'Server error: {str(e)}'}), 500
