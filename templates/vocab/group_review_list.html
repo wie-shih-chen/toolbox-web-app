@@ -185,7 +185,7 @@
       <div class="wc-word">
         <span class="nowrap-scroll" style="flex: 1; min-width: 0;">{{ w.word }}</span>
         {% if w.exam_tips and w.exam_tips|length > 0 %}
-          <button class="official-badge" style="margin-left: 10px; flex-shrink: 0;" onclick="openBrowseWordModal('{{ w.word | replace(\"'\", \"\\'\") }}')" title="考試提示">i</button>
+          <button class="official-badge" style="margin-left: 10px; flex-shrink: 0;" data-word="{{ w.word }}" onclick="openBrowseWordModal(this.dataset.word)" title="考試提示">i</button>
         {% endif %}
       </div>
       <div class="wc-def">{{ w.definition }}</div>
