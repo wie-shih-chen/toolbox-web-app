@@ -453,6 +453,40 @@ def group_history(group_id):
     today_str = get_tw_today_str()
     return render_template('vocab/group_history.html', group=group, history_data=history_data, today_str=today_str)
 
+@group_bp.route('/<int:group_id>/review_list')
+@login_required
+def group_review_list(group_id):
+    group = StudyGroup.query.get_or_404(group_id)
+    date_str = request.args.get('date')
+    if not date_str:
+        return redirect(url_for('group.group_history', group_id=group.id))
+        
+    assignment = GroupDailyAssignment.query.filter_by(group_id=group.id, date=date_str).first()
+    if not assignment:
+        return redirect(url_for('group.group_history', group_id=group.id))
+        
+    import json
+    words_list = json.loads(assignment.words_json) if isinstance(assignment.words_json, str) else assignment.words_json
+    word_strings = [w['word'] for w in words_list]
+    
+    vps = VocabProgress.query.filter(
+        VocabProgress.user_id == current_user.id,
+        VocabProgress.source == f'group_{group.id}',
+        VocabProgress.word.in_(word_strings)
+    ).all()
+    vp_dict = {vp.word: vp for vp in vps}
+    
+    decorated_words = []
+    for w in words_list:
+        word_str = w['word']
+        vp = vp_dict.get(word_str)
+        w_copy = w.copy()
+        w_copy['correct'] = vp.correct if vp else 0
+        w_copy['incorrect'] = vp.incorrect if vp else 0
+        decorated_words.append(w_copy)
+        
+    return render_template('vocab/group_review_list.html', group=group, date=date_str, words=decorated_words)
+
 @group_bp.route('/<int:group_id>/api/quiz_words')
 @login_required
 def api_quiz_words(group_id):

@@ -349,12 +349,12 @@
               {% if record and record.quiz_taken %}
                 <div class="stat-badge" style="background: rgba(255, 215, 0, 0.15); color: gold;">測驗: {{ record.quiz_score }}分</div>
                 <div class="action-group">
-                  <a href="{{ url_for('group.group_study', group_id=group.id, date=data.date, review=1) }}" class="action-btn secondary">再次複習</a>
+                  <a href="{{ url_for('group.group_review_list', group_id=group.id, date=data.date) }}" class="action-btn secondary">再次複習</a>
                 </div>
               {% elif record and record.words_studied >= group.daily_goal %}
                 <div class="stat-badge" style="background: rgba(46, 213, 115, 0.15); color: #2ed573;">可測驗</div>
                 <div class="action-group">
-                  <a href="{{ url_for('group.group_study', group_id=group.id, date=data.date, review=1) }}" class="action-btn secondary">再次複習</a>
+                  <a href="{{ url_for('group.group_review_list', group_id=group.id, date=data.date) }}" class="action-btn secondary">再次複習</a>
                   <a href="{{ url_for('group.take_quiz', group_id=group.id, date=data.date) }}" class="action-btn warning">進入測驗</a>
                 </div>
               {% else %}
@@ -367,12 +367,12 @@
               {% if record and record.quiz_taken %}
                 <div class="stat-badge" style="background: rgba(255, 215, 0, 0.15); color: gold;">測驗: {{ record.quiz_score }}分</div>
                 <div class="action-group">
-                  <a href="{{ url_for('group.group_study', group_id=group.id, date=data.date, review=1) }}" class="action-btn secondary">再次複習</a>
+                  <a href="{{ url_for('group.group_review_list', group_id=group.id, date=data.date) }}" class="action-btn secondary">再次複習</a>
                 </div>
               {% elif record and record.words_studied >= group.daily_goal %}
                 <div class="stat-badge" style="background: rgba(255, 107, 107, 0.15); color: #ff6b6b;">未測驗</div>
                 <div class="action-group">
-                  <a href="{{ url_for('group.group_study', group_id=group.id, date=data.date, review=1) }}" class="action-btn secondary">再次複習</a>
+                  <a href="{{ url_for('group.group_review_list', group_id=group.id, date=data.date) }}" class="action-btn secondary">再次複習</a>
                   <a href="{{ url_for('group.take_quiz', group_id=group.id, date=data.date) }}" class="action-btn warning">進行補考</a>
                 </div>
               {% else %}
