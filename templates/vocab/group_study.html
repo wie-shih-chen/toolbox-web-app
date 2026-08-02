@@ -545,7 +545,15 @@ function showCard() {
   const exEl = document.getElementById('cardExample');
   if (w.examples && w.examples.length > 0) {
     const ex = w.examples[0];
-    exEl.innerHTML = `<div class="en">${ex.english || ''}</div><div class="zh">${ex.chinese || ''}</div>`;
+    exEl.innerHTML = `
+      <div class="en" style="display: flex; align-items: flex-start; justify-content: center; gap: 8px; text-align: left;">
+        <span id="cardExampleEn">${ex.english || ''}</span>
+        <button onclick="speakWord(event, 'cardExampleEn')" style="background: transparent; border:none; color:var(--text-secondary, #888); cursor:pointer; padding:0; display:flex; align-items: center; justify-content: center; transition: color 0.2s; flex-shrink: 0; margin-top: 2px;" title="發音" onmouseover="this.style.color='#667eea'" onmouseout="this.style.color='var(--text-secondary, #888)'">
+          <span class="material-icons" style="font-size: 1.2rem;">volume_up</span>
+        </button>
+      </div>
+      <div class="zh">${ex.chinese || ''}</div>
+    `;
   } else {
     exEl.textContent = '';
   }
