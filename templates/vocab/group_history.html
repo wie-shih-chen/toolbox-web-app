@@ -182,6 +182,51 @@
     color: white;
   }
   
+  .action-btn {
+    padding: 0.5rem 1.2rem;
+    border-radius: 20px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+    color: white;
+  }
+  .action-btn.primary {
+    background: linear-gradient(135deg, var(--accent-color, #4ecdc4), #2980b9);
+    box-shadow: 0 4px 15px rgba(78, 205, 196, 0.3);
+  }
+  .action-btn.primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(78, 205, 196, 0.4);
+    color: white;
+  }
+  .action-btn.warning {
+    background: linear-gradient(135deg, #f59e0b, #d97706);
+    box-shadow: 0 4px 15px rgba(245, 158, 11, 0.3);
+  }
+  .action-btn.warning:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(245, 158, 11, 0.4);
+    color: white;
+  }
+  .action-btn.secondary {
+    background: rgba(255,255,255,0.15);
+    border: 1px solid rgba(255,255,255,0.3);
+  }
+  .action-btn.secondary:hover {
+    background: rgba(255,255,255,0.25);
+    transform: translateY(-2px);
+    color: white;
+  }
+  .action-group {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+  }
+  
   .table-responsive {
     width: 100%;
     overflow-x: auto;
@@ -299,28 +344,42 @@
             {% endif %}
           </div>
           
-          <div style="display: flex; align-items: center; gap: 1rem;">
+          <div style="display: flex; align-items: center; gap: 1rem; flex-wrap: wrap;">
             {% if data.date == today_str %}
               {% if record and record.quiz_taken %}
                 <div class="stat-badge" style="background: rgba(255, 215, 0, 0.15); color: gold;">測驗: {{ record.quiz_score }}分</div>
-                <a href="{{ url_for('group.group_study', group_id=group.id, date=data.date, review=1) }}" class="btn btn-sm btn-outline-light" style="border-radius: 20px;">再次複習</a>
+                <div class="action-group">
+                  <a href="{{ url_for('group.group_study', group_id=group.id, date=data.date, review=1) }}" class="action-btn secondary">再次複習</a>
+                </div>
               {% elif record and record.words_studied >= group.daily_goal %}
                 <div class="stat-badge" style="background: rgba(46, 213, 115, 0.15); color: #2ed573;">可測驗</div>
-                <a href="{{ url_for('group.take_quiz', group_id=group.id, date=data.date) }}" class="btn btn-sm btn-success" style="border-radius: 20px;">進入測驗</a>
+                <div class="action-group">
+                  <a href="{{ url_for('group.group_study', group_id=group.id, date=data.date, review=1) }}" class="action-btn secondary">再次複習</a>
+                  <a href="{{ url_for('group.take_quiz', group_id=group.id, date=data.date) }}" class="action-btn warning">進入測驗</a>
+                </div>
               {% else %}
                 <div class="stat-badge" style="background: rgba(255, 255, 255, 0.1); color: #ccc;">進行中</div>
-                <a href="{{ url_for('group.group_study', group_id=group.id, date=data.date) }}" class="btn btn-sm btn-primary" style="border-radius: 20px;">繼續任務</a>
+                <div class="action-group">
+                  <a href="{{ url_for('group.group_study', group_id=group.id, date=data.date) }}" class="action-btn primary">繼續任務</a>
+                </div>
               {% endif %}
             {% else %}
               {% if record and record.quiz_taken %}
                 <div class="stat-badge" style="background: rgba(255, 215, 0, 0.15); color: gold;">測驗: {{ record.quiz_score }}分</div>
-                <a href="{{ url_for('group.group_study', group_id=group.id, date=data.date, review=1) }}" class="btn btn-sm btn-outline-light" style="border-radius: 20px;">再次複習</a>
+                <div class="action-group">
+                  <a href="{{ url_for('group.group_study', group_id=group.id, date=data.date, review=1) }}" class="action-btn secondary">再次複習</a>
+                </div>
               {% elif record and record.words_studied >= group.daily_goal %}
                 <div class="stat-badge" style="background: rgba(255, 107, 107, 0.15); color: #ff6b6b;">未測驗</div>
-                <a href="{{ url_for('group.take_quiz', group_id=group.id, date=data.date) }}" class="btn btn-sm btn-warning" style="border-radius: 20px;">進行補考</a>
+                <div class="action-group">
+                  <a href="{{ url_for('group.group_study', group_id=group.id, date=data.date, review=1) }}" class="action-btn secondary">再次複習</a>
+                  <a href="{{ url_for('group.take_quiz', group_id=group.id, date=data.date) }}" class="action-btn warning">進行補考</a>
+                </div>
               {% else %}
                 <div class="stat-badge" style="background: rgba(255, 107, 107, 0.15); color: #ff6b6b;">未完成</div>
-                <a href="{{ url_for('group.group_study', group_id=group.id, date=data.date) }}" class="btn btn-sm btn-primary" style="border-radius: 20px;">補齊進度</a>
+                <div class="action-group">
+                  <a href="{{ url_for('group.group_study', group_id=group.id, date=data.date) }}" class="action-btn primary">補齊進度</a>
+                </div>
               {% endif %}
             {% endif %}
           </div>
