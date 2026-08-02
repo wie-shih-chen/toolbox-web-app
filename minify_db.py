@@ -5,8 +5,7 @@ import json
 # Setup Flask app context
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 from app import app
-from extensions import db
-from models import GroupDailyAssignment
+from models import db, GroupDailyAssignment
 
 def minify_assignments():
     with app.app_context():
