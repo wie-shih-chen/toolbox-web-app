@@ -9,8 +9,19 @@ main_bp = Blueprint('main', __name__)
 def index():
     cd_service = CountdownService(current_user.id)
     pinned_countdowns = cd_service.get_pinned()
-    return render_template('index.html', pinned_countdowns=pinned_countdowns)
-
+    import json
+    dashboard_order = []
+    if current_user.settings.dashboard_order:
+        try:
+            dashboard_order = json.loads(current_user.settings.dashboard_order)
+        except:
+            pass
+            
+    # Default order if none is set or empty
+    if not dashboard_order:
+        dashboard_order = ['salary', 'expense', 'downloader', 'countdown', 'reminder', 'calendar', 'period', 'shop', 'vocab', 'group']
+        
+    return render_template('index.html', pinned_countdowns=pinned_countdowns, dashboard_order=dashboard_order)
 @main_bp.route('/manual')
 @login_required
 def manual():

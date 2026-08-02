@@ -115,6 +115,10 @@ class UserSettings(db.Model):
     binding_expiry = db.Column(db.DateTime, nullable=True)    # Code expiration time
     notification_methods = db.Column(db.Text, default='["email"]') # JSON list: ["email", "line"]
     monthly_report_day = db.Column(db.Integer, default=5) # 1-28
+    
+    # Layout Preferences
+    dashboard_order = db.Column(db.Text, default='[]')
+    dock_order = db.Column(db.Text, default='["main.index", "salary.index", "ntut.calendar", "expense.today"]')
 
     # Calendar notification settings
     calendar_notify_enabled = db.Column(db.Boolean, default=True)

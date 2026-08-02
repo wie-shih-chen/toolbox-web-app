@@ -40,6 +40,19 @@ def load_user_from_request(request):
             return None
     return None
 
+@app.context_processor
+def inject_globals():
+    import json
+    def parse_dock_order(user):
+        default = ["main.index", "salary.index", "ntut.calendar", "expense.today"]
+        if user and user.is_authenticated and user.settings and user.settings.dock_order:
+            try:
+                return json.loads(user.settings.dock_order)
+            except:
+                return default
+        return default
+    return dict(parse_dock_order=parse_dock_order)
+
 # Register Blueprints
 with app.app_context():
     db.create_all() # Create tables if they don't exist (checkfirst is default in SQLAlchemy 2.x)

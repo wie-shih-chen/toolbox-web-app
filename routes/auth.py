@@ -240,6 +240,17 @@ def settings():
             db.session.commit()
             flash('已解除 LINE 綁定')
 
+        # --- Layout Preferences ---
+        elif action == 'update_layout':
+            dashboard_order = request.form.get('dashboard_order')
+            dock_order = request.form.get('dock_order')
+            if dashboard_order:
+                current_user.settings.dashboard_order = dashboard_order
+            if dock_order:
+                current_user.settings.dock_order = dock_order
+            db.session.commit()
+            flash('版面配置已更新')
+
         # --- Profile Updates ---
         else:
             # Update Email

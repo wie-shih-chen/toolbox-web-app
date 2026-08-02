@@ -520,7 +520,47 @@
 
             </div>
 
-    <!-- 4. Accounting Settings (Moved content removed by user request) -->
+    <!-- 4. Layout Settings -->
+    <div class="settings-section">
+        <div class="section-header">
+            <span style="font-size: 1.4rem;">📱</span> 版面與導覽列設定
+        </div>
+        <div style="color: var(--text-tertiary); font-size: 0.9rem; margin-bottom: 20px;">
+            拖曳以排序首頁板塊，或自訂底部分頁導覽列 (Dock) 中的工具。
+        </div>
+
+        <form id="layoutForm" method="POST" action="{{ url_for('auth.settings') }}">
+            <input type="hidden" name="action" value="update_layout">
+            <input type="hidden" name="dashboard_order" id="dashboardOrderInput">
+            <input type="hidden" name="dock_order" id="dockOrderInput">
+
+            <div style="margin-bottom: 24px;">
+                <h4 style="margin-bottom: 12px; color: var(--text-secondary); font-size: 1rem;">首頁板塊排序</h4>
+                <div id="dashboardSortable" style="background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05); border-radius: 12px; padding: 12px;">
+                </div>
+            </div>
+
+            <div style="margin-bottom: 24px;">
+                <h4 style="margin-bottom: 12px; color: var(--text-secondary); font-size: 1rem;">底部導覽列 (Dock) - 建議放入 4 個</h4>
+                <div style="display: flex; gap: 16px; align-items: flex-start; flex-wrap: wrap;">
+                    <div style="flex: 1; min-width: 200px;">
+                        <div style="font-size: 0.85rem; color: #4ecdc4; margin-bottom: 8px;">放在 Dock 中</div>
+                        <div id="dockSortable" style="background: rgba(78,205,196,0.05); border: 1px dashed rgba(78,205,196,0.3); border-radius: 12px; padding: 12px; min-height: 80px;">
+                        </div>
+                    </div>
+                    <div style="flex: 1; min-width: 200px;">
+                        <div style="font-size: 0.85rem; color: var(--text-tertiary); margin-bottom: 8px;">未放入</div>
+                        <div id="dockAvailableSortable" style="background: rgba(255,255,255,0.02); border: 1px dashed rgba(255,255,255,0.1); border-radius: 12px; padding: 12px; min-height: 80px;">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <button type="button" onclick="saveLayouts()" class="btn btn-glow-cyan" style="width: 100%; padding: 12px; border-radius: 10px;">
+                <i class="fas fa-save" style="margin-right: 6px;"></i> 儲存版面設定
+            </button>
+        </form>
+    </div>
 
     <!-- 5. Data Management -->
     <div class="settings-section">
@@ -1005,5 +1045,100 @@
     document.addEventListener('DOMContentLoaded', () => {
         // No legacy init required
     });
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
+<script>
+    const allTools = {
+        'salary': { title: '薪水小幫手', icon: 'payments', endpoint: 'salary.index' },
+        'expense': { title: '記帳管家', icon: 'account_balance_wallet', endpoint: 'expense.today' },
+        'downloader': { title: '影音下載器', icon: 'cloud_download', endpoint: null },
+        'countdown': { title: '倒數與紀念日', icon: 'hourglass_empty', endpoint: 'countdown.index' },
+        'reminder': { title: '提醒事項', icon: 'notifications_active', endpoint: 'reminder.index' },
+        'calendar': { title: '整合日曆', icon: 'school', endpoint: 'ntut.calendar' },
+        'period': { title: '生理期紀錄', icon: 'water_drop', endpoint: 'period.dashboard' },
+        'shop': { title: '服飾購物', icon: 'checkroom', endpoint: 'shop.index' },
+        'vocab': { title: 'TOEIC背單字', icon: 'spellcheck', endpoint: 'vocab.index' }
+    };
+    
+    const dockToolsMap = {
+        'main.index': { title: '首頁', icon: 'home', id: 'main.index' },
+        'salary.index': { title: '薪資', icon: 'payments', id: 'salary.index' },
+        'ntut.calendar': { title: '日曆', icon: 'school', id: 'ntut.calendar' },
+        'expense.today': { title: '記帳', icon: 'account_balance_wallet', id: 'expense.today' },
+        'countdown.index': { title: '倒數', icon: 'hourglass_empty', id: 'countdown.index' },
+        'reminder.index': { title: '提醒', icon: 'notifications_active', id: 'reminder.index' },
+        'period.dashboard': { title: '生理期', icon: 'water_drop', id: 'period.dashboard' },
+        'shop.index': { title: '購物', icon: 'checkroom', id: 'shop.index' },
+        'vocab.index': { title: '單字', icon: 'spellcheck', id: 'vocab.index' }
+    };
+
+    const dashboardOrderStr = '{{ current_user.settings.dashboard_order|safe }}';
+    const dockOrderStr = '{{ current_user.settings.dock_order|safe }}';
+    
+    const dashboardOrder = (dashboardOrderStr && dashboardOrderStr !== 'None') ? JSON.parse(dashboardOrderStr) : [];
+    const dockOrder = (dockOrderStr && dockOrderStr !== 'None') ? JSON.parse(dockOrderStr) : ["main.index", "salary.index", "ntut.calendar", "expense.today"];
+
+    function createSortableItem(id, item, isDock=false) {
+        return `
+            <div data-id="${id}" style="display: flex; align-items: center; gap: 12px; padding: 10px; background: rgba(255,255,255,0.05); margin-bottom: 8px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1); cursor: grab;">
+                <span class="material-icons" style="color: var(--text-tertiary);">drag_indicator</span>
+                <span class="material-icons" style="color: #4ecdc4;">${item.icon}</span>
+                <span style="color: white; font-size: 0.95rem;">${item.title}</span>
+            </div>
+        `;
+    }
+
+    function initLayouts() {
+        // Dashboard
+        const dashContainer = document.getElementById('dashboardSortable');
+        const defaultDash = Object.keys(allTools);
+        let actualDashOrder = dashboardOrder.length > 0 ? dashboardOrder : defaultDash;
+        
+        // Append missing ones
+        for (let k of defaultDash) {
+            if (!actualDashOrder.includes(k)) actualDashOrder.push(k);
+        }
+
+        actualDashOrder.forEach(key => {
+            if (allTools[key]) {
+                dashContainer.innerHTML += createSortableItem(key, allTools[key]);
+            }
+        });
+
+        // Dock
+        const dockContainer = document.getElementById('dockSortable');
+        const dockAvailContainer = document.getElementById('dockAvailableSortable');
+        
+        const allDockKeys = Object.keys(dockToolsMap);
+        dockOrder.forEach(key => {
+            if (dockToolsMap[key]) {
+                dockContainer.innerHTML += createSortableItem(key, dockToolsMap[key], true);
+            }
+        });
+
+        allDockKeys.forEach(key => {
+            if (!dockOrder.includes(key)) {
+                dockAvailContainer.innerHTML += createSortableItem(key, dockToolsMap[key], true);
+            }
+        });
+
+        // Init Sortable
+        new Sortable(dashContainer, { animation: 150 });
+        new Sortable(dockContainer, { group: 'dock', animation: 150 });
+        new Sortable(dockAvailContainer, { group: 'dock', animation: 150 });
+    }
+
+    function saveLayouts() {
+        // Collect dashboard order
+        const dashIds = Array.from(document.getElementById('dashboardSortable').children).map(el => el.getAttribute('data-id'));
+        document.getElementById('dashboardOrderInput').value = JSON.stringify(dashIds);
+
+        // Collect dock order
+        const dockIds = Array.from(document.getElementById('dockSortable').children).map(el => el.getAttribute('data-id'));
+        document.getElementById('dockOrderInput').value = JSON.stringify(dockIds);
+
+        document.getElementById('layoutForm').submit();
+    }
+
+    document.addEventListener('DOMContentLoaded', initLayouts);
 </script>
 {% endblock %}

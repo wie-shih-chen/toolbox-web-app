@@ -1,0 +1,4 @@
+Traceback (most recent call last):
+  File "/Users/weishichen/Downloads/個人/Program/python/工具箱/web_app/app.py", line 2, in <module>
+    from dotenv import load_dotenv
+ModuleNotFoundError: No module named 'dotenv'
