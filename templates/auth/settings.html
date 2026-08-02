@@ -1072,8 +1072,10 @@
 
     function createSortableItem(id, item, isDock=false) {
         return `
-            <div data-id="${id}" style="display: flex; align-items: center; gap: 12px; padding: 10px; background: rgba(255,255,255,0.05); margin-bottom: 8px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1); cursor: grab;">
-                <span class="material-icons" style="color: var(--text-tertiary);">drag_indicator</span>
+            <div data-id="${id}" style="display: flex; align-items: center; gap: 12px; padding: 10px; background: rgba(255,255,255,0.05); margin-bottom: 8px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1);">
+                <div class="drag-handle" style="cursor: grab; display: flex; align-items: center; padding: 5px;">
+                    <span class="material-icons" style="color: var(--text-tertiary);">drag_indicator</span>
+                </div>
                 <span class="material-icons" style="color: #4ecdc4;">${item.icon}</span>
                 <span style="color: white; font-size: 0.95rem;">${item.title}</span>
             </div>
@@ -1117,12 +1119,14 @@
         // Init Sortable
         new Sortable(dashContainer, { 
             animation: 150,
+            handle: '.drag-handle',
             onEnd: saveLayouts 
         });
         
         new Sortable(dockContainer, { 
             group: 'dock', 
             animation: 150,
+            handle: '.drag-handle',
             onEnd: saveLayouts,
             onAdd: function (evt) {
                 if (dockContainer.children.length > 5) {
@@ -1138,6 +1142,7 @@
         new Sortable(dockAvailContainer, { 
             group: 'dock', 
             animation: 150,
+            handle: '.drag-handle',
             onEnd: saveLayouts 
         });
     }
