@@ -57,9 +57,9 @@
 <body>
     <div class="container">
         <nav class="nav-bar glass">
-            <a href="{{ url_for('main.index') }}" class="nav-brand">
-                <span class="material-icons">home_repair_service</span>
-                工具箱 Web
+            <a href="{{ url_for('main.index') }}" class="nav-brand" style="gap: 8px;">
+                <img src="{{ url_for('static', filename='apple-touch-icon.png') }}" alt="Logo" style="width: 24px; height: 24px; border-radius: 6px; object-fit: cover;">
+                CoreX
             </a>
 
             <div class="nav-links">
@@ -277,7 +277,7 @@
                 <!-- Slides -->
                 <div id="slide1" class="intro-slide active">
                     <div class="intro-icon">👋</div>
-                    <div class="intro-title">歡迎使用工具箱 Web</div>
+                    <div class="intro-title">歡迎使用 CoreX</div>
                     <div class="intro-text">
                         這裡整合了薪水計算、記帳管家與校園資訊，<br>是您日常生活與學習的最佳助手。
                     </div>
