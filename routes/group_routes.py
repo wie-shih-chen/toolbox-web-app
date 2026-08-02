@@ -268,24 +268,26 @@ def dashboard(group_id):
             db.session.add(record)
             db.session.commit()
             
-        # Count words studied in group today
-        # Only count logs from this specific group source
-        logs = VocabHistoryLog.query.filter(
-            VocabHistoryLog.user_id == user.id,
-            VocabHistoryLog.source == f'group_{group.id}',
-            VocabHistoryLog.created_at >= today_start_utc
-        ).all()
-        unique_words = {log.word for log in logs}
-        
         assignment = get_or_create_daily_assignment(group, today_str)
         assignment_words = {w['word'] for w in assignment}
         
-        # If user has studied all unique words in today's assignment, they reached the goal.
-        if len(assignment_words) > 0 and unique_words.issuperset(assignment_words):
-            record.words_studied = group.daily_goal
-        elif len(unique_words) > (record.words_studied or 0):
-            record.words_studied = len(unique_words)
-        db.session.commit()
+        # Count words studied in group today
+        # Only count logs from this specific group source AND that are part of today's assignment
+        if assignment_words:
+            logs = VocabHistoryLog.query.filter(
+                VocabHistoryLog.user_id == user.id,
+                VocabHistoryLog.source == f'group_{group.id}',
+                VocabHistoryLog.created_at >= today_start_utc,
+                VocabHistoryLog.word.in_(assignment_words)
+            ).all()
+            unique_words = {log.word for log in logs}
+            
+            # If user has studied all unique words in today's assignment, they reached the goal.
+            if len(assignment_words) > 0 and unique_words.issuperset(assignment_words):
+                record.words_studied = group.daily_goal
+            elif len(unique_words) > (record.words_studied or 0):
+                record.words_studied = len(unique_words)
+            db.session.commit()
         
         # Calculate all-time group stats for this user
         all_time = VocabProgress.query.filter_by(
