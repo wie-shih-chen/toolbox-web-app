@@ -407,25 +407,39 @@ class PeriodService:
             
         return events
 
+    def _make_prob_event(self, prefix_id, base_date, offset, opacity, title):
+        day = base_date + timedelta(days=offset)
+        return {
+            "id": f"{prefix_id}_period_{offset}",
+            "groupId": "predicted_period",
+            "title": title,
+            "start": day.strftime('%Y-%m-%d'),
+            "end": (day + timedelta(days=1)).strftime('%Y-%m-%d'),
+            "backgroundColor": f"rgba(255, 77, 79, {opacity})",
+            "borderColor": "transparent",
+            "textColor": "#ffffff",
+            "extendedProps": {"type": "predicted_period"}
+        }
+
     def _create_prediction_events(self, p, prefix_id):
         events = []
         p_start = datetime.datetime.strptime(p['period_start'], '%Y-%m-%d')
         p_end = datetime.datetime.strptime(p['period_end'], '%Y-%m-%d')
-        p_end_exclusive = p_end + timedelta(days=1)
         
-        # predicted period
-        events.append({
-            "id": f"{prefix_id}_period",
-            "groupId": "predicted_period",
-            "title": "預測經期",
-            "start": p_start.strftime('%Y-%m-%d'),
-            "end": p_end_exclusive.strftime('%Y-%m-%d'),
-            "backgroundColor": "transparent",
-            "borderColor": "#ffa39e", # Light red
-            "textColor": "#cf1322",
-            "className": "dashed-border",
-            "extendedProps": {"type": "predicted_period"}
-        })
+        duration = (p_end - p_start).days + 1
+        
+        # 1. Fade in before predicted start (confidence interval early)
+        events.append(self._make_prob_event(prefix_id, p_start, -2, 0.15, ""))
+        events.append(self._make_prob_event(prefix_id, p_start, -1, 0.40, ""))
+        
+        # 2. Main predicted period (decreasing probability as days go by)
+        for i in range(duration):
+            opacity = max(0.2, 0.85 - (i * 0.15))
+            title = "預測經期" if i == 0 else ""
+            events.append(self._make_prob_event(prefix_id, p_start, i, opacity, title))
+            
+        # 3. Fade out after predicted end
+        events.append(self._make_prob_event(prefix_id, p_start, duration, 0.15, ""))
         
         # fertile window
         f_start = datetime.datetime.strptime(p['fertile_window_start'], '%Y-%m-%d')
