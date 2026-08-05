@@ -243,7 +243,7 @@ def export_records():
             w_start, w_end = get_week_range(r['timestamp'])
             week_str = f"{w_start} ~ {w_end}"
             if week_str != current_week:
-                detail_lines.append(f"--- [ {week_str} ] ---")
+                detail_lines.append(f"════ [ {week_str} ] ════")
                 current_week = week_str
                 
             time_str = r['timestamp'][5:16].replace('-', '/')
