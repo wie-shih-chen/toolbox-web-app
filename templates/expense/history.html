@@ -39,19 +39,20 @@
         </div>
         <div class="history-filter-group">
             <label>查詢月份：</label>
+            <input type="hidden" id="billingStartDay" value="{{ settings.billing_cycle_start_day or 1 }}">
             <select id="monthSelect" class="form-control">
-                <option value="01">01 月 (10號起)</option>
-                <option value="02">02 月 (10號起)</option>
-                <option value="03">03 月 (10號起)</option>
-                <option value="04">04 月 (10號起)</option>
-                <option value="05">05 月 (10號起)</option>
-                <option value="06">06 月 (10號起)</option>
-                <option value="07">07 月 (10號起)</option>
-                <option value="08">08 月 (10號起)</option>
-                <option value="09">09 月 (10號起)</option>
-                <option value="10">10 月 (10號起)</option>
-                <option value="11">11 月 (10號起)</option>
-                <option value="12">12 月 (10號起)</option>
+                <option value="01">01 月 ({{ settings.billing_cycle_start_day or 1 }}號起)</option>
+                <option value="02">02 月 ({{ settings.billing_cycle_start_day or 1 }}號起)</option>
+                <option value="03">03 月 ({{ settings.billing_cycle_start_day or 1 }}號起)</option>
+                <option value="04">04 月 ({{ settings.billing_cycle_start_day or 1 }}號起)</option>
+                <option value="05">05 月 ({{ settings.billing_cycle_start_day or 1 }}號起)</option>
+                <option value="06">06 月 ({{ settings.billing_cycle_start_day or 1 }}號起)</option>
+                <option value="07">07 月 ({{ settings.billing_cycle_start_day or 1 }}號起)</option>
+                <option value="08">08 月 ({{ settings.billing_cycle_start_day or 1 }}號起)</option>
+                <option value="09">09 月 ({{ settings.billing_cycle_start_day or 1 }}號起)</option>
+                <option value="10">10 月 ({{ settings.billing_cycle_start_day or 1 }}號起)</option>
+                <option value="11">11 月 ({{ settings.billing_cycle_start_day or 1 }}號起)</option>
+                <option value="12">12 月 ({{ settings.billing_cycle_start_day or 1 }}號起)</option>
             </select>
         </div>
         <div class="history-filter-group">

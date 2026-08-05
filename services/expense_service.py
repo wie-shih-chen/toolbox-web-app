@@ -184,18 +184,27 @@ class ExpenseService:
         }
 
     def get_current_period(self):
-        now = datetime.now()
-        # Start: 1st day of current month
-        start_date = datetime(now.year, now.month, 1)
+        settings = self.get_settings()
+        start_day = settings.get('billing_cycle_start_day', 1)
         
-        # End: Last day of current month
-        # Logic: First day of next month - 1 day
-        if now.month == 12:
-            next_month = datetime(now.year + 1, 1, 1)
+        now = datetime.now()
+        
+        if now.day >= start_day:
+            # We are in the current month's cycle
+            start_date = datetime(now.year, now.month, start_day)
+            if now.month == 12:
+                next_month_start = datetime(now.year + 1, 1, start_day)
+            else:
+                next_month_start = datetime(now.year, now.month + 1, start_day)
         else:
-            next_month = datetime(now.year, now.month + 1, 1)
+            # We are in the previous month's cycle
+            if now.month == 1:
+                start_date = datetime(now.year - 1, 12, start_day)
+            else:
+                start_date = datetime(now.year, now.month - 1, start_day)
+            next_month_start = datetime(now.year, now.month, start_day)
             
-        end_date = next_month - timedelta(days=1)
+        end_date = next_month_start - timedelta(days=1)
             
         return start_date.strftime('%Y-%m-%d'), end_date.strftime('%Y-%m-%d')
 

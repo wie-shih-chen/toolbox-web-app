@@ -40,7 +40,8 @@ def today():
 @expense_bp.route('/history')
 @login_required
 def history():
-    return render_template('expense/history.html')
+    settings = expense_service.get_settings()
+    return render_template('expense/history.html', settings=settings)
 
 @expense_bp.route('/settings')
 @login_required

@@ -746,17 +746,28 @@ const expenseApp = {
         }
     },
     async loadHistoryData() {
-        const y = document.getElementById('yearSelect').value;
-        const m = document.getElementById('monthSelect').value;
-        const d = document.getElementById('daySelect').value;
-        const s = d ? `${y}-${m}-${d}` : `${y}-${m}-01`;
-        let e;
-        if (d) {
+        const y = parseInt(document.getElementById('yearSelect').value);
+        const m = parseInt(document.getElementById('monthSelect').value);
+        const dStr = document.getElementById('daySelect').value;
+        const billingStartDay = parseInt(document.getElementById('billingStartDay')?.value || 1);
+        
+        let s, e;
+        if (dStr) {
+            s = `${y}-${String(m).padStart(2, '0')}-${dStr}`;
             e = this.formatDate(new Date(new Date(s).getTime() + 86400000));
         } else {
-            let dim = new Date(y, m, 0).getDate();
-            e = `${y}-${m}-${dim}`;
+            s = `${y}-${String(m).padStart(2, '0')}-${String(billingStartDay).padStart(2, '0')}`;
+            let nextM = m + 1;
+            let nextY = y;
+            if (nextM > 12) {
+                nextM = 1;
+                nextY += 1;
+            }
+            let nextDate = new Date(nextY, nextM - 1, billingStartDay);
+            let endDate = new Date(nextDate.getTime() - 86400000);
+            e = this.formatDate(endDate);
         }
+        
         const res = await fetch(`/expense/api/records?start_date=${s}&end_date=${e}`);
         const data = await res.json();
         this.records = data.records;
@@ -765,15 +776,26 @@ const expenseApp = {
         this.renderList('historyExpenseList');
     },
     async downloadCsv() {
-        const y = document.getElementById('yearSelect').value;
-        const m = document.getElementById('monthSelect').value;
-        const d = document.getElementById('daySelect').value;
-        const s = d ? `${y}-${m}-${d}` : `${y}-${m}-01`;
-        let e;
-        if (d) { e = this.formatDate(new Date(new Date(s).getTime() + 86400000)); }
-        else {
-            let dim = new Date(y, m, 0).getDate();
-            e = `${y}-${m}-${dim}`;
+        const y = parseInt(document.getElementById('yearSelect').value);
+        const m = parseInt(document.getElementById('monthSelect').value);
+        const dStr = document.getElementById('daySelect').value;
+        const billingStartDay = parseInt(document.getElementById('billingStartDay')?.value || 1);
+        
+        let s, e;
+        if (dStr) {
+            s = `${y}-${String(m).padStart(2, '0')}-${dStr}`;
+            e = this.formatDate(new Date(new Date(s).getTime() + 86400000));
+        } else {
+            s = `${y}-${String(m).padStart(2, '0')}-${String(billingStartDay).padStart(2, '0')}`;
+            let nextM = m + 1;
+            let nextY = y;
+            if (nextM > 12) {
+                nextM = 1;
+                nextY += 1;
+            }
+            let nextDate = new Date(nextY, nextM - 1, billingStartDay);
+            let endDate = new Date(nextDate.getTime() - 86400000);
+            e = this.formatDate(endDate);
         }
 
         const btn = document.getElementById('exportCsvBtn');
