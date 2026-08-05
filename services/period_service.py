@@ -1,5 +1,7 @@
 import datetime
 from datetime import timedelta
+import math
+import statistics
 from models import db
 from models import PeriodRecord, UserSettings
 
@@ -126,29 +128,32 @@ class PeriodService:
         self.settings.avg_period_cycle = self._calculate_avg_cycle([r.cycle_length for r in records if r.cycle_length and not r.exclude_from_avg])
 
     def _calculate_avg_cycle(self, latest_cycles=None):
-        """加權平均：最近的週期占更高比重"""
+        """統計學常態分佈平均：考量標準差與極端值"""
         records = PeriodRecord.query.filter(
             PeriodRecord.user_id == self.user_id,
             PeriodRecord.cycle_length.isnot(None),
             PeriodRecord.exclude_from_avg == False
-        ).order_by(PeriodRecord.start_date.desc()).limit(6).all()
+        ).order_by(PeriodRecord.start_date.desc()).limit(12).all()
         
         cycles = [r.cycle_length for r in records]
         if latest_cycles:
-            # Filter latest_cycles to exclude None
             latest_cycles = [c for c in latest_cycles if c is not None]
-            cycles = latest_cycles + cycles  # Prepend newest
+            cycles = latest_cycles + cycles
         
-        # Filter outliers (14~60 days for normal calculation)
         cycles = [c for c in cycles if 14 <= c <= 60]
         if not cycles:
             return self.settings.avg_period_cycle or 28
+            
+        if len(cycles) < 2:
+            return int(round(sum(cycles) / len(cycles)))
+            
+        # Use simple mean for baseline
+        mean_val = statistics.mean(cycles)
         
-        # Weights: 6, 5, 4, 3, 2, 1 (newest first)
-        weights = list(range(len(cycles), 0, -1))
-        weighted_sum = sum(c * w for c, w in zip(cycles, weights))
-        total_weight = sum(weights)
-        return int(round(weighted_sum / total_weight))
+        # We don't filter outliers here if we want to model true variance, 
+        # but we can return the mean. The standard deviation will be calculated 
+        # separately when needed.
+        return int(round(mean_val))
 
     def _calculate_avg_duration(self):
         """From actual records with both start and end date, calculate average period duration."""
@@ -179,12 +184,19 @@ class PeriodService:
 
     def update_settings(self, avg_period_cycle=None, avg_period_duration=None, 
                         period_notify_enabled=None, period_notify_time=None, 
-                        period_notify_days_before=None,
-                        period_notify_period=None, period_notify_ovulation=None):
+                        period_notify_days_before=None, period_notify_period=None, 
+                        period_notify_ovulation=None, stress_level=None, 
+                        sleep_quality=None, anxiety_multiplier=None):
         if avg_period_cycle is not None:
-            self.settings.avg_period_cycle = int(avg_period_cycle)
+            try:
+                self.settings.avg_period_cycle = int(avg_period_cycle)
+            except ValueError:
+                pass
         if avg_period_duration is not None:
-            self.settings.avg_period_duration = int(avg_period_duration)
+            try:
+                self.settings.avg_period_duration = int(avg_period_duration)
+            except ValueError:
+                pass
         if period_notify_enabled is not None:
             self.settings.period_notify_enabled = bool(period_notify_enabled)
         if period_notify_time is not None:
@@ -228,7 +240,7 @@ class PeriodService:
         return {"success": True, "start_date": record.start_date, "end_date": today}
 
     def get_status(self):
-        """回傳今日生理期狀態（是否在經期、第幾天、距離下次幾天、是否有未結束紀錄）。"""
+        """回傳今日生理期狀態（機率模型版）。"""
         today = datetime.datetime.now()
         today_str = today.strftime('%Y-%m-%d')
 
@@ -237,9 +249,13 @@ class PeriodService:
         period_day = None
         active_id = None
         has_open_record = False
+        latest_start_date = None
 
         for r in all_records:
             start_dt = datetime.datetime.strptime(r.start_date, '%Y-%m-%d')
+            if latest_start_date is None:
+                latest_start_date = start_dt
+                
             if not r.end_date:  # None or empty string
                 if start_dt <= today:
                     in_period = True
@@ -256,26 +272,66 @@ class PeriodService:
                     break
 
         days_until_next = None
+        probability = 0.0
+        
         preds = self.get_predictions(months=3)
         if preds:
             next_start = datetime.datetime.strptime(preds[0]['period_start'], '%Y-%m-%d')
             days_until_next = (next_start - today).days
+            
+            # Probability calculation (CDF)
+            if not in_period and latest_start_date:
+                days_since_last = (today - latest_start_date).days
+                # Get standard deviation
+                records_for_std = PeriodRecord.query.filter(
+                    PeriodRecord.user_id == self.user_id,
+                    PeriodRecord.cycle_length.isnot(None),
+                    PeriodRecord.exclude_from_avg == False
+                ).order_by(PeriodRecord.start_date.desc()).limit(12).all()
+                cycles = [r.cycle_length for r in records_for_std if 14 <= r.cycle_length <= 60]
+                
+                std_dev = statistics.pstdev(cycles) if len(cycles) > 1 else 3.0
+                std_dev = max(1.0, std_dev) # Prevent division by zero
+                
+                # Dynamic mean (shifted by environment)
+                shifted_mean = self._get_shifted_mean_cycle()
+                
+                # CDF: P(X <= current_day)
+                probability = 0.5 * (1 + math.erf((days_since_last - shifted_mean) / (std_dev * math.sqrt(2))))
 
         return {
             "is_in_period": in_period,
             "period_day": period_day,
             "days_until_next": days_until_next,
             "has_open_record": has_open_record,
-            "active_record_id": active_id
+            "active_record_id": active_id,
+            "today_probability": round(probability * 100, 1)
         }
+
+    def _get_shifted_mean_cycle(self):
+        """根據環境變數 (壓力、焦慮) 平移平均週期"""
+        mean_cycle = self.settings.avg_period_cycle or 28
+        
+        shift = 0
+        if getattr(self.settings, 'anxiety_multiplier', 0) > 0.8:
+            shift += 4
+        elif getattr(self.settings, 'anxiety_multiplier', 0) > 0.5:
+            shift += 2
+            
+        if getattr(self.settings, 'stress_level', 0) > 0.8:
+            shift += 3
+        elif getattr(self.settings, 'stress_level', 0) > 0.5:
+            shift += 1
+            
+        return mean_cycle + shift
 
 
     def get_predictions(self, months=3):
         """
-        Predict future periods based on the latest record and average cycle length.
+        Predict future periods based on the latest record and dynamic probability model.
         Returns a list of prediction objects for the next `months` periods.
         """
-        avg_cycle = self.settings.avg_period_cycle or 28
+        shifted_avg_cycle = self._get_shifted_mean_cycle()
         duration = self.settings.avg_period_duration or 5
 
         latest_record = PeriodRecord.query.filter_by(user_id=self.user_id).order_by(PeriodRecord.start_date.desc()).first()
@@ -287,8 +343,8 @@ class PeriodService:
         current_date = datetime.datetime.strptime(latest_record.start_date, '%Y-%m-%d')
         
         for i in range(months):
-            # 1. 預測下次經期 = 上次第一天 + 平均週期
-            predicted_start = current_date + timedelta(days=avg_cycle)
+            # 1. 預測下次經期 = 上次第一天 + 動態平均週期
+            predicted_start = current_date + timedelta(days=shifted_avg_cycle)
             predicted_end = predicted_start + timedelta(days=duration - 1)
             
             # 2. 排卵日 = 預測下次經期 - 14 天

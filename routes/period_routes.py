@@ -110,6 +110,10 @@ def period_settings():
         notify_period = request.form.get('period_notify_period') == 'on'
         notify_ovulation = request.form.get('period_notify_ovulation') == 'on'
         
+        stress_level = request.form.get('stress_level')
+        sleep_quality = request.form.get('sleep_quality')
+        anxiety_multiplier = request.form.get('anxiety_multiplier')
+        
         service.update_settings(
             avg_period_cycle=avg_cycle,
             avg_period_duration=avg_duration,
@@ -117,7 +121,10 @@ def period_settings():
             period_notify_time=notify_time,
             period_notify_days_before=notify_days,
             period_notify_period=notify_period,
-            period_notify_ovulation=notify_ovulation
+            period_notify_ovulation=notify_ovulation,
+            stress_level=stress_level,
+            sleep_quality=sleep_quality,
+            anxiety_multiplier=anxiety_multiplier
         )
         flash('設定已儲存！', 'success')
             

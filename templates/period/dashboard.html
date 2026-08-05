@@ -516,6 +516,77 @@
     .excluded-row td:nth-child(3) {
         text-decoration: line-through rgba(255,255,255,0.3);
     }
+
+    /* Environment Trackers */
+    .env-tracker {
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 16px;
+        padding: 20px;
+        margin-bottom: 24px;
+        backdrop-filter: blur(10px);
+    }
+    .env-tracker h3 {
+        margin: 0 0 16px 0;
+        font-size: 1.1rem;
+        color: var(--text-primary);
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    .slider-group {
+        margin-bottom: 16px;
+    }
+    .slider-group:last-child {
+        margin-bottom: 0;
+    }
+    .slider-label {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 8px;
+        font-size: 0.9rem;
+        color: var(--text-secondary);
+    }
+    .env-slider {
+        width: 100%;
+        -webkit-appearance: none;
+        height: 6px;
+        border-radius: 3px;
+        background: rgba(255,255,255,0.2);
+        outline: none;
+    }
+    .env-slider::-webkit-slider-thumb {
+        -webkit-appearance: none;
+        appearance: none;
+        width: 18px;
+        height: 18px;
+        border-radius: 50%;
+        background: #ff4d4f;
+        cursor: pointer;
+        transition: transform 0.1s;
+    }
+    .env-slider::-webkit-slider-thumb:active {
+        transform: scale(1.2);
+    }
+    
+    .prob-indicator {
+        margin-top: 12px;
+        padding-top: 12px;
+        border-top: 1px dashed rgba(255,255,255,0.2);
+    }
+    .prob-bar-container {
+        height: 8px;
+        background: rgba(255,255,255,0.1);
+        border-radius: 4px;
+        overflow: hidden;
+        margin-top: 8px;
+    }
+    .prob-bar-fill {
+        height: 100%;
+        background: linear-gradient(90deg, #ff4d4f, #ff7875);
+        border-radius: 4px;
+        transition: width 0.5s ease-out;
+    }
 </style>
 {% endblock %}
 
@@ -534,11 +605,21 @@
 </div>
 {% elif status.days_until_next is not none and status.days_until_next >= 0 %}
 <div class="status-banner not-in-period">
-    <div class="status-main">
+    <div class="status-main" style="width:100%;">
         <div class="status-icon">📅</div>
-        <div class="status-text">
+        <div class="status-text" style="width:100%;">
             <h2>距離下次經期還有 <span style="color:#ff4d4f;">{{ status.days_until_next }}</span> 天</h2>
-            <p>{% if next_prediction %}預測：{{ next_prediction.period_start }} | 易孕期：{{ next_prediction.fertile_window_start }}~{{ next_prediction.fertile_window_end }}{% endif %}</p>
+            <p>{% if next_prediction %}信賴區間：{{ next_prediction.period_start }} (±2天) | 今日機率: <strong>{{ status.today_probability }}%</strong>{% endif %}</p>
+            {% if status.today_probability > 0 %}
+            <div class="prob-indicator">
+                <div style="font-size: 0.8rem; color: var(--text-secondary); display:flex; justify-content:space-between;">
+                    <span>低機率</span><span>隨時觸發</span>
+                </div>
+                <div class="prob-bar-container">
+                    <div class="prob-bar-fill" style="width: {{ status.today_probability }}%;"></div>
+                </div>
+            </div>
+            {% endif %}
         </div>
     </div>
 </div>
@@ -582,6 +663,46 @@
         </button>
     </div>
 </div>
+
+<!-- Environmental Trackers -->
+<div class="env-tracker">
+    <h3><span class="material-icons" style="color:#faad14;">psychology</span> 環境變數追蹤 (動態權重)</h3>
+    <form id="envForm" method="POST" action="{{ url_for('period.period_settings') }}">
+        <div class="slider-group">
+            <div class="slider-label">
+                <span>壓力指數 (Stress)</span>
+                <span id="stress_val">{{ (settings.stress_level * 100)|int }}%</span>
+            </div>
+            <input type="range" name="stress_level" class="env-slider" min="0" max="1" step="0.1" value="{{ settings.stress_level }}" oninput="document.getElementById('stress_val').innerText = Math.round(this.value*100)+'%'; submitEnv();">
+        </div>
+        <div class="slider-group">
+            <div class="slider-label">
+                <span>焦慮乘數 (Anxiety)</span>
+                <span id="anxiety_val">{{ (settings.anxiety_multiplier * 100)|int }}%</span>
+            </div>
+            <input type="range" name="anxiety_multiplier" class="env-slider" min="0" max="1" step="0.1" value="{{ settings.anxiety_multiplier }}" oninput="document.getElementById('anxiety_val').innerText = Math.round(this.value*100)+'%'; submitEnv();">
+        </div>
+        <!-- Hidden fields to preserve other settings when submitting this form -->
+        <input type="hidden" name="avg_period_cycle" value="{{ settings.avg_period_cycle }}">
+        <input type="hidden" name="avg_period_duration" value="{{ settings.avg_period_duration }}">
+        <input type="hidden" name="sleep_quality" value="{{ settings.sleep_quality }}">
+    </form>
+</div>
+<script>
+    let envTimeout;
+    function submitEnv() {
+        clearTimeout(envTimeout);
+        envTimeout = setTimeout(() => {
+            const formData = new FormData(document.getElementById('envForm'));
+            fetch(document.getElementById('envForm').action, {
+                method: 'POST',
+                body: formData
+            }).then(() => {
+                window.location.reload();
+            });
+        }, 500);
+    }
+</script>
 
 <div class="cal-container">
     <div id="calendar"></div>

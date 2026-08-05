@@ -138,6 +138,11 @@ class UserSettings(db.Model):
     period_notify_days_before = db.Column(db.Integer, default=3)
     period_notify_period = db.Column(db.Boolean, default=True)      # 🩸 月經前通知
     period_notify_ovulation = db.Column(db.Boolean, default=False)  # 🥚 排卵期前通知
+    
+    # Menstrual Environment Factors (0.0 to 1.0)
+    stress_level = db.Column(db.Float, default=0.0)
+    sleep_quality = db.Column(db.Float, default=0.5)
+    anxiety_multiplier = db.Column(db.Float, default=0.0)
 
     # Vocab Settings
     vocab_daily_goal = db.Column(db.Integer, default=20)
