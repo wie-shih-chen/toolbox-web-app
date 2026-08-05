@@ -45,7 +45,6 @@ const expenseApp = {
     },
 
     initHistoryPriors() {
-        // ... (previously established logic)
         const yearSelect = document.getElementById('yearSelect');
         const monthSelect = document.getElementById('monthSelect');
         if (!yearSelect) return;
@@ -60,9 +59,20 @@ const expenseApp = {
             yearSelect.appendChild(opt);
         }
 
-        // Default to current month
+        // Determine current cycle month based on billing start day
+        const billingStartDay = parseInt(document.getElementById('billingStartDay')?.value || 1);
         let targetMonth = now.getMonth() + 1;
+        let targetYear = currentYear;
+        
+        if (now.getDate() < billingStartDay) {
+            targetMonth -= 1;
+            if (targetMonth < 1) {
+                targetMonth = 12;
+                targetYear -= 1;
+            }
+        }
 
+        yearSelect.value = targetYear;
         monthSelect.value = String(targetMonth).padStart(2, '0');
         this.updateDaysInMonth();
         this.loadHistoryData();
