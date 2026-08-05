@@ -128,12 +128,12 @@ class PeriodService:
         self.settings.avg_period_cycle = self._calculate_avg_cycle([r.cycle_length for r in records if r.cycle_length and not r.exclude_from_avg])
 
     def _calculate_avg_cycle(self, latest_cycles=None):
-        """統計學常態分佈平均：考量標準差與極端值"""
+        """加權平均：最近的週期占更高比重 (EMA 概念)"""
         records = PeriodRecord.query.filter(
             PeriodRecord.user_id == self.user_id,
             PeriodRecord.cycle_length.isnot(None),
             PeriodRecord.exclude_from_avg == False
-        ).order_by(PeriodRecord.start_date.desc()).limit(12).all()
+        ).order_by(PeriodRecord.start_date.desc()).limit(6).all()
         
         cycles = [r.cycle_length for r in records]
         if latest_cycles:
@@ -147,13 +147,10 @@ class PeriodService:
         if len(cycles) < 2:
             return int(round(sum(cycles) / len(cycles)))
             
-        # Use simple mean for baseline
-        mean_val = statistics.mean(cycles)
-        
-        # We don't filter outliers here if we want to model true variance, 
-        # but we can return the mean. The standard deviation will be calculated 
-        # separately when needed.
-        return int(round(mean_val))
+        # 使用加權平均 (最新週期權重最高)
+        weights = list(range(len(cycles), 0, -1))
+        weighted_sum = sum(c * w for c, w in zip(cycles, weights))
+        return int(round(weighted_sum / sum(weights)))
 
     def _calculate_avg_duration(self):
         """From actual records with both start and end date, calculate average period duration."""
@@ -274,30 +271,32 @@ class PeriodService:
         days_until_next = None
         probability = 0.0
         
-        preds = self.get_predictions(months=3)
-        if preds:
-            next_start = datetime.datetime.strptime(preds[0]['period_start'], '%Y-%m-%d')
-            days_until_next = (next_start - today).days
+        if not in_period and latest_start_date:
+            days_since_last = (today - latest_start_date).days
+            # Get standard deviation
+            records_for_std = PeriodRecord.query.filter(
+                PeriodRecord.user_id == self.user_id,
+                PeriodRecord.cycle_length.isnot(None),
+                PeriodRecord.exclude_from_avg == False
+            ).order_by(PeriodRecord.start_date.desc()).limit(12).all()
+            cycles = [r.cycle_length for r in records_for_std if 14 <= r.cycle_length <= 60]
             
-            # Probability calculation (CDF)
-            if not in_period and latest_start_date:
-                days_since_last = (today - latest_start_date).days
-                # Get standard deviation
-                records_for_std = PeriodRecord.query.filter(
-                    PeriodRecord.user_id == self.user_id,
-                    PeriodRecord.cycle_length.isnot(None),
-                    PeriodRecord.exclude_from_avg == False
-                ).order_by(PeriodRecord.start_date.desc()).limit(12).all()
-                cycles = [r.cycle_length for r in records_for_std if 14 <= r.cycle_length <= 60]
-                
-                std_dev = statistics.pstdev(cycles) if len(cycles) > 1 else 3.0
-                std_dev = max(1.0, std_dev) # Prevent division by zero
-                
-                # Dynamic mean (shifted by environment)
-                shifted_mean = self._get_shifted_mean_cycle()
-                
-                # CDF: P(X <= current_day)
-                probability = 0.5 * (1 + math.erf((days_since_last - shifted_mean) / (std_dev * math.sqrt(2))))
+            std_dev = statistics.pstdev(cycles) if len(cycles) > 1 else 3.0
+            std_dev = max(1.0, std_dev) # Prevent division by zero
+            
+            # Dynamic mean (shifted by environment)
+            shifted_mean = self._get_shifted_mean_cycle()
+
+            # 3. 計算預計剩餘天數
+            days_until_next = shifted_mean - days_since_last
+            
+            # 4. 直覺化機率計算 (Scaled PDF)
+            import math
+            if days_since_last <= shifted_mean:
+                # Scaled Normal PDF: peak at 1.0 when days_since_last == shifted_mean
+                probability = math.exp(-0.5 * ((days_since_last - shifted_mean) / std_dev) ** 2)
+            else:
+                probability = 0.99
 
         return {
             "is_in_period": in_period,
