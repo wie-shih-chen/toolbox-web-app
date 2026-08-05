@@ -308,22 +308,8 @@ class PeriodService:
         }
 
     def _get_shifted_mean_cycle(self):
-        """根據環境變數 (壓力、焦慮) 平移平均週期"""
-        mean_cycle = self.settings.avg_period_cycle or 28
-        
-        shift = 0
-        if getattr(self.settings, 'anxiety_multiplier', 0) > 0.8:
-            shift += 4
-        elif getattr(self.settings, 'anxiety_multiplier', 0) > 0.5:
-            shift += 2
-            
-        if getattr(self.settings, 'stress_level', 0) > 0.8:
-            shift += 3
-        elif getattr(self.settings, 'stress_level', 0) > 0.5:
-            shift += 1
-            
-        return mean_cycle + shift
-
+        """(功能已移除) 停用環境變數平移，直接回傳平均週期"""
+        return self.settings.avg_period_cycle or 28
 
     def get_predictions(self, months=3):
         """
