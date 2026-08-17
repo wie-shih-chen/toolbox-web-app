@@ -212,7 +212,7 @@ def export_records():
         msg = NotificationTemplate.get_expense_export_msg(
             start_date=start_date,
             end_date=end_date,
-            total_expense=total_expense,
+            total_expense=total,
             records=records,
             category_stats=category_stats
         )
