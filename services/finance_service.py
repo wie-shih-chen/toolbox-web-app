@@ -188,10 +188,30 @@ class FinanceService:
         settings = target_user.settings
         initial = settings.initial_assets or 0.0
         
-        # Total Income overall
+        # Total Income overall (Salary)
         total_income = db.session.query(func.sum(SalaryRecord.amount)).filter_by(user_id=target_user.id).scalar() or 0
         
         # Total Expense overall
         total_expense = db.session.query(func.sum(ExpenseRecord.amount)).filter_by(user_id=target_user.id).scalar() or 0
         
-        return initial + total_income - total_expense
+        # Calculate months active for fixed extra income
+        first_salary = db.session.query(func.min(SalaryRecord.date)).filter_by(user_id=target_user.id).scalar()
+        first_expense = db.session.query(func.min(ExpenseRecord.timestamp)).filter_by(user_id=target_user.id).scalar()
+        
+        earliest_date = datetime.now()
+        if first_salary:
+            try:
+                sd = datetime.strptime(first_salary, '%Y-%m-%d')
+                if sd < earliest_date: earliest_date = sd
+            except: pass
+        if first_expense:
+            try:
+                ed = datetime.strptime(first_expense[:10], '%Y-%m-%d')
+                if ed < earliest_date: earliest_date = ed
+            except: pass
+            
+        months_active = (datetime.now().year - earliest_date.year) * 12 + (datetime.now().month - earliest_date.month) + 1
+        fixed_income = settings.fixed_extra_income or 0.0
+        total_fixed = fixed_income * max(1, months_active)
+        
+        return initial + total_income + total_fixed - total_expense
