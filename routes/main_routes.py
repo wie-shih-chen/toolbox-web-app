@@ -18,7 +18,7 @@ def index():
             pass
             
     # Default full list of tools
-    default_order = ['finance', 'salary', 'expense', 'downloader', 'countdown', 'reminder', 'calendar', 'period', 'shop', 'vocab', 'group']
+    default_order = ['finance', 'salary', 'expense', 'downloader', 'countdown', 'reminder', 'calendar', 'period', 'shop', 'vocab']
     
     if not dashboard_order:
         dashboard_order = default_order
