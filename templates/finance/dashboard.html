@@ -414,12 +414,6 @@
             renderTrendCharts(trends);
         }
 
-        // Load Assets
-        const assetsRes = await fetch('{{ url_for("finance.get_assets") }}');
-        if(assetsRes.ok) {
-            const assetsData = await assetsRes.json();
-            document.getElementById('val-total-assets').textContent = `$${assetsData.total_assets.toLocaleString()}`;
-        }
     }
 
     async function saveSettings() {

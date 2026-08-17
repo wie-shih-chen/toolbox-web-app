@@ -86,7 +86,7 @@ class FinanceService:
         if fixed_income > 0:
             income_details.append({'type': 'fixed', 'date': start_date, 'category': '固定額外收入', 'amount': fixed_income})
         for r in salary_records:
-            income_details.append({'type': 'salary', 'date': r.date.strftime('%Y-%m-%d'), 'category': '薪水', 'amount': r.amount})
+            income_details.append({'type': 'salary', 'date': r.date, 'category': '薪水', 'amount': r.amount})
         
         # 2. Get Expense
         expense_records = ExpenseRecord.query.filter(
