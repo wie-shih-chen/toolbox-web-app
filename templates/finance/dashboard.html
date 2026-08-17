@@ -347,14 +347,11 @@
             <label>目標儲蓄率 (%)</label>
             <input type="number" id="input-target-rate" placeholder="例如: 20">
         </div>
-        <div class="form-group">
-            <label style="display: flex; align-items: center; justify-content: space-between;">
+        <div class="form-group" style="display: flex; align-items: center; justify-content: space-between; background: rgba(255, 255, 255, 0.05); padding: 12px; border-radius: 12px; border: 1px solid rgba(255, 255, 255, 0.1);">
+            <label style="margin: 0; cursor: pointer; color: white;" for="input-enable-monthly-savings">
                 啟用每月儲蓄金額目標
-                <label class="switch">
-                    <input type="checkbox" id="input-enable-monthly-savings">
-                    <span class="slider round"></span>
-                </label>
             </label>
+            <input type="checkbox" id="input-enable-monthly-savings" style="width: 24px; height: 24px; cursor: pointer; margin: 0;">
         </div>
         <div class="form-group" id="group-monthly-savings" style="display: none;">
             <label>每月儲蓄目標金額</label>
