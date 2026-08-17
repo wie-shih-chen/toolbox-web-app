@@ -17,9 +17,16 @@ def index():
         except:
             pass
             
-    # Default order if none is set or empty
+    # Default full list of tools
+    default_order = ['finance', 'salary', 'expense', 'downloader', 'countdown', 'reminder', 'calendar', 'period', 'shop', 'vocab', 'group']
+    
     if not dashboard_order:
-        dashboard_order = ['finance', 'salary', 'expense', 'downloader', 'countdown', 'reminder', 'calendar', 'period', 'shop', 'vocab', 'group']
+        dashboard_order = default_order
+    else:
+        # Auto-append any new tools that the user doesn't have in their saved order yet
+        for tool in default_order:
+            if tool not in dashboard_order:
+                dashboard_order.append(tool)
         
     return render_template('index.html', pinned_countdowns=pinned_countdowns, dashboard_order=dashboard_order)
 @main_bp.route('/manual')
