@@ -92,7 +92,8 @@ class CountdownNotifyService:
                     milestones_to_check.append(f'{se.icon} {se.title}')
 
             for milestone_label in milestones_to_check:
-                msg = f'💕 「{ev.title}」提醒：明天是 {milestone_label}'
+                from services.notification_service import NotificationTemplate
+                msg = NotificationTemplate.get_countdown_msg(ev.title, milestone_label)
                 CountdownNotifyService._send(user, settings, methods, msg)
                 sent += 1
 
@@ -100,10 +101,11 @@ class CountdownNotifyService:
 
     @staticmethod
     def _send(user, settings, methods, msg_text):
-        from services.notification_service import NotificationService
+        from services.notification_service import NotificationService, NotificationTemplate
+        subject = NotificationTemplate.get_countdown_subject(msg_text)
         NotificationService.send_notification(
             user=user,
-            subject=f'💕 倒數日提醒：{msg_text[:50]}',
+            subject=subject,
             message_text=msg_text,
             notify_methods=methods,
             module='countdown'

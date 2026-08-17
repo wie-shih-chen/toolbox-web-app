@@ -105,8 +105,10 @@ class PeriodNotifyService:
                     notify_type='period'
                 ).first()
                 if not already_sent:
-                    msg_text = f"🩸 生理期提醒：預計在 {days_before} 天後 ({pred_start_str}) 開始，請預作準備！"
-                    if send_notification(msg_text, "🩸 生理期提醒", "period"):
+                    from services.notification_service import NotificationTemplate
+                    msg_text = NotificationTemplate.get_period_msg(days_before, pred_start_str)
+                    subject = NotificationTemplate.get_period_subject()
+                    if send_notification(msg_text, subject, "period"):
                         sent_count += 1
                         
         # 2. Ovulation Notification
@@ -119,8 +121,10 @@ class PeriodNotifyService:
                     notify_type='ovulation'
                 ).first()
                 if not already_sent:
-                    msg_text = f"🥚 排卵期提醒：預計在 {days_before} 天後 ({ovulation_day_str}) 進入排卵日 (易孕期)！"
-                    if send_notification(msg_text, "🥚 排卵期提醒", "ovulation"):
+                    from services.notification_service import NotificationTemplate
+                    msg_text = NotificationTemplate.get_ovulation_msg(days_before, ovulation_day_str)
+                    subject = NotificationTemplate.get_ovulation_subject()
+                    if send_notification(msg_text, subject, "ovulation"):
                         sent_count += 1
                         
         return sent_count

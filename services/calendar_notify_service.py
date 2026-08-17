@@ -172,12 +172,14 @@ class CalendarNotifyService:
     @staticmethod
     def _send(user, settings, methods: list, event_title: str, cal_name: str):
         """Dispatch notification via LINE and/or Email."""
-        msg_text = f"📅 行事曆提醒：明天 {event_title}\n（日曆：{cal_name}）"
+        from services.notification_service import NotificationService, NotificationTemplate
         
-        from services.notification_service import NotificationService
+        msg_text = NotificationTemplate.get_calendar_msg(event_title, cal_name)
+        subject = NotificationTemplate.get_calendar_subject(event_title)
+        
         NotificationService.send_notification(
             user=user,
-            subject=f"📅 行事曆提醒：明天 {event_title}",
+            subject=subject,
             message_text=msg_text,
             notify_methods=methods,
             module='calendar'

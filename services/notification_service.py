@@ -6,6 +6,56 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+class NotificationTemplate:
+    """
+    統一管理所有推播通知的文字內容，方便一次性檢修與修改。
+    """
+    
+    # --- 1. 行事曆 (Calendar) ---
+    @staticmethod
+    def get_calendar_msg(event_title, cal_name):
+        return f"📅 行事曆提醒：明天 {event_title}\n（日曆：{cal_name}）"
+        
+    @staticmethod
+    def get_calendar_subject(event_title):
+        return f"📅 行事曆提醒：明天 {event_title}"
+
+    # --- 2. 倒數日 (Countdown) ---
+    @staticmethod
+    def get_countdown_msg(title, milestone_label):
+        return f"💕 「{title}」提醒：明天是 {milestone_label}"
+        
+    @staticmethod
+    def get_countdown_subject(msg_text):
+        return f"💕 倒數日提醒：{msg_text[:50]}"
+
+    # --- 3. 日常提醒 (Reminder) ---
+    @staticmethod
+    def get_reminder_msg(title, description, remind_time):
+        return f"🔔 [提醒] {title}\n\n{description or ''}\n\n時間: {remind_time}"
+        
+    @staticmethod
+    def get_reminder_subject(title):
+        return f"🔔 提醒: {title}"
+
+    # --- 4. 生理期 (Period) ---
+    @staticmethod
+    def get_period_msg(days_before, date_str):
+        return f"🩸 生理期提醒：預計在 {days_before} 天後 ({date_str}) 開始，請預作準備！"
+        
+    @staticmethod
+    def get_period_subject():
+        return "🩸 生理期提醒"
+
+    # --- 5. 排卵期 (Ovulation) ---
+    @staticmethod
+    def get_ovulation_msg(days_before, date_str):
+        return f"🌸 排卵期提醒：預計在 {days_before} 天後 ({date_str}) 到來，這段期間受孕機率較高哦！"
+        
+    @staticmethod
+    def get_ovulation_subject():
+        return "🌸 排卵期提醒"
+
 class NotificationService:
     @staticmethod
     def send_notification(user, subject, message_text, notify_methods=None, module=None):

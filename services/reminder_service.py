@@ -181,13 +181,16 @@ class ReminderService:
 
     @staticmethod
     def send_notification(reminder):
-        methods = json.loads(reminder.notify_method)
-        msg_text = f"🔔 [提醒] {reminder.title}\n\n{reminder.description or ''}\n\n時間: {reminder.remind_time}"
+        import json
+        from services.notification_service import NotificationService, NotificationTemplate
         
-        from services.notification_service import NotificationService
+        methods = json.loads(reminder.notify_method)
+        msg_text = NotificationTemplate.get_reminder_msg(reminder.title, reminder.description, reminder.remind_time)
+        subject = NotificationTemplate.get_reminder_subject(reminder.title)
+        
         NotificationService.send_notification(
             user=reminder.user,
-            subject=f"🔔 提醒: {reminder.title}",
+            subject=subject,
             message_text=msg_text,
             notify_methods=methods,
             module='reminder'
