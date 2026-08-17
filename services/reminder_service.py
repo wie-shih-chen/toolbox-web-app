@@ -182,38 +182,13 @@ class ReminderService:
     @staticmethod
     def send_notification(reminder):
         methods = json.loads(reminder.notify_method)
-        user_settings = UserSettings.query.filter_by(user_id=reminder.user_id).first()
-        
         msg_text = f"🔔 [提醒] {reminder.title}\n\n{reminder.description or ''}\n\n時間: {reminder.remind_time}"
         
-        # 1. LINE Notify
-        if 'line' in methods:
-            try:
-                LineService.push_to_user(reminder.user_id, msg_text, module=None)
-            except Exception as e:
-                print(f"[Scheduler] Failed to send LINE reminder: {e}")
-            
-        # 2. Email Notify
-        if 'email' in methods:
-            try:
-                # user property now exists via backref in models.py
-                user = reminder.user 
-                if user and user.email:
-                    # Ensure Sender is set
-                    sender = current_app.config.get('MAIL_USERNAME')
-                    if not sender:
-                        print(f"[Scheduler] Cannot send email: MAIL_USERNAME not set in config.")
-                        return
-
-                    msg = Message(
-                        subject=f"🔔 提醒: {reminder.title}",
-                        recipients=[user.email],
-                        body=msg_text,
-                        sender=sender
-                    )
-                    mail.send(msg)
-                    print(f"[Scheduler] Email sent to {user.email}")
-                else:
-                    print(f"[Scheduler] Cannot send email: User {reminder.user_id} has no email address.")
-            except Exception as e:
-                print(f"[Scheduler] Failed to send email reminder: {e}")
+        from services.notification_service import NotificationService
+        NotificationService.send_notification(
+            user=reminder.user,
+            subject=f"🔔 提醒: {reminder.title}",
+            message_text=msg_text,
+            notify_methods=methods,
+            module='reminder'
+        )

@@ -100,25 +100,11 @@ class CountdownNotifyService:
 
     @staticmethod
     def _send(user, settings, methods, msg_text):
-        if 'line' in methods:
-            try:
-                from services.line_service import LineService
-                LineService.push_to_user(user.id, msg_text, module=None)
-                print(f'[CountdownNotify] LINE sent to user {user.id}: {msg_text[:40]}')
-            except Exception as e:
-                print(f'[CountdownNotify] LINE failed: {e}')
-
-        if 'email' in methods and user.email:
-            try:
-                sender = current_app.config.get('MAIL_USERNAME')
-                if sender:
-                    msg = Message(
-                        subject=f'💕 倒數日提醒：{msg_text[:50]}',
-                        recipients=[user.email],
-                        body=msg_text,
-                        sender=sender,
-                    )
-                    mail.send(msg)
-                    print(f'[CountdownNotify] Email sent to {user.email}')
-            except Exception as e:
-                print(f'[CountdownNotify] Email failed: {e}')
+        from services.notification_service import NotificationService
+        NotificationService.send_notification(
+            user=user,
+            subject=f'💕 倒數日提醒：{msg_text[:50]}',
+            message_text=msg_text,
+            notify_methods=methods,
+            module='countdown'
+        )

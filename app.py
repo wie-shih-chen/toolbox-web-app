@@ -108,42 +108,8 @@ with app.app_context():
 
     # Initialize Scheduler
     try:
-        from flask_apscheduler import APScheduler
-        from services.reminder_service import ReminderService
-        from services.calendar_notify_service import CalendarNotifyService
-        
-        scheduler = APScheduler()
-        app.config['SCHEDULER_API_ENABLED'] = True
-        scheduler.init_app(app)
-        
-        @scheduler.task('interval', id='check_reminders', seconds=60)
-        def check_reminders_task():
-            # Wrap in app context inside the task
-            with app.app_context():
-                ReminderService.check_and_send_reminders(app)
-        
-        @scheduler.task('interval', id='calendar_notify', seconds=60)
-        def calendar_notify_task():
-            """Every minute: check if any user's notify_time matches now → send calendar reminders."""
-            CalendarNotifyService.check_and_send(app)
-
-        from services.countdown_notify_service import CountdownNotifyService
-        @scheduler.task('interval', id='countdown_notify', seconds=60)
-        def countdown_notify_task():
-            """Every minute: at 09:00 TW time, send countdown/anniversary milestone reminders."""
-            CountdownNotifyService.check_and_send(app)
-
-        from services.period_notify_service import PeriodNotifyService
-        @scheduler.task('interval', id='period_notify', seconds=60)
-        def period_notify_task():
-            """Every minute: check if any user's period notice matches now."""
-            PeriodNotifyService.check_and_send(app)
-            
-        if not os.environ.get('SKIP_SCHEDULER'):
-            scheduler.start()
-            print("Scheduler started successfully.")
-        else:
-            print("Scheduler start skipped (SKIP_SCHEDULER set).")
+        from services.notification_scheduler import NotificationScheduler
+        NotificationScheduler.init_app(app)
     except ImportError as e:
         print(f"Scheduler could not start: {e}")
         print("Reminders will not be sent automatically.")

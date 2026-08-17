@@ -173,28 +173,12 @@ class CalendarNotifyService:
     def _send(user, settings, methods: list, event_title: str, cal_name: str):
         """Dispatch notification via LINE and/or Email."""
         msg_text = f"📅 行事曆提醒：明天 {event_title}\n（日曆：{cal_name}）"
-
-        if 'line' in methods:
-            try:
-                from services.line_service import LineService
-                LineService.push_to_user(user.id, msg_text, module=None)
-                print(f"[CalNotify] LINE sent to user {user.id}: {event_title}")
-            except Exception as e:
-                print(f"[CalNotify] LINE send failed for user {user.id}: {e}")
-
-        if 'email' in methods and user.email:
-            try:
-                sender = current_app.config.get('MAIL_USERNAME')
-                if not sender:
-                    print("[CalNotify] MAIL_USERNAME not set, skipping email.")
-                else:
-                    msg = Message(
-                        subject=f"📅 行事曆提醒：明天 {event_title}",
-                        recipients=[user.email],
-                        body=msg_text,
-                        sender=sender,
-                    )
-                    mail.send(msg)
-                    print(f"[CalNotify] Email sent to {user.email}: {event_title}")
-            except Exception as e:
-                print(f"[CalNotify] Email send failed for user {user.id}: {e}")
+        
+        from services.notification_service import NotificationService
+        NotificationService.send_notification(
+            user=user,
+            subject=f"📅 行事曆提醒：明天 {event_title}",
+            message_text=msg_text,
+            notify_methods=methods,
+            module='calendar'
+        )

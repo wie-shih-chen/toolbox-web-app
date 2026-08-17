@@ -76,38 +76,13 @@ class PeriodNotifyService:
         
         # Helper to actually send the messages
         def send_notification(msg_text, subject, notify_type):
-            try:
-                methods = json.loads(settings.notification_methods)
-            except:
-                methods = ['email']
-                
-            if not methods:
-                return False
-                
-            success = False
-            if 'line' in methods:
-                try:
-                    from services.line_service import LineService
-                    if LineService.push_to_user(user.id, msg_text, module='period'):
-                        print(f"[PeriodNotify] LINE sent to user {user.id}")
-                        success = True
-                except Exception as e:
-                    print(f"[PeriodNotify] LINE send failed for user {user.id}: {e}")
-
-            if 'email' in methods and user.email:
-                try:
-                    sender = current_app.config.get('MAIL_USERNAME')
-                    msg = Message(
-                        subject=subject,
-                        recipients=[user.email],
-                        body=msg_text,
-                        sender=sender,
-                    )
-                    mail.send(msg)
-                    print(f"[PeriodNotify] Email sent to {user.email}")
-                    success = True
-                except Exception as e:
-                    print(f"[PeriodNotify] Email send failed for user {user.id}: {e}")
+            from services.notification_service import NotificationService
+            success = NotificationService.send_notification(
+                user=user,
+                subject=subject,
+                message_text=msg_text,
+                module='period'
+            )
                     
             if success:
                 log = PeriodNotificationLog(
