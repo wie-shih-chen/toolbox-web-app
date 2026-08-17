@@ -345,8 +345,11 @@
         </div>
         <div class="form-group">
             <label>📅 資產計算起始月份</label>
-            <p style="font-size: 0.85rem; color: var(--text-tertiary); margin-bottom: 8px;">若設定此月份，系統將只計算從該月開始的收支。留空則計算所有歷史紀錄。</p>
-            <input type="month" id="input-asset-start-date">
+            <p style="font-size: 0.85rem; color: var(--text-tertiary); margin-bottom: 8px;">若設定此月份，系統將只計算從該月開始的收支。選擇「計算所有歷史紀錄」則不設限。</p>
+            <select id="input-asset-start-date">
+                <option value="">計算所有歷史紀錄</option>
+                <!-- Options will be populated by JS -->
+            </select>
         </div>
         <div class="form-group">
             <label>每月固定額外收入</label>
@@ -389,6 +392,23 @@
     let trendLineChartInstance = null;
     let currentTargetRate = 20;
     let currentNetIncome = 0;
+
+    function populateMonthSelect() {
+        const select = document.getElementById('input-asset-start-date');
+        const now = new Date();
+        // Generate past 60 months to current
+        for(let i = 0; i < 60; i++) {
+            const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+            const yyyy = d.getFullYear();
+            const mm = String(d.getMonth() + 1).padStart(2, '0');
+            const value = `${yyyy}-${mm}`;
+            const text = `${yyyy} 年 ${mm} 月`;
+            const option = document.createElement('option');
+            option.value = value;
+            option.textContent = text;
+            select.appendChild(option);
+        }
+    }
 
     function switchTab(tabId) {
         document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
@@ -695,6 +715,7 @@
     }
 
     document.addEventListener('DOMContentLoaded', () => {
+        populateMonthSelect();
         loadData();
         
         document.getElementById('input-enable-monthly-savings').addEventListener('change', (e) => {
