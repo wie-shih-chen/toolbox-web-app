@@ -28,12 +28,15 @@ class FinanceService:
             settings.target_savings_rate = float(data['target_savings_rate'])
         if 'finance_cycle_type' in data:
             settings.finance_cycle_type = data['finance_cycle_type']
+        if 'fixed_extra_income' in data:
+            settings.fixed_extra_income = float(data['fixed_extra_income'])
             
         db.session.commit()
         return {
             'initial_assets': settings.initial_assets,
             'target_savings_rate': settings.target_savings_rate,
-            'finance_cycle_type': settings.finance_cycle_type
+            'finance_cycle_type': settings.finance_cycle_type,
+            'fixed_extra_income': settings.fixed_extra_income
         }
 
     def get_current_period(self, user=None):
@@ -73,18 +76,34 @@ class FinanceService:
             SalaryRecord.user_id == target_user.id,
             SalaryRecord.date >= start_date,
             SalaryRecord.date <= end_date
-        ).all()
+        ).order_by(SalaryRecord.date.desc()).all()
         
-        total_income = sum(r.amount for r in salary_records)
+        salary_sum = sum(r.amount for r in salary_records)
+        fixed_income = target_user.settings.fixed_extra_income or 0.0
+        total_income = salary_sum + fixed_income
+        
+        income_details = []
+        if fixed_income > 0:
+            income_details.append({'type': 'fixed', 'date': start_date, 'category': '固定額外收入', 'amount': fixed_income})
+        for r in salary_records:
+            income_details.append({'type': 'salary', 'date': r.date.strftime('%Y-%m-%d'), 'category': '薪水', 'amount': r.amount})
         
         # 2. Get Expense
         expense_records = ExpenseRecord.query.filter(
             ExpenseRecord.user_id == target_user.id,
             func.substr(ExpenseRecord.timestamp, 1, 10) >= start_date,
             func.substr(ExpenseRecord.timestamp, 1, 10) <= end_date
-        ).all()
+        ).order_by(ExpenseRecord.timestamp.desc()).all()
         
         total_expense = sum(r.amount for r in expense_records)
+        expense_details = []
+        for r in expense_records:
+            expense_details.append({
+                'date': r.timestamp[:10],
+                'category': r.category,
+                'amount': r.amount,
+                'note': r.note
+            })
         
         # 3. Calculate
         net_income = total_income - total_expense
@@ -98,7 +117,9 @@ class FinanceService:
             'total_income': total_income,
             'total_expense': total_expense,
             'net_income': net_income,
-            'savings_rate': savings_rate
+            'savings_rate': savings_rate,
+            'income_details': income_details,
+            'expense_details': expense_details
         }
 
     def get_trend(self, user=None, months=6):

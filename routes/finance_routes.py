@@ -52,6 +52,7 @@ def handle_settings():
         return jsonify({
             'initial_assets': settings.initial_assets,
             'target_savings_rate': settings.target_savings_rate,
-            'finance_cycle_type': settings.finance_cycle_type
+            'finance_cycle_type': settings.finance_cycle_type,
+            'fixed_extra_income': getattr(settings, 'fixed_extra_income', 0.0)
         })
     return jsonify({'error': 'Unauthorized'}), 401

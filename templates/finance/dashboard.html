@@ -113,6 +113,98 @@
         box-shadow: 0 4px 15px rgba(0,0,0,0.1);
     }
     
+    .chart-container canvas {
+        max-height: 250px;
+    }
+    
+    /* Compact Lists */
+    .detail-list {
+        max-height: 200px;
+        overflow-y: auto;
+        margin-top: 16px;
+        padding-right: 8px;
+    }
+    .detail-list::-webkit-scrollbar {
+        width: 4px;
+    }
+    .detail-list::-webkit-scrollbar-thumb {
+        background: rgba(255,255,255,0.2);
+        border-radius: 4px;
+    }
+    .detail-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 8px 0;
+        border-bottom: 1px solid rgba(255,255,255,0.05);
+        font-size: 0.9rem;
+    }
+    .detail-item:last-child {
+        border-bottom: none;
+    }
+    .detail-name {
+        color: var(--text-secondary);
+        flex: 1;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    .detail-date {
+        color: var(--text-tertiary);
+        font-size: 0.8rem;
+        margin-right: 10px;
+    }
+    .detail-amount {
+        color: white;
+        font-weight: 600;
+    }
+    .detail-amount.income { color: #00C9FF; }
+    .detail-amount.expense { color: #FF416C; }
+    
+    /* Simulator Styles */
+    .sim-row {
+        display: flex;
+        gap: 10px;
+        margin-bottom: 12px;
+        align-items: center;
+    }
+    .sim-row input {
+        padding: 10px;
+        border-radius: 8px;
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        color: white;
+    }
+    .sim-row .btn-remove {
+        background: rgba(255, 65, 108, 0.2);
+        color: #FF416C;
+        border: none;
+        padding: 10px;
+        border-radius: 8px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    .btn-add {
+        background: rgba(255,255,255,0.1);
+        color: white;
+        border: none;
+        padding: 10px 16px;
+        border-radius: 8px;
+        cursor: pointer;
+        font-size: 0.9rem;
+        width: 100%;
+        margin-bottom: 16px;
+    }
+    .sim-result {
+        background: rgba(255,255,255,0.05);
+        border-radius: 12px;
+        padding: 16px;
+        text-align: center;
+        margin-top: 20px;
+    }
+    
     .form-group {
         margin-bottom: 16px;
     }
@@ -146,8 +238,8 @@
     <div class="tabs-container">
         <button class="tab-btn active" onclick="switchTab('overview')">📊 本期總覽</button>
         <button class="tab-btn" onclick="switchTab('trends')">📈 歷史趨勢</button>
-        <button class="tab-btn" onclick="switchTab('goals')">🎯 理財目標</button>
-        <button class="tab-btn" onclick="switchTab('settings')">⚙️ 小設定</button>
+        <button class="tab-btn" onclick="switchTab('goals')">🛍️ 預支出項</button>
+        <button class="tab-btn" onclick="switchTab('settings')">⚙️ 設定</button>
     </div>
 </div>
 
@@ -180,8 +272,18 @@
     </div>
     
     <div class="chart-container">
-        <h3>收支比例</h3>
-        <canvas id="overviewChart"></canvas>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px;">
+            <div>
+                <h3>收支比例</h3>
+                <canvas id="overviewChart"></canvas>
+            </div>
+            <div>
+                <h3>本期明細 (最近 50 筆)</h3>
+                <div class="detail-list" id="overview-details">
+                    <!-- Dynamic details go here -->
+                </div>
+            </div>
+        </div>
     </div>
 </div>
 
@@ -198,13 +300,25 @@
     </div>
 </div>
 
-<!-- Tab 3: Goals -->
+<!-- Tab 3: Goals (Planned Expenses Simulation) -->
 <div id="tab-goals" class="tab-content">
-    <div class="kpi-grid">
-        <div class="kpi-card" style="grid-column: span 2;">
-            <div class="kpi-title">目前總資產推估</div>
-            <div class="kpi-value" id="val-total-assets">$0</div>
-            <div style="font-size: 0.8rem; color: var(--text-tertiary); margin-top: 8px;">(初始資產 + 歷史總收入 - 歷史總支出)</div>
+    <div class="chart-container">
+        <h3>🛍️ 預支出項 (購買模擬)</h3>
+        <p style="color: var(--text-secondary); font-size: 0.9rem; margin-bottom: 16px;">
+            這是一個沙盒模擬工具，讓您在購買前先試算。這裡輸入的金額不影響真實記帳數據。<br>
+            系統將以您的「本期淨收支結餘」做為計算基礎。
+        </p>
+        
+        <div id="sim-items">
+            <!-- Dynamic rows -->
+        </div>
+        
+        <button class="btn-add" onclick="addSimRow()">+ 新增一筆預算花費</button>
+        
+        <div class="sim-result">
+            <div style="color: var(--text-secondary); margin-bottom: 5px;">模擬剩餘結餘</div>
+            <div id="val-sim-remaining" style="font-size: 2rem; font-weight: bold; color: #92FE9D;">$0</div>
+            <div style="font-size: 0.85rem; color: var(--text-tertiary); margin-top: 5px;">(本期淨結餘 <span id="val-sim-base">$0</span> - 預計花費總額 <span id="val-sim-expense">$0</span>)</div>
         </div>
     </div>
 </div>
@@ -216,6 +330,10 @@
         <div class="form-group">
             <label>初始資產 (目前存款額)</label>
             <input type="number" id="input-initial-assets" placeholder="例如: 100000">
+        </div>
+        <div class="form-group">
+            <label>每月固定額外收入</label>
+            <input type="number" id="input-fixed-income" placeholder="例如: 3000">
         </div>
         <div class="form-group">
             <label>目標儲蓄率 (%)</label>
@@ -241,6 +359,7 @@
     let trendBarChartInstance = null;
     let trendLineChartInstance = null;
     let currentTargetRate = 20;
+    let currentNetIncome = 0;
 
     function switchTab(tabId) {
         document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
@@ -258,6 +377,7 @@
             document.getElementById('input-initial-assets').value = settings.initial_assets;
             document.getElementById('input-target-rate').value = settings.target_savings_rate;
             document.getElementById('input-cycle-type').value = settings.finance_cycle_type;
+            document.getElementById('input-fixed-income').value = settings.fixed_extra_income;
             
             currentTargetRate = settings.target_savings_rate;
             document.getElementById('val-target-rate').textContent = `目標: ${currentTargetRate}%`;
@@ -279,8 +399,12 @@
             } else {
                 document.getElementById('bar-savings-rate').style.background = 'linear-gradient(90deg, #FF416C 0%, #FF4B2B 100%)';
             }
+            
+            currentNetIncome = summary.net_income;
+            updateSimulation();
 
             renderOverviewChart(summary.total_income, summary.total_expense);
+            renderDetailsList(summary.income_details, summary.expense_details);
         }
 
         // Load Trend
@@ -302,7 +426,8 @@
         const data = {
             initial_assets: parseFloat(document.getElementById('input-initial-assets').value) || 0,
             target_savings_rate: parseFloat(document.getElementById('input-target-rate').value) || 0,
-            finance_cycle_type: document.getElementById('input-cycle-type').value
+            finance_cycle_type: document.getElementById('input-cycle-type').value,
+            fixed_extra_income: parseFloat(document.getElementById('input-fixed-income').value) || 0
         };
         
         const res = await fetch('{{ url_for("finance.handle_settings") }}', {
@@ -335,12 +460,85 @@
             },
             options: {
                 responsive: true,
+                maintainAspectRatio: false,
                 cutout: '70%',
                 plugins: {
                     legend: { position: 'bottom' }
                 }
             }
         });
+    }
+    
+    function renderDetailsList(incomes, expenses) {
+        const container = document.getElementById('overview-details');
+        container.innerHTML = '';
+        
+        // Combine and sort by date descending
+        let allItems = [];
+        incomes.forEach(i => allItems.push({...i, is_income: true}));
+        expenses.forEach(e => allItems.push({...e, is_income: false}));
+        
+        allItems.sort((a, b) => b.date.localeCompare(a.date));
+        
+        // Limit to 50
+        allItems = allItems.slice(0, 50);
+        
+        if (allItems.length === 0) {
+            container.innerHTML = '<div style="color: var(--text-tertiary); text-align: center; padding: 20px;">尚無紀錄</div>';
+            return;
+        }
+        
+        let html = '';
+        allItems.forEach(item => {
+            const amountClass = item.is_income ? 'income' : 'expense';
+            const prefix = item.is_income ? '+' : '-';
+            const note = item.note ? ` - ${item.note}` : '';
+            html += `
+                <div class="detail-item">
+                    <span class="detail-date">${item.date.substring(5)}</span>
+                    <span class="detail-name">[${item.category}]${note}</span>
+                    <span class="detail-amount ${amountClass}">${prefix}$${item.amount.toLocaleString()}</span>
+                </div>
+            `;
+        });
+        container.innerHTML = html;
+    }
+
+    // Simulator Logic
+    function addSimRow() {
+        const container = document.getElementById('sim-items');
+        const row = document.createElement('div');
+        row.className = 'sim-row';
+        row.innerHTML = `
+            <input type="text" placeholder="物品名稱 (選填)" style="flex: 2;" class="sim-name">
+            <input type="number" placeholder="金額" style="flex: 1;" class="sim-amount" oninput="updateSimulation()">
+            <button class="btn-remove" onclick="this.parentElement.remove(); updateSimulation();">
+                <span class="material-icons">close</span>
+            </button>
+        `;
+        container.appendChild(row);
+    }
+    
+    function updateSimulation() {
+        let totalExpense = 0;
+        document.querySelectorAll('.sim-amount').forEach(input => {
+            const val = parseFloat(input.value) || 0;
+            totalExpense += val;
+        });
+        
+        const remaining = currentNetIncome - totalExpense;
+        
+        document.getElementById('val-sim-base').textContent = `$${currentNetIncome.toLocaleString()}`;
+        document.getElementById('val-sim-expense').textContent = `$${totalExpense.toLocaleString()}`;
+        
+        const resEl = document.getElementById('val-sim-remaining');
+        resEl.textContent = `$${remaining.toLocaleString()}`;
+        
+        if (remaining < 0) {
+            resEl.style.color = '#FF416C';
+        } else {
+            resEl.style.color = '#92FE9D';
+        }
     }
 
     function renderTrendCharts(trends) {
@@ -364,6 +562,7 @@
             },
             options: {
                 responsive: true,
+                maintainAspectRatio: false,
                 scales: {
                     y: { beginAtZero: true, grid: { color: 'rgba(255,255,255,0.1)' } },
                     x: { grid: { display: false } }
@@ -390,6 +589,7 @@
             },
             options: {
                 responsive: true,
+                maintainAspectRatio: false,
                 scales: {
                     y: { grid: { color: 'rgba(255,255,255,0.1)' } },
                     x: { grid: { display: false } }
@@ -398,6 +598,9 @@
         });
     }
 
-    document.addEventListener('DOMContentLoaded', loadData);
+    document.addEventListener('DOMContentLoaded', () => {
+        loadData();
+        addSimRow(); // Add one row by default for simulator
+    });
 </script>
 {% endblock %}
