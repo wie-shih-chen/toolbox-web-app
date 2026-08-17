@@ -6,34 +6,48 @@
 {% block content %}
 <style>
     /* Tabs Styles */
-    .tabs-container {
+    .tabs-wrapper {
         display: flex;
-        gap: 10px;
+        justify-content: center;
         margin-bottom: 24px;
+        width: 100%;
+    }
+    .tabs-container {
+        display: inline-flex;
+        background: rgba(44, 44, 46, 0.8);
+        padding: 4px;
+        border-radius: 12px;
+        border: 1px solid rgba(255, 255, 255, 0.05);
+        gap: 4px;
         overflow-x: auto;
-        padding-bottom: 5px;
-        -ms-overflow-style: none;  /* IE and Edge */
-        scrollbar-width: none;  /* Firefox */
+        -ms-overflow-style: none;
+        scrollbar-width: none;
     }
     .tabs-container::-webkit-scrollbar {
         display: none;
     }
     .tab-btn {
-        background: rgba(255, 255, 255, 0.05);
-        border: 1px solid rgba(255, 255, 255, 0.1);
-        padding: 10px 20px;
-        border-radius: 20px;
-        color: var(--text-secondary);
+        background: transparent;
+        border: none;
+        padding: 8px 16px;
+        border-radius: 8px;
+        color: rgba(255, 255, 255, 0.6);
         font-weight: 600;
         cursor: pointer;
         white-space: nowrap;
-        transition: all 0.3s ease;
+        transition: all 0.2s ease;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 0.95rem;
+    }
+    .tab-btn:hover {
+        color: rgba(255, 255, 255, 0.9);
     }
     .tab-btn.active {
-        background: linear-gradient(135deg, #0575E6 0%, #021B79 100%);
+        background: rgba(255, 255, 255, 0.2);
         color: white;
-        border-color: transparent;
-        box-shadow: 0 4px 15px rgba(5, 117, 230, 0.4);
+        box-shadow: 0 2px 8px rgba(0,0,0,0.2);
     }
     .tab-content {
         display: none;
@@ -128,11 +142,13 @@
 </style>
 
 <!-- Tabs Navigation -->
-<div class="tabs-container">
-    <button class="tab-btn active" onclick="switchTab('overview')">本期總覽</button>
-    <button class="tab-btn" onclick="switchTab('trends')">歷史趨勢</button>
-    <button class="tab-btn" onclick="switchTab('goals')">理財目標</button>
-    <button class="tab-btn" onclick="switchTab('settings')">小設定</button>
+<div class="tabs-wrapper">
+    <div class="tabs-container">
+        <button class="tab-btn active" onclick="switchTab('overview')">📊 本期總覽</button>
+        <button class="tab-btn" onclick="switchTab('trends')">📈 歷史趨勢</button>
+        <button class="tab-btn" onclick="switchTab('goals')">🎯 理財目標</button>
+        <button class="tab-btn" onclick="switchTab('settings')">⚙️ 小設定</button>
+    </div>
 </div>
 
 <!-- Tab 1: Overview -->
