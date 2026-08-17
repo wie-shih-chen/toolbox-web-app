@@ -34,6 +34,8 @@ class FinanceService:
             settings.enable_monthly_savings = bool(data['enable_monthly_savings'])
         if 'monthly_savings_amount' in data:
             settings.monthly_savings_amount = int(data['monthly_savings_amount'])
+        if 'asset_tracking_start_date' in data:
+            settings.asset_tracking_start_date = data['asset_tracking_start_date'] or None
             
         db.session.commit()
         return {
@@ -42,7 +44,8 @@ class FinanceService:
             'finance_cycle_type': settings.finance_cycle_type,
             'fixed_extra_income': settings.fixed_extra_income,
             'enable_monthly_savings': settings.enable_monthly_savings,
-            'monthly_savings_amount': settings.monthly_savings_amount
+            'monthly_savings_amount': settings.monthly_savings_amount,
+            'asset_tracking_start_date': settings.asset_tracking_start_date
         }
 
     def get_current_period(self, user=None):
@@ -194,16 +197,22 @@ class FinanceService:
         first_expense = db.session.query(func.min(ExpenseRecord.timestamp)).filter_by(user_id=target_user.id).scalar()
         
         earliest_date = datetime.now()
-        if first_salary:
+        if settings.asset_tracking_start_date:
             try:
-                sd = datetime.strptime(first_salary, '%Y-%m-%d')
-                if sd < earliest_date: earliest_date = sd
-            except: pass
-        if first_expense:
-            try:
-                ed = datetime.strptime(first_expense[:10], '%Y-%m-%d')
-                if ed < earliest_date: earliest_date = ed
-            except: pass
+                earliest_date = datetime.strptime(settings.asset_tracking_start_date, '%Y-%m-%d')
+            except:
+                pass
+        else:
+            if first_salary:
+                try:
+                    sd = datetime.strptime(first_salary, '%Y-%m-%d')
+                    if sd < earliest_date: earliest_date = sd
+                except: pass
+            if first_expense:
+                try:
+                    ed = datetime.strptime(first_expense[:10], '%Y-%m-%d')
+                    if ed < earliest_date: earliest_date = ed
+                except: pass
             
         today = datetime.now()
         start_day = settings.billing_cycle_start_day or 10

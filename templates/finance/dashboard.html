@@ -399,6 +399,7 @@
         if(settingsRes.ok) {
             const settings = await settingsRes.json();
             document.getElementById('input-initial-assets').value = settings.initial_assets;
+            document.getElementById('input-asset-start-date').value = settings.asset_tracking_start_date || '';
             document.getElementById('input-target-rate').value = settings.target_savings_rate;
             document.getElementById('input-cycle-type').value = settings.finance_cycle_type;
             document.getElementById('input-fixed-income').value = settings.fixed_extra_income;
@@ -462,6 +463,7 @@
     async function saveSettings() {
         const data = {
             initial_assets: parseFloat(document.getElementById('input-initial-assets').value) || 0,
+            asset_tracking_start_date: document.getElementById('input-asset-start-date').value || null,
             target_savings_rate: parseFloat(document.getElementById('input-target-rate').value) || 0,
             finance_cycle_type: document.getElementById('input-cycle-type').value,
             fixed_extra_income: parseFloat(document.getElementById('input-fixed-income').value) || 0,
