@@ -56,6 +56,128 @@ class NotificationTemplate:
     def get_ovulation_subject():
         return "🌸 排卵期提醒"
 
+    # --- 6. 薪資 (Salary) ---
+    @staticmethod
+    def get_salary_export_msg(username, records, total_amount, type_stats, start_date=None, end_date=None):
+        if start_date and end_date:
+            msg = (
+                f"📊 [薪資匯出] {username}\n"
+                f"期間: {start_date} ~ {end_date}\n"
+                f"總金額: ${total_amount:,}\n"
+                f"總筆數: {len(records)} 筆\n"
+                f"------------------\n"
+            )
+        else:
+            from datetime import datetime
+            msg = (
+                f"📊 [薪資匯出通知] {username}\n"
+                f"總筆數: {len(records)}\n"
+                f"總金額: ${total_amount:,}\n"
+                f"匯出時間: {datetime.now().strftime('%Y/%m/%d %H:%M')}\n"
+                f"------------------\n"
+            )
+            
+        msg += "【項目統計】\n"
+        for rtype, stats in type_stats.items():
+            line_stat = f"💰 {rtype}: ${stats['amount']:,} ({stats['count']}筆"
+            if stats['hours'] > 0:
+                line_stat += f", 共{stats['hours']}h"
+            line_stat += ")\n"
+            msg += line_stat
+            
+        msg += "------------------\n【明細紀錄】\n"
+        detail_lines = []
+        for r in records:
+            rtype = "排班" if r['type'] == 'shift' else "獎金"
+            if r['type'] not in ['shift', 'bonus']:
+                rtype = r['type']
+            line = f"{r['date'][5:]} {rtype} ${r['amount']}"
+            if r['type'] == 'shift':
+                line += f" ({r['hours']}h)"
+            detail_lines.append(line)
+        msg += "\n".join(detail_lines)
+        return msg
+
+    @staticmethod
+    def get_salary_report_msg(start_date, end_date, total_salary, records):
+        msg = (
+            f"💰 [薪資報表] {start_date} ~ {end_date}\n"
+            f"總金額: ${total_salary:,}\n"
+            f"筆數: {len(records)} 筆\n"
+            f"------------------\n"
+        )
+        detail_lines = []
+        for r in records:
+            rtype = "排班" if r['type'] == 'shift' else "獎金"
+            if r['type'] not in ['shift', 'bonus']:
+                rtype = r['type']
+            line = f"{r['date'][5:]} {rtype} ${r['amount']}"
+            if r['type'] == 'shift':
+                line += f" ({r['hours']}h)"
+            detail_lines.append(line)
+        msg += "\n".join(detail_lines)
+        return msg
+
+    # --- 7. 記帳 (Expense) ---
+    @staticmethod
+    def get_expense_export_msg(start_date, end_date, total_expense, records, category_stats):
+        msg = f"📊 【記帳報表】 {start_date} ~ {end_date}\n"
+        msg += f"💰 總支出: ${int(total_expense):,}\n"
+        msg += f"📝 總筆數: {len(records)} 筆\n"
+        msg += "🔍 類別統計:\n"
+        
+        # Format category stats
+        for cat, amount in sorted(category_stats.items(), key=lambda x: x[1], reverse=True):
+            if amount > 0:
+                pct = (amount / total_expense) * 100 if total_expense > 0 else 0
+                msg += f"  {cat}: ${int(amount):,} ({pct:.1f}%)\n"
+                
+        msg += "------------------\n"
+        msg += "【明細紀錄】\n"
+        
+        detail_lines = []
+        current_week = None
+        
+        def get_week_range(date_str):
+            from datetime import datetime, timedelta
+            dt = datetime.strptime(date_str[:10], '%Y-%m-%d')
+            start = dt - timedelta(days=dt.weekday())
+            end = start + timedelta(days=6)
+            return start.strftime('%m/%d'), end.strftime('%m/%d')
+            
+        for r in records:
+            cat = r.get('category', '其他')
+            note = str(r.get('note', '')).strip()
+            if not note or note.lower() == 'none':
+                note = '(無備註)'
+            
+            w_start, w_end = get_week_range(r['timestamp'])
+            week_str = f"{w_start} ~ {w_end}"
+            if week_str != current_week:
+                detail_lines.append(f"════ [ {week_str} ] ════")
+                current_week = week_str
+                
+            time_str = r['timestamp'][5:16].replace('-', '/')
+            amt_str = f"${int(r['amount']):,}"
+            detail_lines.append(f"{time_str} {cat} [{amt_str}] {note}")
+            
+        msg += "\n".join(detail_lines)
+        return msg
+
+    @staticmethod
+    def get_expense_report_msg(start_date, end_date, total_amount, records):
+        msg = (
+            f"💸 [記帳報表] {start_date} ~ {end_date}\n"
+            f"總支出: ${total_amount:,}\n"
+            f"------------------\n"
+        )
+        detail_lines = []
+        for r in records:
+            cat = r.get('category', '其他').split(' ')[0]
+            detail_lines.append(f"{r['timestamp'][5:16]} {cat} ${int(r['amount'])}")
+        msg += "\n".join(detail_lines)
+        return msg
+
 class NotificationService:
     @staticmethod
     def send_notification(user, subject, message_text, notify_methods=None, module=None):

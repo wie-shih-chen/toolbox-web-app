@@ -207,50 +207,15 @@ def export_records():
             category_stats[cat_name]['amount'] += int(r['amount'])
             category_stats[cat_name]['emoji'] = emoji
 
-        msg = (
-            f"📉 [記帳匯出通知] {current_user.username}\n"
-            f"📅 期間: {start_date} ~ {end_date}\n"
-            f"💰 總支出: ${total:,}\n"
-            f"🕒 匯出時間: {datetime.now().strftime('%Y/%m/%d %H:%M')}\n"
-            f"------------------\n"
+            
+        from services.notification_service import NotificationTemplate
+        msg = NotificationTemplate.get_expense_export_msg(
+            start_date=start_date,
+            end_date=end_date,
+            total_expense=total_expense,
+            records=records,
+            category_stats=category_stats
         )
-        
-        # Add Category summary
-        msg += "📊【各分類統計】\n"
-        for cat_name, stats in sorted(category_stats.items(), key=lambda x: x[1]['amount'], reverse=True):
-            msg += f"{stats['emoji']} {cat_name}: ${stats['amount']:,} ({stats['count']}筆)\n"
-            
-        msg += "------------------\n"
-        
-        # Add details
-        msg += "📝【明細紀錄】\n"
-        detail_lines = []
-        
-        def get_week_range(date_str):
-            dt = datetime.strptime(date_str[:10], '%Y-%m-%d')
-            start = dt - timedelta(days=dt.weekday())
-            end = start + timedelta(days=6)
-            return start.strftime('%m/%d'), end.strftime('%m/%d')
-            
-        current_week = None
-        for r in records:
-            cat = r.get('category', '其他').split(' ')[0] # Get emoji or just first part
-            note = r.get('note', '').strip()
-            if not note:
-                note = '(無備註)'
-            
-            # Weekly separator logic
-            w_start, w_end = get_week_range(r['timestamp'])
-            week_str = f"{w_start} ~ {w_end}"
-            if week_str != current_week:
-                detail_lines.append(f"════ [ {week_str} ] ════")
-                current_week = week_str
-                
-            time_str = r['timestamp'][5:16].replace('-', '/')
-            amt_str = f"${int(r['amount']):,}"
-            detail_lines.append(f"{time_str} {cat} [{amt_str}] {note}")
-            
-        msg += "\n".join(detail_lines)
             
         sent_nicknames = LineService.push_to_user(current_user.id, msg, module='expense')
             

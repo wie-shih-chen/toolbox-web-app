@@ -192,40 +192,13 @@ def export_csv():
             if r['type'] == 'shift':
                 type_stats[rtype]['hours'] += r.get('hours', 0)
 
-        msg = (
-            f"📊 [薪資匯出通知] {current_user.username}\n"
-            f"總筆數: {len(records)}\n"
-            f"總金額: ${total_amount:,}\n"
-            f"匯出時間: {datetime.now().strftime('%Y/%m/%d %H:%M')}\n"
-            f"------------------\n"
+        from services.notification_service import NotificationTemplate
+        msg = NotificationTemplate.get_salary_export_msg(
+            username=current_user.username,
+            records=records,
+            total_amount=total_amount,
+            type_stats=type_stats
         )
-        
-        # Add stats
-        msg += "【項目統計】\n"
-        for rtype, stats in type_stats.items():
-            line_stat = f"💰 {rtype}: ${stats['amount']:,} ({stats['count']}筆"
-            if stats['hours'] > 0:
-                line_stat += f", 共{stats['hours']}h"
-            line_stat += ")\n"
-            msg += line_stat
-            
-        msg += "------------------\n"
-        
-        # Add details (All records)
-        msg += "【明細紀錄】\n"
-        detail_lines = []
-        for r in records:
-            # Translate type
-            rtype = "排班" if r['type'] == 'shift' else "獎金"
-            if r['type'] != 'shift' and r['type'] != 'bonus':
-                 rtype = r['type'] # Fallback
-                 
-            line = f"{r['date'][5:]} {rtype} ${r['amount']}"
-            if r['type'] == 'shift':
-                line += f" ({r['hours']}h)"
-            detail_lines.append(line)
-            
-        msg += "\n".join(detail_lines)
             
         sent_nicknames = LineService.push_to_user(current_user.id, msg, module='salary')
 
@@ -333,35 +306,15 @@ def export_period_csv():
             if r['type'] == 'shift':
                 type_stats[rtype]['hours'] += r.get('hours', 0)
 
-        msg = (
-            f"📊 [薪資匯出] {current_user.username}\n"
-            f"期間: {start_date} ~ {end_date}\n"
-            f"總金額: ${total_amount:,}\n"
-            f"總筆數: {len(records)} 筆\n"
-            f"------------------\n"
+        from services.notification_service import NotificationTemplate
+        msg = NotificationTemplate.get_salary_export_msg(
+            username=current_user.username,
+            records=records,
+            total_amount=total_amount,
+            type_stats=type_stats,
+            start_date=start_date,
+            end_date=end_date
         )
-        
-        # Add stats
-        msg += "【項目統計】\n"
-        for rtype, stats in type_stats.items():
-            line_stat = f"💰 {rtype}: ${stats['amount']:,} ({stats['count']}筆"
-            if stats['hours'] > 0:
-                line_stat += f", 共{stats['hours']}h"
-            line_stat += ")\n"
-            msg += line_stat
-            
-        msg += "------------------\n"
-        
-        # Add details
-        msg += "【明細紀錄】\n"
-        detail_lines = []
-        for r in records:
-            rtype = '排班' if r['type'] == 'shift' else '獎金'
-            line = f"{r['date'][5:]} {rtype} ${r['amount']}"
-            if r['type'] == 'shift':
-                line += f" ({r['hours']}h)"
-            detail_lines.append(line)
-        msg += '\n'.join(detail_lines)
         try:
             sent_nicknames = LineService.push_to_user(current_user.id, msg, module='salary')
         except Exception as e:

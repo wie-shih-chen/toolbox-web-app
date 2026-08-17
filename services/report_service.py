@@ -104,27 +104,8 @@ class ReportService:
                     
                     # 2. Send LINE
                     if 'line' in methods:
-                        msg = (
-                            f"💰 [薪資報表] {start_date} ~ {end_date}\n"
-                            f"總金額: ${total_salary:,}\n"
-                            f"筆數: {len(records)} 筆\n"
-                            f"------------------\n"
-                        )
-                        
-                        # Add details (All records)
-                        detail_lines = []
-                        for r in records:
-                            # Translate type
-                            rtype = "排班" if r['type'] == 'shift' else "獎金"
-                            if r['type'] != 'shift' and r['type'] != 'bonus':
-                                 rtype = r['type'] # Fallback
-                                 
-                            line = f"{r['date'][5:]} {rtype} ${r['amount']}"
-                            if r['type'] == 'shift':
-                                line += f" ({r['hours']}h)"
-                            detail_lines.append(line)
-                            
-                        msg += "\n".join(detail_lines)
+                        from services.notification_service import NotificationTemplate
+                        msg = NotificationTemplate.get_salary_report_msg(start_date, end_date, total_salary, records)
                         
                         LineService.push_to_user(user.id, msg, module='salary')
 
@@ -163,19 +144,8 @@ class ReportService:
                      
                      # 2. Send LINE
                      if 'line' in methods:
-                        msg = (
-                            f"💸 [記帳報表] {start_date} ~ {end_date}\n"
-                            f"總支出: ${data.get('total_amount', 0):,}\n"
-                            f"------------------\n"
-                        )
-                        
-                        # Add details (All records)
-                        detail_lines = []
-                        for r in records:
-                            cat = r.get('category', '其他').split(' ')[0] # Get emoji or just first part
-                            detail_lines.append(f"{r['timestamp'][5:16]} {cat} ${int(r['amount'])}")
-                            
-                        msg += "\n".join(detail_lines)
+                        from services.notification_service import NotificationTemplate
+                        msg = NotificationTemplate.get_expense_report_msg(start_date, end_date, data.get('total_amount', 0), records)
                         
                         LineService.push_to_user(user.id, msg, module='expense')
 
