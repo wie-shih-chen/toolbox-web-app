@@ -680,7 +680,7 @@
         const labels = trends.map(t => t.label);
         const incomes = trends.map(t => t.total_income);
         const expenses = trends.map(t => t.total_expense);
-        const nets = trends.map(t => t.net_income);
+        const nets = trends.map(t => t.true_net);
         
         // Bar Chart
         const ctxBar = document.getElementById('trendBarChart').getContext('2d');

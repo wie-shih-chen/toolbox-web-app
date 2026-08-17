@@ -125,17 +125,19 @@ class FinanceService:
         if target_user.settings.enable_monthly_savings:
             savings_goal = target_user.settings.monthly_savings_amount or 0
 
-        net_income = total_income - total_expense - savings_goal
+        true_net = total_income - total_expense  # 真實淨收支（不扣儲蓄目標）
+        net_income = true_net - savings_goal      # 扣除儲蓄目標後的可用結餘
         
         savings_rate = 0.0
         if total_income > 0:
-            savings_rate = round(max(0, total_income - total_expense) / total_income * 100, 1)
+            savings_rate = round(max(0, true_net) / total_income * 100, 1)
             
         return {
             'period_start': start_date,
             'period_end': end_date,
             'total_income': total_income,
             'total_expense': total_expense,
+            'true_net': true_net,
             'net_income': net_income,
             'savings_rate': savings_rate,
             'savings_goal': savings_goal,
