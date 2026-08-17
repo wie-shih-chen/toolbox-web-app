@@ -71,11 +71,17 @@ class FinanceService:
         if not target_user.is_authenticated:
             return {}
             
-        # 1. Get Income (Salary)
+        salary_start_dt = datetime.strptime(start_date, '%Y-%m-%d') - relativedelta(months=1)
+        salary_end_dt = datetime.strptime(end_date, '%Y-%m-%d') - relativedelta(months=1)
+        
+        salary_start = salary_start_dt.strftime('%Y-%m-%d')
+        salary_end = salary_end_dt.strftime('%Y-%m-%d')
+        
+        # 1. Get Income (Salary) - Offset by 1 month backward
         salary_records = SalaryRecord.query.filter(
             SalaryRecord.user_id == target_user.id,
-            SalaryRecord.date >= start_date,
-            SalaryRecord.date <= end_date
+            SalaryRecord.date >= salary_start,
+            SalaryRecord.date <= salary_end
         ).order_by(SalaryRecord.date.desc()).all()
         
         salary_sum = sum(r.amount for r in salary_records)
