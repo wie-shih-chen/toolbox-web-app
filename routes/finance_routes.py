@@ -49,6 +49,7 @@ def handle_settings():
         
     settings = finance_service.get_settings()
     if settings:
+        earliest_date = finance_service.get_earliest_record_date()
         return jsonify({
             'initial_assets': settings.initial_assets,
             'target_savings_rate': settings.target_savings_rate,
@@ -56,6 +57,7 @@ def handle_settings():
             'fixed_extra_income': getattr(settings, 'fixed_extra_income', 0.0),
             'enable_monthly_savings': getattr(settings, 'enable_monthly_savings', False),
             'monthly_savings_amount': getattr(settings, 'monthly_savings_amount', 0),
-            'asset_tracking_start_date': getattr(settings, 'asset_tracking_start_date', None)
+            'asset_tracking_start_date': getattr(settings, 'asset_tracking_start_date', None),
+            'earliest_record_month': earliest_date.strftime('%Y-%m')
         })
     return jsonify({'error': 'Unauthorized'}), 401

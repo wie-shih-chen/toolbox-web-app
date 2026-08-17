@@ -393,20 +393,36 @@
     let currentTargetRate = 20;
     let currentNetIncome = 0;
 
-    function populateMonthSelect() {
+    function populateMonthSelect(earliestMonthStr) {
         const select = document.getElementById('input-asset-start-date');
+        // keep the first default option
+        select.innerHTML = '<option value="">計算所有歷史紀錄</option>';
+        
         const now = new Date();
-        // Generate past 60 months to current
-        for(let i = 0; i < 60; i++) {
-            const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
-            const yyyy = d.getFullYear();
-            const mm = String(d.getMonth() + 1).padStart(2, '0');
+        let current = new Date(now.getFullYear(), now.getMonth(), 1);
+        
+        // Parse earliest month (e.g. "2026-08")
+        let earliest = new Date(now.getFullYear(), now.getMonth() - 60, 1); // fallback 5 years
+        if (earliestMonthStr && earliestMonthStr.includes('-')) {
+            const parts = earliestMonthStr.split('-');
+            earliest = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, 1);
+        }
+        
+        // Prevent infinite loops if data is messed up
+        let safety = 0;
+        while (current >= earliest && safety < 120) {
+            const yyyy = current.getFullYear();
+            const mm = String(current.getMonth() + 1).padStart(2, '0');
             const value = `${yyyy}-${mm}`;
             const text = `${yyyy} 年 ${mm} 月`;
             const option = document.createElement('option');
             option.value = value;
             option.textContent = text;
             select.appendChild(option);
+            
+            // Move back 1 month
+            current.setMonth(current.getMonth() - 1);
+            safety++;
         }
     }
 
@@ -423,6 +439,9 @@
         const settingsRes = await fetch('{{ url_for("finance.handle_settings") }}');
         if(settingsRes.ok) {
             const settings = await settingsRes.json();
+            
+            populateMonthSelect(settings.earliest_record_month);
+            
             document.getElementById('input-initial-assets').value = settings.initial_assets;
             document.getElementById('input-asset-start-date').value = settings.asset_tracking_start_date || '';
             document.getElementById('input-target-rate').value = settings.target_savings_rate;
@@ -715,7 +734,6 @@
     }
 
     document.addEventListener('DOMContentLoaded', () => {
-        populateMonthSelect();
         loadData();
         
         document.getElementById('input-enable-monthly-savings').addEventListener('change', (e) => {

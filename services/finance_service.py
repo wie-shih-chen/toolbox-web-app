@@ -183,6 +183,28 @@ class FinanceService:
             
         return trends
         
+    def get_earliest_record_date(self, user=None):
+        target_user = user or current_user
+        if not target_user.is_authenticated:
+            return datetime.now()
+            
+        first_salary = db.session.query(func.min(SalaryRecord.date)).filter_by(user_id=target_user.id).scalar()
+        first_expense = db.session.query(func.min(ExpenseRecord.timestamp)).filter_by(user_id=target_user.id).scalar()
+        
+        earliest_date = datetime.now()
+        if first_salary:
+            try:
+                sd = datetime.strptime(first_salary, '%Y-%m-%d')
+                if sd < earliest_date: earliest_date = sd
+            except: pass
+        if first_expense:
+            try:
+                ed = datetime.strptime(first_expense[:10], '%Y-%m-%d')
+                if ed < earliest_date: earliest_date = ed
+            except: pass
+            
+        return earliest_date
+
     def get_total_assets(self, user=None):
         target_user = user or current_user
         if not target_user.is_authenticated:
@@ -193,9 +215,6 @@ class FinanceService:
         cycle_type = settings.finance_cycle_type
         
         # Find earliest record date
-        first_salary = db.session.query(func.min(SalaryRecord.date)).filter_by(user_id=target_user.id).scalar()
-        first_expense = db.session.query(func.min(ExpenseRecord.timestamp)).filter_by(user_id=target_user.id).scalar()
-        
         earliest_date = datetime.now()
         if settings.asset_tracking_start_date:
             try:
@@ -206,16 +225,7 @@ class FinanceService:
             except:
                 pass
         else:
-            if first_salary:
-                try:
-                    sd = datetime.strptime(first_salary, '%Y-%m-%d')
-                    if sd < earliest_date: earliest_date = sd
-                except: pass
-            if first_expense:
-                try:
-                    ed = datetime.strptime(first_expense[:10], '%Y-%m-%d')
-                    if ed < earliest_date: earliest_date = ed
-                except: pass
+            earliest_date = self.get_earliest_record_date(target_user)
             
         today = datetime.now()
         start_day = settings.billing_cycle_start_day or 10
