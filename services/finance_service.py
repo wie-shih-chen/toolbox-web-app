@@ -242,4 +242,11 @@ class FinanceService:
             func.substr(ExpenseRecord.timestamp, 1, 10) <= today_str
         ).scalar() or 0
 
+        # Add fixed extra income × number of months since start
+        fixed_income = settings.fixed_extra_income or 0.0
+        if fixed_income > 0:
+            today = datetime.now()
+            months_active = (today.year - earliest_date.year) * 12 + (today.month - earliest_date.month) + 1
+            total_salary += fixed_income * months_active
+
         return initial + total_salary - total_expense
