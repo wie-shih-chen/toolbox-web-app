@@ -254,8 +254,12 @@
             <div class="kpi-title">總支出</div>
             <div class="kpi-value" id="val-expense">$0</div>
         </div>
+        <div class="kpi-card" id="kpi-savings" style="display: none;">
+            <div class="kpi-title" style="color: #4ade80;">每月儲蓄目標</div>
+            <div class="kpi-value" id="val-savings">$0</div>
+        </div>
         <div class="kpi-card">
-            <div class="kpi-title">淨收支結餘</div>
+            <div class="kpi-title">剩餘可用結餘</div>
             <div class="kpi-value" id="val-net">$0</div>
         </div>
     </div>
@@ -395,6 +399,13 @@
             document.getElementById('val-income').textContent = `$${summary.total_income.toLocaleString()}`;
             document.getElementById('val-expense').textContent = `$${summary.total_expense.toLocaleString()}`;
             document.getElementById('val-net').textContent = `$${summary.net_income.toLocaleString()}`;
+            
+            if (summary.savings_goal && summary.savings_goal > 0) {
+                document.getElementById('kpi-savings').style.display = 'block';
+                document.getElementById('val-savings').textContent = `$${summary.savings_goal.toLocaleString()}`;
+            } else {
+                document.getElementById('kpi-savings').style.display = 'none';
+            }
             
             document.getElementById('val-savings-rate').textContent = `${summary.savings_rate}%`;
             document.getElementById('bar-savings-rate').style.width = `${Math.min(100, summary.savings_rate)}%`;

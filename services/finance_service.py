@@ -30,13 +30,19 @@ class FinanceService:
             settings.finance_cycle_type = data['finance_cycle_type']
         if 'fixed_extra_income' in data:
             settings.fixed_extra_income = float(data['fixed_extra_income'])
+        if 'enable_monthly_savings' in data:
+            settings.enable_monthly_savings = bool(data['enable_monthly_savings'])
+        if 'monthly_savings_amount' in data:
+            settings.monthly_savings_amount = int(data['monthly_savings_amount'])
             
         db.session.commit()
         return {
             'initial_assets': settings.initial_assets,
             'target_savings_rate': settings.target_savings_rate,
             'finance_cycle_type': settings.finance_cycle_type,
-            'fixed_extra_income': settings.fixed_extra_income
+            'fixed_extra_income': settings.fixed_extra_income,
+            'enable_monthly_savings': settings.enable_monthly_savings,
+            'monthly_savings_amount': settings.monthly_savings_amount
         }
 
     def get_current_period(self, user=None):
@@ -112,10 +118,15 @@ class FinanceService:
             })
         
         # 3. Calculate
-        net_income = total_income - total_expense
+        savings_goal = 0
+        if target_user.settings.enable_monthly_savings:
+            savings_goal = target_user.settings.monthly_savings_amount or 0
+
+        net_income = total_income - total_expense - savings_goal
+        
         savings_rate = 0.0
         if total_income > 0:
-            savings_rate = round(max(0, net_income) / total_income * 100, 1)
+            savings_rate = round(max(0, total_income - total_expense) / total_income * 100, 1)
             
         return {
             'period_start': start_date,
@@ -124,6 +135,7 @@ class FinanceService:
             'total_expense': total_expense,
             'net_income': net_income,
             'savings_rate': savings_rate,
+            'savings_goal': savings_goal,
             'income_details': income_details,
             'expense_details': expense_details
         }

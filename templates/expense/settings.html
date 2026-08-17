@@ -78,6 +78,32 @@
                 </div>
             </div>
 
+            <!-- Monthly Savings Goal -->
+            <div class="settings-section">
+                <h4 class="settings-section-divider">
+                    <span class="material-icons settings-subsection-title">savings</span>
+                    每月儲蓄目標
+                </h4>
+                
+                <div class="form-group" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                    <label for="enableMonthlySavings" style="margin: 0; font-weight: bold; cursor: pointer;">啟用儲蓄目標扣除</label>
+                    <label class="switch">
+                        <input type="checkbox" name="enable_monthly_savings" id="enableMonthlySavings" {% if settings.enable_monthly_savings %}checked{% endif %}>
+                        <span class="slider round"></span>
+                    </label>
+                </div>
+                
+                <div class="form-group" id="savingsAmountGroup" style="{% if not settings.enable_monthly_savings %}display: none;{% endif %} margin-top: 10px;">
+                    <label for="monthlySavingsAmount">預計儲蓄金額</label>
+                    <div class="settings-currency-wrapper">
+                        <span class="settings-currency-symbol">$</span>
+                        <input type="number" name="monthly_savings_amount" id="monthlySavingsAmount" value="{{ settings.monthly_savings_amount or 0 }}"
+                            class="settings-large-input">
+                    </div>
+                    <p style="margin-top: 5px; font-size: 0.85rem; color: var(--text-secondary)">此金額會直接從您的結餘（可用餘額）中扣除，幫助您檢視實際能動用的錢。</p>
+                </div>
+            </div>
+
             <!-- Custom Categories Section -->
             <div class="settings-section">
                 <h4 class="settings-section-divider">
@@ -250,6 +276,36 @@
         renderCategoriesList();
         renderRecurringList();
         renderShortcutList();
+
+        // Setup save handler for general inputs
+        const inputs = document.querySelectorAll('#settingsForm input[type="number"]:not(#recurringAmount):not(#recurringDay), #settingsForm select');
+        inputs.forEach(input => {
+            input.addEventListener('change', async (e) => {
+                if (e.target.id === 'monthlySavingsAmount') return; // Handled separately if needed, but actually we can save it.
+                const key = e.target.name;
+                const value = e.target.value;
+                await saveSettings(key, value);
+            });
+        });
+
+        // Setup savings toggle
+        const enableSavingsToggle = document.getElementById('enableMonthlySavings');
+        const savingsAmountGroup = document.getElementById('savingsAmountGroup');
+        const savingsAmountInput = document.getElementById('monthlySavingsAmount');
+
+        if (enableSavingsToggle) {
+            enableSavingsToggle.addEventListener('change', async (e) => {
+                const isEnabled = e.target.checked;
+                savingsAmountGroup.style.display = isEnabled ? 'block' : 'none';
+                await saveSettings('enable_monthly_savings', isEnabled);
+            });
+        }
+        
+        if (savingsAmountInput) {
+            savingsAmountInput.addEventListener('change', async (e) => {
+                await saveSettings('monthly_savings_amount', e.target.value);
+            });
+        }
 
         // --- Category Logic ---
         function renderCategoriesList() {

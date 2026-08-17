@@ -97,6 +97,8 @@ class UserSettings(db.Model):
     target_savings_rate = db.Column(db.Float, default=20.0)
     finance_cycle_type = db.Column(db.String(20), default='month') # 'month' 或 'billing'
     fixed_extra_income = db.Column(db.Float, default=0.0)
+    enable_monthly_savings = db.Column(db.Boolean, default=False)
+    monthly_savings_amount = db.Column(db.Integer, default=0)
     
     # New Fields
     editable_month_range = db.Column(db.Integer, default=1) # 0=Current, 1=Prev, -1=Unlimited
