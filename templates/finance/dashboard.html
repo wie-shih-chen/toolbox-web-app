@@ -278,7 +278,7 @@
                 <canvas id="overviewChart"></canvas>
             </div>
             <div>
-                <h3>本期明細 (最近 50 筆)</h3>
+                <h3>收支分類彙整</h3>
                 <div class="detail-list" id="overview-details">
                     <!-- Dynamic details go here -->
                 </div>
@@ -467,30 +467,43 @@
         const container = document.getElementById('overview-details');
         container.innerHTML = '';
         
-        // Combine and sort by date descending
-        let allItems = [];
-        incomes.forEach(i => allItems.push({...i, is_income: true}));
-        expenses.forEach(e => allItems.push({...e, is_income: false}));
+        let aggregated = {};
         
-        allItems.sort((a, b) => b.date.localeCompare(a.date));
+        incomes.forEach(i => {
+            const cat = i.category || '其他收入';
+            if (!aggregated[cat]) aggregated[cat] = { type: 'income', amount: 0 };
+            aggregated[cat].amount += i.amount;
+        });
         
-        // Limit to 50
-        allItems = allItems.slice(0, 50);
+        expenses.forEach(e => {
+            const cat = e.category || '其他支出';
+            if (!aggregated[cat]) aggregated[cat] = { type: 'expense', amount: 0 };
+            aggregated[cat].amount += e.amount;
+        });
         
-        if (allItems.length === 0) {
+        const keys = Object.keys(aggregated);
+        
+        if (keys.length === 0) {
             container.innerHTML = '<div style="color: var(--text-tertiary); text-align: center; padding: 20px;">尚無紀錄</div>';
             return;
         }
         
+        // Sort: incomes first, then by amount descending
+        keys.sort((a, b) => {
+            if (aggregated[a].type !== aggregated[b].type) {
+                return aggregated[a].type === 'income' ? -1 : 1;
+            }
+            return aggregated[b].amount - aggregated[a].amount;
+        });
+        
         let html = '';
-        allItems.forEach(item => {
-            const amountClass = item.is_income ? 'income' : 'expense';
-            const prefix = item.is_income ? '+' : '-';
-            const note = item.note ? ` - ${item.note}` : '';
+        keys.forEach(cat => {
+            const item = aggregated[cat];
+            const amountClass = item.type === 'income' ? 'income' : 'expense';
+            const prefix = item.type === 'income' ? '+' : '-';
             html += `
                 <div class="detail-item">
-                    <span class="detail-date">${item.date.substring(5)}</span>
-                    <span class="detail-name">[${item.category}]${note}</span>
+                    <span class="detail-name">${cat}</span>
                     <span class="detail-amount ${amountClass}">${prefix}$${item.amount.toLocaleString()}</span>
                 </div>
             `;
