@@ -127,10 +127,12 @@ class NotificationTemplate:
         msg += "🔍 類別統計:\n"
         
         # Format category stats
-        for cat, amount in sorted(category_stats.items(), key=lambda x: x[1], reverse=True):
+        for cat, stats in sorted(category_stats.items(), key=lambda x: x[1]['amount'], reverse=True):
+            amount = stats['amount']
             if amount > 0:
                 pct = (amount / total_expense) * 100 if total_expense > 0 else 0
-                msg += f"  {cat}: ${int(amount):,} ({pct:.1f}%)\n"
+                emoji = stats.get('emoji', '📦')
+                msg += f"  {emoji} {cat}: ${int(amount):,} ({pct:.1f}%)\n"
                 
         msg += "------------------\n"
         msg += "【明細紀錄】\n"
