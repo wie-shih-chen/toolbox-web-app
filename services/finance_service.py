@@ -187,14 +187,9 @@ class FinanceService:
             
         settings = target_user.settings
         initial = settings.initial_assets or 0.0
+        cycle_type = settings.finance_cycle_type
         
-        # Total Income overall (Salary)
-        total_income = db.session.query(func.sum(SalaryRecord.amount)).filter_by(user_id=target_user.id).scalar() or 0
-        
-        # Total Expense overall
-        total_expense = db.session.query(func.sum(ExpenseRecord.amount)).filter_by(user_id=target_user.id).scalar() or 0
-        
-        # Calculate months active for fixed extra income
+        # Find earliest record date
         first_salary = db.session.query(func.min(SalaryRecord.date)).filter_by(user_id=target_user.id).scalar()
         first_expense = db.session.query(func.min(ExpenseRecord.timestamp)).filter_by(user_id=target_user.id).scalar()
         
@@ -210,8 +205,48 @@ class FinanceService:
                 if ed < earliest_date: earliest_date = ed
             except: pass
             
-        months_active = (datetime.now().year - earliest_date.year) * 12 + (datetime.now().month - earliest_date.month) + 1
-        fixed_income = settings.fixed_extra_income or 0.0
-        total_fixed = fixed_income * max(1, months_active)
+        today = datetime.now()
+        start_day = settings.billing_cycle_start_day or 10
         
-        return initial + total_income + total_fixed - total_expense
+        if cycle_type == 'billing':
+            if today.day >= start_day:
+                current_start = today.replace(day=start_day)
+            else:
+                current_start = (today - relativedelta(months=1)).replace(day=start_day)
+                
+            if earliest_date.day >= start_day:
+                loop_start = earliest_date.replace(day=start_day)
+            else:
+                loop_start = (earliest_date - relativedelta(months=1)).replace(day=start_day)
+        else:
+            current_start = today.replace(day=1)
+            loop_start = earliest_date.replace(day=1)
+
+        current_start = current_start.replace(hour=0, minute=0, second=0, microsecond=0)
+        loop_start = loop_start.replace(hour=0, minute=0, second=0, microsecond=0)
+        
+        total_income = 0
+        total_expense = 0
+        
+        curr = loop_start
+        # Prevent infinite loop in case of bad data, limit to max 10 years (120 months)
+        max_months = 120 
+        months_count = 0
+        
+        while curr <= current_start and months_count < max_months:
+            months_count += 1
+            period_start = curr
+            period_end = period_start + relativedelta(months=1) - timedelta(days=1)
+            
+            summary = self.get_summary(
+                period_start.strftime('%Y-%m-%d'),
+                period_end.strftime('%Y-%m-%d'),
+                target_user
+            )
+            
+            total_income += summary.get('total_income', 0)
+            total_expense += summary.get('total_expense', 0)
+            
+            curr += relativedelta(months=1)
+            
+        return initial + total_income - total_expense
