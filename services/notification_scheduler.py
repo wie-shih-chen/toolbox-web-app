@@ -38,13 +38,38 @@ class NotificationScheduler:
             PeriodNotifyService.check_and_send(app)
             
         if not os.environ.get('SKIP_SCHEDULER'):
+            def recurring_finance_job():
+                with app.app_context():
+                    try:
+                        from services.recurring_finance_service import RecurringFinanceService
+                        print(f"[{datetime.now()}] [Scheduler] Running recurring finance check...")
+                        RecurringFinanceService.check_and_create(app)
+                    except Exception as e:
+                        print(f"[{datetime.now()}] [Scheduler] Error in recurring finance task: {e}")
+
+            scheduler.add_job(
+                func=recurring_finance_job,
+                trigger=CronTrigger(hour=8, minute=0),
+                id='recurring_finance_job',
+                name='Recurring Finance Job',
+                replace_existing=True
+            )
+            
+            scheduler.add_job(
+                func=recurring_finance_job,
+                trigger='date',
+                run_date=datetime.now(),
+                id='recurring_finance_job_startup',
+                name='Recurring Finance Job Startup'
+            )
+
             try:
                 scheduler.start()
                 logger.info("NotificationScheduler started successfully.")
                 print("Scheduler started successfully.")
             except Exception as e:
-                logger.error(f"Scheduler could not start: {e}")
-                print(f"Scheduler could not start: {e}")
+                logger.error(f"Failed to start NotificationScheduler: {e}")
+                print(f"Failed to start Scheduler: {e}")
                 print("Reminders will not be sent automatically.")
         else:
             logger.info("NotificationScheduler start skipped (SKIP_SCHEDULER set).")

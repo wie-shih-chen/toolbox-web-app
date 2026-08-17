@@ -180,6 +180,15 @@ class NotificationTemplate:
         msg += "\n".join(detail_lines)
         return msg
 
+    # --- 8. 自動固定收支 (Recurring) ---
+    @staticmethod
+    def get_recurring_expense_msg(name, amount, category):
+        return f"🤖 [系統自動扣款] 已為您新增一筆固定支出：\n名稱：{name}\n類別：{category}\n金額：${amount:,}"
+        
+    @staticmethod
+    def get_recurring_expense_subject(name):
+        return f"🤖 固定支出自動扣款：{name}"
+
 class NotificationService:
     @staticmethod
     def send_notification(user, subject, message_text, notify_methods=None, module=None):
