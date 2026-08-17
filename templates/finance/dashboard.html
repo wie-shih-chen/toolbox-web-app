@@ -246,17 +246,21 @@
 <!-- Tab 1: Overview -->
 <div id="tab-overview" class="tab-content active">
     <div class="kpi-grid">
+        <div class="kpi-card" style="background: linear-gradient(135deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.05) 100%); grid-column: 1 / -1;">
+            <div class="kpi-title" style="color: #FFD700;">💰 目前總資產</div>
+            <div class="kpi-value" id="val-total-assets" style="color: #FFD700; font-size: 2.5rem;">$0</div>
+        </div>
         <div class="kpi-card">
             <div class="kpi-title">總收入</div>
             <div class="kpi-value" id="val-income">$0</div>
         </div>
         <div class="kpi-card">
             <div class="kpi-title">總支出</div>
-            <div class="kpi-value" id="val-expense">$0</div>
+            <div class="kpi-value expense" id="val-expense">$0</div>
         </div>
-        <div class="kpi-card" id="kpi-savings" style="display: none;">
-            <div class="kpi-title" style="color: #4ade80;">每月儲蓄目標</div>
-            <div class="kpi-value" id="val-savings">$0</div>
+        <div class="kpi-card" id="kpi-savings" style="display: none; background: rgba(146, 254, 157, 0.1); border: 1px solid rgba(146, 254, 157, 0.3);">
+            <div class="kpi-title" style="color: #92FE9D;">每月儲蓄目標</div>
+            <div class="kpi-value" id="val-savings" style="color: #92FE9D;">$0</div>
         </div>
         <div class="kpi-card">
             <div class="kpi-title">剩餘可用結餘</div>
@@ -437,6 +441,13 @@
             renderOverviewChart(summary.total_income, summary.total_expense);
             renderCategoryChart(summary.expense_details);
             renderDetailsList(summary.income_details, summary.expense_details);
+        }
+        
+        // Load Total Assets
+        const assetsRes = await fetch('{{ url_for("finance.get_assets") }}');
+        if(assetsRes.ok) {
+            const assetsData = await assetsRes.json();
+            document.getElementById('val-total-assets').textContent = `$${assetsData.total_assets.toLocaleString()}`;
         }
 
         // Load Trend
