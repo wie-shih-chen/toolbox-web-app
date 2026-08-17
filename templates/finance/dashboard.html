@@ -278,6 +278,10 @@
                 <canvas id="overviewChart"></canvas>
             </div>
             <div>
+                <h3>支出分類</h3>
+                <canvas id="categoryChart"></canvas>
+            </div>
+            <div>
                 <h3>收支明細</h3>
                 <div class="detail-list" id="overview-details">
                     <!-- Dynamic details go here -->
@@ -356,6 +360,7 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
     let overviewChartInstance = null;
+    let categoryChartInstance = null;
     let trendBarChartInstance = null;
     let trendLineChartInstance = null;
     let currentTargetRate = 20;
@@ -404,6 +409,7 @@
             updateSimulation();
 
             renderOverviewChart(summary.total_income, summary.total_expense);
+            renderCategoryChart(summary.expense_details);
             renderDetailsList(summary.income_details, summary.expense_details);
         }
 
@@ -458,6 +464,44 @@
                 cutout: '70%',
                 plugins: {
                     legend: { position: 'bottom' }
+                }
+            }
+        });
+    }
+    
+    function renderCategoryChart(expenses) {
+        const ctx = document.getElementById('categoryChart').getContext('2d');
+        if (categoryChartInstance) categoryChartInstance.destroy();
+        
+        let aggregated = {};
+        expenses.forEach(e => {
+            const cat = e.category || '其他';
+            aggregated[cat] = (aggregated[cat] || 0) + e.amount;
+        });
+        
+        const labels = Object.keys(aggregated);
+        const data = Object.values(aggregated);
+        
+        const colors = [
+            '#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', 
+            '#FFEEAD', '#D4A5A5', '#9B59B6', '#3498DB', '#F1C40F'
+        ];
+        
+        categoryChartInstance = new Chart(ctx, {
+            type: 'pie',
+            data: {
+                labels: labels.length > 0 ? labels : ['無支出'],
+                datasets: [{
+                    data: data.length > 0 ? data : [1],
+                    backgroundColor: data.length > 0 ? colors.slice(0, labels.length) : ['rgba(255,255,255,0.1)'],
+                    borderWidth: 0
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { position: 'bottom', labels: { boxWidth: 12 } }
                 }
             }
         });
