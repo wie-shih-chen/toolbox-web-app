@@ -53,6 +53,8 @@ def handle_settings():
             'initial_assets': settings.initial_assets,
             'target_savings_rate': settings.target_savings_rate,
             'finance_cycle_type': settings.finance_cycle_type,
-            'fixed_extra_income': getattr(settings, 'fixed_extra_income', 0.0)
+            'fixed_extra_income': getattr(settings, 'fixed_extra_income', 0.0),
+            'enable_monthly_savings': getattr(settings, 'enable_monthly_savings', False),
+            'monthly_savings_amount': getattr(settings, 'monthly_savings_amount', 0)
         })
     return jsonify({'error': 'Unauthorized'}), 401
