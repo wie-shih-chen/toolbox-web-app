@@ -212,10 +212,8 @@ class FinanceService:
             
         settings = target_user.settings
         initial = settings.initial_assets or 0.0
-        cycle_type = settings.finance_cycle_type
         
-        # Find earliest record date
-        earliest_date = datetime.now()
+        # Determine earliest date (from setting or first record)
         if settings.asset_tracking_start_date:
             try:
                 if len(settings.asset_tracking_start_date) == 7:
@@ -223,52 +221,25 @@ class FinanceService:
                 else:
                     earliest_date = datetime.strptime(settings.asset_tracking_start_date, '%Y-%m-%d')
             except:
-                pass
+                earliest_date = self.get_earliest_record_date(target_user)
         else:
             earliest_date = self.get_earliest_record_date(target_user)
-            
-        today = datetime.now()
-        start_day = settings.billing_cycle_start_day or 10
-        
-        if cycle_type == 'billing':
-            if today.day >= start_day:
-                current_start = today.replace(day=start_day)
-            else:
-                current_start = (today - relativedelta(months=1)).replace(day=start_day)
-                
-            if earliest_date.day >= start_day:
-                loop_start = earliest_date.replace(day=start_day)
-            else:
-                loop_start = (earliest_date - relativedelta(months=1)).replace(day=start_day)
-        else:
-            current_start = today.replace(day=1)
-            loop_start = earliest_date.replace(day=1)
 
-        current_start = current_start.replace(hour=0, minute=0, second=0, microsecond=0)
-        loop_start = loop_start.replace(hour=0, minute=0, second=0, microsecond=0)
-        
-        total_income = 0
-        total_expense = 0
-        
-        curr = loop_start
-        # Prevent infinite loop in case of bad data, limit to max 10 years (120 months)
-        max_months = 120 
-        months_count = 0
-        
-        while curr <= current_start and months_count < max_months:
-            months_count += 1
-            period_start = curr
-            period_end = period_start + relativedelta(months=1) - timedelta(days=1)
-            
-            summary = self.get_summary(
-                period_start.strftime('%Y-%m-%d'),
-                period_end.strftime('%Y-%m-%d'),
-                target_user
-            )
-            
-            total_income += summary.get('total_income', 0)
-            total_expense += summary.get('total_expense', 0)
-            
-            curr += relativedelta(months=1)
-            
-        return initial + total_income - total_expense
+        start_str = earliest_date.strftime('%Y-%m-%d')
+        today_str = datetime.now().strftime('%Y-%m-%d')
+
+        # Sum salary records directly (no 1-month offset, just raw amounts)
+        total_salary = db.session.query(func.sum(SalaryRecord.amount)).filter(
+            SalaryRecord.user_id == target_user.id,
+            SalaryRecord.date >= start_str,
+            SalaryRecord.date <= today_str
+        ).scalar() or 0
+
+        # Sum expense records directly
+        total_expense = db.session.query(func.sum(ExpenseRecord.amount)).filter(
+            ExpenseRecord.user_id == target_user.id,
+            func.substr(ExpenseRecord.timestamp, 1, 10) >= start_str,
+            func.substr(ExpenseRecord.timestamp, 1, 10) <= today_str
+        ).scalar() or 0
+
+        return initial + total_salary - total_expense
