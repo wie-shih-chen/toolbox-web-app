@@ -65,6 +65,7 @@ with app.app_context():
     from routes.auth import auth_bp
     from routes.shop import shop_bp
     from routes.admin import admin_bp
+    from routes.finance_routes import finance_bp
 
     app.register_blueprint(main_bp)
     app.register_blueprint(salary_bp, url_prefix='/salary')
@@ -74,6 +75,7 @@ with app.app_context():
     app.register_blueprint(auth_bp)
     app.register_blueprint(shop_bp, url_prefix='/shop')
     app.register_blueprint(admin_bp, url_prefix='/admin')
+    app.register_blueprint(finance_bp, url_prefix='/finance')
     
     from services.line_service import LineService
     from routes.line_routes import line_bp, register_line_handlers

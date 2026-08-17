@@ -1,0 +1,387 @@
+{% extends "base.html" %}
+
+{% block title %}理財總覽 - 工具箱{% endblock %}
+{% block page_title %}理財總覽{% endblock %}
+
+{% block content %}
+<style>
+    /* Tabs Styles */
+    .tabs-container {
+        display: flex;
+        gap: 10px;
+        margin-bottom: 24px;
+        overflow-x: auto;
+        padding-bottom: 5px;
+        -ms-overflow-style: none;  /* IE and Edge */
+        scrollbar-width: none;  /* Firefox */
+    }
+    .tabs-container::-webkit-scrollbar {
+        display: none;
+    }
+    .tab-btn {
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        padding: 10px 20px;
+        border-radius: 20px;
+        color: var(--text-secondary);
+        font-weight: 600;
+        cursor: pointer;
+        white-space: nowrap;
+        transition: all 0.3s ease;
+    }
+    .tab-btn.active {
+        background: linear-gradient(135deg, #0575E6 0%, #021B79 100%);
+        color: white;
+        border-color: transparent;
+        box-shadow: 0 4px 15px rgba(5, 117, 230, 0.4);
+    }
+    .tab-content {
+        display: none;
+        animation: fadeIn 0.3s ease;
+    }
+    .tab-content.active {
+        display: block;
+    }
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* KPI Cards */
+    .kpi-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        gap: 16px;
+        margin-bottom: 24px;
+    }
+    .kpi-card {
+        background: var(--glass-bg);
+        border: var(--glass-border);
+        border-radius: 20px;
+        padding: 20px;
+        text-align: center;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    }
+    .kpi-title {
+        font-size: 0.9rem;
+        color: var(--text-secondary);
+        margin-bottom: 8px;
+    }
+    .kpi-value {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: var(--text-primary);
+    }
+    
+    /* Progress Bar */
+    .progress-container {
+        background: rgba(255,255,255,0.1);
+        border-radius: 10px;
+        height: 12px;
+        width: 100%;
+        margin-top: 10px;
+        overflow: hidden;
+    }
+    .progress-bar {
+        height: 100%;
+        background: linear-gradient(90deg, #00C9FF 0%, #92FE9D 100%);
+        border-radius: 10px;
+        transition: width 0.5s ease;
+    }
+    
+    /* Charts */
+    .chart-container {
+        background: var(--glass-bg);
+        border: var(--glass-border);
+        border-radius: 24px;
+        padding: 20px;
+        margin-bottom: 24px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    }
+    
+    .form-group {
+        margin-bottom: 16px;
+    }
+    .form-group label {
+        display: block;
+        margin-bottom: 8px;
+        color: var(--text-secondary);
+    }
+    .form-group input, .form-group select {
+        width: 100%;
+        padding: 12px;
+        border-radius: 12px;
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        color: white;
+    }
+    .btn-save {
+        width: 100%;
+        padding: 12px;
+        border-radius: 12px;
+        background: linear-gradient(135deg, #0575E6 0%, #021B79 100%);
+        color: white;
+        border: none;
+        font-weight: 600;
+        cursor: pointer;
+    }
+</style>
+
+<!-- Tabs Navigation -->
+<div class="tabs-container">
+    <button class="tab-btn active" onclick="switchTab('overview')">本期總覽</button>
+    <button class="tab-btn" onclick="switchTab('trends')">歷史趨勢</button>
+    <button class="tab-btn" onclick="switchTab('goals')">理財目標</button>
+    <button class="tab-btn" onclick="switchTab('settings')">小設定</button>
+</div>
+
+<!-- Tab 1: Overview -->
+<div id="tab-overview" class="tab-content active">
+    <div class="kpi-grid">
+        <div class="kpi-card">
+            <div class="kpi-title">總收入</div>
+            <div class="kpi-value" id="val-income">$0</div>
+        </div>
+        <div class="kpi-card">
+            <div class="kpi-title">總支出</div>
+            <div class="kpi-value" id="val-expense">$0</div>
+        </div>
+        <div class="kpi-card">
+            <div class="kpi-title">淨收支結餘</div>
+            <div class="kpi-value" id="val-net">$0</div>
+        </div>
+    </div>
+    
+    <div class="chart-container">
+        <h3>本期儲蓄率</h3>
+        <div style="display: flex; justify-content: space-between; margin-top: 10px;">
+            <span id="val-savings-rate">0%</span>
+            <span style="color: var(--text-tertiary); font-size: 0.9rem;" id="val-target-rate">目標: 20%</span>
+        </div>
+        <div class="progress-container">
+            <div class="progress-bar" id="bar-savings-rate" style="width: 0%;"></div>
+        </div>
+    </div>
+    
+    <div class="chart-container">
+        <h3>收支比例</h3>
+        <canvas id="overviewChart"></canvas>
+    </div>
+</div>
+
+<!-- Tab 2: Trends -->
+<div id="tab-trends" class="tab-content">
+    <div class="chart-container">
+        <h3>收支趨勢 (過去 6 期)</h3>
+        <canvas id="trendBarChart"></canvas>
+    </div>
+    
+    <div class="chart-container">
+        <h3>淨收支趨勢</h3>
+        <canvas id="trendLineChart"></canvas>
+    </div>
+</div>
+
+<!-- Tab 3: Goals -->
+<div id="tab-goals" class="tab-content">
+    <div class="kpi-grid">
+        <div class="kpi-card" style="grid-column: span 2;">
+            <div class="kpi-title">目前總資產推估</div>
+            <div class="kpi-value" id="val-total-assets">$0</div>
+            <div style="font-size: 0.8rem; color: var(--text-tertiary); margin-top: 8px;">(初始資產 + 歷史總收入 - 歷史總支出)</div>
+        </div>
+    </div>
+</div>
+
+<!-- Tab 4: Settings -->
+<div id="tab-settings" class="tab-content">
+    <div class="chart-container">
+        <h3>理財總覽設定</h3>
+        <div class="form-group">
+            <label>初始資產 (目前存款額)</label>
+            <input type="number" id="input-initial-assets" placeholder="例如: 100000">
+        </div>
+        <div class="form-group">
+            <label>目標儲蓄率 (%)</label>
+            <input type="number" id="input-target-rate" placeholder="例如: 20">
+        </div>
+        <div class="form-group">
+            <label>統計週期</label>
+            <select id="input-cycle-type">
+                <option value="month">自然月 (每月 1 號 ~ 月底)</option>
+                <option value="billing">記帳管家週期 (跟隨記帳設定)</option>
+            </select>
+        </div>
+        <button class="btn-save" onclick="saveSettings()">儲存設定</button>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    let overviewChartInstance = null;
+    let trendBarChartInstance = null;
+    let trendLineChartInstance = null;
+    let currentTargetRate = 20;
+
+    function switchTab(tabId) {
+        document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        
+        document.getElementById('tab-' + tabId).classList.add('active');
+        event.currentTarget.classList.add('active');
+    }
+
+    async function loadData() {
+        // Load Settings
+        const settingsRes = await fetch('{{ url_for("finance.handle_settings") }}');
+        if(settingsRes.ok) {
+            const settings = await settingsRes.json();
+            document.getElementById('input-initial-assets').value = settings.initial_assets;
+            document.getElementById('input-target-rate').value = settings.target_savings_rate;
+            document.getElementById('input-cycle-type').value = settings.finance_cycle_type;
+            
+            currentTargetRate = settings.target_savings_rate;
+            document.getElementById('val-target-rate').textContent = `目標: ${currentTargetRate}%`;
+        }
+
+        // Load Summary
+        const summaryRes = await fetch('{{ url_for("finance.get_summary") }}');
+        if(summaryRes.ok) {
+            const summary = await summaryRes.json();
+            document.getElementById('val-income').textContent = `$${summary.total_income.toLocaleString()}`;
+            document.getElementById('val-expense').textContent = `$${summary.total_expense.toLocaleString()}`;
+            document.getElementById('val-net').textContent = `$${summary.net_income.toLocaleString()}`;
+            
+            document.getElementById('val-savings-rate').textContent = `${summary.savings_rate}%`;
+            document.getElementById('bar-savings-rate').style.width = `${Math.min(100, summary.savings_rate)}%`;
+            
+            if (summary.savings_rate >= currentTargetRate) {
+                document.getElementById('bar-savings-rate').style.background = 'linear-gradient(90deg, #00C9FF 0%, #92FE9D 100%)';
+            } else {
+                document.getElementById('bar-savings-rate').style.background = 'linear-gradient(90deg, #FF416C 0%, #FF4B2B 100%)';
+            }
+
+            renderOverviewChart(summary.total_income, summary.total_expense);
+        }
+
+        // Load Trend
+        const trendRes = await fetch('{{ url_for("finance.get_trend") }}');
+        if(trendRes.ok) {
+            const trends = await trendRes.json();
+            renderTrendCharts(trends);
+        }
+
+        // Load Assets
+        const assetsRes = await fetch('{{ url_for("finance.get_assets") }}');
+        if(assetsRes.ok) {
+            const assetsData = await assetsRes.json();
+            document.getElementById('val-total-assets').textContent = `$${assetsData.total_assets.toLocaleString()}`;
+        }
+    }
+
+    async function saveSettings() {
+        const data = {
+            initial_assets: parseFloat(document.getElementById('input-initial-assets').value) || 0,
+            target_savings_rate: parseFloat(document.getElementById('input-target-rate').value) || 0,
+            finance_cycle_type: document.getElementById('input-cycle-type').value
+        };
+        
+        const res = await fetch('{{ url_for("finance.handle_settings") }}', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(data)
+        });
+        
+        if(res.ok) {
+            alert('設定已儲存');
+            loadData(); // Reload all data with new settings
+        }
+    }
+
+    function renderOverviewChart(income, expense) {
+        const ctx = document.getElementById('overviewChart').getContext('2d');
+        if (overviewChartInstance) overviewChartInstance.destroy();
+        
+        Chart.defaults.color = '#a0aec0';
+        
+        overviewChartInstance = new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+                labels: ['總收入', '總支出'],
+                datasets: [{
+                    data: [income, expense],
+                    backgroundColor: ['#00C9FF', '#FF416C'],
+                    borderWidth: 0
+                }]
+            },
+            options: {
+                responsive: true,
+                cutout: '70%',
+                plugins: {
+                    legend: { position: 'bottom' }
+                }
+            }
+        });
+    }
+
+    function renderTrendCharts(trends) {
+        const labels = trends.map(t => t.label);
+        const incomes = trends.map(t => t.total_income);
+        const expenses = trends.map(t => t.total_expense);
+        const nets = trends.map(t => t.net_income);
+        
+        // Bar Chart
+        const ctxBar = document.getElementById('trendBarChart').getContext('2d');
+        if (trendBarChartInstance) trendBarChartInstance.destroy();
+        
+        trendBarChartInstance = new Chart(ctxBar, {
+            type: 'bar',
+            data: {
+                labels: labels,
+                datasets: [
+                    { label: '收入', data: incomes, backgroundColor: '#00C9FF', borderRadius: 4 },
+                    { label: '支出', data: expenses, backgroundColor: '#FF416C', borderRadius: 4 }
+                ]
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    y: { beginAtZero: true, grid: { color: 'rgba(255,255,255,0.1)' } },
+                    x: { grid: { display: false } }
+                }
+            }
+        });
+
+        // Line Chart
+        const ctxLine = document.getElementById('trendLineChart').getContext('2d');
+        if (trendLineChartInstance) trendLineChartInstance.destroy();
+        
+        trendLineChartInstance = new Chart(ctxLine, {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: '淨收支',
+                    data: nets,
+                    borderColor: '#92FE9D',
+                    backgroundColor: 'rgba(146, 254, 157, 0.2)',
+                    fill: true,
+                    tension: 0.4
+                }]
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    y: { grid: { color: 'rgba(255,255,255,0.1)' } },
+                    x: { grid: { display: false } }
+                }
+            }
+        });
+    }
+
+    document.addEventListener('DOMContentLoaded', loadData);
+</script>
+{% endblock %}
