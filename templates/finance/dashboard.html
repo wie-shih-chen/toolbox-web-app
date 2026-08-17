@@ -278,7 +278,7 @@
                 <canvas id="overviewChart"></canvas>
             </div>
             <div>
-                <h3>收支分類彙整</h3>
+                <h3>收支明細</h3>
                 <div class="detail-list" id="overview-details">
                     <!-- Dynamic details go here -->
                 </div>
@@ -467,18 +467,17 @@
         const container = document.getElementById('overview-details');
         container.innerHTML = '';
         
-        let aggregated = {};
+        let aggregated = {
+            '總收入': { type: 'income', amount: 0 },
+            '總支出': { type: 'expense', amount: 0 }
+        };
         
         incomes.forEach(i => {
-            const cat = i.category || '其他收入';
-            if (!aggregated[cat]) aggregated[cat] = { type: 'income', amount: 0 };
-            aggregated[cat].amount += i.amount;
+            aggregated['總收入'].amount += i.amount;
         });
         
         expenses.forEach(e => {
-            const cat = e.category || '其他支出';
-            if (!aggregated[cat]) aggregated[cat] = { type: 'expense', amount: 0 };
-            aggregated[cat].amount += e.amount;
+            aggregated['總支出'].amount += e.amount;
         });
         
         const keys = Object.keys(aggregated);
