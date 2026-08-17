@@ -199,7 +199,10 @@ class FinanceService:
         earliest_date = datetime.now()
         if settings.asset_tracking_start_date:
             try:
-                earliest_date = datetime.strptime(settings.asset_tracking_start_date, '%Y-%m-%d')
+                if len(settings.asset_tracking_start_date) == 7:
+                    earliest_date = datetime.strptime(settings.asset_tracking_start_date, '%Y-%m')
+                else:
+                    earliest_date = datetime.strptime(settings.asset_tracking_start_date, '%Y-%m-%d')
             except:
                 pass
         else:
