@@ -528,6 +528,7 @@ def get_income_trend():
     
     labels = []
     data = []
+    company_details = []
     current = start_month
     
     while current <= end_month:
@@ -545,14 +546,22 @@ def get_income_trend():
         summary = service.get_history_summary(month_start, month_end)
         total = summary.get('total_amount', 0)
         
+        # 統計各公司收入
+        companies = {}
+        for r in summary.get('records', []):
+            c_name = r.get('company_name') or '未指定公司'
+            companies[c_name] = companies.get(c_name, 0) + float(r.get('amount', 0))
+            
         labels.append(current.strftime('%Y-%m'))
         data.append(float(total))
+        company_details.append(companies)
         
         current = next_month
     
     return jsonify({
         "labels": labels,
         "data": data,
+        "company_details": company_details,
         "total_months": len(labels)
     })
 

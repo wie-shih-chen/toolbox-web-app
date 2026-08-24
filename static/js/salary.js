@@ -1054,7 +1054,20 @@ async function loadSalaryTrendChart() {
                         titleFont: { size: 14 },
                         bodyFont: { size: 13 },
                         callbacks: {
-                            label: (ctx) => `收入: NT$ ${ctx.parsed.y.toLocaleString()}`
+                            label: (ctx) => `總收入: NT$ ${ctx.parsed.y.toLocaleString()}`,
+                            afterBody: (context) => {
+                                const index = context[0].dataIndex;
+                                const details = data.company_details ? data.company_details[index] : null;
+                                if (!details || Object.keys(details).length === 0) return [];
+                                
+                                const sortedDetails = Object.entries(details).sort((a, b) => b[1] - a[1]);
+                                const lines = [''];
+                                lines.push('【各公司明細】');
+                                for (const [company, amount] of sortedDetails) {
+                                    lines.push(`  • ${company}: NT$ ${Math.round(amount).toLocaleString()}`);
+                                }
+                                return lines;
+                            }
                         }
                     },
                     title: {
