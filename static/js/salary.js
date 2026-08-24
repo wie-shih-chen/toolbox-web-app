@@ -263,23 +263,22 @@ const salaryApp = {
         }).join('');
 
         // Render List
-        // Override inline grid styles from HTML to use flexible wrapping
-        listContainer.style.display = 'flex';
-        listContainer.style.flexWrap = 'wrap';
-        listContainer.style.gap = '12px';
+        // Use CSS classes defined in salary.css for responsive layout
+        listContainer.className = 'company-breakdown-list';
+        listContainer.style = ''; // clear inline styles from older versions
         
         listContainer.innerHTML = statsArray.map(s => {
             const pct = (s.amount / totalAmount * 100).toFixed(1);
             return `
-                <div style="display: flex; justify-content: space-between; align-items: center; flex: 1 1 250px; max-width: 400px; background: rgba(255,255,255,0.03); padding: 8px 12px; border-radius: 8px;">
-                    <div style="display: flex; align-items: center; gap: 8px; white-space: nowrap;">
-                        <div style="width: 10px; height: 10px; border-radius: 50%; background: ${s.color}; flex-shrink: 0;"></div>
-                        <span style="font-weight: 500;">${s.name}</span>
-                        <span style="color: var(--text-secondary); font-size: 0.8rem;">${pct}%</span>
+                <div class="company-breakdown-item">
+                    <div class="company-breakdown-name">
+                        <div class="company-dot" style="background: ${s.color};"></div>
+                        <span class="name-text">${s.name}</span>
+                        <span class="pct-text">${pct}%</span>
                     </div>
-                    <div style="text-align: right; white-space: nowrap; margin-left: 16px;">
-                        <span style="margin-right: 12px; color: var(--text-secondary); font-size: 0.85rem;">${s.hours.toFixed(1)}h</span>
-                        <span style="font-weight: 600;">$${Math.round(s.amount)}</span>
+                    <div class="company-breakdown-stats">
+                        <span class="hours-text">${s.hours.toFixed(1)}h</span>
+                        <span class="amount-text">$${Math.round(s.amount)}</span>
                     </div>
                 </div>
             `;

@@ -97,6 +97,63 @@
     width: 100%;
 }
 
+/* Company Breakdown Custom Styles */
+.company-breakdown-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+
+.company-breakdown-item {
+    display: flex; 
+    justify-content: space-between; 
+    align-items: center; 
+    flex: 1 1 250px; 
+    max-width: 400px; 
+    background: rgba(255,255,255,0.03); 
+    padding: 8px 12px; 
+    border-radius: 8px;
+}
+
+.company-breakdown-name {
+    display: flex; 
+    align-items: center; 
+    gap: 8px; 
+    white-space: nowrap;
+}
+
+.company-dot {
+    width: 10px; 
+    height: 10px; 
+    border-radius: 50%; 
+    flex-shrink: 0;
+}
+
+.name-text {
+    font-weight: 500;
+}
+
+.pct-text {
+    color: var(--text-secondary); 
+    font-size: 0.8rem;
+}
+
+.company-breakdown-stats {
+    text-align: right; 
+    white-space: nowrap; 
+    margin-left: 16px;
+}
+
+.hours-text {
+    margin-right: 12px; 
+    color: var(--text-secondary); 
+    font-size: 0.85rem;
+}
+
+.amount-text {
+    font-weight: 600;
+}
+
 /* Weekly Grid */
 .weekly-grid {
     display: grid;
@@ -595,6 +652,52 @@ select.settings-input {
 }
 
 @media (max-width: 768px) {
+    /* Compact summary card to save vertical space on mobile */
+    .summary-card {
+        padding: 15px;
+        margin-bottom: 15px;
+    }
+    
+    .summary-stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 10px;
+        margin-bottom: 15px;
+    }
+    
+    .summary-item {
+        padding: 12px;
+    }
+    
+    .summary-item .value {
+        font-size: 1.4rem;
+    }
+    
+    .summary-item .label {
+        margin-bottom: 4px;
+    }
+    
+    .summary-divider {
+        margin: 15px 0;
+    }
+    
+    /* Make company list horizontally scrollable on mobile to save vertical space */
+    .company-breakdown-list {
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        padding-bottom: 5px;
+        -webkit-overflow-scrolling: touch;
+        /* Hides scrollbar on webkit */
+    }
+    
+    .company-breakdown-list::-webkit-scrollbar {
+        display: none;
+    }
+    
+    .company-breakdown-item {
+        flex: 0 0 240px; /* Fixed width for each horizontal card */
+        max-width: 240px;
+    }
+
     .salary-nav {
         gap: 6px;
         padding-bottom: 5px;
