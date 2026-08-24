@@ -77,9 +77,18 @@ def delete_company(company_id):
     company = Company.query.filter_by(id=company_id, user_id=current_user.id).first()
     if not company:
         return jsonify({'error': 'Not found'}), 404
+        
+    action = request.args.get('action')
     record_count = SalaryRecord.query.filter_by(company_id=company_id).count()
+    
     if record_count > 0:
-        return jsonify({'error': f'此公司有 {record_count} 筆班表記錄，請先將記錄重新歸屬或刪除後再刪除公司', 'record_count': record_count}), 400
+        if action == 'hide':
+            pass
+        elif action == 'delete_all':
+            SalaryRecord.query.filter_by(company_id=company_id).delete()
+        else:
+            return jsonify({'error': f'此公司有 {record_count} 筆班表記錄，請先將記錄重新歸屬或刪除後再刪除公司', 'record_count': record_count}), 400
+            
     company.is_active = False  # Soft delete
     db.session.commit()
     return jsonify({'success': True})
