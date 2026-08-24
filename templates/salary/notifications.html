@@ -71,24 +71,24 @@ function renderCompanies() {
             
             <div class="notify-row" style="margin-bottom: 16px; display: flex; align-items: center; gap: 8px;">
                 <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; flex: 1;">
-                    <input type="checkbox" id="cf-payday-enabled-${c.id}" ${c.notify_payday_enabled ? 'checked' : ''} style="width: 18px; height: 18px;"> 
+                    <input type="checkbox" id="cf-payday-enabled-${c.id}" ${c.notify_payday_enabled ? 'checked' : ''} onchange="debouncedSaveNotifications(${c.id})" style="width: 18px; height: 18px;"> 
                     <span>發薪日提醒</span>
                 </label>
                 <div style="display: flex; align-items: center; gap: 8px;">
                     <span style="font-size: 0.85rem; color: var(--text-secondary);">每月第</span>
-                    <input type="number" id="cf-payday-day-${c.id}" min="1" max="28" value="${c.notify_payday_day || 10}" class="settings-input" style="width: 60px; margin: 0; padding: 4px 8px;">
+                    <input type="number" id="cf-payday-day-${c.id}" min="1" max="28" value="${c.notify_payday_day || 10}" oninput="debouncedSaveNotifications(${c.id})" class="settings-input" style="width: 60px; margin: 0; padding: 4px 8px;">
                     <span style="font-size: 0.85rem; color: var(--text-secondary);">號</span>
-                    <input type="time" id="cf-payday-time-${c.id}" value="${c.notify_payday_time || '09:00'}" class="settings-input" style="margin: 0; padding: 4px 8px;">
+                    <input type="time" id="cf-payday-time-${c.id}" value="${c.notify_payday_time || '09:00'}" oninput="debouncedSaveNotifications(${c.id})" class="settings-input" style="margin: 0; padding: 4px 8px;">
                 </div>
             </div>
 
             <div class="notify-row" style="margin-bottom: 16px; display: flex; align-items: center; gap: 8px;">
                 <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; flex: 1;">
-                    <input type="checkbox" id="cf-weekly-enabled-${c.id}" ${c.notify_weekly_enabled ? 'checked' : ''} style="width: 18px; height: 18px;"> 
+                    <input type="checkbox" id="cf-weekly-enabled-${c.id}" ${c.notify_weekly_enabled ? 'checked' : ''} onchange="debouncedSaveNotifications(${c.id})" style="width: 18px; height: 18px;"> 
                     <span>每週工時摘要</span>
                 </label>
                 <div style="display: flex; align-items: center; gap: 8px;">
-                    <select id="cf-weekly-day-${c.id}" class="settings-input" style="margin: 0; padding: 4px 8px;">
+                    <select id="cf-weekly-day-${c.id}" class="settings-input" onchange="debouncedSaveNotifications(${c.id})" style="margin: 0; padding: 4px 8px;">
                         <option value="monday" ${c.notify_weekly_day === 'monday' ? 'selected' : ''}>週一</option>
                         <option value="tuesday" ${c.notify_weekly_day === 'tuesday' ? 'selected' : ''}>週二</option>
                         <option value="wednesday" ${c.notify_weekly_day === 'wednesday' ? 'selected' : ''}>週三</option>
@@ -97,14 +97,14 @@ function renderCompanies() {
                         <option value="saturday" ${c.notify_weekly_day === 'saturday' ? 'selected' : ''}>週六</option>
                         <option value="sunday" ${c.notify_weekly_day === 'sunday' ? 'selected' : ''}>週日</option>
                     </select>
-                    <input type="time" id="cf-weekly-time-${c.id}" value="${c.notify_weekly_time || '20:00'}" class="settings-input" style="margin: 0; padding: 4px 8px;">
+                    <input type="time" id="cf-weekly-time-${c.id}" value="${c.notify_weekly_time || '20:00'}" class="settings-input" oninput="debouncedSaveNotifications(${c.id})" style="margin: 0; padding: 4px 8px;">
                 </div>
             </div>
             
             <hr style="border: 0; border-top: 1px solid rgba(255,255,255,0.1); margin: 20px 0;">
             <div style="margin-bottom: 16px; display: flex; justify-content: space-between; align-items: center;">
                 <h5 style="margin: 0; font-size: 1rem; color: var(--text-primary);">排班提醒設定</h5>
-                <button class="btn btn-secondary" onclick="addShiftReminder(${c.id})" style="padding: 4px 10px; font-size: 0.8rem;">+ 新增提醒</button>
+                <button class="btn btn-secondary" onclick="addShiftReminder(${c.id}); debouncedSaveNotifications(${c.id})" style="padding: 4px 10px; font-size: 0.8rem;">+ 新增提醒</button>
             </div>
             
             <div id="sr-list-${c.id}" style="display: flex; flex-direction: column; gap: 8px; margin-bottom: 20px;">
@@ -117,11 +117,25 @@ function renderCompanies() {
                 }).join('')}
             </div>
 
-            <div style="text-align: right;">
-                <button class="btn btn-primary" onclick="saveNotifications(${c.id})" id="btn-save-${c.id}" style="padding: 6px 16px; font-size: 0.9rem;">儲存設定</button>
+            <div style="text-align: right; display: flex; justify-content: flex-end; align-items: center; gap: 8px;">
+                <span id="save-status-${c.id}" style="font-size: 0.85rem; color: var(--text-secondary); opacity: 0; transition: opacity 0.3s;">✅ 已自動儲存</span>
+                <button class="btn btn-primary" onclick="saveNotifications(${c.id})" id="btn-save-${c.id}" style="padding: 6px 16px; font-size: 0.9rem; display: none;">儲存設定</button>
             </div>
         </div>
     `).join('');
+}
+
+const saveTimeouts = {};
+function debouncedSaveNotifications(id) {
+    if (saveTimeouts[id]) clearTimeout(saveTimeouts[id]);
+    const status = document.getElementById(`save-status-${id}`);
+    if (status) {
+        status.textContent = '儲存中...';
+        status.style.opacity = '1';
+    }
+    saveTimeouts[id] = setTimeout(() => {
+        saveNotifications(id, true);
+    }, 800);
 }
 
 function createReminderHTML(companyId, type, offset, message) {
@@ -131,17 +145,17 @@ function createReminderHTML(companyId, type, offset, message) {
     
     return `
         <div class="shift-reminder-item" style="display:flex; align-items:center; gap:8px; background: rgba(255,255,255,0.03); padding: 8px; border-radius: 6px; flex-wrap: wrap;">
-            <select class="sr-type settings-input" onchange="toggleOffsetInput(this)" style="width: auto; margin:0; padding:4px;">
+            <select class="sr-type settings-input" onchange="toggleOffsetInput(this); debouncedSaveNotifications(${companyId})" style="width: auto; margin:0; padding:4px;">
                 <option value="exact" ${isExact ? 'selected' : ''}>上班時間點</option>
                 <option value="before" ${isBefore ? 'selected' : ''}>上班前</option>
                 <option value="after" ${isAfter ? 'selected' : ''}>上班後</option>
             </select>
             <div class="sr-offset-container" style="${isExact ? 'display:none;' : 'display:flex; align-items:center; gap:4px;'}">
-                <input type="number" class="sr-offset settings-input" min="1" max="1440" value="${offset}" style="width:50px; margin:0; padding:4px;">
+                <input type="number" class="sr-offset settings-input" oninput="debouncedSaveNotifications(${companyId})" min="1" max="1440" value="${offset}" style="width:50px; margin:0; padding:4px;">
                 <span style="font-size:0.85rem; color:var(--text-secondary);">分鐘</span>
             </div>
-            <input type="text" class="sr-message settings-input" placeholder="提醒內容 (支援變數 {time})" value="${message}" style="flex:1; min-width: 150px; margin:0; padding:4px;">
-            <button class="btn" style="padding:4px; color:var(--danger-color); background:transparent; font-size:1.2rem; min-width:unset; line-height:1;" onclick="this.parentElement.remove(); checkEmpty(${companyId});">✕</button>
+            <input type="text" class="sr-message settings-input" oninput="debouncedSaveNotifications(${companyId})" placeholder="提醒內容 (支援變數 {time})" value="${message}" style="flex:1; min-width: 150px; margin:0; padding:4px;">
+            <button class="btn" style="padding:4px; color:var(--danger-color); background:transparent; font-size:1.2rem; min-width:unset; line-height:1;" onclick="this.parentElement.remove(); checkEmpty(${companyId}); debouncedSaveNotifications(${companyId})">✕</button>
         </div>
     `;
 }
@@ -172,11 +186,15 @@ function checkEmpty(companyId) {
     }
 }
 
-async function saveNotifications(id) {
+async function saveNotifications(id, isAutoSave = false) {
     const btn = document.getElementById(`btn-save-${id}`);
+    const statusText = document.getElementById(`save-status-${id}`);
     const originalText = btn.textContent;
-    btn.textContent = '儲存中...';
-    btn.disabled = true;
+    
+    if (!isAutoSave) {
+        btn.textContent = '儲存中...';
+        btn.disabled = true;
+    }
     
     // Collect shift reminders
     const srItems = document.querySelectorAll(`#sr-list-${id} .shift-reminder-item`);
@@ -212,11 +230,18 @@ async function saveNotifications(id) {
         });
         
         if (res.ok) {
-            btn.textContent = '✅ 已儲存';
-            setTimeout(() => {
-                btn.textContent = originalText;
-                btn.disabled = false;
-            }, 2000);
+            if (!isAutoSave) {
+                btn.textContent = '✅ 已儲存';
+                setTimeout(() => {
+                    btn.textContent = originalText;
+                    btn.disabled = false;
+                }, 2000);
+            } else if (statusText) {
+                statusText.textContent = '✅ 已自動儲存';
+                setTimeout(() => {
+                    statusText.style.opacity = '0';
+                }, 2000);
+            }
             
             // update cache quietly
             const idx = companiesCache.findIndex(c => c.id === id);
@@ -229,13 +254,21 @@ async function saveNotifications(id) {
         } else {
             const err = await res.json();
             alert(err.error || '儲存失敗');
-            btn.textContent = originalText;
-            btn.disabled = false;
+            if (!isAutoSave) {
+                btn.textContent = originalText;
+                btn.disabled = false;
+            } else if (statusText) {
+                statusText.textContent = '❌ 儲存失敗';
+            }
         }
     } catch (e) {
         alert('網路錯誤');
-        btn.textContent = originalText;
-        btn.disabled = false;
+        if (!isAutoSave) {
+            btn.textContent = originalText;
+            btn.disabled = false;
+        } else if (statusText) {
+            statusText.textContent = '❌ 網路錯誤';
+        }
     }
 }
 
