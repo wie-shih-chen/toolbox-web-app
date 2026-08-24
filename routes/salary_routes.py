@@ -95,8 +95,13 @@ def assign_legacy_records():
     company = Company.query.filter_by(id=company_id, user_id=current_user.id).first()
     if not company:
         return jsonify({'error': '找不到公司'}), 404
-    count = SalaryRecord.query.filter_by(user_id=current_user.id, company_id=None).update({'company_id': company_id})
+        
+    records = SalaryRecord.query.filter_by(user_id=current_user.id, company_id=None).all()
+    count = len(records)
+    for r in records:
+        r.company_id = company_id
     db.session.commit()
+    
     return jsonify({'success': True, 'assigned_count': count})
 
 @salary_bp.route('/api/companies/legacy-count', methods=['GET'])

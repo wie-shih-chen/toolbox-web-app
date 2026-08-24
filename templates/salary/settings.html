@@ -114,6 +114,9 @@
         class="salary-nav-item {% if request.endpoint == 'salary.settings' %}active{% endif %}">
         ⚙️ 設定
     </a>
+    <a href="{{ url_for('auth.settings') }}" class="salary-nav-item">
+        🔔 通知設定
+    </a>
 </div>
 
 <div class="settings-container">
@@ -333,7 +336,11 @@ function openCompanyForm(id) {
         document.getElementById('cf-id').value = '';
         document.getElementById('cf-name').value = '';
         document.getElementById('cf-color').value = '#6366f1';
-        document.getElementById('cf-rate').value = '';
+        
+        // Auto-fill from global settings default hourly rate
+        const globalRate = document.getElementById('hourlyRate');
+        document.getElementById('cf-rate').value = globalRate ? globalRate.value : '';
+        
         document.getElementById('cf-payday-enabled').checked = false;
         document.getElementById('cf-payday-day').value = 10;
         document.getElementById('cf-payday-time').value = '09:00';
