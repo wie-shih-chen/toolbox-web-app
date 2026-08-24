@@ -1,9 +1,10 @@
 from flask import Blueprint, render_template, request, jsonify, Response
 from flask_login import login_required, current_user
 from services.salary_service import SalaryService
-from models import db, Company, SalaryRecord
-
+from models import db, SalaryRecord, UserSettings, Company, CompanyShiftReminder
 from datetime import datetime, timedelta
+import calendar
+import json
 
 salary_bp = Blueprint('salary', __name__)
 service = SalaryService()
@@ -15,18 +16,29 @@ service = SalaryService()
 def get_companies():
     companies = Company.query.filter_by(user_id=current_user.id, is_active=True)\
         .order_by(Company.created_at.asc()).all()
-    return jsonify([{
-        'id': c.id,
-        'name': c.name,
-        'color': c.color,
-        'hourly_rate': c.hourly_rate,
-        'notify_payday_enabled': c.notify_payday_enabled,
-        'notify_payday_day': c.notify_payday_day,
-        'notify_payday_time': c.notify_payday_time,
-        'notify_weekly_enabled': c.notify_weekly_enabled,
-        'notify_weekly_day': c.notify_weekly_day,
-        'notify_weekly_time': c.notify_weekly_time,
-    } for c in companies])
+    result = []
+    for c in companies:
+        reminders = CompanyShiftReminder.query.filter_by(company_id=c.id, is_active=True).all()
+        shift_reminders = [{
+            'id': r.id,
+            'offset_minutes': r.offset_minutes,
+            'message_template': r.message_template
+        } for r in reminders]
+        
+        result.append({
+            'id': c.id,
+            'name': c.name,
+            'color': c.color,
+            'hourly_rate': c.hourly_rate,
+            'notify_payday_enabled': c.notify_payday_enabled,
+            'notify_payday_day': c.notify_payday_day,
+            'notify_payday_time': c.notify_payday_time,
+            'notify_weekly_enabled': c.notify_weekly_enabled,
+            'notify_weekly_day': c.notify_weekly_day,
+            'notify_weekly_time': c.notify_weekly_time,
+            'shift_reminders': shift_reminders
+        })
+    return jsonify(result)
 
 @salary_bp.route('/api/companies', methods=['POST'])
 @login_required
@@ -68,6 +80,23 @@ def update_company(company_id):
     if 'notify_weekly_enabled' in data: company.notify_weekly_enabled = bool(data['notify_weekly_enabled'])
     if 'notify_weekly_day' in data: company.notify_weekly_day = data['notify_weekly_day']
     if 'notify_weekly_time' in data: company.notify_weekly_time = data['notify_weekly_time']
+    
+    if 'shift_reminders' in data:
+        # First, deactivate all existing active reminders for this company
+        existing_reminders = CompanyShiftReminder.query.filter_by(company_id=company.id, is_active=True).all()
+        for r in existing_reminders:
+            r.is_active = False
+            
+        # Add the new ones
+        for rem_data in data['shift_reminders']:
+            new_reminder = CompanyShiftReminder(
+                company_id=company.id,
+                offset_minutes=int(rem_data.get('offset_minutes', 0)),
+                message_template=rem_data.get('message_template', '記得打卡！'),
+                is_active=True
+            )
+            db.session.add(new_reminder)
+
     db.session.commit()
     return jsonify({'success': True})
 

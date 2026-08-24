@@ -19,7 +19,7 @@
     </a>
     <a href="{{ url_for('salary.notifications') }}"
         class="salary-nav-item {% if request.endpoint == 'salary.notifications' %}active{% endif %}">
-        🔔 通知設定
+        🔔 通知
     </a>
     <a href="{{ url_for('salary.settings') }}"
         class="salary-nav-item {% if request.endpoint == 'salary.settings' %}active{% endif %}">
@@ -101,11 +101,75 @@ function renderCompanies() {
                 </div>
             </div>
             
+            <hr style="border: 0; border-top: 1px solid rgba(255,255,255,0.1); margin: 20px 0;">
+            <div style="margin-bottom: 16px; display: flex; justify-content: space-between; align-items: center;">
+                <h5 style="margin: 0; font-size: 1rem; color: var(--text-primary);">排班提醒設定</h5>
+                <button class="btn btn-secondary" onclick="addShiftReminder(${c.id})" style="padding: 4px 10px; font-size: 0.8rem;">+ 新增提醒</button>
+            </div>
+            
+            <div id="sr-list-${c.id}" style="display: flex; flex-direction: column; gap: 8px; margin-bottom: 20px;">
+                ${(!c.shift_reminders || c.shift_reminders.length === 0) ? '<div class="empty-sr" style="color:var(--text-secondary); font-size:0.9rem;">尚無設定排班提醒。</div>' : c.shift_reminders.map((r) => {
+                    const isBefore = r.offset_minutes < 0;
+                    const isAfter = r.offset_minutes > 0;
+                    const isExact = r.offset_minutes === 0;
+                    const absOffset = Math.abs(r.offset_minutes);
+                    return createReminderHTML(c.id, isExact ? 'exact' : (isBefore ? 'before' : 'after'), isExact ? 30 : absOffset, r.message_template);
+                }).join('')}
+            </div>
+
             <div style="text-align: right;">
                 <button class="btn btn-primary" onclick="saveNotifications(${c.id})" id="btn-save-${c.id}" style="padding: 6px 16px; font-size: 0.9rem;">儲存設定</button>
             </div>
         </div>
     `).join('');
+}
+
+function createReminderHTML(companyId, type, offset, message) {
+    const isExact = type === 'exact';
+    const isBefore = type === 'before';
+    const isAfter = type === 'after';
+    
+    return `
+        <div class="shift-reminder-item" style="display:flex; align-items:center; gap:8px; background: rgba(255,255,255,0.03); padding: 8px; border-radius: 6px; flex-wrap: wrap;">
+            <select class="sr-type settings-input" onchange="toggleOffsetInput(this)" style="width: auto; margin:0; padding:4px;">
+                <option value="exact" ${isExact ? 'selected' : ''}>上班時間點</option>
+                <option value="before" ${isBefore ? 'selected' : ''}>上班前</option>
+                <option value="after" ${isAfter ? 'selected' : ''}>上班後</option>
+            </select>
+            <div class="sr-offset-container" style="${isExact ? 'display:none;' : 'display:flex; align-items:center; gap:4px;'}">
+                <input type="number" class="sr-offset settings-input" min="1" max="1440" value="${offset}" style="width:50px; margin:0; padding:4px;">
+                <span style="font-size:0.85rem; color:var(--text-secondary);">分鐘</span>
+            </div>
+            <input type="text" class="sr-message settings-input" placeholder="提醒內容 (支援變數 {time})" value="${message}" style="flex:1; min-width: 150px; margin:0; padding:4px;">
+            <button class="btn" style="padding:4px; color:var(--danger-color); background:transparent; font-size:1.2rem; min-width:unset; line-height:1;" onclick="this.parentElement.remove(); checkEmpty(${companyId});">✕</button>
+        </div>
+    `;
+}
+
+function toggleOffsetInput(selectEl) {
+    const container = selectEl.parentElement.querySelector('.sr-offset-container');
+    if (selectEl.value === 'exact') {
+        container.style.display = 'none';
+    } else {
+        container.style.display = 'flex';
+    }
+}
+
+function addShiftReminder(companyId) {
+    const list = document.getElementById(`sr-list-${companyId}`);
+    const emptyMsg = list.querySelector('.empty-sr');
+    if (emptyMsg) emptyMsg.remove();
+    
+    // Default to "exact" time
+    const html = createReminderHTML(companyId, 'exact', 30, '記得打卡！');
+    list.insertAdjacentHTML('beforeend', html);
+}
+
+function checkEmpty(companyId) {
+    const list = document.getElementById(`sr-list-${companyId}`);
+    if (list.children.length === 0) {
+        list.innerHTML = '<div class="empty-sr" style="color:var(--text-secondary); font-size:0.9rem;">尚無設定排班提醒。</div>';
+    }
 }
 
 async function saveNotifications(id) {
@@ -114,6 +178,22 @@ async function saveNotifications(id) {
     btn.textContent = '儲存中...';
     btn.disabled = true;
     
+    // Collect shift reminders
+    const srItems = document.querySelectorAll(`#sr-list-${id} .shift-reminder-item`);
+    const shiftReminders = Array.from(srItems).map(item => {
+        const type = item.querySelector('.sr-type').value;
+        const offsetVal = parseInt(item.querySelector('.sr-offset').value) || 0;
+        let offsetMinutes = 0;
+        
+        if (type === 'before') offsetMinutes = -offsetVal;
+        else if (type === 'after') offsetMinutes = offsetVal;
+        
+        return {
+            offset_minutes: offsetMinutes,
+            message_template: item.querySelector('.sr-message').value.trim() || '記得打卡！'
+        };
+    });
+    
     const payload = {
         notify_payday_enabled: document.getElementById(`cf-payday-enabled-${id}`).checked,
         notify_payday_day: parseInt(document.getElementById(`cf-payday-day-${id}`).value) || 10,
@@ -121,6 +201,7 @@ async function saveNotifications(id) {
         notify_weekly_enabled: document.getElementById(`cf-weekly-enabled-${id}`).checked,
         notify_weekly_day: document.getElementById(`cf-weekly-day-${id}`).value,
         notify_weekly_time: document.getElementById(`cf-weekly-time-${id}`).value,
+        shift_reminders: shiftReminders
     };
 
     try {
@@ -136,8 +217,12 @@ async function saveNotifications(id) {
                 btn.textContent = originalText;
                 btn.disabled = false;
             }, 2000);
-            // update cache
+            
+            // update cache quietly
             const idx = companiesCache.findIndex(c => c.id === id);
+            if (idx !== -1) {
+                companiesCache[idx].shift_reminders = shiftReminders;
+            }
             if(idx !== -1) {
                 Object.assign(companiesCache[idx], payload);
             }

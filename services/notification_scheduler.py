@@ -5,6 +5,7 @@ from services.reminder_service import ReminderService
 from services.calendar_notify_service import CalendarNotifyService
 from services.countdown_notify_service import CountdownNotifyService
 from services.period_notify_service import PeriodNotifyService
+from apscheduler.triggers.cron import CronTrigger
 
 logger = logging.getLogger(__name__)
 scheduler = APScheduler()
@@ -120,6 +121,100 @@ def _send_company_notifications(app):
     except Exception as e:
         logger.error(f"Company notification error: {e}")
 
+def _send_shift_reminders(app):
+    """掃描所有公司的排班提醒規則，並發送通知。"""
+    from datetime import datetime, timedelta
+    import json
+    try:
+        with app.app_context():
+            from models import db, Company, SalaryRecord, User, CompanyShiftReminder, ShiftReminderLog
+            
+            now = datetime.now()
+            today_str = now.strftime('%Y-%m-%d')
+            tomorrow_str = (now + timedelta(days=1)).strftime('%Y-%m-%d')
+            
+            # Fetch active reminders
+            active_reminders = CompanyShiftReminder.query.filter_by(is_active=True).all()
+            for reminder in active_reminders:
+                company = Company.query.get(reminder.company_id)
+                if not company or not company.is_active:
+                    continue
+                user = User.query.get(company.user_id)
+                if not user or not user.settings:
+                    continue
+                    
+                try:
+                    methods = json.loads(user.settings.notification_methods or '["email"]')
+                except Exception:
+                    methods = ['email']
+                    
+                # Look for shifts today and tomorrow to handle cross-midnight
+                shifts = SalaryRecord.query.filter(
+                    SalaryRecord.type == 'shift',
+                    SalaryRecord.company_id == company.id,
+                    SalaryRecord.date.in_([today_str, tomorrow_str])
+                ).all()
+                
+                for shift in shifts:
+                    if not shift.start_time:
+                        continue
+                    
+                    try:
+                        shift_start_dt = datetime.strptime(f"{shift.date} {shift.start_time}", "%Y-%m-%d %H:%M")
+                    except ValueError:
+                        continue
+                        
+                    # Calculate exactly when we should send the reminder
+                    notify_dt = shift_start_dt + timedelta(minutes=reminder.offset_minutes)
+                    
+                    # If the notify time has passed and is within the last 15 minutes (to avoid sending very old ones if server was down)
+                    if now >= notify_dt and now <= notify_dt + timedelta(minutes=15):
+                        # Check if already sent
+                        log_exists = ShiftReminderLog.query.filter_by(
+                            shift_id=shift.id, 
+                            reminder_id=reminder.id
+                        ).first()
+                        
+                        if not log_exists:
+                            # Send the reminder!
+                            msg = reminder.message_template or "記得打卡！"
+                            # Add dynamic variable replacements
+                            msg = msg.replace("{time}", shift.start_time)
+                            msg = msg.replace("{company}", company.name)
+                            
+                            final_msg = f"[{company.name} 排班提醒]\n{msg}"
+                            
+                            if 'line' in methods:
+                                try:
+                                    from services.line_service import LineService
+                                    LineService.push_to_user(user.id, final_msg, module='salary')
+                                except Exception as e:
+                                    logger.error(f"Shift reminder LINE error: {e}")
+                                    
+                            if 'email' in methods and user.email:
+                                try:
+                                    from services.email_service import EmailService
+                                    EmailService.send_email(
+                                        to=user.email,
+                                        subject=f'[{company.name}] 排班提醒',
+                                        template='email/simple_notify.html',
+                                        username=user.username,
+                                        message=final_msg
+                                    )
+                                except Exception as e:
+                                    logger.error(f"Shift reminder Email error: {e}")
+                                    
+                            # Save log
+                            new_log = ShiftReminderLog(
+                                shift_id=shift.id,
+                                reminder_id=reminder.id,
+                                sent_at=now
+                            )
+                            db.session.add(new_log)
+            db.session.commit()
+    except Exception as e:
+        logger.error(f"Shift reminder task error: {e}")
+
 
 class NotificationScheduler:
     @staticmethod
@@ -151,8 +246,9 @@ class NotificationScheduler:
 
         @scheduler.task('interval', id='company_notify', seconds=60)
         def company_notify_task():
-            """Every minute: check company payday / weekly summary notifications."""
+            """Every minute: check company payday / weekly summary notifications, and shift reminders."""
             _send_company_notifications(app)
+            _send_shift_reminders(app)
 
         if not os.environ.get('SKIP_SCHEDULER'):
             def recurring_finance_job():

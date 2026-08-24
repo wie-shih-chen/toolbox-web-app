@@ -104,6 +104,19 @@ class ExpenseRecord(db.Model):
     note = db.Column(db.String(200))
     amount = db.Column(db.Float, default=0.0)
 
+class CompanyShiftReminder(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    company_id = db.Column(db.Integer, db.ForeignKey('company.id'), nullable=False)
+    offset_minutes = db.Column(db.Integer, default=0) # Negative = before start, 0 = at start, Positive = after start
+    message_template = db.Column(db.String(200), default="記得打卡！")
+    is_active = db.Column(db.Boolean, default=True)
+
+class ShiftReminderLog(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    shift_id = db.Column(db.Integer, db.ForeignKey('salary_record.id'), nullable=False)
+    reminder_id = db.Column(db.Integer, db.ForeignKey('company_shift_reminder.id'), nullable=False)
+    sent_at = db.Column(db.DateTime, default=datetime.utcnow)
+
 class UserSettings(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
