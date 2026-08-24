@@ -247,8 +247,13 @@
                     </div>
                 </div>
 
-
-                <div class="modal-actions">
+                <!-- Company Selector (shared for shift & bonus) -->
+                <div class="form-group" id="companyGroup">
+                    <label>所屬公司</label>
+                    <select name="company_id" id="recordCompany" style="width:100%;">
+                        <option value="">未指定</option>
+                    </select>
+                </div>                <div class="modal-actions">
                     <button type="button" class="btn btn-danger hidden" id="deleteBtn">刪除</button>
                     <button type="submit" class="btn btn-primary">儲存</button>
                 </div>
