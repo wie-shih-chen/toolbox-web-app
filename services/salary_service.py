@@ -144,6 +144,7 @@ class SalaryService:
             
         if 'date' in record_data: record.date = record_data['date']
         if 'note' in record_data: record.note = record_data['note']
+        if 'company_id' in record_data: record.company_id = record_data['company_id'] or None
         
         if record.type == 'shift':
             if 'start_time' in record_data: record.start_time = record_data['start_time']
@@ -152,11 +153,22 @@ class SalaryService:
             if record.start_time and record.end_time:
                 record.hours = self._calculate_hours(record.start_time, record.end_time)
                 
-            if 'rate' in record_data:
+            # Handle rate: if provided, use it. If empty or not provided, calculate default.
+            raw_rate = record_data.get('rate')
+            if raw_rate is not None and str(raw_rate).strip() != '':
                 try:
-                    record.rate = float(record_data['rate'])
-                except:
-                    pass
+                    base_rate = float(raw_rate)
+                except ValueError:
+                    base_rate = record.rate
+            else:
+                # Need to fallback to company rate or default settings rate
+                settings = self.get_settings()
+                default_rate = float(settings.get('hourly_rate', 183.0))
+                if record.company_id:
+                    company = Company.query.get(record.company_id)
+                    if company:
+                        default_rate = company.hourly_rate
+                base_rate = default_rate
 
             # Strip old holiday note prefix before re-applying
             existing_note = record.note or ''
