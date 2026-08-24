@@ -28,8 +28,7 @@ const salaryApp = {
             const companies = await res.json();
             const sel = document.getElementById('recordCompany');
             if (!sel) return;
-            sel.innerHTML = '<option value="">未指定</option>' +
-                companies.map(c => `<option value="${c.id}" data-color="${c.color}" data-rate="${c.hourly_rate}">${c.name}</option>`).join('');
+            sel.innerHTML = companies.map(c => `<option value="${c.id}" data-color="${c.color}" data-rate="${c.hourly_rate}">${c.name}</option>`).join('');
 
             // Auto-fill rate when company changes
             sel.addEventListener('change', () => {
@@ -434,13 +433,24 @@ const salaryApp = {
         if (activeBtn) activeBtn.classList.add('active');
         if (activeContent) {
             activeContent.classList.add('active');
-            activeContent.querySelectorAll('input').forEach(input => {
-                // Only re-enable if NOT in read-only mode (checking modal title or similar)
-                // But generally, tab switching only happens in Add mode or if isEditable is true.
+            activeContent.querySelectorAll('input, select, textarea').forEach(input => {
                 if (!document.getElementById('modalTitle').textContent.includes('唯讀')) {
                     input.disabled = false;
                 }
             });
+            
+            // Move company selector to the active tab
+            const companyGroup = document.getElementById('companyGroup');
+            if (companyGroup) {
+                if (tabName === 'shift') {
+                    const shiftRate = document.getElementById('shiftRate');
+                    if (shiftRate && shiftRate.closest('.form-group')) {
+                        shiftRate.closest('.form-group').before(companyGroup);
+                    }
+                } else if (tabName === 'bonus') {
+                    activeContent.prepend(companyGroup);
+                }
+            }
         }
         document.getElementById('recordType').value = tabName;
     },
@@ -453,7 +463,13 @@ const salaryApp = {
         const rateInput = document.getElementById('shiftRate');
         if (rateInput) rateInput.value = '';
         const companySel = document.getElementById('recordCompany');
-        if (companySel) companySel.value = '';
+        if (companySel) {
+            companySel.value = '';
+            // Select the first available company by default if options exist
+            if (companySel.options.length > 0) {
+                companySel.selectedIndex = 0;
+            }
+        }
     },
 
     async handleSubmit(e) {
@@ -1061,10 +1077,15 @@ async function loadSalaryTrendChart() {
                         }
                     },
                     x: {
-                        display: false, // 隱藏 X 軸標籤，避免擁擠
-                        ticks: { color: 'rgba(255, 255, 255, 0.7)' },
+                        display: true,
+                        ticks: {
+                            color: 'rgba(255, 255, 255, 0.5)',
+                            maxRotation: 45,
+                            minRotation: 45,
+                            maxTicksLimit: 12
+                        },
                         grid: {
-                            color: 'rgba(255, 255, 255, 0.05)'
+                            display: false
                         }
                     }
                 }
