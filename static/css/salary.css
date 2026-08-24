@@ -46,6 +46,7 @@
     position: relative;
     /* Validation for absolute children */
     display: flex;
+    flex-wrap: wrap;
     gap: 30px;
     background-color: var(--card-bg);
     padding: 10px 25px;

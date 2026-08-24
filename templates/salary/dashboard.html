@@ -43,17 +43,19 @@
         </div>
 
         <div class="summary-card">
-            <div class="summary-item">
-                <span class="label">本週時數</span>
-                <span class="value" id="weeklyHours">0h</span>
-            </div>
-            <div class="summary-item">
-                <span class="label">預估薪資</span>
-                <span class="value highlight" id="weeklyAmount">$0</span>
+            <div style="display: flex; gap: 30px; width: 100%; flex-wrap: wrap;">
+                <div class="summary-item">
+                    <span class="label">本週時數</span>
+                    <span class="value" id="weeklyHours">0h</span>
+                </div>
+                <div class="summary-item">
+                    <span class="label">預估薪資</span>
+                    <span class="value highlight" id="weeklyAmount">$0</span>
+                </div>
             </div>
 
             <!-- Target Income Progress (Hidden by default) -->
-            <div id="targetIncomeContainer" style="display: none; width: 100%; margin-top: 15px;">
+            <div id="targetIncomeContainer" style="display: none; width: 100%; margin-top: 10px;">
                 <div
                     style="display: flex; justify-content: space-between; font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 5px;">
                     <span>月目標達成率</span>
