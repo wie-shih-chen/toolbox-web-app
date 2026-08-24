@@ -216,6 +216,70 @@ const salaryApp = {
         const aEl = document.getElementById('weeklyAmount');
         if (hEl) hEl.textContent = `${hours.toFixed(1)}h`;
         if (aEl) aEl.textContent = `$${Math.round(amount)}`;
+        
+        this.renderCompanyBreakdown(this.records);
+    },
+
+    renderCompanyBreakdown(records) {
+        const container = document.getElementById('companyBreakdownContainer');
+        const barContainer = document.getElementById('companyBreakdownBar');
+        const listContainer = document.getElementById('companyBreakdownList');
+        
+        if (!container || !barContainer || !listContainer) return;
+
+        // Group by company
+        const compStats = {};
+        let totalAmount = 0;
+
+        records.forEach(r => {
+            const cid = r.company_id || 'unassigned';
+            if (!compStats[cid]) {
+                compStats[cid] = {
+                    name: r.company_name || '未指定公司',
+                    color: r.company_color || '#9ca3af',
+                    hours: 0,
+                    amount: 0
+                };
+            }
+            if (r.type === 'shift') {
+                compStats[cid].hours += r.hours;
+            }
+            compStats[cid].amount += r.amount;
+            totalAmount += r.amount;
+        });
+
+        const statsArray = Object.values(compStats).filter(s => s.amount > 0).sort((a, b) => b.amount - a.amount);
+
+        if (statsArray.length === 0 || totalAmount === 0) {
+            container.style.display = 'none';
+            return;
+        }
+
+        container.style.display = 'block';
+        
+        // Render Bar
+        barContainer.innerHTML = statsArray.map(s => {
+            const pct = (s.amount / totalAmount * 100).toFixed(1);
+            return `<div style="width: ${pct}%; height: 100%; background: ${s.color};" title="${s.name} ${pct}%"></div>`;
+        }).join('');
+
+        // Render List
+        listContainer.innerHTML = statsArray.map(s => {
+            const pct = (s.amount / totalAmount * 100).toFixed(1);
+            return `
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <div style="width: 10px; height: 10px; border-radius: 50%; background: ${s.color};"></div>
+                        <span>${s.name}</span>
+                        <span style="color: var(--text-secondary); font-size: 0.8rem;">${pct}%</span>
+                    </div>
+                    <div style="text-align: right;">
+                        <span style="margin-right: 12px; color: var(--text-secondary);">${s.hours.toFixed(1)}h</span>
+                        <span style="font-weight: 600;">$${Math.round(s.amount)}</span>
+                    </div>
+                </div>
+            `;
+        }).join('');
     },
 
     async updateMonthlyGoalForWeek() {
@@ -737,12 +801,14 @@ const salaryApp = {
         const startStr = this.formatDate(start);
         const endStr = this.formatDate(end);
         let hours = 0, amount = 0;
+        let filteredRecords = [];
 
         this.records.forEach(r => {
             // Logic: start <= date < end (e.g. Jan 10 <= date < Feb 10)
             if (r.date >= startStr && r.date < endStr) {
                 if (r.type === 'shift') hours += r.hours;
                 amount += r.amount;
+                filteredRecords.push(r);
             }
         });
 
@@ -752,6 +818,7 @@ const salaryApp = {
         if (aEl) aEl.textContent = `$${Math.round(amount)}`;
 
         this.updateTargetProgress(amount);
+        this.renderCompanyBreakdown(filteredRecords);
     },
 
     // History
@@ -828,6 +895,7 @@ const salaryApp = {
             document.getElementById('historyCount').textContent = data.record_count;
 
             this.updateTargetProgress(data.total_amount);
+            this.renderCompanyBreakdown(data.records);
 
             const tbody = document.getElementById('historyTableBody');
             tbody.innerHTML = '';
