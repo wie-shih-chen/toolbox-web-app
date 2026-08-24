@@ -1,11 +1,143 @@
 from flask import Blueprint, render_template, request, jsonify, Response
 from flask_login import login_required, current_user
 from services.salary_service import SalaryService
+from models import db, Company, SalaryRecord
 
 from datetime import datetime, timedelta
 
 salary_bp = Blueprint('salary', __name__)
 service = SalaryService()
+
+# ================= COMPANY API =================
+
+@salary_bp.route('/api/companies', methods=['GET'])
+@login_required
+def get_companies():
+    companies = Company.query.filter_by(user_id=current_user.id, is_active=True)\
+        .order_by(Company.created_at.asc()).all()
+    return jsonify([{
+        'id': c.id,
+        'name': c.name,
+        'color': c.color,
+        'hourly_rate': c.hourly_rate,
+        'notify_payday_enabled': c.notify_payday_enabled,
+        'notify_payday_day': c.notify_payday_day,
+        'notify_payday_time': c.notify_payday_time,
+        'notify_weekly_enabled': c.notify_weekly_enabled,
+        'notify_weekly_day': c.notify_weekly_day,
+        'notify_weekly_time': c.notify_weekly_time,
+    } for c in companies])
+
+@salary_bp.route('/api/companies', methods=['POST'])
+@login_required
+def create_company():
+    data = request.json or {}
+    name = data.get('name', '').strip()
+    if not name:
+        return jsonify({'error': '公司名稱不能為空'}), 400
+
+    company = Company(
+        user_id=current_user.id,
+        name=name,
+        color=data.get('color', '#6366f1'),
+        hourly_rate=float(data.get('hourly_rate', current_user.settings.hourly_rate or 183.0)),
+        notify_payday_enabled=bool(data.get('notify_payday_enabled', False)),
+        notify_payday_day=int(data.get('notify_payday_day', 10)),
+        notify_payday_time=data.get('notify_payday_time', '09:00'),
+        notify_weekly_enabled=bool(data.get('notify_weekly_enabled', False)),
+        notify_weekly_day=data.get('notify_weekly_day', 'sunday'),
+        notify_weekly_time=data.get('notify_weekly_time', '20:00'),
+    )
+    db.session.add(company)
+    db.session.commit()
+    return jsonify({'id': company.id, 'name': company.name, 'color': company.color}), 201
+
+@salary_bp.route('/api/companies/<int:company_id>', methods=['PUT'])
+@login_required
+def update_company(company_id):
+    company = Company.query.filter_by(id=company_id, user_id=current_user.id).first()
+    if not company:
+        return jsonify({'error': 'Not found'}), 404
+    data = request.json or {}
+    if 'name' in data: company.name = data['name'].strip()
+    if 'color' in data: company.color = data['color']
+    if 'hourly_rate' in data: company.hourly_rate = float(data['hourly_rate'])
+    if 'notify_payday_enabled' in data: company.notify_payday_enabled = bool(data['notify_payday_enabled'])
+    if 'notify_payday_day' in data: company.notify_payday_day = int(data['notify_payday_day'])
+    if 'notify_payday_time' in data: company.notify_payday_time = data['notify_payday_time']
+    if 'notify_weekly_enabled' in data: company.notify_weekly_enabled = bool(data['notify_weekly_enabled'])
+    if 'notify_weekly_day' in data: company.notify_weekly_day = data['notify_weekly_day']
+    if 'notify_weekly_time' in data: company.notify_weekly_time = data['notify_weekly_time']
+    db.session.commit()
+    return jsonify({'success': True})
+
+@salary_bp.route('/api/companies/<int:company_id>', methods=['DELETE'])
+@login_required
+def delete_company(company_id):
+    company = Company.query.filter_by(id=company_id, user_id=current_user.id).first()
+    if not company:
+        return jsonify({'error': 'Not found'}), 404
+    record_count = SalaryRecord.query.filter_by(company_id=company_id).count()
+    if record_count > 0:
+        return jsonify({'error': f'此公司有 {record_count} 筆班表記錄，請先將記錄重新歸屬或刪除後再刪除公司', 'record_count': record_count}), 400
+    company.is_active = False  # Soft delete
+    db.session.commit()
+    return jsonify({'success': True})
+
+@salary_bp.route('/api/companies/assign-legacy', methods=['POST'])
+@login_required
+def assign_legacy_records():
+    """批次將 company_id=NULL 的舊記錄歸屬到指定公司"""
+    data = request.json or {}
+    company_id = data.get('company_id')
+    if not company_id:
+        return jsonify({'error': '請指定公司'}), 400
+    company = Company.query.filter_by(id=company_id, user_id=current_user.id).first()
+    if not company:
+        return jsonify({'error': '找不到公司'}), 404
+    count = SalaryRecord.query.filter_by(user_id=current_user.id, company_id=None).update({'company_id': company_id})
+    db.session.commit()
+    return jsonify({'success': True, 'assigned_count': count})
+
+@salary_bp.route('/api/companies/legacy-count', methods=['GET'])
+@login_required
+def get_legacy_count():
+    """回傳尚未歸屬公司的記錄數量"""
+    count = SalaryRecord.query.filter_by(user_id=current_user.id, company_id=None).count()
+    return jsonify({'count': count})
+
+@salary_bp.route('/api/companies/summary', methods=['GET'])
+@login_required
+def get_companies_summary():
+    """各公司本月收入 + 時數統計"""
+    from datetime import date
+    today = date.today()
+    start = today.replace(day=1).strftime('%Y-%m-%d')
+    import calendar
+    last_day = calendar.monthrange(today.year, today.month)[1]
+    end = today.replace(day=last_day).strftime('%Y-%m-%d')
+
+    companies = Company.query.filter_by(user_id=current_user.id, is_active=True).all()
+    result = []
+    for c in companies:
+        records = SalaryRecord.query.filter(
+            SalaryRecord.user_id == current_user.id,
+            SalaryRecord.company_id == c.id,
+            SalaryRecord.date >= start,
+            SalaryRecord.date <= end
+        ).all()
+        total_amount = sum(r.amount for r in records)
+        total_hours = sum(r.hours or 0 for r in records if r.type == 'shift')
+        result.append({
+            'company_id': c.id,
+            'name': c.name,
+            'color': c.color,
+            'total_amount': total_amount,
+            'total_hours': round(total_hours, 1),
+            'record_count': len(records)
+        })
+    return jsonify(result)
+
 
 @salary_bp.route('/')
 @login_required

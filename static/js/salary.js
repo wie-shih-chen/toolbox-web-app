@@ -151,24 +151,37 @@ const salaryApp = {
             dayRecords.forEach(record => {
                 const card = document.createElement('div');
                 card.className = `shift-card ${record.type === 'bonus' ? 'bonus' : ''}`;
+                card.style.position = 'relative';
+                card.style.overflow = 'hidden';
                 card.onclick = () => this.openEditModal(record);
 
+                // Company color left bar
+                const colorBar = document.createElement('div');
+                colorBar.style.cssText = `position:absolute;left:0;top:0;bottom:0;width:4px;border-radius:4px 0 0 4px;background:${record.company_color || 'transparent'};`;
+                card.appendChild(colorBar);
+
+                const contentWrap = document.createElement('div');
+                contentWrap.style.paddingLeft = record.company_color ? '10px' : '0';
+
                 if (record.type === 'shift') {
-                    card.innerHTML = `
+                    contentWrap.innerHTML = `
                         <div class="shift-time">${record.start_time} - ${record.end_time}</div>
                         <div class="shift-info">
                             <span>${record.hours}h</span>
                             <span>$${Math.round(record.amount)}</span>
                         </div>
+                        ${record.company_name ? `<div style="font-size:0.72rem;color:${record.company_color || 'var(--text-secondary)'};margin-top:2px;">${record.company_name}</div>` : ''}
                     `;
                 } else {
-                    card.innerHTML = `
+                    contentWrap.innerHTML = `
                         <div class="shift-time" style="color:#ffd700">💰 獎金 $${record.amount}</div>
                         <div class="shift-info">
                             <span>${record.note || ''}</span>
                         </div>
+                        ${record.company_name ? `<div style="font-size:0.72rem;color:${record.company_color || 'var(--text-secondary)'};margin-top:2px;">${record.company_name}</div>` : ''}
                     `;
                 }
+                card.appendChild(contentWrap);
                 container.appendChild(card);
             });
         }
@@ -310,6 +323,10 @@ const salaryApp = {
             if (hoursField) hoursField.value = record.hours || '';
         }
 
+        // Set company
+        const companySel = document.getElementById('recordCompany');
+        if (companySel) companySel.value = record.company_id || '';
+
         document.getElementById('recordModal').classList.add('show');
     },
 
@@ -355,6 +372,8 @@ const salaryApp = {
         document.getElementById('endTime').value = this.settings.default_end_time || '18:00';
         const rateInput = document.getElementById('shiftRate');
         if (rateInput) rateInput.value = '';
+        const companySel = document.getElementById('recordCompany');
+        if (companySel) companySel.value = '';
     },
 
     async handleSubmit(e) {

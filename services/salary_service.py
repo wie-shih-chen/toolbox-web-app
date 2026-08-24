@@ -1,4 +1,4 @@
-from models import db, SalaryRecord, UserSettings
+from models import db, SalaryRecord, UserSettings, Company
 from flask_login import current_user
 from datetime import datetime, timedelta
 from sqlalchemy import func
@@ -78,7 +78,8 @@ class SalaryService:
             user_id=current_user.id,
             date=record_data.get('date'),
             type=record_data.get('type'),
-            note=record_data.get('note')
+            note=record_data.get('note'),
+            company_id=record_data.get('company_id') or None
         )
         
         if new_record.type == 'shift':
@@ -90,10 +91,15 @@ class SalaryService:
             if start_t and end_t:
                 new_record.hours = self._calculate_hours(start_t, end_t)
             
-            # Rate handling
+            # Rate: use company rate if company_id given, else fall back to settings
             raw_rate = record_data.get('rate')
             settings = self.get_settings()
             default_rate = float(settings.get('hourly_rate', 183.0))
+            # If company_id provided, load company's hourly_rate
+            if new_record.company_id:
+                company = Company.query.get(new_record.company_id)
+                if company:
+                    default_rate = company.hourly_rate
             
             base_rate = default_rate if not raw_rate else (float(raw_rate) if str(raw_rate).strip() else default_rate)
 
@@ -421,6 +427,11 @@ class SalaryService:
         }
 
     def _to_dict(self, record):
+        company_name = None
+        company_color = None
+        if record.company_id and record.company:
+            company_name = record.company.name
+            company_color = record.company.color
         return {
             'id': record.id,
             'date': record.date,
@@ -430,5 +441,8 @@ class SalaryService:
             'hours': record.hours,
             'rate': record.rate,
             'amount': record.amount,
-            'note': record.note
+            'note': record.note,
+            'company_id': record.company_id,
+            'company_name': company_name,
+            'company_color': company_color,
         }

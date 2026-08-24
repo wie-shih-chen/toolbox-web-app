@@ -58,6 +58,25 @@ class User(UserMixin, db.Model):
             return None
         return User.query.get(user_id)
 
+class Company(db.Model):
+    """Per-user company profile for multi-company salary tracking."""
+    id          = db.Column(db.Integer, primary_key=True)
+    user_id     = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    name        = db.Column(db.String(100), nullable=False)
+    color       = db.Column(db.String(10), default='#6366f1')   # hex color for badge
+    hourly_rate = db.Column(db.Float, default=183.0)
+    # Per-company notification settings
+    notify_payday_enabled = db.Column(db.Boolean, default=False)
+    notify_payday_day     = db.Column(db.Integer, default=10)    # day of month
+    notify_payday_time    = db.Column(db.String(5), default='09:00')
+    notify_weekly_enabled = db.Column(db.Boolean, default=False)
+    notify_weekly_day     = db.Column(db.String(10), default='sunday')
+    notify_weekly_time    = db.Column(db.String(5), default='20:00')
+    is_active   = db.Column(db.Boolean, default=True)
+    created_at  = db.Column(db.DateTime, default=datetime.utcnow)
+
+    salary_records = db.relationship('SalaryRecord', backref='company', lazy=True)
+
 class SalaryRecord(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
@@ -70,6 +89,9 @@ class SalaryRecord(db.Model):
     hours = db.Column(db.Float, default=0.0)
     rate = db.Column(db.Float, default=0.0)
     
+    # Company association (nullable for backward compatibility)
+    company_id = db.Column(db.Integer, db.ForeignKey('company.id'), nullable=True)
+
     # Common details
     amount = db.Column(db.Integer, default=0)
     note = db.Column(db.String(200))
