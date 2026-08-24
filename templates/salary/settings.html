@@ -304,7 +304,20 @@ function openCompanyForm(id) {
         document.getElementById('company-form-title').textContent = '新增公司';
         document.getElementById('cf-id').value = '';
         document.getElementById('cf-name').value = '';
-        document.getElementById('cf-color').value = '#6366f1';
+        
+        // Pick distinct color
+        const usedColors = companiesCache.map(c => c.color.toLowerCase());
+        const palette = [
+            '#6366f1', '#ef4444', '#f59e0b', '#10b981', '#3b82f6', '#8b5cf6',
+            '#ec4899', '#14b8a6', '#f97316', '#06b6d4', '#84cc16', '#a855f7',
+            '#f43f5e', '#eab308', '#22c55e', '#0ea5e9'
+        ];
+        const available = palette.filter(c => !usedColors.includes(c));
+        if (available.length > 0) {
+            document.getElementById('cf-color').value = available[Math.floor(Math.random() * available.length)];
+        } else {
+            document.getElementById('cf-color').value = '#' + Math.floor(Math.random()*16777215).toString(16).padStart(6, '0');
+        }
         
         // Auto-fill from global settings default hourly rate
         const globalRate = document.getElementById('hourlyRate');
