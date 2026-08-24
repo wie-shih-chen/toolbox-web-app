@@ -177,6 +177,11 @@ def settings():
     current_settings = service.get_settings()
     return render_template('salary/settings.html', settings=current_settings)
 
+@salary_bp.route('/notifications')
+@login_required
+def notifications():
+    return render_template('salary/notifications.html')
+
 # ================= MAX API =================
 
 @salary_bp.route('/api/records', methods=['GET'])

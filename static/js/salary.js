@@ -151,20 +151,13 @@ const salaryApp = {
             dayRecords.forEach(record => {
                 const card = document.createElement('div');
                 card.className = `shift-card ${record.type === 'bonus' ? 'bonus' : ''}`;
-                card.style.position = 'relative';
-                card.style.overflow = 'hidden';
+                if (record.company_color) {
+                    card.style.borderLeftColor = record.company_color;
+                }
                 card.onclick = () => this.openEditModal(record);
 
-                // Company color left bar
-                const colorBar = document.createElement('div');
-                colorBar.style.cssText = `position:absolute;left:0;top:0;bottom:0;width:4px;border-radius:4px 0 0 4px;background:${record.company_color || 'transparent'};`;
-                card.appendChild(colorBar);
-
-                const contentWrap = document.createElement('div');
-                contentWrap.style.paddingLeft = record.company_color ? '10px' : '0';
-
                 if (record.type === 'shift') {
-                    contentWrap.innerHTML = `
+                    card.innerHTML = `
                         <div class="shift-time">${record.start_time} - ${record.end_time}</div>
                         <div class="shift-info">
                             <span>${record.hours}h</span>
@@ -173,7 +166,7 @@ const salaryApp = {
                         ${record.company_name ? `<div style="font-size:0.72rem;color:${record.company_color || 'var(--text-secondary)'};margin-top:2px;">${record.company_name}</div>` : ''}
                     `;
                 } else {
-                    contentWrap.innerHTML = `
+                    card.innerHTML = `
                         <div class="shift-time" style="color:#ffd700">💰 獎金 $${record.amount}</div>
                         <div class="shift-info">
                             <span>${record.note || ''}</span>
@@ -181,7 +174,6 @@ const salaryApp = {
                         ${record.company_name ? `<div style="font-size:0.72rem;color:${record.company_color || 'var(--text-secondary)'};margin-top:2px;">${record.company_name}</div>` : ''}
                     `;
                 }
-                card.appendChild(contentWrap);
                 container.appendChild(card);
             });
         }
@@ -667,9 +659,14 @@ const salaryApp = {
                 const item = document.createElement('div');
                 item.className = 'cal-item';
                 const isHolidayShift = r.type === 'shift' && holidayName;
-                item.textContent = r.type === 'shift'
-                    ? `• ${r.start_time}${isHolidayShift ? ' ×2' : ''}`
-                    : `• 💰`;
+                
+                let text = r.type === 'shift' ? `${r.start_time}${isHolidayShift ? ' ×2' : ''}` : `💰 獎金`;
+                
+                item.innerHTML = `
+                    <span style="display:inline-block; width:6px; height:6px; border-radius:50%; background:${r.company_color || 'var(--text-secondary)'}; margin-right:4px;"></span>
+                    <span>${text}</span>
+                `;
+                
                 if (r.type === 'bonus') item.style.color = '#ffd700';
                 if (isHolidayShift) item.style.color = '#f87171';
                 item.onclick = (e) => {
@@ -816,10 +813,15 @@ const salaryApp = {
                 const tr = document.createElement('tr');
                 tr.style.cursor = 'pointer';
                 tr.onclick = () => this.openEditModal(r);
+                
+                const companyHtml = r.company_name 
+                    ? `<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${r.company_color};margin-right:4px;"></span><span style="color:var(--text-secondary);font-size:0.85em;">${r.company_name}</span>`
+                    : '';
+                    
                 tr.innerHTML = r.type === 'shift' ? `
-                    <td>${r.date}</td><td>排班</td><td>${r.start_time} - ${r.end_time}</td><td>${r.hours}</td><td>${r.rate}/hr -> $${Math.round(r.amount)}</td><td>${r.note || ''}</td>
+                    <td>${r.date}</td><td>排班</td><td>${r.start_time} - ${r.end_time}<br>${companyHtml}</td><td>${r.hours}</td><td>${r.rate}/hr -> $${Math.round(r.amount)}</td><td>${r.note || ''}</td>
                 ` : `
-                    <td>${r.date}</td><td style="color:#ffd700">獎金</td><td></td><td>${r.hours || ''}</td><td>$${r.amount}</td><td>${r.note || ''}</td>
+                    <td>${r.date}</td><td style="color:#ffd700">獎金</td><td>${companyHtml}</td><td>${r.hours || ''}</td><td>$${r.amount}</td><td>${r.note || ''}</td>
                 `;
                 tbody.appendChild(tr);
             });

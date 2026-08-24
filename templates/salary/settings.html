@@ -232,37 +232,6 @@
                 </div>
             </div>
 
-            <!-- Notifications -->
-            <div style="margin-top: 16px; border-top: 1px solid rgba(255,255,255,0.08); padding-top: 16px;">
-                <p style="font-weight: 600; margin-bottom: 12px; font-size: 0.9rem;">📬 客製化通知</p>
-
-                <div class="notify-row">
-                    <label>
-                        <input type="checkbox" id="cf-payday-enabled"> 發薪日提醒
-                    </label>
-                    <span style="font-size: 0.85rem; color: var(--text-secondary);">每月第</span>
-                    <input type="number" id="cf-payday-day" min="1" max="28" value="10" style="width: 60px;">
-                    <span style="font-size: 0.85rem; color: var(--text-secondary);">號</span>
-                    <input type="time" id="cf-payday-time" value="09:00">
-                </div>
-
-                <div class="notify-row">
-                    <label>
-                        <input type="checkbox" id="cf-weekly-enabled"> 每週工時摘要
-                    </label>
-                    <select id="cf-weekly-day">
-                        <option value="monday">週一</option>
-                        <option value="tuesday">週二</option>
-                        <option value="wednesday">週三</option>
-                        <option value="thursday">週四</option>
-                        <option value="friday">週五</option>
-                        <option value="saturday">週六</option>
-                        <option value="sunday" selected>週日</option>
-                    </select>
-                    <input type="time" id="cf-weekly-time" value="20:00">
-                </div>
-            </div>
-
             <div style="display: flex; gap: 10px; margin-top: 16px;">
                 <button class="btn btn-primary" style="flex: 1;" onclick="saveCompany()">儲存</button>
                 <button class="btn btn-secondary" style="flex: 1;" onclick="closeCompanyForm()">取消</button>
@@ -340,13 +309,6 @@ function openCompanyForm(id) {
         // Auto-fill from global settings default hourly rate
         const globalRate = document.getElementById('hourlyRate');
         document.getElementById('cf-rate').value = globalRate ? globalRate.value : '';
-        
-        document.getElementById('cf-payday-enabled').checked = false;
-        document.getElementById('cf-payday-day').value = 10;
-        document.getElementById('cf-payday-time').value = '09:00';
-        document.getElementById('cf-weekly-enabled').checked = false;
-        document.getElementById('cf-weekly-day').value = 'sunday';
-        document.getElementById('cf-weekly-time').value = '20:00';
     } else {
         const c = companiesCache.find(x => x.id === id);
         if (!c) return;
@@ -355,12 +317,6 @@ function openCompanyForm(id) {
         document.getElementById('cf-name').value = c.name;
         document.getElementById('cf-color').value = c.color;
         document.getElementById('cf-rate').value = c.hourly_rate;
-        document.getElementById('cf-payday-enabled').checked = c.notify_payday_enabled;
-        document.getElementById('cf-payday-day').value = c.notify_payday_day;
-        document.getElementById('cf-payday-time').value = c.notify_payday_time;
-        document.getElementById('cf-weekly-enabled').checked = c.notify_weekly_enabled;
-        document.getElementById('cf-weekly-day').value = c.notify_weekly_day;
-        document.getElementById('cf-weekly-time').value = c.notify_weekly_time;
     }
 }
 
@@ -374,13 +330,7 @@ async function saveCompany() {
     const payload = {
         name: document.getElementById('cf-name').value.trim(),
         color: document.getElementById('cf-color').value,
-        hourly_rate: parseFloat(document.getElementById('cf-rate').value) || 183,
-        notify_payday_enabled: document.getElementById('cf-payday-enabled').checked,
-        notify_payday_day: parseInt(document.getElementById('cf-payday-day').value),
-        notify_payday_time: document.getElementById('cf-payday-time').value,
-        notify_weekly_enabled: document.getElementById('cf-weekly-enabled').checked,
-        notify_weekly_day: document.getElementById('cf-weekly-day').value,
-        notify_weekly_time: document.getElementById('cf-weekly-time').value,
+        hourly_rate: parseFloat(document.getElementById('cf-rate').value) || 183
     };
     if (!payload.name) { alert('請填寫公司名稱'); return; }
 

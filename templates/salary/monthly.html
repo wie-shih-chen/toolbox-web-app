@@ -134,12 +134,13 @@
         class="salary-nav-item {% if request.endpoint == 'salary.history' %}active{% endif %}">
         📜 歷史排班
     </a>
+    <a href="{{ url_for('salary.notifications') }}"
+        class="salary-nav-item {% if request.endpoint == 'salary.notifications' %}active{% endif %}">
+        🔔 通知設定
+    </a>
     <a href="{{ url_for('salary.settings') }}"
         class="salary-nav-item {% if request.endpoint == 'salary.settings' %}active{% endif %}">
         ⚙️ 設定
-    </a>
-    <a href="{{ url_for('auth.settings') }}" class="salary-nav-item">
-        🔔 通知設定
     </a>
 </div>
 
