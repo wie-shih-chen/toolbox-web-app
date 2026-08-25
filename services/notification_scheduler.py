@@ -180,6 +180,8 @@ def _send_shift_reminders(app):
                             reminder_id=reminder.id
                         ).first()
                         
+                        logger.info(f"[Shift Debug] shift_id={shift.id}, notify_dt={notify_dt}, log_exists={bool(log_exists)}")
+                        
                         if not log_exists:
                             # Send the reminder!
                             msg = reminder.message_template or "記得打卡！"
@@ -197,6 +199,7 @@ def _send_shift_reminders(app):
                                 notify_methods=methods,
                                 module='salary'
                             )
+                            logger.info(f"[Shift Debug] NotificationService sent for user {user.id}")
                                     
                             # Save log
                             new_log = ShiftReminderLog(
@@ -205,6 +208,11 @@ def _send_shift_reminders(app):
                                 sent_at=now
                             )
                             db.session.add(new_log)
+                            logger.info(f"[Shift Debug] Log saved for shift {shift.id}")
+                        else:
+                            logger.info(f"[Shift Debug] Skipping shift {shift.id} because log exists.")
+                    else:
+                        logger.info(f"[Shift Debug] Skipping shift {shift.id}. notify_dt={notify_dt}, now={now}")
             db.session.commit()
     except Exception as e:
         logger.error(f"Shift reminder task error: {e}")

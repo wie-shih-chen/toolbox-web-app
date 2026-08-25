@@ -106,8 +106,10 @@ class LineService:
                 try:
                     perms = json.loads(binding.permissions or '[]')
                     if module not in perms:
+                        print(f"[LINE Debug] Skipping user {app_user_id} binding {binding.id} because module '{module}' not in perms {perms}")
                         continue
-                except Exception:
+                except Exception as e:
+                    print(f"[LINE Debug] Error parsing perms for user {app_user_id} binding {binding.id}: {e}")
                     pass
             
             if text:
