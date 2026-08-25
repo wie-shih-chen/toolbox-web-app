@@ -57,7 +57,7 @@ class SalaryService:
             
         return [self._to_dict(r) for r in records]
 
-    def _calculate_hours(self, start_time_str, end_time_str):
+    def _calculate_hours(self, start_time_str, end_time_str, company_id=None):
         try:
             start_dt = datetime.strptime(start_time_str, '%H:%M')
             end_dt = datetime.strptime(end_time_str, '%H:%M')
@@ -66,7 +66,28 @@ class SalaryService:
                 end_dt += timedelta(days=1)
                 
             delta = end_dt - start_dt
-            return delta.total_seconds() / 3600.0
+            total_hours = delta.total_seconds() / 3600.0
+            
+            # Apply break rules if company is specified
+            deduct_hours = 0.0
+            if company_id:
+                company = Company.query.get(company_id)
+                if company and company.break_rules:
+                    try:
+                        import json
+                        rules = json.loads(company.break_rules)
+                        # Sort rules by threshold descending to apply the largest threshold that matches
+                        rules.sort(key=lambda x: float(x.get('threshold', 0)), reverse=True)
+                        for rule in rules:
+                            threshold = float(rule.get('threshold', 0))
+                            deduct = float(rule.get('deduct', 0))
+                            if total_hours >= threshold:
+                                deduct_hours = deduct
+                                break
+                    except Exception as e:
+                        pass
+            
+            return max(0.0, total_hours - deduct_hours)
         except (ValueError, TypeError):
             return 0.0
 
@@ -89,7 +110,7 @@ class SalaryService:
             new_record.end_time = end_t
             
             if start_t and end_t:
-                new_record.hours = self._calculate_hours(start_t, end_t)
+                new_record.hours = self._calculate_hours(start_t, end_t, new_record.company_id)
             
             # Rate: use company rate if company_id given, else fall back to settings
             raw_rate = record_data.get('rate')
@@ -151,7 +172,7 @@ class SalaryService:
             if 'end_time' in record_data: record.end_time = record_data['end_time']
             
             if record.start_time and record.end_time:
-                record.hours = self._calculate_hours(record.start_time, record.end_time)
+                record.hours = self._calculate_hours(record.start_time, record.end_time, record.company_id)
                 
             # Handle rate: if provided, use it. If empty or not provided, calculate default.
             raw_rate = record_data.get('rate')

@@ -72,6 +72,7 @@ class Company(db.Model):
     notify_weekly_enabled = db.Column(db.Boolean, default=False)
     notify_weekly_day     = db.Column(db.String(10), default='sunday')
     notify_weekly_time    = db.Column(db.String(5), default='20:00')
+    break_rules = db.Column(db.Text, default='[]') # JSON list of rules e.g. [{"threshold": 4.0, "deduct": 0.5}]
     is_active   = db.Column(db.Boolean, default=True)
     created_at  = db.Column(db.DateTime, default=datetime.utcnow)
 
