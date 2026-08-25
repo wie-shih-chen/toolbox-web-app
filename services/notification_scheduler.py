@@ -13,14 +13,14 @@ scheduler = APScheduler()
 
 def _send_company_notifications(app):
     """掃描所有公司的通知設定，依用戶總設定發送 LINE/Email 通知。"""
-    from datetime import datetime
+    from datetime import datetime, timedelta
     import json
     try:
         with app.app_context():
             from models import db, Company, SalaryRecord, User
             from services.notification_service import NotificationTemplate
 
-            now = datetime.now()
+            now = datetime.utcnow() + timedelta(hours=8)
             today_day = now.day
             today_weekday = now.strftime('%A').lower()  # 'monday' .. 'sunday'
             current_time_str = now.strftime('%H:%M')
@@ -137,7 +137,7 @@ def _send_shift_reminders(app):
         with app.app_context():
             from models import db, Company, SalaryRecord, User, CompanyShiftReminder, ShiftReminderLog
             
-            now = datetime.now()
+            now = datetime.utcnow() + timedelta(hours=8)
             today_str = now.strftime('%Y-%m-%d')
             tomorrow_str = (now + timedelta(days=1)).strftime('%Y-%m-%d')
             
@@ -246,6 +246,7 @@ class NotificationScheduler:
     def init_app(app):
         """Initialize APScheduler and register all notification tasks."""
         app.config['SCHEDULER_API_ENABLED'] = True
+        app.config['SCHEDULER_TIMEZONE'] = 'Asia/Taipei'
         scheduler.init_app(app)
         
         @scheduler.task('interval', id='check_reminders', seconds=60)
