@@ -25,6 +25,35 @@ def get_companies():
             'message_template': r.message_template
         } for r in reminders]
         
+        upcoming_schedules = []
+        if reminders:
+            now_tw = datetime.utcnow() + timedelta(hours=8)
+            today_str = now_tw.strftime('%Y-%m-%d')
+            shifts = SalaryRecord.query.filter(
+                SalaryRecord.company_id == c.id,
+                SalaryRecord.type == 'shift',
+                SalaryRecord.date >= today_str
+            ).all()
+            
+            for s in shifts:
+                try:
+                    if s.start_time:
+                        shift_dt = datetime.strptime(f"{s.date} {s.start_time}", "%Y-%m-%d %H:%M")
+                        for r in reminders:
+                            notify_dt = shift_dt + timedelta(minutes=r.offset_minutes)
+                            if notify_dt >= now_tw:
+                                upcoming_schedules.append({
+                                    'shift_date': s.date,
+                                    'shift_start': s.start_time,
+                                    'notify_time': notify_dt.strftime('%Y-%m-%d %H:%M'),
+                                    'message': r.message_template
+                                })
+                except Exception:
+                    pass
+            upcoming_schedules.sort(key=lambda x: x['notify_time'])
+            upcoming_schedules = upcoming_schedules[:3]
+            
+        
         result.append({
             'id': c.id,
             'name': c.name,
@@ -37,6 +66,7 @@ def get_companies():
             'notify_weekly_day': c.notify_weekly_day,
             'notify_weekly_time': c.notify_weekly_time,
             'shift_reminders': shift_reminders,
+            'upcoming_schedules': upcoming_schedules,
             'break_rules': c.break_rules or '[]'
         })
     return jsonify(result)
