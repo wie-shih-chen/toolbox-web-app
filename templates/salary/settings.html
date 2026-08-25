@@ -271,6 +271,11 @@
 {% block extra_js %}
 <script src="{{ url_for('static', filename='js/salary.js') }}"></script>
 <script>
+document.addEventListener('DOMContentLoaded', () => {
+    document.body.appendChild(document.getElementById('company-modal-overlay'));
+    document.body.appendChild(document.getElementById('legacy-modal'));
+});
+
 // ======== Company Management ========
 let companiesCache = [];
 
@@ -387,22 +392,27 @@ function renderBreakRules(rules) {
             const nlValue = cond.var + '|' + cond.op;
             const isTime = ['start_time', 'end_time'].includes(cond.var);
             return `
-            <div class="condition-row" style="display:flex; gap:8px; align-items:center; margin-bottom: 8px; flex-wrap:wrap;">
-                <span style="font-size: 0.85rem; color: var(--text-secondary); font-weight:600; width: 36px; text-align:right;">${cIdx === 0 ? '如果' : '並且'}</span>
-                <select class="settings-input cond-nl" style="width: auto; padding: 4px 8px;" onchange="updateConditionInput(this)">
-                    <option value="total_hours|>=" ${nlValue === 'total_hours|>=' ? 'selected' : ''}>總工時滿</option>
-                    <option value="total_hours|<" ${nlValue === 'total_hours|<' ? 'selected' : ''}>總工時未滿</option>
-                    <option value="start_time|<=" ${nlValue === 'start_time|<=' ? 'selected' : ''}>上班時間早於(含)</option>
-                    <option value="start_time|>=" ${nlValue === 'start_time|>=' ? 'selected' : ''}>上班時間晚於(含)</option>
-                    <option value="end_time|<=" ${nlValue === 'end_time|<=' ? 'selected' : ''}>下班時間早於(含)</option>
-                    <option value="end_time|>=" ${nlValue === 'end_time|>=' ? 'selected' : ''}>下班時間晚於(含)</option>
-                </select>
-                ${isTime 
-                    ? `<input type="time" class="settings-input cond-val" value="${cond.val}" style="width: 100px; padding: 4px 8px;">`
-                    : `<input type="number" step="0.5" class="settings-input cond-val" value="${cond.val}" style="width: 70px; padding: 4px 8px; text-align:center;">`
-                }
-                <span class="cond-suffix" style="font-size: 0.85rem; color: var(--text-secondary);">${isTime ? '' : '小時'}</span>
-                <button class="btn btn-secondary" onclick="removeCondition(this)" style="padding: 4px; border-radius: 50%; color:var(--danger-color); margin-left:auto;"><span class="material-icons" style="font-size:16px;">close</span></button>
+            <div class="condition-row" style="background: rgba(0,0,0,0.15); padding: 10px 12px; border-radius: 8px; margin-bottom: 8px; position: relative;">
+                <button class="btn btn-secondary" onclick="removeCondition(this)" style="position: absolute; right: 8px; top: 10px; padding: 4px; border-radius: 50%; color:var(--danger-color); z-index: 2;"><span class="material-icons" style="font-size:18px;">close</span></button>
+                
+                <div style="display:flex; gap:8px; align-items:center; margin-bottom: 8px; padding-right: 32px;">
+                    <span style="font-size: 0.85rem; color: var(--text-secondary); font-weight:600; width: 36px; text-align:right; flex-shrink: 0;">${cIdx === 0 ? '如果' : '並且'}</span>
+                    <select class="settings-input cond-nl" style="flex: 1; padding: 6px 8px;" onchange="updateConditionInput(this)">
+                        <option value="total_hours|>=" ${nlValue === 'total_hours|>=' ? 'selected' : ''}>總工時滿</option>
+                        <option value="total_hours|<" ${nlValue === 'total_hours|<' ? 'selected' : ''}>總工時未滿</option>
+                        <option value="start_time|<=" ${nlValue === 'start_time|<=' ? 'selected' : ''}>上班時間早於(含)</option>
+                        <option value="start_time|>=" ${nlValue === 'start_time|>=' ? 'selected' : ''}>上班時間晚於(含)</option>
+                        <option value="end_time|<=" ${nlValue === 'end_time|<=' ? 'selected' : ''}>下班時間早於(含)</option>
+                        <option value="end_time|>=" ${nlValue === 'end_time|>=' ? 'selected' : ''}>下班時間晚於(含)</option>
+                    </select>
+                </div>
+                <div style="display:flex; gap:8px; align-items:center; padding-left: 44px; padding-right: 32px;">
+                    ${isTime 
+                        ? `<input type="time" class="settings-input cond-val" value="${cond.val}" style="flex: 1; max-width: 140px; padding: 6px 8px;">`
+                        : `<input type="number" step="0.5" class="settings-input cond-val" value="${cond.val}" style="flex: 1; max-width: 140px; padding: 6px 8px; text-align:center;">`
+                    }
+                    <span class="cond-suffix" style="font-size: 0.85rem; color: var(--text-secondary);">${isTime ? '' : '小時'}</span>
+                </div>
             </div>
             `;
         }).join('');
@@ -438,13 +448,13 @@ function updateConditionInput(selectElem) {
     if (isTime) {
         valInput.type = 'time';
         valInput.removeAttribute('step'); // Remove step to prevent browser from showing seconds
-        valInput.style.width = '100px';
+        valInput.style.maxWidth = '140px';
         if (!valInput.value.includes(':')) valInput.value = '12:00';
         suffix.textContent = '';
     } else {
         valInput.type = 'number';
         valInput.step = '0.5';
-        valInput.style.width = '70px';
+        valInput.style.maxWidth = '140px';
         suffix.textContent = '小時';
     }
 }
@@ -455,20 +465,24 @@ function addCondition(btn) {
     
     const row = document.createElement('div');
     row.className = 'condition-row';
-    row.style.cssText = 'display:flex; gap:8px; align-items:center; margin-bottom: 8px; flex-wrap:wrap;';
+    row.style.cssText = 'background: rgba(0,0,0,0.15); padding: 10px 12px; border-radius: 8px; margin-bottom: 8px; position: relative;';
     row.innerHTML = `
-        <span style="font-size: 0.85rem; color: var(--text-secondary); font-weight:600; width: 36px; text-align:right;">${isFirst ? '如果' : '並且'}</span>
-        <select class="settings-input cond-nl" style="width: auto; padding: 4px 8px;" onchange="updateConditionInput(this)">
-            <option value="total_hours|>=">總工時滿</option>
-            <option value="total_hours|<">總工時未滿</option>
-            <option value="start_time|<=">上班時間早於(含)</option>
-            <option value="start_time|>=">上班時間晚於(含)</option>
-            <option value="end_time|<=">下班時間早於(含)</option>
-            <option value="end_time|>=">下班時間晚於(含)</option>
-        </select>
-        <input type="number" step="0.5" class="settings-input cond-val" value="" style="width: 70px; padding: 4px 8px; text-align:center;">
-        <span class="cond-suffix" style="font-size: 0.85rem; color: var(--text-secondary);">小時</span>
-        <button class="btn btn-secondary" onclick="removeCondition(this)" style="padding: 4px; border-radius: 50%; color:var(--danger-color); margin-left:auto;"><span class="material-icons" style="font-size:16px;">close</span></button>
+        <button class="btn btn-secondary" onclick="removeCondition(this)" style="position: absolute; right: 8px; top: 10px; padding: 4px; border-radius: 50%; color:var(--danger-color); z-index: 2;"><span class="material-icons" style="font-size:18px;">close</span></button>
+        <div style="display:flex; gap:8px; align-items:center; margin-bottom: 8px; padding-right: 32px;">
+            <span style="font-size: 0.85rem; color: var(--text-secondary); font-weight:600; width: 36px; text-align:right; flex-shrink: 0;">${isFirst ? '如果' : '並且'}</span>
+            <select class="settings-input cond-nl" style="flex: 1; padding: 6px 8px;" onchange="updateConditionInput(this)">
+                <option value="total_hours|>=">總工時滿</option>
+                <option value="total_hours|<">總工時未滿</option>
+                <option value="start_time|<=">上班時間早於(含)</option>
+                <option value="start_time|>=">上班時間晚於(含)</option>
+                <option value="end_time|<=">下班時間早於(含)</option>
+                <option value="end_time|>=">下班時間晚於(含)</option>
+            </select>
+        </div>
+        <div style="display:flex; gap:8px; align-items:center; padding-left: 44px; padding-right: 32px;">
+            <input type="number" step="0.5" class="settings-input cond-val" value="" style="flex: 1; max-width: 140px; padding: 6px 8px; text-align:center;">
+            <span class="cond-suffix" style="font-size: 0.85rem; color: var(--text-secondary);">小時</span>
+        </div>
     `;
     container.appendChild(row);
 }
@@ -505,19 +519,23 @@ function addBreakRule() {
         <div class="rule-title" style="font-size: 0.95rem; font-weight: 600; margin-bottom: 12px; color: var(--accent-color);">新規則</div>
         
         <div class="conditions-container">
-            <div class="condition-row" style="display:flex; gap:8px; align-items:center; margin-bottom: 8px; flex-wrap:wrap;">
-                <span style="font-size: 0.85rem; color: var(--text-secondary); font-weight:600; width: 36px; text-align:right;">如果</span>
-                <select class="settings-input cond-nl" style="width: auto; padding: 4px 8px;" onchange="updateConditionInput(this)">
-                    <option value="total_hours|>=">總工時滿</option>
-                    <option value="total_hours|<">總工時未滿</option>
-                    <option value="start_time|<=">上班時間早於(含)</option>
-                    <option value="start_time|>=">上班時間晚於(含)</option>
-                    <option value="end_time|<=">下班時間早於(含)</option>
-                    <option value="end_time|>=">下班時間晚於(含)</option>
-                </select>
-                <input type="number" step="0.5" class="settings-input cond-val" value="" style="width: 70px; padding: 4px 8px; text-align:center;">
-                <span class="cond-suffix" style="font-size: 0.85rem; color: var(--text-secondary);">小時</span>
-                <button class="btn btn-secondary" onclick="removeCondition(this)" style="padding: 4px; border-radius: 50%; color:var(--danger-color); margin-left:auto;"><span class="material-icons" style="font-size:16px;">close</span></button>
+            <div class="condition-row" style="background: rgba(0,0,0,0.15); padding: 10px 12px; border-radius: 8px; margin-bottom: 8px; position: relative;">
+                <button class="btn btn-secondary" onclick="removeCondition(this)" style="position: absolute; right: 8px; top: 10px; padding: 4px; border-radius: 50%; color:var(--danger-color); z-index: 2;"><span class="material-icons" style="font-size:18px;">close</span></button>
+                <div style="display:flex; gap:8px; align-items:center; margin-bottom: 8px; padding-right: 32px;">
+                    <span style="font-size: 0.85rem; color: var(--text-secondary); font-weight:600; width: 36px; text-align:right; flex-shrink: 0;">如果</span>
+                    <select class="settings-input cond-nl" style="flex: 1; padding: 6px 8px;" onchange="updateConditionInput(this)">
+                        <option value="total_hours|>=">總工時滿</option>
+                        <option value="total_hours|<">總工時未滿</option>
+                        <option value="start_time|<=">上班時間早於(含)</option>
+                        <option value="start_time|>=">上班時間晚於(含)</option>
+                        <option value="end_time|<=">下班時間早於(含)</option>
+                        <option value="end_time|>=">下班時間晚於(含)</option>
+                    </select>
+                </div>
+                <div style="display:flex; gap:8px; align-items:center; padding-left: 44px; padding-right: 32px;">
+                    <input type="number" step="0.5" class="settings-input cond-val" value="" style="flex: 1; max-width: 140px; padding: 6px 8px; text-align:center;">
+                    <span class="cond-suffix" style="font-size: 0.85rem; color: var(--text-secondary);">小時</span>
+                </div>
             </div>
         </div>
         
