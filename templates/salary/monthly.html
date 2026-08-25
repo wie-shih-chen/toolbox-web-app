@@ -122,10 +122,6 @@
 {% block content %}
 <!-- Horizontal Navigation Bar -->
 <div class="salary-nav">
-    <a href="{{ url_for('salary.index') }}"
-        class="salary-nav-item {% if request.endpoint == 'salary.index' %}active{% endif %}">
-        📅 本週排班
-    </a>
     <a href="{{ url_for('salary.monthly') }}"
         class="salary-nav-item {% if request.endpoint == 'salary.monthly' %}active{% endif %}">
         🗓️ 月曆檢視

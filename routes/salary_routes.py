@@ -226,11 +226,9 @@ def index():
     except Exception as e:
         print(f"Lazy Report Error: {e}")
 
-    # Default to current week
-    today = datetime.now()
-    monday = today - timedelta(days=today.weekday())
-    date_str = monday.strftime('%Y-%m-%d')
-    return render_template('salary/dashboard.html', start_date=date_str)
+    # Redirect to monthly view
+    from flask import redirect, url_for
+    return redirect(url_for('salary.monthly'))
 
 @salary_bp.route('/monthly')
 @login_required
