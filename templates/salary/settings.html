@@ -437,6 +437,7 @@ function updateConditionInput(selectElem) {
     
     if (isTime) {
         valInput.type = 'time';
+        valInput.removeAttribute('step'); // Remove step to prevent browser from showing seconds
         valInput.style.width = '100px';
         if (!valInput.value.includes(':')) valInput.value = '12:00';
         suffix.textContent = '';
