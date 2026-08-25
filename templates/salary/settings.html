@@ -316,6 +316,7 @@ function renderCompanyList() {
 function openCompanyForm(id) {
     const overlay = document.getElementById('company-modal-overlay');
     overlay.style.display = 'flex';
+    document.body.style.overflow = 'hidden'; // Prevent background scrolling
 
     if (id === null) {
         document.getElementById('company-form-title').textContent = '新增公司';
@@ -406,6 +407,7 @@ function removeBreakRule(btn) {
 
 function closeCompanyForm() {
     document.getElementById('company-modal-overlay').style.display = 'none';
+    document.body.style.overflow = ''; // Restore background scrolling
 }
 
 async function saveCompany() {
@@ -489,6 +491,7 @@ async function checkLegacyRecords() {
     sel.innerHTML = '<option value="">請選擇公司…</option>' +
         companiesCache.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
     modal.style.display = 'flex';
+    document.body.style.overflow = 'hidden';
 }
 
 async function assignLegacyRecords() {
@@ -501,12 +504,14 @@ async function assignLegacyRecords() {
     });
     if (res.ok) {
         document.getElementById('legacy-modal').style.display = 'none';
+        document.body.style.overflow = '';
         alert('歸屬完成！');
     }
 }
 
 function dismissLegacyModal() {
     document.getElementById('legacy-modal').style.display = 'none';
+    document.body.style.overflow = '';
 }
 
 document.addEventListener('DOMContentLoaded', loadCompanies);
