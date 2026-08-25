@@ -25,7 +25,7 @@ class User(UserMixin, db.Model):
     salary_records = db.relationship('SalaryRecord', backref='user', lazy=True)
     expense_records = db.relationship('ExpenseRecord', backref='user', lazy=True)
     period_records = db.relationship('PeriodRecord', backref='user', lazy=True)
-    settings = db.relationship('UserSettings', backref='user', uselist=False, lazy=True)
+    settings = db.relationship('UserSettings', backref='user', uselist=False, lazy='joined')
     reminders = db.relationship('Reminder', backref='user', lazy=True)
     line_bindings = db.relationship('LineBinding', backref='user', lazy=True)
     orders = db.relationship('Order', backref='user', lazy=True)

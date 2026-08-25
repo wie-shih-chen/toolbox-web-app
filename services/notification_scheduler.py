@@ -259,9 +259,9 @@ class NotificationScheduler:
             """Every minute: check if any user's notify_time matches now → send calendar reminders."""
             CalendarNotifyService.check_and_send(app)
 
-        @scheduler.task('interval', id='countdown_notify', seconds=60)
+        @scheduler.task('cron', id='countdown_notify', hour=9, minute=0)
         def countdown_notify_task():
-            """Every minute: at 09:00 TW time, send countdown/anniversary milestone reminders."""
+            """Every day at 09:00 TW time, send countdown/anniversary milestone reminders."""
             CountdownNotifyService.check_and_send(app)
 
         @scheduler.task('interval', id='period_notify', seconds=60)

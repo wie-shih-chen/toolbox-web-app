@@ -27,10 +27,6 @@ class CountdownNotifyService:
             current_time = now_tw.strftime('%H:%M')
             tomorrow = (now_tw + timedelta(days=1)).date()
 
-            # Only run at 09:00 Taiwan time to avoid spam
-            if current_time != '09:00':
-                return
-
             print(f'[CountdownNotify] Running at {current_time} TW — checking tomorrow {tomorrow}')
 
             users = User.query.all()
