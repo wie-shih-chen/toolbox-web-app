@@ -302,21 +302,21 @@ class NotificationScheduler:
             )
 
             try:
-                import fcntl
-                # Use a file lock to ensure only one worker starts the scheduler
-                lock_file_path = os.path.join(os.environ.get('TMPDIR', '/tmp'), 'apscheduler.lock')
-                scheduler_lock_file = open(lock_file_path, 'w')
-                try:
-                    # LOCK_NB means non-blocking; raises BlockingIOError if already locked
-                    fcntl.lockf(scheduler_lock_file, fcntl.LOCK_EX | fcntl.LOCK_NB)
+                import uwsgi
+                if uwsgi.worker_id() == 1:
                     scheduler.start()
-                    logger.info("NotificationScheduler started successfully.")
-                    print("Scheduler started successfully.")
-                    # Keep scheduler_lock_file open for the lifetime of this process
-                    app.scheduler_lock_file = scheduler_lock_file
-                except BlockingIOError:
-                    logger.info("Scheduler already running in another worker.")
-                    print("Scheduler already running in another worker.")
+                    logger.info("NotificationScheduler started in uWSGI worker 1.")
+                    print("Scheduler started in uWSGI worker 1.")
+                else:
+                    logger.info("Skipping scheduler start in uWSGI worker > 1.")
+                    print("Skipping scheduler start in uWSGI worker > 1.")
+            except ImportError:
+                # Not running under uWSGI (e.g. local Flask dev server)
+                # Ensure it only runs once in dev by checking werkzeug
+                if os.environ.get('WERKZEUG_RUN_MAIN') == 'true' or not os.environ.get('WERKZEUG_RUN_MAIN'):
+                    scheduler.start()
+                    logger.info("NotificationScheduler started in local dev.")
+                    print("Scheduler started in local dev.")
             except Exception as e:
                 logger.error(f"Failed to start NotificationScheduler: {e}")
                 print(f"Failed to start Scheduler: {e}")
