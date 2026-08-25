@@ -26,8 +26,15 @@ def _send_company_notifications(app):
             current_time_str = now.strftime('%H:%M')
 
             companies = Company.query.filter_by(is_active=True).all()
+            if not companies:
+                return
+
+            company_ids = [c.id for c in companies]
+            # Fetch all users associated with these companies in one go to reduce queries
+            users = {u.id: u for u in User.query.filter(User.id.in_(list(set(c.user_id for c in companies)))).all()}
+            
             for company in companies:
-                user = User.query.get(company.user_id)
+                user = users.get(company.user_id)
                 if not user or not user.settings:
                     continue
 
@@ -136,11 +143,33 @@ def _send_shift_reminders(app):
             
             # Fetch active reminders
             active_reminders = CompanyShiftReminder.query.filter_by(is_active=True).all()
+            if not active_reminders:
+                return
+                
+            # Batch fetch related companies and users
+            company_ids = list(set(r.company_id for r in active_reminders))
+            companies = {c.id: c for c in Company.query.filter(Company.id.in_(company_ids), Company.is_active == True).all()}
+            user_ids = list(set(c.user_id for c in companies.values()))
+            users = {u.id: u for u in User.query.filter(User.id.in_(user_ids)).all()}
+            
+            # Batch fetch shifts for today and tomorrow for all relevant companies
+            all_shifts = SalaryRecord.query.filter(
+                SalaryRecord.type == 'shift',
+                SalaryRecord.company_id.in_(company_ids),
+                SalaryRecord.date.in_([today_str, tomorrow_str])
+            ).all()
+            
+            # Group shifts by company_id for quick lookup
+            from collections import defaultdict
+            shifts_by_company = defaultdict(list)
+            for shift in all_shifts:
+                shifts_by_company[shift.company_id].append(shift)
+
             for reminder in active_reminders:
-                company = Company.query.get(reminder.company_id)
-                if not company or not company.is_active:
+                company = companies.get(reminder.company_id)
+                if not company:
                     continue
-                user = User.query.get(company.user_id)
+                user = users.get(company.user_id)
                 if not user or not user.settings:
                     continue
                     
@@ -149,12 +178,7 @@ def _send_shift_reminders(app):
                 except Exception:
                     methods = ['email']
                     
-                # Look for shifts today and tomorrow to handle cross-midnight
-                shifts = SalaryRecord.query.filter(
-                    SalaryRecord.type == 'shift',
-                    SalaryRecord.company_id == company.id,
-                    SalaryRecord.date.in_([today_str, tomorrow_str])
-                ).all()
+                shifts = shifts_by_company.get(company.id, [])
                 
                 for shift in shifts:
                     if not shift.start_time:
@@ -278,9 +302,21 @@ class NotificationScheduler:
             )
 
             try:
-                scheduler.start()
-                logger.info("NotificationScheduler started successfully.")
-                print("Scheduler started successfully.")
+                import fcntl
+                # Use a file lock to ensure only one worker starts the scheduler
+                lock_file_path = os.path.join(os.environ.get('TMPDIR', '/tmp'), 'apscheduler.lock')
+                scheduler_lock_file = open(lock_file_path, 'w')
+                try:
+                    # LOCK_NB means non-blocking; raises BlockingIOError if already locked
+                    fcntl.lockf(scheduler_lock_file, fcntl.LOCK_EX | fcntl.LOCK_NB)
+                    scheduler.start()
+                    logger.info("NotificationScheduler started successfully.")
+                    print("Scheduler started successfully.")
+                    # Keep scheduler_lock_file open for the lifetime of this process
+                    app.scheduler_lock_file = scheduler_lock_file
+                except BlockingIOError:
+                    logger.info("Scheduler already running in another worker.")
+                    print("Scheduler already running in another worker.")
             except Exception as e:
                 logger.error(f"Failed to start NotificationScheduler: {e}")
                 print(f"Failed to start Scheduler: {e}")
