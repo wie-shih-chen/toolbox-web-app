@@ -392,10 +392,10 @@ function renderBreakRules(rules) {
                 <select class="settings-input cond-nl" style="width: auto; padding: 4px 8px;" onchange="updateConditionInput(this)">
                     <option value="total_hours|>=" ${nlValue === 'total_hours|>=' ? 'selected' : ''}>總工時滿</option>
                     <option value="total_hours|<" ${nlValue === 'total_hours|<' ? 'selected' : ''}>總工時未滿</option>
-                    <option value="start_time|<=" ${nlValue === 'start_time|<=' ? 'selected' : ''}>上班時間早於</option>
-                    <option value="start_time|>=" ${nlValue === 'start_time|>=' ? 'selected' : ''}>上班時間晚於</option>
-                    <option value="end_time|<=" ${nlValue === 'end_time|<=' ? 'selected' : ''}>下班時間早於</option>
-                    <option value="end_time|>=" ${nlValue === 'end_time|>=' ? 'selected' : ''}>下班時間晚於</option>
+                    <option value="start_time|<=" ${nlValue === 'start_time|<=' ? 'selected' : ''}>上班時間早於(含)</option>
+                    <option value="start_time|>=" ${nlValue === 'start_time|>=' ? 'selected' : ''}>上班時間晚於(含)</option>
+                    <option value="end_time|<=" ${nlValue === 'end_time|<=' ? 'selected' : ''}>下班時間早於(含)</option>
+                    <option value="end_time|>=" ${nlValue === 'end_time|>=' ? 'selected' : ''}>下班時間晚於(含)</option>
                 </select>
                 ${isTime 
                     ? `<input type="time" class="settings-input cond-val" value="${cond.val}" style="width: 100px; padding: 4px 8px;">`
@@ -461,10 +461,10 @@ function addCondition(btn) {
         <select class="settings-input cond-nl" style="width: auto; padding: 4px 8px;" onchange="updateConditionInput(this)">
             <option value="total_hours|>=">總工時滿</option>
             <option value="total_hours|<">總工時未滿</option>
-            <option value="start_time|<=">上班時間早於</option>
-            <option value="start_time|>=">上班時間晚於</option>
-            <option value="end_time|<=">下班時間早於</option>
-            <option value="end_time|>=">下班時間晚於</option>
+            <option value="start_time|<=">上班時間早於(含)</option>
+            <option value="start_time|>=">上班時間晚於(含)</option>
+            <option value="end_time|<=">下班時間早於(含)</option>
+            <option value="end_time|>=">下班時間晚於(含)</option>
         </select>
         <input type="number" step="0.5" class="settings-input cond-val" value="" style="width: 70px; padding: 4px 8px; text-align:center;">
         <span class="cond-suffix" style="font-size: 0.85rem; color: var(--text-secondary);">小時</span>
@@ -510,10 +510,10 @@ function addBreakRule() {
                 <select class="settings-input cond-nl" style="width: auto; padding: 4px 8px;" onchange="updateConditionInput(this)">
                     <option value="total_hours|>=">總工時滿</option>
                     <option value="total_hours|<">總工時未滿</option>
-                    <option value="start_time|<=">上班時間早於</option>
-                    <option value="start_time|>=">上班時間晚於</option>
-                    <option value="end_time|<=">下班時間早於</option>
-                    <option value="end_time|>=">下班時間晚於</option>
+                    <option value="start_time|<=">上班時間早於(含)</option>
+                    <option value="start_time|>=">上班時間晚於(含)</option>
+                    <option value="end_time|<=">下班時間早於(含)</option>
+                    <option value="end_time|>=">下班時間晚於(含)</option>
                 </select>
                 <input type="number" step="0.5" class="settings-input cond-val" value="" style="width: 70px; padding: 4px 8px; text-align:center;">
                 <span class="cond-suffix" style="font-size: 0.85rem; color: var(--text-secondary);">小時</span>
