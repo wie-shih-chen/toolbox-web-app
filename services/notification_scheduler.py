@@ -68,24 +68,14 @@ def _send_company_notifications(app):
                            f"上月共排班 {hours:.1f} 小時\n"
                            f"預計收入 ${total:,}")
 
-                    if 'line' in methods:
-                        try:
-                            from services.line_service import LineService
-                            LineService.push_to_user(user.id, msg, module='salary')
-                        except Exception as e:
-                            logger.error(f"Company payday LINE error: {e}")
-                    if 'email' in methods and user.email:
-                        try:
-                            from services.email_service import EmailService
-                            EmailService.send_email(
-                                to=user.email,
-                                subject=f'[{company.name}] 發薪日提醒',
-                                template='email/simple_notify.html',
-                                username=user.username,
-                                message=msg
-                            )
-                        except Exception as e:
-                            logger.error(f"Company payday Email error: {e}")
+                    from services.notification_service import NotificationService
+                    NotificationService.send_notification(
+                        user=user,
+                        subject=f'[{company.name}] 發薪日提醒',
+                        message_text=msg,
+                        notify_methods=methods,
+                        module='salary'
+                    )
 
                 # ---- 每週摘要通知 ----
                 if (company.notify_weekly_enabled and
@@ -108,24 +98,14 @@ def _send_company_notifications(app):
                            f"日期：{start} ~ {end}\n"
                            f"共排班 {hours:.1f} 小時，收入 ${total:,}")
 
-                    if 'line' in methods:
-                        try:
-                            from services.line_service import LineService
-                            LineService.push_to_user(user.id, msg, module='salary')
-                        except Exception as e:
-                            logger.error(f"Company weekly LINE error: {e}")
-                    if 'email' in methods and user.email:
-                        try:
-                            from services.email_service import EmailService
-                            EmailService.send_email(
-                                to=user.email,
-                                subject=f'[{company.name}] 每週工時摘要',
-                                template='email/simple_notify.html',
-                                username=user.username,
-                                message=msg
-                            )
-                        except Exception as e:
-                            logger.error(f"Company weekly Email error: {e}")
+                    from services.notification_service import NotificationService
+                    NotificationService.send_notification(
+                        user=user,
+                        subject=f'[{company.name}] 每週工時摘要',
+                        message_text=msg,
+                        notify_methods=methods,
+                        module='salary'
+                    )
     except Exception as e:
         logger.error(f"Company notification error: {e}")
 
@@ -209,25 +189,14 @@ def _send_shift_reminders(app):
                             
                             final_msg = f"[{company.name} 排班提醒]\n{msg}"
                             
-                            if 'line' in methods:
-                                try:
-                                    from services.line_service import LineService
-                                    LineService.push_to_user(user.id, final_msg, module='salary')
-                                except Exception as e:
-                                    logger.error(f"Shift reminder LINE error: {e}")
-                                    
-                            if 'email' in methods and user.email:
-                                try:
-                                    from services.email_service import EmailService
-                                    EmailService.send_email(
-                                        to=user.email,
-                                        subject=f'[{company.name}] 排班提醒',
-                                        template='email/simple_notify.html',
-                                        username=user.username,
-                                        message=final_msg
-                                    )
-                                except Exception as e:
-                                    logger.error(f"Shift reminder Email error: {e}")
+                            from services.notification_service import NotificationService
+                            NotificationService.send_notification(
+                                user=user,
+                                subject=f'[{company.name}] 排班提醒',
+                                message_text=final_msg,
+                                notify_methods=methods,
+                                module='salary'
+                            )
                                     
                             # Save log
                             new_log = ShiftReminderLog(
