@@ -398,8 +398,8 @@ function renderBreakRules(rules) {
                     <option value="<" ${cond.op==='<'?'selected':''}>小於 (<)</option>
                 </select>
                 ${cond.var === 'start_time' 
-                    ? \`<input type="time" class="settings-input cond-val" value="\${cond.val}" style="width: 100px; padding: 4px 8px;">\`
-                    : \`<input type="number" step="0.5" class="settings-input cond-val" value="\${cond.val}" style="width: 70px; padding: 4px 8px; text-align:center;">\`
+                    ? `<input type="time" class="settings-input cond-val" value="${cond.val}" style="width: 100px; padding: 4px 8px;">`
+                    : `<input type="number" step="0.5" class="settings-input cond-val" value="${cond.val}" style="width: 70px; padding: 4px 8px; text-align:center;">`
                 }
                 <button class="btn btn-secondary" onclick="removeCondition(this)" style="padding: 4px; border-radius: 50%; color:var(--danger-color); margin-left:auto;"><span class="material-icons" style="font-size:16px;">close</span></button>
             </div>
@@ -448,8 +448,8 @@ function addCondition(btn) {
     const row = document.createElement('div');
     row.className = 'condition-row';
     row.style.cssText = 'display:flex; gap:8px; align-items:center; margin-bottom: 8px; flex-wrap:wrap;';
-    row.innerHTML = \`
-        <span style="font-size: 0.85rem; color: var(--text-secondary); font-weight:600; width: 36px; text-align:right;">\${isFirst ? '如果' : '並且'}</span>
+    row.innerHTML = `
+        <span style="font-size: 0.85rem; color: var(--text-secondary); font-weight:600; width: 36px; text-align:right;">${isFirst ? '如果' : '並且'}</span>
         <select class="settings-input cond-var" style="width: auto; padding: 4px 8px;" onchange="updateConditionInput(this)">
             <option value="total_hours">總工時</option>
             <option value="start_time">上班時間</option>
@@ -463,7 +463,7 @@ function addCondition(btn) {
         </select>
         <input type="number" step="0.5" class="settings-input cond-val" value="" style="width: 70px; padding: 4px 8px; text-align:center;">
         <button class="btn btn-secondary" onclick="removeCondition(this)" style="padding: 4px; border-radius: 50%; color:var(--danger-color); margin-left:auto;"><span class="material-icons" style="font-size:16px;">close</span></button>
-    \`;
+    `;
     container.appendChild(row);
 }
 
@@ -480,7 +480,7 @@ function removeCondition(btn) {
 function updateRuleTitles() {
     document.querySelectorAll('#cf-break-rules-container .rule-block').forEach((block, idx) => {
         const title = block.querySelector('.rule-title');
-        if (title) title.textContent = \`規則 \${idx + 1}\`;
+        if (title) title.textContent = `規則 ${idx + 1}`;
     });
 }
 
@@ -494,7 +494,7 @@ function addBreakRule() {
     ruleBlock.className = 'rule-block';
     ruleBlock.style.cssText = 'background: rgba(255,255,255,0.03); border-radius: 12px; padding: 12px; position: relative; border: 1px solid rgba(255,255,255,0.1); margin-bottom: 12px;';
     
-    ruleBlock.innerHTML = \`
+    ruleBlock.innerHTML = `
         <button class="btn btn-secondary" onclick="removeBreakRuleBlock(this)" style="position:absolute; top: 12px; right: 12px; padding: 4px; border-radius: 50%; color:var(--danger-color);"><span class="material-icons" style="font-size:16px;">delete</span></button>
         <div class="rule-title" style="font-size: 0.95rem; font-weight: 600; margin-bottom: 12px; color: var(--accent-color);">新規則</div>
         
@@ -526,7 +526,7 @@ function addBreakRule() {
             <input type="number" step="0.5" class="settings-input rule-deduct" value="1" style="width: 70px; padding: 4px 8px; text-align:center;">
             <span style="font-size: 0.9rem;">小時</span>
         </div>
-    \`;
+    `;
     container.appendChild(ruleBlock);
     updateRuleTitles();
 }
