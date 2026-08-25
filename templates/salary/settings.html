@@ -360,48 +360,184 @@ function openCompanyForm(id) {
 function renderBreakRules(rules) {
     const container = document.getElementById('cf-break-rules-container');
     container.innerHTML = '';
-    if (rules.length === 0) {
-        container.innerHTML = '<div style="color:var(--text-secondary); font-size:0.9rem;">(無規則)</div>';
+    
+    // Normalize rules on the fly for UI rendering
+    const normalizedRules = rules.map(r => {
+        if (r.type !== 'logic') {
+            return {
+                type: 'logic',
+                conditions: [{var: 'total_hours', op: '>=', val: r.threshold || 0}],
+                deduct: r.deduct || 0
+            };
+        }
+        return r;
+    });
+
+    if (normalizedRules.length === 0) {
+        container.innerHTML = '<div style="color:var(--text-secondary); font-size:0.9rem; text-align:center; padding: 12px 0;">(尚未設定規則)</div>';
         return;
     }
-    rules.forEach((rule, index) => {
-        const row = document.createElement('div');
-        row.style.cssText = 'display:flex; gap:10px; align-items:center;';
-        row.innerHTML = `
-            <span style="font-size:0.9rem; flex-shrink:0;">滿</span>
-            <input type="number" step="0.5" class="settings-input br-threshold" value="${rule.threshold}" style="width:70px; padding:4px; text-align:center;" placeholder="時數">
-            <span style="font-size:0.9rem; flex-shrink:0;">小時，扣</span>
-            <input type="number" step="0.5" class="settings-input br-deduct" value="${rule.deduct}" style="width:70px; padding:4px; text-align:center;" placeholder="時數">
-            <span style="font-size:0.9rem; flex-shrink:0;">小時</span>
-            <button class="btn btn-secondary" onclick="removeBreakRule(this)" style="padding: 4px; border-radius: 50%; color:var(--danger-color);"><span class="material-icons" style="font-size:16px;">remove</span></button>
+    
+    normalizedRules.forEach((rule, rIdx) => {
+        const ruleBlock = document.createElement('div');
+        ruleBlock.className = 'rule-block';
+        ruleBlock.style.cssText = 'background: rgba(255,255,255,0.03); border-radius: 12px; padding: 12px; position: relative; border: 1px solid rgba(255,255,255,0.1); margin-bottom: 12px;';
+        
+        let conditionsHtml = rule.conditions.map((cond, cIdx) => `
+            <div class="condition-row" style="display:flex; gap:8px; align-items:center; margin-bottom: 8px; flex-wrap:wrap;">
+                <span style="font-size: 0.85rem; color: var(--text-secondary); font-weight:600; width: 36px; text-align:right;">${cIdx === 0 ? '如果' : '並且'}</span>
+                <select class="settings-input cond-var" style="width: auto; padding: 4px 8px;" onchange="updateConditionInput(this)">
+                    <option value="total_hours" ${cond.var==='total_hours'?'selected':''}>總工時</option>
+                    <option value="start_time" ${cond.var==='start_time'?'selected':''}>上班時間</option>
+                </select>
+                <select class="settings-input cond-op" style="width: auto; padding: 4px 8px;">
+                    <option value=">=" ${cond.op==='>='?'selected':''}>大於等於 (>=)</option>
+                    <option value="<=" ${cond.op==='<='?'selected':''}>小於等於 (<=)</option>
+                    <option value="==" ${cond.op==='=='?'selected':''}>等於 (==)</option>
+                    <option value=">" ${cond.op==='>'?'selected':''}>大於 (>)</option>
+                    <option value="<" ${cond.op==='<'?'selected':''}>小於 (<)</option>
+                </select>
+                ${cond.var === 'start_time' 
+                    ? \`<input type="time" class="settings-input cond-val" value="\${cond.val}" style="width: 100px; padding: 4px 8px;">\`
+                    : \`<input type="number" step="0.5" class="settings-input cond-val" value="\${cond.val}" style="width: 70px; padding: 4px 8px; text-align:center;">\`
+                }
+                <button class="btn btn-secondary" onclick="removeCondition(this)" style="padding: 4px; border-radius: 50%; color:var(--danger-color); margin-left:auto;"><span class="material-icons" style="font-size:16px;">close</span></button>
+            </div>
+        `).join('');
+
+        ruleBlock.innerHTML = `
+            <button class="btn btn-secondary" onclick="removeBreakRuleBlock(this)" style="position:absolute; top: 12px; right: 12px; padding: 4px; border-radius: 50%; color:var(--danger-color);"><span class="material-icons" style="font-size:16px;">delete</span></button>
+            <div class="rule-title" style="font-size: 0.95rem; font-weight: 600; margin-bottom: 12px; color: var(--accent-color);">規則 ${rIdx + 1}</div>
+            
+            <div class="conditions-container">
+                ${conditionsHtml}
+            </div>
+            
+            <div style="margin-left: 44px; margin-bottom: 12px;">
+                <button class="btn btn-secondary" onclick="addCondition(this)" style="padding: 2px 8px; font-size: 0.8rem;">+ 新增條件 (AND)</button>
+            </div>
+            
+            <div style="display:flex; gap:8px; align-items:center; background: rgba(0,0,0,0.15); padding: 8px 12px; border-radius: 8px;">
+                <span style="font-size: 0.9rem; font-weight:600;">則扣除</span>
+                <input type="number" step="0.5" class="settings-input rule-deduct" value="${rule.deduct}" style="width: 70px; padding: 4px 8px; text-align:center;">
+                <span style="font-size: 0.9rem;">小時</span>
+            </div>
         `;
-        container.appendChild(row);
+        container.appendChild(ruleBlock);
+    });
+}
+
+function updateConditionInput(selectElem) {
+    const row = selectElem.closest('.condition-row');
+    const valInput = row.querySelector('.cond-val');
+    if (selectElem.value === 'start_time') {
+        valInput.type = 'time';
+        valInput.style.width = '100px';
+        if (!valInput.value.includes(':')) valInput.value = '12:00';
+    } else {
+        valInput.type = 'number';
+        valInput.step = '0.5';
+        valInput.style.width = '70px';
+    }
+}
+
+function addCondition(btn) {
+    const container = btn.closest('.rule-block').querySelector('.conditions-container');
+    const isFirst = container.children.length === 0;
+    
+    const row = document.createElement('div');
+    row.className = 'condition-row';
+    row.style.cssText = 'display:flex; gap:8px; align-items:center; margin-bottom: 8px; flex-wrap:wrap;';
+    row.innerHTML = \`
+        <span style="font-size: 0.85rem; color: var(--text-secondary); font-weight:600; width: 36px; text-align:right;">\${isFirst ? '如果' : '並且'}</span>
+        <select class="settings-input cond-var" style="width: auto; padding: 4px 8px;" onchange="updateConditionInput(this)">
+            <option value="total_hours">總工時</option>
+            <option value="start_time">上班時間</option>
+        </select>
+        <select class="settings-input cond-op" style="width: auto; padding: 4px 8px;">
+            <option value=">=">大於等於 (>=)</option>
+            <option value="<=">小於等於 (<=)</option>
+            <option value="==">等於 (==)</option>
+            <option value=">">大於 (>)</option>
+            <option value="<">小於 (<)</option>
+        </select>
+        <input type="number" step="0.5" class="settings-input cond-val" value="" style="width: 70px; padding: 4px 8px; text-align:center;">
+        <button class="btn btn-secondary" onclick="removeCondition(this)" style="padding: 4px; border-radius: 50%; color:var(--danger-color); margin-left:auto;"><span class="material-icons" style="font-size:16px;">close</span></button>
+    \`;
+    container.appendChild(row);
+}
+
+function removeCondition(btn) {
+    const row = btn.closest('.condition-row');
+    const container = row.parentElement;
+    row.remove();
+    const rows = container.querySelectorAll('.condition-row');
+    rows.forEach((r, idx) => {
+        r.querySelector('span').textContent = idx === 0 ? '如果' : '並且';
+    });
+}
+
+function updateRuleTitles() {
+    document.querySelectorAll('#cf-break-rules-container .rule-block').forEach((block, idx) => {
+        const title = block.querySelector('.rule-title');
+        if (title) title.textContent = \`規則 \${idx + 1}\`;
     });
 }
 
 function addBreakRule() {
     const container = document.getElementById('cf-break-rules-container');
-    if (container.querySelector('div') && container.querySelector('div').textContent === '(無規則)') {
+    if (container.querySelector('div') && container.querySelector('div').textContent.includes('尚未設定規則')) {
         container.innerHTML = '';
     }
-    const row = document.createElement('div');
-    row.style.cssText = 'display:flex; gap:10px; align-items:center;';
-    row.innerHTML = `
-        <span style="font-size:0.9rem; flex-shrink:0;">滿</span>
-        <input type="number" step="0.5" class="settings-input br-threshold" value="8" style="width:70px; padding:4px; text-align:center;" placeholder="時數">
-        <span style="font-size:0.9rem; flex-shrink:0;">小時，扣</span>
-        <input type="number" step="0.5" class="settings-input br-deduct" value="1" style="width:70px; padding:4px; text-align:center;" placeholder="時數">
-        <span style="font-size:0.9rem; flex-shrink:0;">小時</span>
-        <button class="btn btn-secondary" onclick="removeBreakRule(this)" style="padding: 4px; border-radius: 50%; color:var(--danger-color);"><span class="material-icons" style="font-size:16px;">remove</span></button>
-    `;
-    container.appendChild(row);
+    
+    const ruleBlock = document.createElement('div');
+    ruleBlock.className = 'rule-block';
+    ruleBlock.style.cssText = 'background: rgba(255,255,255,0.03); border-radius: 12px; padding: 12px; position: relative; border: 1px solid rgba(255,255,255,0.1); margin-bottom: 12px;';
+    
+    ruleBlock.innerHTML = \`
+        <button class="btn btn-secondary" onclick="removeBreakRuleBlock(this)" style="position:absolute; top: 12px; right: 12px; padding: 4px; border-radius: 50%; color:var(--danger-color);"><span class="material-icons" style="font-size:16px;">delete</span></button>
+        <div class="rule-title" style="font-size: 0.95rem; font-weight: 600; margin-bottom: 12px; color: var(--accent-color);">新規則</div>
+        
+        <div class="conditions-container">
+            <div class="condition-row" style="display:flex; gap:8px; align-items:center; margin-bottom: 8px; flex-wrap:wrap;">
+                <span style="font-size: 0.85rem; color: var(--text-secondary); font-weight:600; width: 36px; text-align:right;">如果</span>
+                <select class="settings-input cond-var" style="width: auto; padding: 4px 8px;" onchange="updateConditionInput(this)">
+                    <option value="total_hours">總工時</option>
+                    <option value="start_time">上班時間</option>
+                </select>
+                <select class="settings-input cond-op" style="width: auto; padding: 4px 8px;">
+                    <option value=">=">大於等於 (>=)</option>
+                    <option value="<=">小於等於 (<=)</option>
+                    <option value="==">等於 (==)</option>
+                    <option value=">">大於 (>)</option>
+                    <option value="<">小於 (<)</option>
+                </select>
+                <input type="number" step="0.5" class="settings-input cond-val" value="" style="width: 70px; padding: 4px 8px; text-align:center;">
+                <button class="btn btn-secondary" onclick="removeCondition(this)" style="padding: 4px; border-radius: 50%; color:var(--danger-color); margin-left:auto;"><span class="material-icons" style="font-size:16px;">close</span></button>
+            </div>
+        </div>
+        
+        <div style="margin-left: 44px; margin-bottom: 12px;">
+            <button class="btn btn-secondary" onclick="addCondition(this)" style="padding: 2px 8px; font-size: 0.8rem;">+ 新增條件 (AND)</button>
+        </div>
+        
+        <div style="display:flex; gap:8px; align-items:center; background: rgba(0,0,0,0.15); padding: 8px 12px; border-radius: 8px;">
+            <span style="font-size: 0.9rem; font-weight:600;">則扣除</span>
+            <input type="number" step="0.5" class="settings-input rule-deduct" value="1" style="width: 70px; padding: 4px 8px; text-align:center;">
+            <span style="font-size: 0.9rem;">小時</span>
+        </div>
+    \`;
+    container.appendChild(ruleBlock);
+    updateRuleTitles();
 }
 
-function removeBreakRule(btn) {
-    btn.parentElement.remove();
+function removeBreakRuleBlock(btn) {
+    btn.closest('.rule-block').remove();
     const container = document.getElementById('cf-break-rules-container');
     if (container.children.length === 0) {
-        container.innerHTML = '<div style="color:var(--text-secondary); font-size:0.9rem;">(無規則)</div>';
+        container.innerHTML = '<div style="color:var(--text-secondary); font-size:0.9rem; text-align:center; padding: 12px 0;">(尚未設定規則)</div>';
+    } else {
+        updateRuleTitles();
     }
 }
 
@@ -413,13 +549,26 @@ function closeCompanyForm() {
 async function saveCompany() {
     const id = document.getElementById('cf-id').value;
     const rules = [];
-    document.querySelectorAll('#cf-break-rules-container > div').forEach(row => {
-        const tInput = row.querySelector('.br-threshold');
-        const dInput = row.querySelector('.br-deduct');
-        if (tInput && dInput) {
+    document.querySelectorAll('#cf-break-rules-container .rule-block').forEach(block => {
+        const condRows = block.querySelectorAll('.condition-row');
+        const conditions = [];
+        condRows.forEach(row => {
+            const cVar = row.querySelector('.cond-var').value;
+            const cOp = row.querySelector('.cond-op').value;
+            const cVal = row.querySelector('.cond-val').value;
+            if (cVal) {
+                conditions.push({var: cVar, op: cOp, val: cVal});
+            }
+        });
+        
+        const deductInput = block.querySelector('.rule-deduct');
+        const deduct = parseFloat(deductInput.value) || 0;
+        
+        if (conditions.length > 0) {
             rules.push({
-                threshold: parseFloat(tInput.value) || 0,
-                deduct: parseFloat(dInput.value) || 0
+                type: 'logic',
+                conditions: conditions,
+                deduct: deduct
             });
         }
     });

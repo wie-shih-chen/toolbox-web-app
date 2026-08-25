@@ -57,6 +57,46 @@ class SalaryService:
             
         return [self._to_dict(r) for r in records]
 
+    @staticmethod
+    def _evaluate_rule_conditions(rule, start_time_str, total_hours):
+        conditions = rule.get('conditions', [])
+        if not conditions:
+            return False
+            
+        for cond in conditions:
+            var = cond.get('var')
+            op = cond.get('op')
+            val = cond.get('val')
+            
+            try:
+                if var == 'total_hours':
+                    actual = float(total_hours)
+                    target = float(val)
+                elif var == 'start_time':
+                    actual = datetime.strptime(start_time_str, '%H:%M').time()
+                    target = datetime.strptime(str(val), '%H:%M').time()
+                else:
+                    return False
+                    
+                if op == '>':
+                    if not (actual > target): return False
+                elif op == '>=':
+                    if not (actual >= target): return False
+                elif op == '<':
+                    if not (actual < target): return False
+                elif op == '<=':
+                    if not (actual <= target): return False
+                elif op == '==':
+                    if not (actual == target): return False
+                elif op == '!=':
+                    if not (actual != target): return False
+                else:
+                    return False
+            except (ValueError, TypeError):
+                return False
+                
+        return True
+
     def _calculate_hours(self, start_time_str, end_time_str, company_id=None):
         try:
             start_dt = datetime.strptime(start_time_str, '%H:%M')
@@ -76,14 +116,26 @@ class SalaryService:
                     try:
                         import json
                         rules = json.loads(company.break_rules)
-                        # Sort rules by threshold descending to apply the largest threshold that matches
-                        rules.sort(key=lambda x: float(x.get('threshold', 0)), reverse=True)
-                        for rule in rules:
-                            threshold = float(rule.get('threshold', 0))
-                            deduct = float(rule.get('deduct', 0))
-                            if total_hours >= threshold:
-                                deduct_hours = deduct
+                        
+                        legacy_rules = [r for r in rules if r.get('type') != 'logic']
+                        logic_rules = [r for r in rules if r.get('type') == 'logic']
+                        
+                        logic_matched = False
+                        for rule in logic_rules:
+                            if self._evaluate_rule_conditions(rule, start_time_str, total_hours):
+                                deduct_hours = float(rule.get('deduct', 0))
+                                logic_matched = True
                                 break
+                                
+                        if not logic_matched:
+                            # Sort legacy rules by threshold descending
+                            legacy_rules.sort(key=lambda x: float(x.get('threshold', 0)), reverse=True)
+                            for rule in legacy_rules:
+                                threshold = float(rule.get('threshold', 0))
+                                deduct = float(rule.get('deduct', 0))
+                                if total_hours >= threshold:
+                                    deduct_hours = deduct
+                                    break
                     except Exception as e:
                         pass
             
