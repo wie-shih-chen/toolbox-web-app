@@ -113,18 +113,8 @@ function renderCompanies() {
                 }).join('')}
             </div>
 
-            <div style="background: rgba(0,0,0,0.15); border-radius: 8px; padding: 12px; margin-bottom: 20px;">
-                <h6 style="margin: 0 0 8px 0; font-size: 0.9rem; color: var(--text-secondary);">⏰ 最近三次即將發送的排班提醒</h6>
-                ${(!c.upcoming_schedules || c.upcoming_schedules.length === 0) 
-                    ? '<div style="color:var(--text-secondary); font-size:0.85rem;">目前沒有即將發送的排班提醒。</div>' 
-                    : c.upcoming_schedules.map(s => `
-                        <div style="font-size: 0.85rem; padding: 6px 0; border-bottom: 1px solid rgba(255,255,255,0.05); display: flex; justify-content: space-between;">
-                            <div>
-                                <span style="color: var(--accent-color); font-weight:600;">${s.notify_time.substring(5, 16).replace('-', '/')} 發送</span>
-                                <span style="color: var(--text-secondary); margin-left: 8px;">(排班 ${s.shift_date.substring(5).replace('-', '/')} ${s.shift_start})</span>
-                            </div>
-                        </div>
-                    `).join('')}
+            <div id="upcoming-schedules-container-${c.id}" style="background: rgba(0,0,0,0.15); border-radius: 8px; padding: 12px; margin-bottom: 20px;">
+                ${generateUpcomingSchedulesHTML(c)}
             </div>
 
             <div style="text-align: right; display: flex; justify-content: flex-end; align-items: center; gap: 8px;">
@@ -133,6 +123,23 @@ function renderCompanies() {
             </div>
         </div>
     `).join('');
+}
+
+function generateUpcomingSchedulesHTML(c) {
+    let html = '<h6 style="margin: 0 0 8px 0; font-size: 0.9rem; color: var(--text-secondary);">⏰ 最近三次即將發送的排班提醒</h6>';
+    if (!c.upcoming_schedules || c.upcoming_schedules.length === 0) {
+        html += '<div style="color:var(--text-secondary); font-size:0.85rem;">目前沒有即將發送的排班提醒。</div>';
+    } else {
+        html += c.upcoming_schedules.map(s => `
+            <div style="font-size: 0.85rem; padding: 6px 0; border-bottom: 1px solid rgba(255,255,255,0.05); display: flex; justify-content: space-between;">
+                <div>
+                    <span style="color: var(--accent-color); font-weight:600;">${s.notify_time.substring(5, 16).replace('-', '/')} 發送</span>
+                    <span style="color: var(--text-secondary); margin-left: 8px;">(排班 ${s.shift_date.substring(5).replace('-', '/')} ${s.shift_start})</span>
+                </div>
+            </div>
+        `).join('');
+    }
+    return html;
 }
 
 const saveTimeouts = {};
@@ -248,6 +255,24 @@ async function saveNotifications(id, isAutoSave = false) {
                 }, 2000);
             } else if (statusText) {
                 statusText.textContent = '✅ 已自動儲存';
+            }
+            
+            // Silently fetch updated data and update ONLY the upcoming schedules block
+            fetch('{{ url_for("salary.get_companies") }}')
+                .then(r => r.json())
+                .then(data => {
+                    companiesCache = data;
+                    const updatedC = data.find(c => c.id === id);
+                    if (updatedC) {
+                        const container = document.getElementById(`upcoming-schedules-container-${id}`);
+                        if (container) {
+                            container.innerHTML = generateUpcomingSchedulesHTML(updatedC);
+                        }
+                    }
+                })
+                .catch(err => console.error("Failed to refresh upcoming schedules", err));
+
+            if (isAutoSave && statusText) {
                 setTimeout(() => {
                     statusText.style.opacity = '0';
                 }, 2000);
