@@ -281,13 +281,10 @@ class NotificationScheduler:
 
             try:
                 import uwsgi
-                if uwsgi.worker_id() == 1:
-                    scheduler.start()
-                    logger.info("NotificationScheduler started in uWSGI worker 1.")
-                    print("Scheduler started in uWSGI worker 1.")
-                else:
-                    logger.info("Skipping scheduler start in uWSGI worker > 1.")
-                    print("Skipping scheduler start in uWSGI worker > 1.")
+                # Always start the scheduler on PythonAnywhere, because free tier might assign worker ID > 1
+                scheduler.start()
+                logger.info(f"NotificationScheduler started in uWSGI worker {uwsgi.worker_id()}.")
+                print(f"Scheduler started in uWSGI worker {uwsgi.worker_id()}.")
             except ImportError:
                 # Not running under uWSGI (e.g. local Flask dev server)
                 # Ensure it only runs once in dev by checking werkzeug
