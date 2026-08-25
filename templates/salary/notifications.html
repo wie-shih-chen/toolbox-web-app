@@ -117,14 +117,14 @@ function renderCompanies() {
                 <h6 style="margin: 0 0 8px 0; font-size: 0.9rem; color: var(--text-secondary);">⏰ 最近三次即將發送的排班提醒</h6>
                 ${(!c.upcoming_schedules || c.upcoming_schedules.length === 0) 
                     ? '<div style="color:var(--text-secondary); font-size:0.85rem;">目前沒有即將發送的排班提醒。</div>' 
-                    : c.upcoming_schedules.map(s => \`
+                    : c.upcoming_schedules.map(s => `
                         <div style="font-size: 0.85rem; padding: 6px 0; border-bottom: 1px solid rgba(255,255,255,0.05); display: flex; justify-content: space-between;">
                             <div>
-                                <span style="color: var(--accent-color); font-weight:600;">\${s.notify_time.substring(5, 16).replace('-', '/')} 發送</span>
-                                <span style="color: var(--text-secondary); margin-left: 8px;">(排班 \${s.shift_date.substring(5).replace('-', '/')} \${s.shift_start})</span>
+                                <span style="color: var(--accent-color); font-weight:600;">${s.notify_time.substring(5, 16).replace('-', '/')} 發送</span>
+                                <span style="color: var(--text-secondary); margin-left: 8px;">(排班 ${s.shift_date.substring(5).replace('-', '/')} ${s.shift_start})</span>
                             </div>
                         </div>
-                    \`).join('')}
+                    `).join('')}
             </div>
 
             <div style="text-align: right; display: flex; justify-content: flex-end; align-items: center; gap: 8px;">
