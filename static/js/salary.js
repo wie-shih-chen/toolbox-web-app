@@ -841,8 +841,11 @@ const salaryApp = {
                 const item = document.createElement('div');
                 item.className = 'cal-item';
                 const isHolidayShift = r.type === 'shift' && holidayName;
+                const isOvertimeShift = r.type === 'shift' && (r.note || '').includes('勞基法加班');
                 
-                let text = r.type === 'shift' ? `${r.start_time}${isHolidayShift ? ' ×2' : ''}` : `💰 獎金`;
+                let text = r.type === 'shift' ? `${r.start_time}` : `💰 獎金`;
+                if (isHolidayShift) text += ' ×2';
+                else if (isOvertimeShift) text += ' 🔥';
                 
                 item.innerHTML = `
                     <span style="display:inline-block; width:6px; height:6px; border-radius:50%; background:${r.company_color || 'var(--text-secondary)'}; margin-right:4px;"></span>
@@ -850,7 +853,8 @@ const salaryApp = {
                 `;
                 
                 if (r.type === 'bonus') item.style.color = '#ffd700';
-                if (isHolidayShift) item.style.color = '#f87171';
+                else if (isHolidayShift) item.style.color = '#f87171';
+                else if (isOvertimeShift) item.style.color = '#f59e0b';
                 item.onclick = (e) => {
                     e.stopPropagation();
                     this.openEditModal(r);
