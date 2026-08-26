@@ -65,26 +65,26 @@ function renderCompanies() {
         <div class="glass" style="padding: 20px; margin-bottom: 16px; border-radius: 12px; border-left: 4px solid ${c.color}">
             <h4 style="margin: 0 0 16px 0; font-size: 1.1rem; color: ${c.color}">${c.name}</h4>
             
-            <div class="notify-row" style="margin-bottom: 16px; display: flex; align-items: center; gap: 8px;">
-                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; flex: 1;">
-                    <input type="checkbox" id="cf-payday-enabled-${c.id}" ${c.notify_payday_enabled ? 'checked' : ''} onchange="debouncedSaveNotifications(${c.id})" style="width: 18px; height: 18px;"> 
-                    <span>發薪日提醒</span>
+            <div style="margin-bottom: 20px; display: flex; flex-direction: column; gap: 10px;">
+                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                    <input type="checkbox" id="cf-payday-enabled-${c.id}" ${c.notify_payday_enabled ? 'checked' : ''} onchange="debouncedSaveNotifications(${c.id})" style="width: 18px; height: 18px; margin: 0;"> 
+                    <span style="font-size: 1rem; font-weight: 500; white-space: nowrap;">發薪日提醒</span>
                 </label>
-                <div style="display: flex; align-items: center; gap: 8px;">
-                    <span style="font-size: 0.85rem; color: var(--text-secondary);">每月第</span>
-                    <input type="number" id="cf-payday-day-${c.id}" min="1" max="28" value="${c.notify_payday_day || 10}" oninput="debouncedSaveNotifications(${c.id})" class="settings-input" style="width: 60px; margin: 0; padding: 4px 8px;">
-                    <span style="font-size: 0.85rem; color: var(--text-secondary);">號</span>
-                    <input type="time" id="cf-payday-time-${c.id}" value="${c.notify_payday_time || '09:00'}" oninput="debouncedSaveNotifications(${c.id})" class="settings-input" style="margin: 0; padding: 4px 8px;">
+                <div style="display: flex; align-items: center; gap: 8px; padding-left: 26px; flex-wrap: wrap;">
+                    <span style="font-size: 0.9rem; color: var(--text-secondary);">每月第</span>
+                    <input type="number" id="cf-payday-day-${c.id}" min="1" max="28" value="${c.notify_payday_day || 10}" oninput="debouncedSaveNotifications(${c.id})" class="settings-input" style="width: 60px; margin: 0; padding: 6px 10px; text-align: center;">
+                    <span style="font-size: 0.9rem; color: var(--text-secondary);">號</span>
+                    <input type="time" id="cf-payday-time-${c.id}" value="${c.notify_payday_time || '09:00'}" oninput="debouncedSaveNotifications(${c.id})" class="settings-input" style="margin: 0; padding: 6px 10px; min-width: 110px;">
                 </div>
             </div>
 
-            <div class="notify-row" style="margin-bottom: 16px; display: flex; align-items: center; gap: 8px;">
-                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; flex: 1;">
-                    <input type="checkbox" id="cf-weekly-enabled-${c.id}" ${c.notify_weekly_enabled ? 'checked' : ''} onchange="debouncedSaveNotifications(${c.id})" style="width: 18px; height: 18px;"> 
-                    <span>每週工時摘要</span>
+            <div style="margin-bottom: 20px; display: flex; flex-direction: column; gap: 10px;">
+                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                    <input type="checkbox" id="cf-weekly-enabled-${c.id}" ${c.notify_weekly_enabled ? 'checked' : ''} onchange="debouncedSaveNotifications(${c.id})" style="width: 18px; height: 18px; margin: 0;"> 
+                    <span style="font-size: 1rem; font-weight: 500; white-space: nowrap;">每週工時摘要</span>
                 </label>
-                <div style="display: flex; align-items: center; gap: 8px;">
-                    <select id="cf-weekly-day-${c.id}" class="settings-input" onchange="debouncedSaveNotifications(${c.id})" style="margin: 0; padding: 4px 8px;">
+                <div style="display: flex; align-items: center; gap: 8px; padding-left: 26px; flex-wrap: wrap;">
+                    <select id="cf-weekly-day-${c.id}" class="settings-input" onchange="debouncedSaveNotifications(${c.id})" style="margin: 0; padding: 6px 10px; width: auto; min-width: 80px;">
                         <option value="monday" ${c.notify_weekly_day === 'monday' ? 'selected' : ''}>週一</option>
                         <option value="tuesday" ${c.notify_weekly_day === 'tuesday' ? 'selected' : ''}>週二</option>
                         <option value="wednesday" ${c.notify_weekly_day === 'wednesday' ? 'selected' : ''}>週三</option>
@@ -93,7 +93,7 @@ function renderCompanies() {
                         <option value="saturday" ${c.notify_weekly_day === 'saturday' ? 'selected' : ''}>週六</option>
                         <option value="sunday" ${c.notify_weekly_day === 'sunday' ? 'selected' : ''}>週日</option>
                     </select>
-                    <input type="time" id="cf-weekly-time-${c.id}" value="${c.notify_weekly_time || '20:00'}" class="settings-input" oninput="debouncedSaveNotifications(${c.id})" style="margin: 0; padding: 4px 8px;">
+                    <input type="time" id="cf-weekly-time-${c.id}" value="${c.notify_weekly_time || '20:00'}" class="settings-input" oninput="debouncedSaveNotifications(${c.id})" style="margin: 0; padding: 6px 10px; min-width: 110px;">
                 </div>
             </div>
             
@@ -161,18 +161,22 @@ function createReminderHTML(companyId, type, offset, message) {
     const isAfter = type === 'after';
     
     return `
-        <div class="shift-reminder-item" style="display:flex; align-items:center; gap:8px; background: rgba(255,255,255,0.03); padding: 8px; border-radius: 6px; flex-wrap: wrap;">
-            <select class="sr-type settings-input" onchange="toggleOffsetInput(this); debouncedSaveNotifications(${companyId})" style="width: auto; margin:0; padding:4px;">
-                <option value="exact" ${isExact ? 'selected' : ''}>上班時間點</option>
-                <option value="before" ${isBefore ? 'selected' : ''}>上班前</option>
-                <option value="after" ${isAfter ? 'selected' : ''}>上班後</option>
-            </select>
-            <div class="sr-offset-container" style="${isExact ? 'display:none;' : 'display:flex; align-items:center; gap:4px;'}">
-                <input type="number" class="sr-offset settings-input" oninput="debouncedSaveNotifications(${companyId})" min="1" max="1440" value="${offset}" style="width:50px; margin:0; padding:4px;">
-                <span style="font-size:0.85rem; color:var(--text-secondary);">分鐘</span>
+        <div class="shift-reminder-item" style="display:flex; flex-direction:column; gap:8px; background: rgba(255,255,255,0.03); padding: 12px; border-radius: 8px; margin-bottom: 8px;">
+            <div style="display:flex; align-items:center; gap:8px; flex-wrap: wrap;">
+                <select class="sr-type settings-input" onchange="toggleOffsetInput(this); debouncedSaveNotifications(${companyId})" style="width: auto; margin:0; padding:6px 10px; font-size: 0.9rem;">
+                    <option value="exact" ${isExact ? 'selected' : ''}>上班時間點</option>
+                    <option value="before" ${isBefore ? 'selected' : ''}>上班前</option>
+                    <option value="after" ${isAfter ? 'selected' : ''}>上班後</option>
+                </select>
+                <div class="sr-offset-container" style="${isExact ? 'display:none;' : 'display:flex; align-items:center; gap:6px;'}">
+                    <input type="number" class="sr-offset settings-input" oninput="debouncedSaveNotifications(${companyId})" min="1" max="1440" value="${offset}" style="width:60px; margin:0; padding:6px; font-size: 0.9rem; text-align: center;">
+                    <span style="font-size:0.85rem; color:var(--text-secondary);">分鐘</span>
+                </div>
             </div>
-            <input type="text" class="sr-message settings-input" oninput="debouncedSaveNotifications(${companyId})" placeholder="提醒內容 (支援變數 {time})" value="${message}" style="flex:1; min-width: 150px; margin:0; padding:4px;">
-            <button class="btn" style="padding:4px; color:var(--danger-color); background:transparent; font-size:1.2rem; min-width:unset; line-height:1;" onclick="this.parentElement.remove(); checkEmpty(${companyId}); debouncedSaveNotifications(${companyId})">✕</button>
+            <div style="display:flex; align-items:center; gap:8px; width: 100%;">
+                <input type="text" class="sr-message settings-input" oninput="debouncedSaveNotifications(${companyId})" placeholder="提醒內容 (支援變數 {time})" value="${message}" style="flex:1; min-width: 150px; margin:0; padding:8px 12px; font-size: 0.95rem;">
+                <button class="btn" style="padding:8px; color:var(--danger-color); background:rgba(248,113,113,0.1); border-radius: 6px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;" onclick="this.closest('.shift-reminder-item').remove(); checkEmpty(${companyId}); debouncedSaveNotifications(${companyId})"><span class="material-icons" style="font-size: 18px;">close</span></button>
+            </div>
         </div>
     `;
 }
