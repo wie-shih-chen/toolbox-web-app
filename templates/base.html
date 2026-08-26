@@ -21,9 +21,6 @@
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
     <!-- Main CSS -->
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
-    {% if request.blueprint in ['shop', 'admin'] %}
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/shop.css') }}">
-    {% endif %}
 
     <!-- jQuery (loaded early to prevent ReferenceError) -->
     <script src="https://cdn.jsdelivr.net/npm/jquery@3.7.1/dist/jquery.min.js"></script>
@@ -189,7 +186,6 @@
             'countdown.index': {'title': '倒數', 'icon': 'hourglass_empty', 'ep_match': 'countdown'},
             'reminder.index': {'title': '提醒', 'icon': 'notifications_active', 'ep_match': 'reminder'},
             'period.dashboard': {'title': '生理期', 'icon': 'water_drop', 'ep_match': 'period'},
-            'shop.index': {'title': '購物', 'icon': 'checkroom', 'ep_match': 'shop'},
             'vocab.index': {'title': '單字', 'icon': 'spellcheck', 'ep_match': 'vocab'},
             'group.index': {'title': '群組', 'icon': 'group', 'ep_match': 'group'}
         } %}

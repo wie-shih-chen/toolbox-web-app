@@ -63,7 +63,6 @@ with app.app_context():
     from routes.ntut_routes import ntut_bp
     from routes.expense_routes import expense_bp
     from routes.auth import auth_bp
-    from routes.shop import shop_bp
     from routes.admin import admin_bp
     from routes.finance_routes import finance_bp
 
@@ -73,7 +72,6 @@ with app.app_context():
     app.register_blueprint(ntut_bp)
     app.register_blueprint(expense_bp)
     app.register_blueprint(auth_bp)
-    app.register_blueprint(shop_bp, url_prefix='/shop')
     app.register_blueprint(admin_bp, url_prefix='/admin')
     app.register_blueprint(finance_bp, url_prefix='/finance')
     
