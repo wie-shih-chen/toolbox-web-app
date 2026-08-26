@@ -469,8 +469,21 @@ const salaryApp = {
         const companySel = document.getElementById('recordCompany');
         if (companySel) {
             companySel.value = '';
-            // Select the first available company by default if options exist
-            if (companySel.options.length > 0) {
+            
+            const lastCompanyId = localStorage.getItem('salary_last_company_id');
+            let found = false;
+            
+            if (lastCompanyId) {
+                for (let i = 0; i < companySel.options.length; i++) {
+                    if (companySel.options[i].value === lastCompanyId) {
+                        companySel.selectedIndex = i;
+                        found = true;
+                        break;
+                    }
+                }
+            }
+            
+            if (!found && companySel.options.length > 0) {
                 companySel.selectedIndex = 0;
             }
         }
@@ -510,6 +523,9 @@ const salaryApp = {
             });
 
             if (res.ok) {
+                if (data.company_id) {
+                    localStorage.setItem('salary_last_company_id', data.company_id);
+                }
                 this.closeModal();
                 this.refreshData();
             } else {
