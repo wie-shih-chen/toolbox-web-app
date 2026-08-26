@@ -35,14 +35,20 @@ def _apply_overtime_pay(rate: float, hours: float, note: str | None) -> tuple[in
         return int(hours * rate), note
     
     amount = rate * 8
+    calc_str = f"8h × {rate:.0f}"
+    
     if hours <= 10:
-        amount += rate * 1.34 * (hours - 8)
+        ot_hours = hours - 8
+        amount += rate * 1.34 * ot_hours
+        calc_str += f" + {ot_hours:.1f}h × {rate:.0f} × 1.34"
     else:
+        ot_hours_2 = hours - 10
         amount += rate * 1.34 * 2
-        amount += rate * 1.67 * (hours - 10)
+        amount += rate * 1.67 * ot_hours_2
+        calc_str += f" + 2h × {rate:.0f} × 1.34 + {ot_hours_2:.1f}h × {rate:.0f} × 1.67"
         
-    ot_note = "(含勞基法加班費)"
-    new_note = f"{note} {ot_note}".strip() if note else ot_note
+    ot_note = f"【勞基法加班】（{calc_str} = ${int(amount)}）"
+    new_note = f"{ot_note} {note}".strip() if note else ot_note
     if ot_note in (note or ""):
         new_note = note
     
@@ -268,8 +274,13 @@ class SalaryService:
             existing_note = record.note or ''
             if '【國定假日' in existing_note and '】' in existing_note:
                 existing_note = existing_note.split('】', 1)[-1].strip()
+                # further strip the calculation part e.g. （5.5h × 196 × 2 = $2156）
+                if existing_note.startswith('工資加倍（'):
+                    existing_note = existing_note.split('）', 1)[-1].strip()
 
             # Remove old overtime note if present
+            if '【勞基法加班】' in existing_note:
+                existing_note = existing_note.split('）', 1)[-1].strip()
             existing_note = existing_note.replace("(含勞基法加班費)", "").strip()
 
             base_rate = record.rate
