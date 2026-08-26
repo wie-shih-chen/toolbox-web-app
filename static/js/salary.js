@@ -845,7 +845,7 @@ const salaryApp = {
                 
                 let text = r.type === 'shift' ? `${r.start_time}` : `💰 獎金`;
                 if (isHolidayShift) text += ' ×2';
-                else if (isOvertimeShift) text += ' 🔥';
+                else if (isOvertimeShift) text += ' (加班)';
                 
                 item.innerHTML = `
                     <span style="display:inline-block; width:6px; height:6px; border-radius:50%; background:${r.company_color || 'var(--text-secondary)'}; margin-right:4px;"></span>
