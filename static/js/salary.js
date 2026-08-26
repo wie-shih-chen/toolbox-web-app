@@ -197,7 +197,7 @@ const salaryApp = {
                     if (noteStr.includes('國定假日')) {
                         badges += '<span style="background: rgba(239, 68, 68, 0.2); color: #fca5a5; font-size: 0.65rem; padding: 2px 6px; border-radius: 4px; margin-right: 4px;">🏮 國定假日</span>';
                     }
-                    if (noteStr.includes('加班費')) {
+                    if (noteStr.includes('勞基法加班')) {
                         badges += '<span style="background: rgba(245, 158, 11, 0.2); color: #fcd34d; font-size: 0.65rem; padding: 2px 6px; border-radius: 4px; margin-right: 4px;">🔥 勞基法加班</span>';
                     }
 
@@ -1009,7 +1009,7 @@ const salaryApp = {
                 if (noteStr.includes('國定假日')) {
                     badges += '<span style="background: rgba(239, 68, 68, 0.2); color: #fca5a5; font-size: 0.65rem; padding: 2px 6px; border-radius: 4px; margin-right: 4px; display: inline-block; margin-bottom: 4px;">🏮 國定假日</span><br>';
                 }
-                if (noteStr.includes('加班費')) {
+                if (noteStr.includes('勞基法加班')) {
                     badges += '<span style="background: rgba(245, 158, 11, 0.2); color: #fcd34d; font-size: 0.65rem; padding: 2px 6px; border-radius: 4px; margin-right: 4px; display: inline-block; margin-bottom: 4px;">🔥 勞基法加班</span><br>';
                 }
                     
