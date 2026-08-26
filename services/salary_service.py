@@ -189,7 +189,7 @@ class SalaryService:
                 new_record.hours, deduct = self._calculate_hours(start_t, end_t, new_record.company_id)
                 if deduct > 0:
                     current_note = record_data.get('note') or ''
-                    record_data['note'] = f"☕ 扣休{deduct}h {current_note}".strip()
+                    record_data['note'] = f"(已扣除休息 {deduct}h) {current_note}".strip()
             
             # Rate: use company rate if company_id given, else fall back to settings
             raw_rate = record_data.get('rate')
@@ -290,13 +290,13 @@ class SalaryService:
             incoming_note = incoming_note.replace("(含勞基法加班費)", "").strip()
             
             # Remove old break note if present
-            if '☕ 扣休' in incoming_note:
-                # Format is "☕ 扣休X.Xh "
+            if '(已扣除休息' in incoming_note or '☕ 扣休' in incoming_note:
                 import re
+                incoming_note = re.sub(r'\(已扣除休息 \d+(\.\d+)?h\)\s*', '', incoming_note)
                 incoming_note = re.sub(r'☕ 扣休\d+(\.\d+)?h\s*', '', incoming_note).strip()
 
             if deduct > 0:
-                incoming_note = f"☕ 扣休{deduct}h {incoming_note}".strip()
+                incoming_note = f"(已扣除休息 {deduct}h) {incoming_note}".strip()
 
             base_rate = record.rate
 

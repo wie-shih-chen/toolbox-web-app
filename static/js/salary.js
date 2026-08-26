@@ -843,8 +843,10 @@ const salaryApp = {
                 const isHolidayShift = r.type === 'shift' && holidayName;
                 const isOvertimeShift = r.type === 'shift' && (r.note || '').includes('勞基法加班');
                 const isCrossDay = r.type === 'shift' && r.start_time && r.end_time && r.end_time < r.start_time;
+                let breakMatch = (r.note || '').match(/\(已扣除休息 (\d+(\.\d+)?)h\)/);
+                let breakText = breakMatch ? ` 扣休 ${breakMatch[1]}h` : '';
                 
-                let text = r.type === 'shift' ? `${r.start_time}${isCrossDay ? ' (+1日)' : ''}` : `💰 獎金`;
+                let text = r.type === 'shift' ? `${r.start_time}${isCrossDay ? ' (+1日)' : ''}${breakText}` : `💰 獎金`;
                 if (isHolidayShift) text += ' ×2';
                 else if (isOvertimeShift) text += ' (加班)';
                 
@@ -1015,9 +1017,6 @@ const salaryApp = {
                 
                 if (isCrossDay) {
                     badges += '<span style="background: rgba(139, 92, 246, 0.2); color: #c4b5fd; font-size: 0.65rem; padding: 2px 6px; border-radius: 4px; margin-right: 4px; display: inline-block; margin-bottom: 4px;">🌙 跨日班</span><br>';
-                }
-                if (noteStr.includes('☕ 扣休')) {
-                    badges += '<span style="background: rgba(161, 98, 7, 0.2); color: #facc15; font-size: 0.65rem; padding: 2px 6px; border-radius: 4px; margin-right: 4px; display: inline-block; margin-bottom: 4px;">☕ 休息扣時</span><br>';
                 }
                 if (noteStr.includes('國定假日')) {
                     badges += '<span style="background: rgba(239, 68, 68, 0.2); color: #fca5a5; font-size: 0.65rem; padding: 2px 6px; border-radius: 4px; margin-right: 4px; display: inline-block; margin-bottom: 4px;">🏮 國定假日</span><br>';
