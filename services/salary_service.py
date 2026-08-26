@@ -163,9 +163,9 @@ class SalaryService:
                     except Exception as e:
                         pass
             
-            return max(0.0, total_hours - deduct_hours)
+            return max(0.0, total_hours - deduct_hours), deduct_hours
         except (ValueError, TypeError):
-            return 0.0
+            return 0.0, 0.0
 
     def add_record(self, record_data):
         if not current_user.is_authenticated:
@@ -186,7 +186,10 @@ class SalaryService:
             new_record.end_time = end_t
             
             if start_t and end_t:
-                new_record.hours = self._calculate_hours(start_t, end_t, new_record.company_id)
+                new_record.hours, deduct = self._calculate_hours(start_t, end_t, new_record.company_id)
+                if deduct > 0:
+                    current_note = record_data.get('note') or ''
+                    record_data['note'] = f"☕ 扣休{deduct}h {current_note}".strip()
             
             # Rate: use company rate if company_id given, else fall back to settings
             raw_rate = record_data.get('rate')
@@ -250,8 +253,9 @@ class SalaryService:
             if 'start_time' in record_data: record.start_time = record_data['start_time']
             if 'end_time' in record_data: record.end_time = record_data['end_time']
             
+            deduct = 0.0
             if record.start_time and record.end_time:
-                record.hours = self._calculate_hours(record.start_time, record.end_time, record.company_id)
+                record.hours, deduct = self._calculate_hours(record.start_time, record.end_time, record.company_id)
                 
             # Handle rate: if provided, use it. If empty or not provided, calculate default.
             raw_rate = record_data.get('rate')
@@ -284,6 +288,15 @@ class SalaryService:
             if '【勞基法加班】' in incoming_note:
                 incoming_note = incoming_note.split('）', 1)[-1].strip()
             incoming_note = incoming_note.replace("(含勞基法加班費)", "").strip()
+            
+            # Remove old break note if present
+            if '☕ 扣休' in incoming_note:
+                # Format is "☕ 扣休X.Xh "
+                import re
+                incoming_note = re.sub(r'☕ 扣休\d+(\.\d+)?h\s*', '', incoming_note).strip()
+
+            if deduct > 0:
+                incoming_note = f"☕ 扣休{deduct}h {incoming_note}".strip()
 
             base_rate = record.rate
 
