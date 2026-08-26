@@ -734,23 +734,17 @@ select.settings-input {
         margin: 15px 0;
     }
     
-    /* Make company list horizontally scrollable on mobile to save vertical space */
+    /* Let company list wrap naturally on mobile instead of horizontal scroll */
     .company-breakdown-list {
-        flex-wrap: nowrap;
-        overflow-x: auto;
-        padding-bottom: 5px;
-        -webkit-overflow-scrolling: touch;
-        /* Hides scrollbar on webkit */
-    }
-    
-    .company-breakdown-list::-webkit-scrollbar {
-        display: none;
+        flex-wrap: wrap;
+        overflow-x: visible;
+        padding-bottom: 0;
     }
     
     .company-breakdown-item {
-        flex: 0 0 auto; /* Allow item to size based on content */
-        min-width: max-content; /* Ensure it never shrinks below content size */
-        padding: 8px 16px;
+        flex: 1 1 100%; /* Force full width on mobile so they stack cleanly */
+        max-width: none;
+        padding: 8px 12px;
     }
 
     .salary-nav {
