@@ -197,9 +197,9 @@ class SalaryService:
             
             base_rate = default_rate if not raw_rate else (float(raw_rate) if str(raw_rate).strip() else default_rate)
 
-            # Calculate amount (handles holidays and overtime)
+            # Calculate amount (handles holidays and always applies overtime)
             effective_rate, amount, final_note = _calculate_pay_and_note(
-                new_record.date, base_rate, new_record.hours, record_data.get('note'), enable_ot
+                new_record.date, base_rate, new_record.hours, record_data.get('note'), True
             )
             new_record.rate = effective_rate
             new_record.amount = amount
@@ -273,15 +273,10 @@ class SalaryService:
             existing_note = existing_note.replace("(含勞基法加班費)", "").strip()
 
             base_rate = record.rate
-            enable_ot = False
-            if record.company_id:
-                company = Company.query.get(record.company_id)
-                if company:
-                    enable_ot = company.enable_overtime
 
             new_rate, amount, updated_note = _calculate_pay_and_note(
                 record.date, base_rate, record.hours,
-                record_data.get('note', existing_note), enable_ot
+                record_data.get('note', existing_note), True
             )
             record.rate = new_rate   # always base rate
             record.amount = amount
