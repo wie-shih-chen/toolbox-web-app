@@ -6,7 +6,7 @@ from flask import Blueprint, render_template, request, jsonify, flash, redirect,
 from flask_login import login_required, current_user
 from models import db, User, StudyGroup, GroupMember, GroupDailyRecord, VocabHistoryLog, VocabProgress, GroupDailyAssignment
 import json
-from services.mongo_service import mongo
+from services import sqlite_service as vocab_db
 
 group_bp = Blueprint('group', __name__, url_prefix='/group')
 
@@ -20,24 +20,7 @@ def get_tw_today_start_utc():
     return tw_midnight - timedelta(hours=8)
 
 def _load_vocab():
-    collection = mongo.get_collection()
-    if not collection:
-        return []
-    cursor = collection.find()
-    words = []
-    for doc in cursor:
-        words.append({
-            'word':         doc.get('english_word', ''),
-            'definition':   doc.get('chinese_definition', ''),
-            'star':         doc.get('star_rating', 0),
-            'category':     doc.get('category', ''),
-            'score_range':  doc.get('toeic_score_range', ''),
-            'parts_of_speech': doc.get('parts_of_speech', []),
-            'word_forms':   doc.get('word_forms', []),
-            'examples':     doc.get('examples', []),
-            'exam_tips':    doc.get('exam_tips', []),
-        })
-    return words
+    return vocab_db.get_all_words()
 
 def generate_invite_code():
     return ''.join(random.choices(string.ascii_uppercase + string.digits, k=6))

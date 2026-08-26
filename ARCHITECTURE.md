@@ -574,6 +574,5 @@ python scripts/maintenance/init_db.py  # 建立所有資料表
 **文件維護建議**：每次有重大功能變更時，在「版本更新記錄」新增一節，並同步更新受影響的 Part 1 ~ Part 7 內容。
 
 
-MongoDB Atlas：
-帳號：randy940907_db_user
-密碼：vQ6E0jxF7D1x0s1d
+MONGO_DATA_API_URL="貼上您的 Data API 網址"
+MONGO_DATA_API_KEY="al-xlIBdYLo5APnEWm94Ua3N_YwgMB4ylfjVUYo7vrWGPm"

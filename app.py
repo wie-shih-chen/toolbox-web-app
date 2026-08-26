@@ -9,7 +9,6 @@ from config import Config
 from models import db, User, ReportLog
 from flask_login import LoginManager
 from extensions import mail
-from services.mongo_service import mongo
 
 app = Flask(__name__)
 app.config.from_object(Config)
@@ -17,7 +16,6 @@ app.config.from_object(Config)
 # Initialize Extensions
 db.init_app(app)
 mail.init_app(app)
-mongo.init_app(app)
 login_manager = LoginManager()
 login_manager.login_view = 'auth.login'
 login_manager.init_app(app)

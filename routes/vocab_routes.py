@@ -1,23 +1,17 @@
 """
 routes/vocab_routes.py
-TOEIC 背單字模組 — 從本地 JSON 檔案讀取（離線模式，不依賴外部 API）
+TOEIC 背單字模組 — 使用本地 SQLite 資料庫（master_vocabulary.db）
 """
 import json
 import os
 from flask import Blueprint, render_template, request, jsonify, current_app, redirect, url_for, flash
 from flask_login import login_required, current_user
 from models import db, VocabProgress, UserSettings, VocabHistoryLog
-from services.mongo_service import mongo
+from services import sqlite_service as vocab_db
 from datetime import datetime
 import re
 
 vocab_bp = Blueprint('vocab', __name__, template_folder='../templates')
-
-def _get_vocab_collection():
-    collection = mongo.get_collection()
-    if collection is None:
-        raise Exception("MongoDB not configured")
-    return collection
 
 
 # ─── 頁面路由 ────────────────────────────────────────────────────
@@ -51,10 +45,7 @@ def index():
     settings = UserSettings.query.filter_by(user_id=current_user.id).first()
     daily_goal = settings.vocab_daily_goal if settings else 20
     
-    try:
-        total_words = _get_vocab_collection().estimated_document_count()
-    except Exception:
-        total_words = 0
+    total_words = vocab_db.count_words()
     
     stats = {
         'today_reviewed': today_reviewed,
@@ -122,13 +113,11 @@ def settings():
 @vocab_bp.route('/history')
 @login_required
 def history():
-    # 找出使用者所有的歷史紀錄，並依日期分組
     logs = VocabHistoryLog.query.filter_by(user_id=current_user.id).order_by(VocabHistoryLog.created_at.desc()).all()
     
     history_data = {}
     from datetime import timedelta
     for log in logs:
-        # Convert UTC to local time (UTC+8)
         local_time = log.created_at + timedelta(hours=8)
         date_str = local_time.strftime('%Y-%m-%d')
         if date_str not in history_data:
@@ -136,7 +125,6 @@ def history():
             
         history_data[date_str][log.result] += 1
         
-        # Keep track of words studied this day
         if log.word not in history_data[date_str]['words']:
             history_data[date_str]['words'][log.word] = {'correct': 0, 'incorrect': 0}
         history_data[date_str]['words'][log.word][log.result] += 1
@@ -146,9 +134,6 @@ def history():
 @vocab_bp.route('/api/reset_progress', methods=['POST'])
 @login_required
 def reset_progress():
-    """
-    刪除該使用者的所有背單字進度與歷史紀錄
-    """
     try:
         VocabProgress.query.filter_by(user_id=current_user.id).delete()
         VocabHistoryLog.query.filter_by(user_id=current_user.id).delete()
@@ -162,64 +147,36 @@ def reset_progress():
 @vocab_bp.route('/api/words')
 @login_required
 def api_words():
-    """
-    從本地 JSON 提供單字資料
-    QueryParams: offset, length, star, category, score_range
-    """
     offset   = request.args.get('offset', 0, type=int)
     length   = request.args.get('length', 100, type=int)
     star_f   = request.args.get('star', type=int)
     cat_f    = request.args.get('category', '').strip()
     score_f  = request.args.get('score_range', '').strip()
     search_q = request.args.get('search', '').strip().lower()
-    
     review_date = request.args.get('review_date', '').strip()
     
-    try:
-        collection = _get_vocab_collection()
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
-    
-    query = {}
+    filters = {}
     
     # 歷史複習過濾
     if review_date:
         from datetime import timedelta
         logs = VocabHistoryLog.query.filter_by(user_id=current_user.id).all()
         reviewed_words = [log.word for log in logs if (log.created_at + timedelta(hours=8)).strftime('%Y-%m-%d') == review_date]
-        query['_id'] = {'$in': reviewed_words}
+        if not reviewed_words:
+            return jsonify({'words': [], 'total': 0, 'offset': offset, 'length': 0})
+        filters['in_words'] = reviewed_words
     
-    # 常規過濾
     if star_f:
-        query['star_rating'] = star_f
+        filters['star'] = star_f
     if cat_f:
-        query['category'] = {'$regex': cat_f, '$options': 'i'}
+        filters['category'] = cat_f
     if score_f:
-        query['toeic_score_range'] = {'$regex': score_f, '$options': 'i'}
+        filters['score_range'] = score_f
     if search_q:
-        if re.match(r'^[a-z0-9\s\-]+$', search_q):
-            # 英文搜尋
-            query['_id'] = {'$regex': f'^{search_q}', '$options': 'i'}
-        else:
-            # 中文搜尋
-            query['chinese_definition'] = {'$regex': search_q, '$options': 'i'}
-            
-    total = collection.count_documents(query)
-    cursor = collection.find(query).skip(offset).limit(length)
+        filters['search'] = search_q
     
-    page = []
-    for doc in cursor:
-        page.append({
-            'word':         doc.get('english_word', ''),
-            'definition':   doc.get('chinese_definition', ''),
-            'star':         doc.get('star_rating', 0),
-            'category':     doc.get('category', ''),
-            'score_range':  doc.get('toeic_score_range', ''),
-            'parts_of_speech': doc.get('parts_of_speech', []),
-            'word_forms':   doc.get('word_forms', []),
-            'examples':     doc.get('examples', []),
-            'exam_tips':    doc.get('exam_tips', []),
-        })
+    total = vocab_db.count_words(filters)
+    page  = vocab_db.get_words(filters, offset=offset, limit=length)
     
     # 取得使用者進度 map
     user_progress = {
@@ -270,7 +227,6 @@ def update_progress():
         record.incorrect += 1
     record.last_reviewed = datetime.utcnow()
     
-    # 新增歷史紀錄
     history_log = VocabHistoryLog(user_id=current_user.id, word=word, result=result)
     db.session.add(history_log)
     
@@ -282,31 +238,12 @@ def update_progress():
 @vocab_bp.route('/api/lookup')
 @login_required
 def api_lookup():
-    """
-    GET /vocab/api/lookup?word=resume
-    從官方字庫精確比對單一單字，回傳完整資料
-    """
     word = request.args.get('word', '').strip().lower()
     if not word:
         return jsonify({'found': False}), 400
-    try:
-        collection = _get_vocab_collection()
-    except Exception as e:
-        return jsonify({'found': False, 'error': str(e)}), 500
 
-    doc = collection.find_one({'_id': word})
-    if doc:
-        w = {
-            'word':         doc.get('english_word', ''),
-            'definition':   doc.get('chinese_definition', ''),
-            'star':         doc.get('star_rating', 0),
-            'category':     doc.get('category', ''),
-            'score_range':  doc.get('toeic_score_range', ''),
-            'parts_of_speech': doc.get('parts_of_speech', []),
-            'word_forms':   doc.get('word_forms', []),
-            'examples':     doc.get('examples', []),
-            'exam_tips':    doc.get('exam_tips', []),
-        }
+    w = vocab_db.get_word(word)
+    if w:
         return jsonify({'found': True, 'word': w})
     return jsonify({'found': False})
 
@@ -314,21 +251,12 @@ def api_lookup():
 @vocab_bp.route('/api/batch_lookup', methods=['POST'])
 @login_required
 def api_batch_lookup():
-    """
-    POST /vocab/api/batch_lookup  body: {"words": ["resume","opening",...]}
-    批量比對多個單字是否在官方字庫中，回傳 {word: bool} 的對應表
-    """
     body = request.get_json()
     query_words = [w.strip().lower() for w in (body.get('words') or []) if w]
     if not query_words:
         return jsonify({})
-    try:
-        collection = _get_vocab_collection()
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
 
-    docs = collection.find({'_id': {'$in': query_words}}, {'_id': 1})
-    official_set = {doc['_id'].lower() for doc in docs}
+    official_set = vocab_db.get_words_in(query_words)
     result = {qw: (qw in official_set) for qw in query_words}
     return jsonify(result)
 
