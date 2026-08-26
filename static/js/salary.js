@@ -850,14 +850,23 @@ const salaryApp = {
                 if (isHolidayShift) text += ' ×2';
                 else if (isOvertimeShift) text += ' (加班)';
                 
-                item.innerHTML = `
-                    <span style="display:inline-block; width:6px; height:6px; border-radius:50%; background:${r.company_color || 'var(--text-secondary)'}; margin-right:4px;"></span>
-                    <span>${text}</span>
-                `;
+                const cColor = r.company_color || 'var(--text-secondary)';
+                item.style.borderLeftColor = cColor;
                 
-                if (r.type === 'bonus') item.style.color = '#ffd700';
-                else if (isHolidayShift) item.style.color = '#f87171';
-                else if (isOvertimeShift) item.style.color = '#f59e0b';
+                item.innerHTML = `<span style="font-weight: 500; letter-spacing: 0.3px;">${text}</span>`;
+                
+                if (r.type === 'bonus') {
+                    item.style.color = '#fcd34d';
+                    item.style.borderLeftColor = '#fcd34d';
+                }
+                else if (isHolidayShift) {
+                    item.style.color = '#fca5a5';
+                    item.style.borderLeftColor = '#fca5a5';
+                }
+                else if (isOvertimeShift) {
+                    item.style.color = '#fde047';
+                    item.style.borderLeftColor = '#fde047';
+                }
                 item.onclick = (e) => {
                     e.stopPropagation();
                     this.openEditModal(r);
