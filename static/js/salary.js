@@ -192,6 +192,15 @@ const salaryApp = {
                 card.onclick = () => this.openEditModal(record);
 
                 if (record.type === 'shift') {
+                    let badges = '';
+                    const noteStr = record.note || '';
+                    if (noteStr.includes('國定假日')) {
+                        badges += '<span style="background: rgba(239, 68, 68, 0.2); color: #fca5a5; font-size: 0.65rem; padding: 2px 6px; border-radius: 4px; margin-right: 4px;">🏮 國定假日</span>';
+                    }
+                    if (noteStr.includes('加班費')) {
+                        badges += '<span style="background: rgba(245, 158, 11, 0.2); color: #fcd34d; font-size: 0.65rem; padding: 2px 6px; border-radius: 4px; margin-right: 4px;">🔥 勞基法加班</span>';
+                    }
+
                     card.innerHTML = `
                         <div class="shift-time">${record.start_time} - ${record.end_time}</div>
                         <div class="shift-info">
@@ -199,6 +208,7 @@ const salaryApp = {
                             <span>$${Math.round(record.amount)}</span>
                         </div>
                         ${record.company_name ? `<div style="font-size:0.72rem;color:${record.company_color || 'var(--text-secondary)'};margin-top:2px;">${record.company_name}</div>` : ''}
+                        ${badges ? `<div style="margin-top: 6px;">${badges}</div>` : ''}
                     `;
                 } else {
                     card.innerHTML = `
