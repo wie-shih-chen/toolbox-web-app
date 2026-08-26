@@ -271,23 +271,25 @@ class SalaryService:
                 base_rate = default_rate
 
             # Strip old holiday note prefix before re-applying
-            existing_note = record.note or ''
-            if '【國定假日' in existing_note and '】' in existing_note:
-                existing_note = existing_note.split('】', 1)[-1].strip()
-                # further strip the calculation part e.g. （5.5h × 196 × 2 = $2156）
-                if existing_note.startswith('工資加倍（'):
-                    existing_note = existing_note.split('）', 1)[-1].strip()
+            incoming_note = record_data.get('note')
+            if incoming_note is None:
+                incoming_note = record.note or ''
+                
+            if '【國定假日' in incoming_note and '】' in incoming_note:
+                incoming_note = incoming_note.split('】', 1)[-1].strip()
+                if incoming_note.startswith('工資加倍（'):
+                    incoming_note = incoming_note.split('）', 1)[-1].strip()
 
             # Remove old overtime note if present
-            if '【勞基法加班】' in existing_note:
-                existing_note = existing_note.split('）', 1)[-1].strip()
-            existing_note = existing_note.replace("(含勞基法加班費)", "").strip()
+            if '【勞基法加班】' in incoming_note:
+                incoming_note = incoming_note.split('）', 1)[-1].strip()
+            incoming_note = incoming_note.replace("(含勞基法加班費)", "").strip()
 
             base_rate = record.rate
 
             new_rate, amount, updated_note = _calculate_pay_and_note(
                 record.date, base_rate, record.hours,
-                record_data.get('note', existing_note), True
+                incoming_note, True
             )
             record.rate = new_rate   # always base rate
             record.amount = amount
