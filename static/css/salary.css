@@ -748,8 +748,9 @@ select.settings-input {
     }
     
     .company-breakdown-item {
-        flex: 0 0 240px; /* Fixed width for each horizontal card */
-        max-width: 240px;
+        flex: 0 0 auto; /* Allow item to size based on content */
+        min-width: max-content; /* Ensure it never shrinks below content size */
+        padding: 8px 16px;
     }
 
     .salary-nav {
