@@ -513,10 +513,44 @@ const salaryApp = {
         const url = id ? `/salary/api/records/${id}` : '/salary/api/records';
 
         if (data.type === 'shift') {
-            if (data.start_time >= data.end_time) {
-                alert('結束時間必須晚於開始時間');
+            if (data.start_time === data.end_time) {
+                alert('開始時間與結束時間不能相同');
                 return;
             }
+
+            // Clash Detection
+            const toEpoch = (dateStr, timeStr) => {
+                const [y, m, d] = dateStr.split('-');
+                const [H, M] = timeStr.split(':');
+                return new Date(y, m-1, d, H, M).getTime();
+            };
+            const getRange = (dateStr, startStr, endStr) => {
+                let s = toEpoch(dateStr, startStr);
+                let e = toEpoch(dateStr, endStr);
+                if (e < s) e += 24 * 3600 * 1000;
+                return [s, e];
+            };
+
+            const [newS, newE] = getRange(data.date, data.start_time, data.end_time);
+            
+            const clashes = this.records.filter(r => {
+                if (id && r.id == id) return false;
+                if (r.type !== 'shift') return false;
+                if (!r.start_time || !r.end_time) return false;
+                
+                // Only check records around the same date to save perf
+                if (Math.abs(new Date(r.date) - new Date(data.date)) > 2 * 24 * 3600 * 1000) return false;
+
+                const [rS, rE] = getRange(r.date, r.start_time, r.end_time);
+                return Math.max(newS, rS) < Math.min(newE, rE);
+            });
+
+            if (clashes.length > 0) {
+                if (!confirm('警告：此時段與現有的班表重疊，確定要儲存嗎？')) {
+                    return;
+                }
+            }
+
             // Logic handled by backend now, but let's be clean
             delete data.hours;
             if (data.rate === '') delete data.rate;

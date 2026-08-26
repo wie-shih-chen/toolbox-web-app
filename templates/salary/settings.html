@@ -237,6 +237,14 @@
             </div>
             <p class="settings-help-text">系統會自動計算班表長度，並從最大的門檻開始比對，扣除對應的休息時數。</p>
         </div>
+        
+        <div class="settings-form-group" style="margin-top: 16px;">
+            <label style="display:flex; align-items:center; cursor:pointer;">
+                <input type="checkbox" id="cf-overtime" style="margin-right: 8px;">
+                <span>啟用勞基法加班費計算</span>
+            </label>
+            <p class="settings-help-text">單日工時超過 8 小時以 1.34 倍計算，超過 10 小時以 1.67 倍計算。</p>
+        </div>
 
         <div style="display: flex; gap: 10px; margin-top: 24px;">
             <button class="btn btn-primary" style="flex: 1;" onclick="saveCompany()">儲存</button>
@@ -247,7 +255,7 @@
 
 <!-- Legacy records modal -->
 <div id="legacy-modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.6); z-index:9999; display:none; align-items:center; justify-content:center;">
-    <div class="glass" style="padding: 28px; max-width: 380px; width: 90%; border-radius: 18px; text-align: center;">
+    <div class="glass animated-modal" style="padding: 28px; max-width: 380px; width: 90%; border-radius: 18px; text-align: center;">
         <div style="font-size: 2rem; margin-bottom: 12px;">🏢</div>
         <h3 style="margin-bottom: 8px;">舊班表記錄待歸屬</h3>
         <p id="legacy-modal-desc" style="color: var(--text-secondary); font-size: 0.9rem; margin-bottom: 20px;"></p>
@@ -342,6 +350,7 @@ function openCompanyForm(id) {
         document.getElementById('cf-rate').value = globalRate ? globalRate.value : '';
         document.getElementById('cf-default-start').value = '';
         document.getElementById('cf-default-end').value = '';
+        document.getElementById('cf-overtime').checked = false;
     } else {
         const c = companiesCache.find(x => x.id === id);
         if (!c) return;
@@ -352,6 +361,7 @@ function openCompanyForm(id) {
         document.getElementById('cf-rate').value = c.hourly_rate;
         document.getElementById('cf-default-start').value = c.default_start_time || '';
         document.getElementById('cf-default-end').value = c.default_end_time || '';
+        document.getElementById('cf-overtime').checked = c.enable_overtime || false;
         let rules = [];
         try {
             rules = JSON.parse(c.break_rules || '[]');
@@ -601,7 +611,8 @@ async function saveCompany() {
         hourly_rate: parseFloat(document.getElementById('cf-rate').value) || 183,
         break_rules: JSON.stringify(rules),
         default_start_time: document.getElementById('cf-default-start').value,
-        default_end_time: document.getElementById('cf-default-end').value
+        default_end_time: document.getElementById('cf-default-end').value,
+        enable_overtime: document.getElementById('cf-overtime').checked
     };
     if (!payload.name) { alert('請填寫公司名稱'); return; }
 

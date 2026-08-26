@@ -3,12 +3,10 @@ from flask_login import current_user
 from datetime import datetime, timedelta
 from sqlalchemy import func
 
-def _apply_holiday_pay(date_str: str, rate: float, hours: float, note: str | None) -> tuple[float, float, str | None]:
+def _calculate_pay_and_note(date_str: str, rate: float, hours: float, note: str | None, enable_overtime: bool = False) -> tuple[float, float, str | None]:
     """
-    Check if date_str is a Taiwan national holiday.
+    Calculate final pay amount considering national holidays or overtime.
     Returns (base_rate, amount, updated_note).
-    - base_rate: always the original hourly rate (for display in UI)
-    - amount:    hours × rate × 2 on holidays, hours × rate on normal days
     """
     try:
         from services.tw_holidays import is_holiday
@@ -24,11 +22,31 @@ def _apply_holiday_pay(date_str: str, rate: float, hours: float, note: str | Non
         else:
             updated_note = holiday_note
     else:
-        amount = int(hours * rate)
-        updated_note = note
+        if enable_overtime:
+            amount, updated_note = _apply_overtime_pay(rate, hours, note)
+        else:
+            amount = int(hours * rate)
+            updated_note = note
 
     return rate, amount, updated_note  # base_rate 不變
 
+def _apply_overtime_pay(rate: float, hours: float, note: str | None) -> tuple[int, str | None]:
+    if hours <= 8:
+        return int(hours * rate), note
+    
+    amount = rate * 8
+    if hours <= 10:
+        amount += rate * 1.34 * (hours - 8)
+    else:
+        amount += rate * 1.34 * 2
+        amount += rate * 1.67 * (hours - 10)
+        
+    ot_note = "(含勞基法加班費)"
+    new_note = f"{note} {ot_note}".strip() if note else ot_note
+    if ot_note in (note or ""):
+        new_note = note
+    
+    return int(amount), new_note
 class SalaryService:
     def get_all_records(self, user=None):
         target_user = user or current_user
@@ -168,21 +186,24 @@ class SalaryService:
             raw_rate = record_data.get('rate')
             settings = self.get_settings()
             default_rate = float(settings.get('hourly_rate', 183.0))
-            # If company_id provided, load company's hourly_rate
+            enable_ot = False
+            
+            # If company_id provided, load company's hourly_rate and overtime config
             if new_record.company_id:
                 company = Company.query.get(new_record.company_id)
                 if company:
                     default_rate = company.hourly_rate
+                    enable_ot = company.enable_overtime
             
             base_rate = default_rate if not raw_rate else (float(raw_rate) if str(raw_rate).strip() else default_rate)
 
-            # Holiday pay: double rate if national holiday
-            effective_rate, amount, holiday_note = _apply_holiday_pay(
-                new_record.date, base_rate, new_record.hours, record_data.get('note')
+            # Calculate amount (handles holidays and overtime)
+            effective_rate, amount, final_note = _calculate_pay_and_note(
+                new_record.date, base_rate, new_record.hours, record_data.get('note'), enable_ot
             )
             new_record.rate = effective_rate
             new_record.amount = amount
-            new_record.note = holiday_note
+            new_record.note = final_note
             
         else:
             # Bonus
@@ -248,10 +269,19 @@ class SalaryService:
             if '【國定假日' in existing_note and '】' in existing_note:
                 existing_note = existing_note.split('】', 1)[-1].strip()
 
+            # Remove old overtime note if present
+            existing_note = existing_note.replace("(含勞基法加班費)", "").strip()
+
             base_rate = record.rate
-            new_rate, amount, updated_note = _apply_holiday_pay(
+            enable_ot = False
+            if record.company_id:
+                company = Company.query.get(record.company_id)
+                if company:
+                    enable_ot = company.enable_overtime
+
+            new_rate, amount, updated_note = _calculate_pay_and_note(
                 record.date, base_rate, record.hours,
-                record_data.get('note', existing_note)
+                record_data.get('note', existing_note), enable_ot
             )
             record.rate = new_rate   # always base rate
             record.amount = amount

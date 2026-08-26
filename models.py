@@ -75,6 +75,7 @@ class Company(db.Model):
     break_rules = db.Column(db.Text, default='[]') # JSON list of rules e.g. [{"threshold": 4.0, "deduct": 0.5}]
     default_start_time    = db.Column(db.String(5), default='')
     default_end_time      = db.Column(db.String(5), default='')
+    enable_overtime       = db.Column(db.Boolean, default=False)
     is_active   = db.Column(db.Boolean, default=True)
     created_at  = db.Column(db.DateTime, default=datetime.utcnow)
 

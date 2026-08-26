@@ -69,7 +69,8 @@ def get_companies():
             'upcoming_schedules': upcoming_schedules,
             'break_rules': c.break_rules or '[]',
             'default_start_time': c.default_start_time or '',
-            'default_end_time': c.default_end_time or ''
+            'default_end_time': c.default_end_time or '',
+            'enable_overtime': c.enable_overtime
         })
     return jsonify(result)
 
@@ -94,7 +95,8 @@ def create_company():
         notify_weekly_time=data.get('notify_weekly_time', '20:00'),
         break_rules=data.get('break_rules', '[]'),
         default_start_time=data.get('default_start_time', ''),
-        default_end_time=data.get('default_end_time', '')
+        default_end_time=data.get('default_end_time', ''),
+        enable_overtime=bool(data.get('enable_overtime', False))
     )
     db.session.add(company)
     db.session.commit()
@@ -119,6 +121,7 @@ def update_company(company_id):
     if 'break_rules' in data: company.break_rules = data['break_rules']
     if 'default_start_time' in data: company.default_start_time = data['default_start_time']
     if 'default_end_time' in data: company.default_end_time = data['default_end_time']
+    if 'enable_overtime' in data: company.enable_overtime = bool(data['enable_overtime'])
     
     if 'shift_reminders' in data:
         # First, deactivate all existing active reminders for this company
