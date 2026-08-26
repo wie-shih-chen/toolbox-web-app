@@ -128,17 +128,7 @@
                 <p class="settings-help-text">新增排班時若未指定公司，以此時薪計算。</p>
             </div>
 
-            <div class="settings-form-group">
-                <label>預設班表時間</label>
-                <div style="display: flex; gap: 10px; align-items: center;">
-                    <input type="time" name="default_start_time" class="settings-input"
-                        value="{{ settings.default_start_time }}">
-                    <span style="color: var(--text-secondary);">至</span>
-                    <input type="time" name="default_end_time" class="settings-input"
-                        value="{{ settings.default_end_time }}">
-                </div>
-                <p class="settings-help-text">新增排班時會自動帶入此時間。</p>
-            </div>
+
 
             <div class="settings-form-group">
                 <label>月收入目標</label>
@@ -220,7 +210,7 @@
             </div>
             <div class="settings-form-group" style="margin: 0;">
                 <label>識別顏色</label>
-                <input type="color" id="cf-color" value="#6366f1" style="height: 42px; width: 100%; border-radius: 8px; border: none; cursor: pointer; background: transparent;">
+                <input type="color" id="cf-color" value="#6366f1" class="settings-input" style="height: 46px; padding: 4px; cursor: pointer;">
             </div>
             <div class="settings-form-group" style="margin: 0;">
                 <label>時薪 (NTD/hr)</label>
@@ -229,9 +219,9 @@
             <div class="settings-form-group" style="margin: 0;">
                 <label>預設班表時間</label>
                 <div style="display: flex; gap: 8px; align-items: center;">
-                    <input type="time" id="cf-default-start" class="settings-input" style="padding: 6px 10px;">
+                    <input type="time" id="cf-default-start" class="settings-input">
                     <span style="color: var(--text-secondary);">-</span>
-                    <input type="time" id="cf-default-end" class="settings-input" style="padding: 6px 10px;">
+                    <input type="time" id="cf-default-end" class="settings-input">
                 </div>
             </div>
         </div>
