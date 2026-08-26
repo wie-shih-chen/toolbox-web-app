@@ -1004,8 +1004,17 @@ const salaryApp = {
                     ? `<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${r.company_color};margin-right:4px;"></span><span style="color:var(--text-secondary);font-size:0.85em;">${r.company_name}</span>`
                     : '';
                     
+                let badges = '';
+                const noteStr = r.note || '';
+                if (noteStr.includes('國定假日')) {
+                    badges += '<span style="background: rgba(239, 68, 68, 0.2); color: #fca5a5; font-size: 0.65rem; padding: 2px 6px; border-radius: 4px; margin-right: 4px; display: inline-block; margin-bottom: 4px;">🏮 國定假日</span><br>';
+                }
+                if (noteStr.includes('加班費')) {
+                    badges += '<span style="background: rgba(245, 158, 11, 0.2); color: #fcd34d; font-size: 0.65rem; padding: 2px 6px; border-radius: 4px; margin-right: 4px; display: inline-block; margin-bottom: 4px;">🔥 勞基法加班</span><br>';
+                }
+                    
                 tr.innerHTML = r.type === 'shift' ? `
-                    <td>${r.date}</td><td>排班</td><td>${r.start_time} - ${r.end_time}<br>${companyHtml}</td><td>${r.hours}</td><td>${r.rate}/hr -> $${Math.round(r.amount)}</td><td>${r.note || ''}</td>
+                    <td>${r.date}</td><td>排班</td><td>${r.start_time} - ${r.end_time}<br>${companyHtml}</td><td>${r.hours}</td><td>${r.rate}/hr -> $${Math.round(r.amount)}</td><td>${badges}${r.note || ''}</td>
                 ` : `
                     <td>${r.date}</td><td style="color:#ffd700">獎金</td><td>${companyHtml}</td><td>${r.hours || ''}</td><td>$${r.amount}</td><td>${r.note || ''}</td>
                 `;
