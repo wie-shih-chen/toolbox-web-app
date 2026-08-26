@@ -844,7 +844,7 @@ const salaryApp = {
                 const isOvertimeShift = r.type === 'shift' && (r.note || '').includes('勞基法加班');
                 const isCrossDay = r.type === 'shift' && r.start_time && r.end_time && r.end_time < r.start_time;
                 let breakMatch = (r.note || '').match(/\(已扣除休息 (\d+(\.\d+)?)h\)/);
-                let breakText = breakMatch ? ` 扣休 ${breakMatch[1]}h` : '';
+                let breakText = breakMatch ? ` (扣休 ${breakMatch[1]}h)` : '';
                 
                 let text = r.type === 'shift' ? `${r.start_time}${isCrossDay ? ' (+1日)' : ''}${breakText}` : `💰 獎金`;
                 if (isHolidayShift) text += ' ×2';
