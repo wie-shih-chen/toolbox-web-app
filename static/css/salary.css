@@ -310,37 +310,42 @@
 
 /* Monthly Calendar */
 .calendar-grid {
-    background-color: var(--card-bg);
-    border-radius: 12px;
+    background-color: #1a1a1a;
+    border-radius: 16px;
     overflow: hidden;
     display: flex;
     flex-direction: column;
     height: 100%;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4);
+    border: 1px solid rgba(255, 255, 255, 0.05);
 }
 
 .calendar-header {
     display: grid;
     grid-template-columns: repeat(7, 1fr);
-    background-color: #333;
+    background-color: rgba(255, 255, 255, 0.02);
     text-align: center;
-    padding: 10px 0;
-    border-bottom: 1px solid var(--border-color);
-    font-weight: 700;
+    padding: 14px 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    font-weight: 500;
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    letter-spacing: 2px;
 }
 
 .calendar-body {
     display: grid;
     grid-template-columns: repeat(7, 1fr);
-    /* grid-auto-rows: minmax(100px, 1fr); */
+    gap: 1px;
+    background-color: rgba(255, 255, 255, 0.04); /* acts as the border color */
     flex: 1;
     overflow-y: auto;
 }
 
 .calendar-day {
-    border-right: 1px solid var(--border-color);
-    border-bottom: 1px solid var(--border-color);
-    min-height: 100px;
-    padding: 5px;
+    background-color: #1a1a1a;
+    min-height: 110px;
+    padding: 8px;
     cursor: pointer;
     transition: background 0.2s;
     display: flex;
@@ -348,16 +353,19 @@
 }
 
 .calendar-day:hover {
-    background-color: #404040;
+    background-color: #242424;
 }
 
 .calendar-day.other-month {
+    background-color: #141414;
+}
+
+.calendar-day.other-month .cal-day-header {
     opacity: 0.3;
-    background-color: #222;
 }
 
 .calendar-day.today {
-    background-color: rgba(78, 205, 196, 0.03);
+    background-color: rgba(78, 205, 196, 0.04);
     box-shadow: inset 0 0 0 1px rgba(78, 205, 196, 0.3);
     position: relative;
     z-index: 1;
