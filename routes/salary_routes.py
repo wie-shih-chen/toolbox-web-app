@@ -67,7 +67,9 @@ def get_companies():
             'notify_weekly_time': c.notify_weekly_time,
             'shift_reminders': shift_reminders,
             'upcoming_schedules': upcoming_schedules,
-            'break_rules': c.break_rules or '[]'
+            'break_rules': c.break_rules or '[]',
+            'default_start_time': c.default_start_time or '',
+            'default_end_time': c.default_end_time or ''
         })
     return jsonify(result)
 
@@ -90,7 +92,9 @@ def create_company():
         notify_weekly_enabled=bool(data.get('notify_weekly_enabled', False)),
         notify_weekly_day=data.get('notify_weekly_day', 'sunday'),
         notify_weekly_time=data.get('notify_weekly_time', '20:00'),
-        break_rules=data.get('break_rules', '[]')
+        break_rules=data.get('break_rules', '[]'),
+        default_start_time=data.get('default_start_time', ''),
+        default_end_time=data.get('default_end_time', '')
     )
     db.session.add(company)
     db.session.commit()
@@ -113,6 +117,8 @@ def update_company(company_id):
     if 'notify_weekly_day' in data: company.notify_weekly_day = data['notify_weekly_day']
     if 'notify_weekly_time' in data: company.notify_weekly_time = data['notify_weekly_time']
     if 'break_rules' in data: company.break_rules = data['break_rules']
+    if 'default_start_time' in data: company.default_start_time = data['default_start_time']
+    if 'default_end_time' in data: company.default_end_time = data['default_end_time']
     
     if 'shift_reminders' in data:
         # First, deactivate all existing active reminders for this company

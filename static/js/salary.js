@@ -28,16 +28,28 @@ const salaryApp = {
             const companies = await res.json();
             const sel = document.getElementById('recordCompany');
             if (!sel) return;
-            sel.innerHTML = companies.map(c => `<option value="${c.id}" data-color="${c.color}" data-rate="${c.hourly_rate}">${c.name}</option>`).join('');
+            sel.innerHTML = companies.map(c => `<option value="${c.id}" data-color="${c.color}" data-rate="${c.hourly_rate}" data-start="${c.default_start_time || ''}" data-end="${c.default_end_time || ''}">${c.name}</option>`).join('');
 
-            // Auto-fill rate when company changes
+            // Auto-fill rate and times when company changes
             sel.addEventListener('change', () => {
                 const opt = sel.options[sel.selectedIndex];
+                
+                // Rate
                 const rateInput = document.getElementById('shiftRate');
                 if (opt && opt.dataset.rate && rateInput && !rateInput.value) {
                     rateInput.placeholder = `公司時薪 $${opt.dataset.rate}/hr`;
                 } else if (rateInput) {
                     rateInput.placeholder = '留空則使用預設時薪';
+                }
+                
+                // Times
+                const startInput = document.getElementById('startTime');
+                const endInput = document.getElementById('endTime');
+                if (startInput) {
+                    startInput.value = (opt && opt.dataset.start) ? opt.dataset.start : (this.settings.default_start_time || '09:00');
+                }
+                if (endInput) {
+                    endInput.value = (opt && opt.dataset.end) ? opt.dataset.end : (this.settings.default_end_time || '18:00');
                 }
             });
         } catch(e) { console.warn('Company load failed', e); }
@@ -486,6 +498,8 @@ const salaryApp = {
             if (!found && companySel.options.length > 0) {
                 companySel.selectedIndex = 0;
             }
+            
+            companySel.dispatchEvent(new Event('change'));
         }
     },
 

@@ -226,6 +226,14 @@
                 <label>時薪 (NTD/hr)</label>
                 <input type="number" id="cf-rate" class="settings-input" placeholder="183">
             </div>
+            <div class="settings-form-group" style="margin: 0;">
+                <label>預設班表時間</label>
+                <div style="display: flex; gap: 8px; align-items: center;">
+                    <input type="time" id="cf-default-start" class="settings-input" style="padding: 6px 10px;">
+                    <span style="color: var(--text-secondary);">-</span>
+                    <input type="time" id="cf-default-end" class="settings-input" style="padding: 6px 10px;">
+                </div>
+            </div>
         </div>
 
         <!-- Break Rules Section -->
@@ -342,6 +350,8 @@ function openCompanyForm(id) {
         // Auto-fill from global settings default hourly rate
         const globalRate = document.getElementById('hourlyRate');
         document.getElementById('cf-rate').value = globalRate ? globalRate.value : '';
+        document.getElementById('cf-default-start').value = '';
+        document.getElementById('cf-default-end').value = '';
     } else {
         const c = companiesCache.find(x => x.id === id);
         if (!c) return;
@@ -350,6 +360,8 @@ function openCompanyForm(id) {
         document.getElementById('cf-name').value = c.name;
         document.getElementById('cf-color').value = c.color;
         document.getElementById('cf-rate').value = c.hourly_rate;
+        document.getElementById('cf-default-start').value = c.default_start_time || '';
+        document.getElementById('cf-default-end').value = c.default_end_time || '';
         let rules = [];
         try {
             rules = JSON.parse(c.break_rules || '[]');
@@ -597,7 +609,9 @@ async function saveCompany() {
         name: document.getElementById('cf-name').value.trim(),
         color: document.getElementById('cf-color').value,
         hourly_rate: parseFloat(document.getElementById('cf-rate').value) || 183,
-        break_rules: JSON.stringify(rules)
+        break_rules: JSON.stringify(rules),
+        default_start_time: document.getElementById('cf-default-start').value,
+        default_end_time: document.getElementById('cf-default-end').value
     };
     if (!payload.name) { alert('請填寫公司名稱'); return; }
 
