@@ -7,35 +7,17 @@ import os
 from flask import Blueprint, render_template, request, jsonify, current_app, redirect, url_for, flash
 from flask_login import login_required, current_user
 from models import db, VocabProgress, UserSettings, VocabHistoryLog
+from services.mongo_service import mongo
 from datetime import datetime
+import re
 
 vocab_bp = Blueprint('vocab', __name__, template_folder='../templates')
 
-# ─── 本地資料快取 ─────────────────────────────────────────────────
-_vocab_cache = None
-
-def _load_vocab():
-    """載入本地 JSON 資料（只載入一次，快取在記憶體中）"""
-    global _vocab_cache
-    if _vocab_cache is None:
-        json_path = os.path.join(current_app.root_path, 'static', 'data', 'toeic_vocabulary.json')
-        with open(json_path, 'r', encoding='utf-8') as f:
-            raw = json.load(f)
-        # 統一欄位格式
-        _vocab_cache = []
-        for item in raw:
-            _vocab_cache.append({
-                'word':         item.get('english_word', ''),
-                'definition':   item.get('chinese_definition', ''),
-                'star':         item.get('star_rating', 0),
-                'category':     item.get('category', ''),
-                'score_range':  item.get('toeic_score_range', ''),
-                'parts_of_speech': item.get('parts_of_speech', []),
-                'word_forms':   item.get('word_forms', []),
-                'examples':     item.get('examples', []),
-                'exam_tips':    item.get('exam_tips', []),
-            })
-    return _vocab_cache
+def _get_vocab_collection():
+    collection = mongo.get_collection()
+    if collection is None:
+        raise Exception("MongoDB not configured")
+    return collection
 
 
 # ─── 頁面路由 ────────────────────────────────────────────────────
@@ -70,10 +52,9 @@ def index():
     daily_goal = settings.vocab_daily_goal if settings else 20
     
     try:
-        all_words = _load_vocab()
-        total_words = len(all_words)
+        total_words = _get_vocab_collection().estimated_document_count()
     except Exception:
-        total_words = 11238
+        total_words = 0
     
     stats = {
         'today_reviewed': today_reviewed,
@@ -195,36 +176,50 @@ def api_words():
     review_date = request.args.get('review_date', '').strip()
     
     try:
-        all_words = _load_vocab()
+        collection = _get_vocab_collection()
     except Exception as e:
         return jsonify({'error': str(e)}), 500
+    
+    query = {}
     
     # 歷史複習過濾
     if review_date:
         from datetime import timedelta
         logs = VocabHistoryLog.query.filter_by(user_id=current_user.id).all()
-        reviewed_words = {log.word for log in logs if (log.created_at + timedelta(hours=8)).strftime('%Y-%m-%d') == review_date}
-        all_words = [w for w in all_words if w['word'] in reviewed_words]
+        reviewed_words = [log.word for log in logs if (log.created_at + timedelta(hours=8)).strftime('%Y-%m-%d') == review_date]
+        query['_id'] = {'$in': reviewed_words}
     
     # 常規過濾
-    filtered = all_words
     if star_f:
-        filtered = [w for w in filtered if w['star'] == star_f]
+        query['star_rating'] = star_f
     if cat_f:
-        filtered = [w for w in filtered if cat_f in w['category']]
+        query['category'] = {'$regex': cat_f, '$options': 'i'}
     if score_f:
-        filtered = [w for w in filtered if score_f in w['score_range']]
+        query['toeic_score_range'] = {'$regex': score_f, '$options': 'i'}
     if search_q:
-        import re
         if re.match(r'^[a-z0-9\s\-]+$', search_q):
-            # 如果搜尋字串只有英文/數字，則只精確比對「英文單字字首」
-            filtered = [w for w in filtered if w['word'].lower().startswith(search_q)]
+            # 英文搜尋
+            query['_id'] = {'$regex': f'^{search_q}', '$options': 'i'}
         else:
-            # 如果包含中文或其他字元，則只在「中文解釋」中尋找
-            filtered = [w for w in filtered if search_q in w.get('definition', '').lower()]
+            # 中文搜尋
+            query['chinese_definition'] = {'$regex': search_q, '$options': 'i'}
+            
+    total = collection.count_documents(query)
+    cursor = collection.find(query).skip(offset).limit(length)
     
-    total = len(filtered)
-    page  = filtered[offset:offset + length]
+    page = []
+    for doc in cursor:
+        page.append({
+            'word':         doc.get('english_word', ''),
+            'definition':   doc.get('chinese_definition', ''),
+            'star':         doc.get('star_rating', 0),
+            'category':     doc.get('category', ''),
+            'score_range':  doc.get('toeic_score_range', ''),
+            'parts_of_speech': doc.get('parts_of_speech', []),
+            'word_forms':   doc.get('word_forms', []),
+            'examples':     doc.get('examples', []),
+            'exam_tips':    doc.get('exam_tips', []),
+        })
     
     # 取得使用者進度 map
     user_progress = {
@@ -295,13 +290,24 @@ def api_lookup():
     if not word:
         return jsonify({'found': False}), 400
     try:
-        all_words = _load_vocab()
+        collection = _get_vocab_collection()
     except Exception as e:
         return jsonify({'found': False, 'error': str(e)}), 500
 
-    for w in all_words:
-        if w['word'].lower() == word:
-            return jsonify({'found': True, 'word': w})
+    doc = collection.find_one({'_id': word})
+    if doc:
+        w = {
+            'word':         doc.get('english_word', ''),
+            'definition':   doc.get('chinese_definition', ''),
+            'star':         doc.get('star_rating', 0),
+            'category':     doc.get('category', ''),
+            'score_range':  doc.get('toeic_score_range', ''),
+            'parts_of_speech': doc.get('parts_of_speech', []),
+            'word_forms':   doc.get('word_forms', []),
+            'examples':     doc.get('examples', []),
+            'exam_tips':    doc.get('exam_tips', []),
+        }
+        return jsonify({'found': True, 'word': w})
     return jsonify({'found': False})
 
 
@@ -317,11 +323,12 @@ def api_batch_lookup():
     if not query_words:
         return jsonify({})
     try:
-        all_words = _load_vocab()
+        collection = _get_vocab_collection()
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
-    official_set = {w['word'].lower() for w in all_words}
+    docs = collection.find({'_id': {'$in': query_words}}, {'_id': 1})
+    official_set = {doc['_id'].lower() for doc in docs}
     result = {qw: (qw in official_set) for qw in query_words}
     return jsonify(result)
 

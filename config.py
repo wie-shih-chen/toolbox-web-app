@@ -3,6 +3,7 @@ import os
 class Config:
     SECRET_KEY = os.environ.get('SECRET_KEY') or 'dev-secret-key-change-in-production'
     GEMINI_API_KEY = os.environ.get('GEMINI_API_KEY')
+    MONGO_URI = os.environ.get('MONGO_URI')
 
     # SSO (Single Sign-On) Config
     # 在 PythonAnywhere 環境變數設定相同的值（兩個 app 共用）
