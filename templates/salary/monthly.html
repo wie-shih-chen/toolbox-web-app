@@ -6,15 +6,60 @@
 {% block extra_css %}
 <link rel="stylesheet" href="{{ url_for('static', filename='css/salary.css') }}?v=3.0">
 <style>
-    /* ── Calendar Grid Layout ── */
+    /* ── View Switcher ── */
+    .cal-view-switcher {
+        display: flex;
+        gap: 4px;
+        background: rgba(255, 255, 255, 0.06);
+        border-radius: 10px;
+        padding: 4px;
+        align-items: center;
+    }
+    .cal-view-btn {
+        padding: 5px 14px;
+        border-radius: 7px;
+        border: none;
+        background: transparent;
+        color: var(--text-secondary);
+        font-size: 0.82rem;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.18s ease;
+        white-space: nowrap;
+    }
+    .cal-view-btn:hover {
+        background: rgba(255,255,255,0.08);
+        color: var(--text-primary, #fff);
+    }
+    .cal-view-btn.active {
+        background: var(--accent, #38bdf8);
+        color: #fff;
+        font-weight: 600;
+        box-shadow: 0 2px 8px rgba(56,189,248,0.35);
+    }
+
+    /* ── Header Controls Row ── */
+    .cal-controls-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-bottom: 12px;
+    }
+    .cal-nav-group {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    /* ── Month Grid ── */
     .calendar-grid {
         display: flex;
         flex-direction: column;
         width: 100%;
         overflow-x: hidden;
     }
-
-    /* Weekday header row: 7 equal columns */
     .calendar-header {
         display: grid;
         grid-template-columns: repeat(7, 1fr);
@@ -25,15 +70,11 @@
         padding: 8px 0;
         border-bottom: 1px solid rgba(255, 255, 255, 0.1);
     }
-
-    /* Calendar body: direct 7-column grid — JS injects 42 .calendar-day cells */
     .calendar-body {
         display: grid;
         grid-template-columns: repeat(7, 1fr);
         width: 100%;
     }
-
-    /* Each day cell */
     .calendar-day {
         min-height: 72px;
         padding: 4px;
@@ -41,23 +82,14 @@
         overflow: hidden;
         box-sizing: border-box;
         width: 100%;
-        /* ensure no cell overflows its column */
     }
-
-    .calendar-day:last-child {
-        border-right: none;
-    }
-
-    .calendar-day.other-month {
-        opacity: 0.35;
-    }
-
-    /* ── National Holiday styles ── */
+    .calendar-day:last-child { border-right: none; }
+    .calendar-day.other-month { opacity: 0.35; }
     .calendar-day.holiday {
         border: 1px solid rgba(248, 113, 113, 0.4) !important;
         background: rgba(248, 113, 113, 0.06) !important;
     }
-
+    .calendar-day.today .cal-day-header { color: var(--accent, #38bdf8); font-weight: 700; }
     .cal-day-header {
         display: flex;
         align-items: center;
@@ -65,7 +97,6 @@
         flex-wrap: wrap;
         font-size: 0.75rem;
     }
-
     .holiday-badge {
         font-size: 0.55rem;
         font-weight: 600;
@@ -79,8 +110,6 @@
         overflow: hidden;
         text-overflow: ellipsis;
     }
-
-    /* Shift items inside each day cell */
     .cal-item {
         font-size: 0.7rem;
         border-radius: 4px;
@@ -90,31 +119,235 @@
         overflow: hidden;
         text-overflow: ellipsis;
         cursor: pointer;
+        border-left: 3px solid transparent;
     }
 
-    .cal-item[style*="f87171"] {
+    /* ── Week View ── */
+    #weekViewBody { display: none; overflow-x: auto; }
+    .week-grid {
+        display: grid;
+        grid-template-columns: 52px repeat(7, 1fr);
+        min-width: 560px;
+    }
+    .week-col-header {
+        text-align: center;
+        padding: 6px 2px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        color: var(--text-secondary);
+        border-bottom: 1px solid rgba(255,255,255,0.1);
+    }
+    .week-col-header.today-col { color: var(--accent, #38bdf8); }
+    .week-col-header .wh-day-num {
+        display: inline-block;
+        width: 26px; height: 26px;
+        line-height: 26px;
+        border-radius: 50%;
+        font-size: 0.9rem;
+        font-weight: 700;
+    }
+    .week-col-header.today-col .wh-day-num { background: var(--accent, #38bdf8); color: #fff; }
+    .week-time-col {
+        font-size: 0.65rem;
+        color: var(--text-secondary);
+        padding-right: 6px;
+        text-align: right;
+        line-height: 1;
+        padding-top: 2px;
+    }
+    .week-hour-row { border-top: 1px solid rgba(255,255,255,0.05); }
+    .week-day-cell {
+        border-left: 1px solid rgba(255,255,255,0.06);
+        border-top: 1px solid rgba(255,255,255,0.05);
+        min-height: 36px;
+        position: relative;
+        cursor: pointer;
+    }
+    .week-day-cell:hover { background: rgba(255,255,255,0.03); }
+    .week-event-block {
+        position: absolute;
+        left: 2px; right: 2px;
+        border-radius: 4px;
+        padding: 2px 5px;
+        font-size: 0.65rem;
+        font-weight: 600;
+        overflow: hidden;
+        cursor: pointer;
+        z-index: 1;
+        line-height: 1.4;
+        box-shadow: 0 1px 4px rgba(0,0,0,0.3);
+    }
+    .week-allday-row {
+        border-bottom: 1px solid rgba(255,255,255,0.1);
+        min-height: 24px;
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        padding: 2px 4px;
+        flex-wrap: wrap;
+    }
+    .week-allday-chip {
+        font-size: 0.65rem;
+        border-radius: 3px;
+        padding: 1px 5px;
         font-weight: 600;
     }
 
-    /* Mobile: tighten up */
+    /* ── Day View ── */
+    #dayViewBody { display: none; overflow-x: auto; }
+    .day-grid {
+        display: grid;
+        grid-template-columns: 52px 1fr;
+        min-width: 280px;
+    }
+    .day-hour-row { border-top: 1px solid rgba(255,255,255,0.05); }
+    .day-col {
+        border-left: 1px solid rgba(255,255,255,0.08);
+        border-top: 1px solid rgba(255,255,255,0.05);
+        min-height: 40px;
+        position: relative;
+        cursor: pointer;
+    }
+    .day-col:hover { background: rgba(255,255,255,0.03); }
+    .day-event-block {
+        position: absolute;
+        left: 4px; right: 4px;
+        border-radius: 5px;
+        padding: 4px 8px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        overflow: hidden;
+        cursor: pointer;
+        z-index: 1;
+        line-height: 1.5;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+    }
+
+    /* ── Year View ── */
+    #yearViewBody { display: none; }
+    .year-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+        gap: 12px;
+    }
+    .mini-month {
+        background: rgba(255,255,255,0.04);
+        border-radius: 10px;
+        padding: 10px;
+    }
+    .mini-month-title {
+        font-size: 0.8rem;
+        font-weight: 600;
+        color: var(--text-secondary);
+        margin-bottom: 6px;
+        text-align: center;
+    }
+    .mini-month-grid {
+        display: grid;
+        grid-template-columns: repeat(7, 1fr);
+        gap: 1px;
+        text-align: center;
+    }
+    .mini-dow {
+        font-size: 0.55rem;
+        color: var(--text-secondary);
+        opacity: 0.6;
+        padding-bottom: 2px;
+    }
+    .mini-day {
+        font-size: 0.65rem;
+        width: 20px; height: 20px;
+        line-height: 20px;
+        border-radius: 50%;
+        margin: 0 auto;
+        cursor: pointer;
+        transition: background 0.15s;
+        color: var(--text-secondary);
+    }
+    .mini-day:hover { background: rgba(255,255,255,0.1); color: #fff; }
+    .mini-day.has-record {
+        background: rgba(56,189,248,0.25);
+        color: var(--accent, #38bdf8);
+        font-weight: 700;
+    }
+    .mini-day.today-mini {
+        background: var(--accent, #38bdf8);
+        color: #fff;
+        font-weight: 700;
+    }
+    .mini-day.other-month-mini { opacity: 0.2; pointer-events: none; }
+    .mini-day.empty { pointer-events: none; }
+
+    /* ── Schedule (Agenda) View ── */
+    #scheduleViewBody { display: none; }
+    .schedule-date-group { margin-bottom: 16px; }
+    .schedule-date-label {
+        font-size: 0.8rem;
+        font-weight: 700;
+        color: var(--text-secondary);
+        padding: 6px 0 4px;
+        border-bottom: 1px solid rgba(255,255,255,0.08);
+        margin-bottom: 6px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    .schedule-date-label .sched-day-num {
+        width: 32px; height: 32px;
+        background: rgba(255,255,255,0.06);
+        border-radius: 50%;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 0.9rem;
+        font-weight: 700;
+        color: #fff;
+        flex-shrink: 0;
+    }
+    .schedule-date-label.sched-today .sched-day-num { background: var(--accent, #38bdf8); }
+    .schedule-date-label.sched-holiday { color: #fca5a5; }
+    .schedule-event-row {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 8px 10px;
+        border-radius: 8px;
+        background: rgba(255,255,255,0.04);
+        margin-bottom: 4px;
+        cursor: pointer;
+        transition: background 0.15s;
+    }
+    .schedule-event-row:hover { background: rgba(255,255,255,0.08); }
+    .sched-color-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+    .sched-time { font-size: 0.75rem; color: var(--text-secondary); min-width: 90px; }
+    .sched-title { font-size: 0.85rem; font-weight: 500; flex: 1; }
+    .sched-amount { font-size: 0.8rem; color: #4ade80; font-weight: 600; white-space: nowrap; }
+    .schedule-empty {
+        text-align: center;
+        color: var(--text-secondary);
+        padding: 40px 0;
+        font-size: 0.9rem;
+        opacity: 0.6;
+    }
+    .sched-load-more { text-align: center; padding: 12px 0; }
+    .sched-load-more button {
+        background: rgba(255,255,255,0.06);
+        border: none;
+        border-radius: 8px;
+        color: var(--text-secondary);
+        padding: 8px 20px;
+        font-size: 0.82rem;
+        cursor: pointer;
+        transition: background 0.15s;
+    }
+    .sched-load-more button:hover { background: rgba(255,255,255,0.12); }
+
     @media (max-width: 480px) {
-        .calendar-day {
-            min-height: 56px;
-            padding: 2px;
-        }
-
-        .cal-day-header {
-            font-size: 0.7rem;
-        }
-
-        .cal-item {
-            font-size: 0.6rem;
-        }
-
-        .holiday-badge {
-            max-width: 50px;
-            font-size: 0.5rem;
-        }
+        .cal-view-btn { padding: 5px 9px; font-size: 0.75rem; }
+        .calendar-day { min-height: 56px; padding: 2px; }
+        .cal-day-header { font-size: 0.7rem; }
+        .cal-item { font-size: 0.6rem; }
+        .holiday-badge { max-width: 50px; font-size: 0.5rem; }
+        .year-grid { grid-template-columns: repeat(2, 1fr); }
+        .cal-controls-row { flex-direction: column; align-items: flex-start; }
     }
 </style>
 {% endblock %}
@@ -141,15 +374,27 @@
 </div>
 
 <div class="salary-monthly" data-current-month="{{ current_month }}">
-    <div class="dashboard-header">
-        <div class="week-nav">
-            <button class="btn btn-nav" id="prevMonthBtn">◀ 上個月</button>
-            <h2 id="currentMonthLabel">2024年 01月</h2>
-            <button class="btn btn-nav" id="nextMonthBtn">下個月 ▶</button>
-            <button class="btn btn-secondary" id="thisMonthBtn">回到本月</button>
+
+    <!-- Controls Row: Nav + View Switcher -->
+    <div class="cal-controls-row">
+        <div class="cal-nav-group">
+            <button class="btn btn-nav" id="prevMonthBtn">◀</button>
+            <h2 id="currentMonthLabel" style="margin:0; font-size:1.1rem; white-space:nowrap;">2024年 01月</h2>
+            <button class="btn btn-nav" id="nextMonthBtn">▶</button>
+            <button class="btn btn-secondary" id="thisMonthBtn" style="font-size:0.8rem; padding:5px 12px;">今天</button>
+        </div>
+
+        <!-- View Switcher -->
+        <div class="cal-view-switcher">
+            <button class="cal-view-btn" data-view="day" id="viewBtn-day">天</button>
+            <button class="cal-view-btn" data-view="week" id="viewBtn-week">週</button>
+            <button class="cal-view-btn active" data-view="month" id="viewBtn-month">月</button>
+            <button class="cal-view-btn" data-view="year" id="viewBtn-year">年</button>
+            <button class="cal-view-btn" data-view="schedule" id="viewBtn-schedule">時間表</button>
         </div>
     </div>
 
+    <!-- Summary Card -->
     <div class="summary-card">
         <div class="summary-stats-grid">
             <div class="summary-item">
@@ -162,15 +407,13 @@
             </div>
         </div>
 
-        <!-- Target Income Progress (Hidden by default) -->
+        <!-- Target Income Progress -->
         <div id="targetIncomeContainer" style="display: none; width: 100%;">
-            <div
-                style="display: flex; justify-content: space-between; font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 8px;">
+            <div style="display: flex; justify-content: space-between; font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 8px;">
                 <span>月目標達成率</span>
                 <span id="targetIncomePercent">0%</span>
             </div>
-            <div
-                style="width: 100%; height: 8px; background: rgba(255,255,255,0.06); border-radius: 4px; overflow: hidden;">
+            <div style="width: 100%; height: 8px; background: rgba(255,255,255,0.06); border-radius: 4px; overflow: hidden;">
                 <div id="targetIncomeBar"
                     style="width: 0%; height: 100%; background: linear-gradient(90deg, #38bdf8, #4ade80); transition: width 0.8s ease-out;"></div>
             </div>
@@ -185,7 +428,8 @@
         </div>
     </div>
 
-    <div class="calendar-grid">
+    <!-- ── Month View ── -->
+    <div class="calendar-grid" id="monthViewBody">
         <div class="calendar-header">
             <div>週一</div>
             <div>週二</div>
@@ -199,11 +443,22 @@
             <!-- Days injected by JS -->
         </div>
     </div>
+
+    <!-- ── Week View ── -->
+    <div id="weekViewBody"></div>
+
+    <!-- ── Day View ── -->
+    <div id="dayViewBody"></div>
+
+    <!-- ── Year View ── -->
+    <div id="yearViewBody"></div>
+
+    <!-- ── Schedule (Agenda) View ── -->
+    <div id="scheduleViewBody"></div>
+
 </div>
 
-<!-- Re-use Modal from Dashboard or separate? -->
-<!-- For simplicity, let's re-use the same modal structure if possible, 
-     or just include it here too since it's a separate page rewrite -->
+<!-- Record Modal -->
 <div id="recordModal" class="modal">
     <div class="modal-content">
         <div class="modal-header">
@@ -230,7 +485,6 @@
                         <label>結束時間</label>
                         <input type="time" name="end_time" id="endTime" required value="18:00">
                     </div>
-                    <!-- Company Selector (dynamically moved between tabs) -->
                     <div class="form-group" id="companyGroup">
                         <label>所屬公司</label>
                         <select name="company_id" id="recordCompany" style="width:100%;" required>

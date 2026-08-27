@@ -70,7 +70,10 @@ const salaryApp = {
         addSafeListener('thisMonthBtn', 'click', () => {
             const n = new Date();
             this.currentMonth = new Date(n.getFullYear(), n.getMonth(), 1);
-            this.loadMonth();
+            this.currentDay   = new Date(n.getFullYear(), n.getMonth(), n.getDate());
+            this.currentWeekMonday = this._getMondayOf(n);
+            this.currentYear  = n.getFullYear();
+            this.loadCurrentView ? this.loadCurrentView() : this.loadMonth();
         });
 
         // Actions
@@ -732,18 +735,120 @@ const salaryApp = {
         return `${y}-${m}-${d}`;
     },
 
-    // Monthly View
+    // ═══════════════════════════════════════════════
+    //  Monthly / Multi-View Calendar
+    // ═══════════════════════════════════════════════
     initMonthly() {
         const now = new Date();
         this.currentMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-        this.holidays = {};   // { 'YYYY-MM-DD': '假日名稱' }
+        this.currentDay   = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        this.currentWeekMonday = this._getMondayOf(now);
+        this.currentYear  = now.getFullYear();
+        this.currentView  = 'month';   // day | week | month | year | schedule
+        this.holidays     = {};
         this.bindEvents();
-        this.loadSettings().then(() => this.loadMonth());
+
+        // View switcher buttons
+        document.querySelectorAll('.cal-view-btn').forEach(btn => {
+            btn.addEventListener('click', () => this.switchView(btn.dataset.view));
+        });
+
+        this.loadSettings().then(() => this.loadCurrentView());
+    },
+
+    _getMondayOf(date) {
+        const d = new Date(date);
+        const day = d.getDay() || 7;   // 0(Sun)→7
+        d.setDate(d.getDate() - day + 1);
+        d.setHours(0,0,0,0);
+        return d;
+    },
+
+    switchView(mode) {
+        this.currentView = mode;
+        // Update tab active state
+        document.querySelectorAll('.cal-view-btn').forEach(b => b.classList.toggle('active', b.dataset.view === mode));
+        // Show/hide view bodies
+        const ids = ['monthViewBody','weekViewBody','dayViewBody','yearViewBody','scheduleViewBody'];
+        const map = { month:'monthViewBody', week:'weekViewBody', day:'dayViewBody', year:'yearViewBody', schedule:'scheduleViewBody' };
+        ids.forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.style.display = (id === map[mode]) ? '' : 'none';
+        });
+        this.updateNavLabel();
+        this.loadCurrentView();
+    },
+
+    updateNavLabel() {
+        const label = document.getElementById('currentMonthLabel');
+        const prev  = document.getElementById('prevMonthBtn');
+        const next  = document.getElementById('nextMonthBtn');
+        if (!label) return;
+        const fmt = (y, m) => `${y}年 ${String(m+1).padStart(2,'0')}月`;
+        switch (this.currentView) {
+            case 'day': {
+                const d = this.currentDay;
+                label.textContent = `${d.getFullYear()}年${d.getMonth()+1}月${d.getDate()}日`;
+                if (prev) prev.title = '上一天';
+                if (next) next.title = '下一天';
+                break;
+            }
+            case 'week': {
+                const ws = this.currentWeekMonday;
+                const we = new Date(ws); we.setDate(we.getDate()+6);
+                label.textContent = `${ws.getMonth()+1}/${ws.getDate()} – ${we.getMonth()+1}/${we.getDate()}`;
+                if (prev) prev.title = '上一週';
+                if (next) next.title = '下一週';
+                break;
+            }
+            case 'year':
+                label.textContent = `${this.currentYear}年`;
+                if (prev) prev.title = '上一年';
+                if (next) next.title = '下一年';
+                break;
+            case 'schedule': {
+                const m = this.currentMonth;
+                label.textContent = fmt(m.getFullYear(), m.getMonth());
+                if (prev) prev.title = '上個月';
+                if (next) next.title = '下個月';
+                break;
+            }
+            default: { // month
+                const m = this.currentMonth;
+                label.textContent = fmt(m.getFullYear(), m.getMonth());
+                if (prev) prev.title = '上個月';
+                if (next) next.title = '下個月';
+            }
+        }
     },
 
     changeMonth(delta) {
-        this.currentMonth.setMonth(this.currentMonth.getMonth() + delta);
-        this.loadMonth();
+        switch (this.currentView) {
+            case 'day':
+                this.currentDay.setDate(this.currentDay.getDate() + delta);
+                break;
+            case 'week':
+                this.currentWeekMonday.setDate(this.currentWeekMonday.getDate() + delta * 7);
+                break;
+            case 'year':
+                this.currentYear += delta;
+                this.currentMonth = new Date(this.currentYear, 0, 1);
+                break;
+            default:
+                this.currentMonth.setMonth(this.currentMonth.getMonth() + delta);
+        }
+        this.loadCurrentView();
+    },
+
+    loadCurrentView() {
+        this.updateNavLabel();
+        switch (this.currentView) {
+            case 'day':      return this._loadDayView();
+            case 'week':     return this._loadWeekView();
+            case 'year':     return this._loadYearView();
+            case 'schedule': return this._loadScheduleView();
+            default:         return this.loadMonth();
+        }
     },
 
     async loadMonth() {
@@ -929,6 +1034,337 @@ const salaryApp = {
 
         this.updateTargetProgress(amount);
         this.renderCompanyBreakdown(filteredRecords);
+    },
+
+    // ─── Day View ────────────────────────────────────
+    async _loadDayView() {
+        const dateStr = this.formatDate(this.currentDay);
+        const nextDay = new Date(this.currentDay); nextDay.setDate(nextDay.getDate() + 1);
+        try {
+            const [recRes, holRes] = await Promise.all([
+                fetch(`/salary/api/records?start_date=${dateStr}&end_date=${this.formatDate(nextDay)}`),
+                fetch(`/salary/api/holidays?year=${this.currentDay.getFullYear()}`)
+            ]);
+            this.records  = await recRes.json();
+            this.holidays = holRes.ok ? await holRes.json() : {};
+        } catch(e) { this.records = []; }
+        this._renderDayView(dateStr);
+        const start = new Date(this.currentDay);
+        const end   = new Date(nextDay);
+        this.updateMonthlySummary(start, end);
+    },
+
+    _renderDayView(dateStr) {
+        const container = document.getElementById('dayViewBody');
+        if (!container) return;
+        const HOUR_H = 40; // px per hour
+        const holidayName = (this.holidays||{})[dateStr];
+        const dayRecords  = (this.records||[]).filter(r => r.date === dateStr && r.type === 'shift');
+        const bonuses     = (this.records||[]).filter(r => r.date === dateStr && r.type === 'bonus');
+        const todayStr    = this.formatDate(new Date());
+        const isToday     = dateStr === todayStr;
+
+        let html = `<div class="day-grid">`;
+        // header row
+        html += `<div></div><div class="week-col-header ${isToday?'today-col':''}" style="border-bottom:1px solid rgba(255,255,255,0.1);padding:8px 4px;">`;
+        const d = this.currentDay;
+        const DOW = ['日','一','二','三','四','五','六'];
+        html += `週${DOW[d.getDay()]} <span class="wh-day-num">${d.getDate()}</span>`;
+        if (holidayName) html += ` <span style="font-size:0.65rem;color:#fca5a5;">${holidayName}</span>`;
+        html += `</div>`;
+
+        for (let h = 0; h < 24; h++) {
+            html += `<div class="week-time-col day-hour-row" style="height:${HOUR_H}px;">${h}:00</div>`;
+            html += `<div class="day-col" data-date="${dateStr}" data-hour="${h}" style="height:${HOUR_H}px;"></div>`;
+        }
+        html += `</div>`;
+        container.innerHTML = html;
+
+        // Place event blocks
+        dayRecords.forEach(r => {
+            const [sh,sm] = (r.start_time||'00:00').split(':').map(Number);
+            let   [eh,em] = (r.end_time||'00:00').split(':').map(Number);
+            if (eh < sh) eh += 24; // cross-day
+            const top    = (sh + sm/60) * HOUR_H;
+            const height = Math.max(((eh + em/60) - (sh + sm/60)) * HOUR_H, 20);
+            const color  = r.company_color || '#38bdf8';
+            const isHol  = holidayName;
+            const block  = document.createElement('div');
+            block.className = 'day-event-block';
+            block.style.cssText = `top:${top}px;height:${height}px;background:${color}22;border-left:3px solid ${color};color:#fff;`;
+            block.innerHTML = `<b>${r.start_time}–${r.end_time}</b>${isHol?' ×2':''}<br>${r.company_name||''} $${Math.round(r.amount)}`;
+            block.onclick = (e) => { e.stopPropagation(); this.openEditModal(r); };
+            const col = container.querySelector(`[data-date="${dateStr}"][data-hour="${sh}"]`);
+            if (col) col.appendChild(block);
+        });
+
+        // Add bonus chips at top
+        if (bonuses.length) {
+            const firstCol = container.querySelector('[data-date]');
+            if (firstCol) {
+                bonuses.forEach(r => {
+                    const chip = document.createElement('div');
+                    chip.style.cssText = 'background:#fcd34d22;border-left:3px solid #fcd34d;border-radius:4px;padding:2px 6px;font-size:0.7rem;color:#fcd34d;cursor:pointer;margin:2px 4px;';
+                    chip.textContent = `💰 獎金 $${Math.round(r.amount)}`;
+                    chip.onclick = () => this.openEditModal(r);
+                    firstCol.parentNode.insertBefore(chip, firstCol.nextSibling);
+                });
+            }
+        }
+
+        // Click empty cells to add
+        container.querySelectorAll('.day-col').forEach(cell => {
+            cell.addEventListener('click', () => {
+                if (!this.isDateEditable(dateStr)) return;
+                this.openAddModalForDate(new Date(this.currentDay));
+            });
+        });
+    },
+
+    // ─── Week View ────────────────────────────────────
+    async _loadWeekView() {
+        const mon = this.currentWeekMonday;
+        const sun = new Date(mon); sun.setDate(sun.getDate() + 7);
+        try {
+            const [recRes, holRes] = await Promise.all([
+                fetch(`/salary/api/records?start_date=${this.formatDate(mon)}&end_date=${this.formatDate(sun)}`),
+                fetch(`/salary/api/holidays?year=${mon.getFullYear()}`)
+            ]);
+            this.records  = await recRes.json();
+            this.holidays = holRes.ok ? await holRes.json() : {};
+        } catch(e) { this.records = []; }
+        this._renderWeekView();
+        this.updateMonthlySummary(mon, sun);
+    },
+
+    _renderWeekView() {
+        const container = document.getElementById('weekViewBody');
+        if (!container) return;
+        const HOUR_H  = 36;
+        const todayStr = this.formatDate(new Date());
+        const DOW = ['日','一','二','三','四','五','六'];
+        const days = [];
+        for (let i = 0; i < 7; i++) {
+            const d = new Date(this.currentWeekMonday);
+            d.setDate(d.getDate() + i);
+            days.push(d);
+        }
+
+        let html = `<div class="week-grid">`;
+        // Time-col header placeholder
+        html += `<div></div>`;
+        days.forEach(d => {
+            const ds  = this.formatDate(d);
+            const hol = (this.holidays||{})[ds];
+            const isT = ds === todayStr;
+            html += `<div class="week-col-header ${isT?'today-col':''}">`;
+            html += `週${DOW[d.getDay()]} <span class="wh-day-num">${d.getDate()}</span>`;
+            if (hol) html += `<br><span style="font-size:0.55rem;color:#fca5a5;">${hol}</span>`;
+            html += `</div>`;
+        });
+
+        // All-day bonus row
+        html += `<div class="week-time-col" style="font-size:0.6rem;padding-top:4px;">全天</div>`;
+        days.forEach(d => {
+            const ds = this.formatDate(d);
+            const bonuses = (this.records||[]).filter(r => r.date===ds && r.type==='bonus');
+            html += `<div class="week-allday-row">`;
+            bonuses.forEach(r => {
+                html += `<span class="week-allday-chip" style="background:#fcd34d22;color:#fcd34d;" data-id="${r.id}">💰$${Math.round(r.amount)}</span>`;
+            });
+            html += `</div>`;
+        });
+
+        // Hour rows
+        for (let h = 0; h < 24; h++) {
+            html += `<div class="week-time-col week-hour-row" style="height:${HOUR_H}px;">${h}:00</div>`;
+            days.forEach(d => {
+                const ds = this.formatDate(d);
+                html += `<div class="week-day-cell" data-date="${ds}" data-hour="${h}" style="height:${HOUR_H}px;"></div>`;
+            });
+        }
+        html += `</div>`;
+        container.innerHTML = html;
+
+        // Place shift blocks
+        (this.records||[]).filter(r => r.type==='shift').forEach(r => {
+            const [sh,sm] = (r.start_time||'00:00').split(':').map(Number);
+            let   [eh,em] = (r.end_time||'00:00').split(':').map(Number);
+            if (eh < sh) eh += 24;
+            const top    = (sm/60) * HOUR_H;
+            const height = Math.max(((eh+em/60)-(sh+sm/60))*HOUR_H, 16);
+            const color  = r.company_color || '#38bdf8';
+            const isHol  = (this.holidays||{})[r.date];
+            const block  = document.createElement('div');
+            block.className = 'week-event-block';
+            block.style.cssText = `top:${top}px;height:${height}px;background:${color}33;border-left:3px solid ${color};color:#fff;`;
+            block.textContent = `${r.start_time}${isHol?' ×2':''}`;
+            block.onclick = (e) => { e.stopPropagation(); this.openEditModal(r); };
+            const cell = container.querySelector(`[data-date="${r.date}"][data-hour="${sh}"]`);
+            if (cell) cell.appendChild(block);
+        });
+
+        // Bonus chips click
+        container.querySelectorAll('[data-id]').forEach(chip => {
+            const rid = parseInt(chip.dataset.id);
+            const rec = (this.records||[]).find(r => r.id===rid);
+            if (rec) chip.addEventListener('click', () => this.openEditModal(rec));
+        });
+
+        // Click empty cells to add
+        container.querySelectorAll('.week-day-cell').forEach(cell => {
+            cell.addEventListener('click', () => {
+                const ds = cell.dataset.date;
+                if (!this.isDateEditable(ds)) return;
+                this.openAddModalForDate(new Date(ds + 'T00:00:00'));
+            });
+        });
+    },
+
+    // ─── Year View ────────────────────────────────────
+    async _loadYearView() {
+        const y = this.currentYear;
+        try {
+            const [recRes, holRes] = await Promise.all([
+                fetch(`/salary/api/records?start_date=${y}-01-01&end_date=${y+1}-01-01`),
+                fetch(`/salary/api/holidays?year=${y}`)
+            ]);
+            this.records  = await recRes.json();
+            this.holidays = holRes.ok ? await holRes.json() : {};
+        } catch(e) { this.records = []; }
+        this._renderYearView();
+        this.updateMonthlySummary(new Date(y,0,1), new Date(y+1,0,1));
+    },
+
+    _renderYearView() {
+        const container = document.getElementById('yearViewBody');
+        if (!container) return;
+        const todayStr  = this.formatDate(new Date());
+        const recordSet = new Set((this.records||[]).map(r => r.date));
+        const DOW_SHORT = ['一','二','三','四','五','六','日'];
+
+        let html = `<div class="year-grid">`;
+        for (let m = 0; m < 12; m++) {
+            html += `<div class="mini-month">`;
+            html += `<div class="mini-month-title">${m+1}月</div>`;
+            html += `<div class="mini-month-grid">`;
+            DOW_SHORT.forEach(d => { html += `<div class="mini-dow">${d}</div>`; });
+
+            const first = new Date(this.currentYear, m, 1);
+            const start = new Date(first);
+            start.setDate(1 - (first.getDay()||7) + 1);
+            for (let i = 0; i < 42; i++) {
+                const cur = new Date(start); cur.setDate(start.getDate()+i);
+                const ds  = this.formatDate(cur);
+                const otherMon = cur.getMonth() !== m;
+                const isToday  = ds === todayStr;
+                const hasRec   = recordSet.has(ds);
+                let cls = 'mini-day';
+                if (otherMon) cls += ' other-month-mini';
+                else if (isToday) cls += ' today-mini';
+                else if (hasRec) cls += ' has-record';
+                html += `<div class="${cls}" data-date="${ds}" data-month="${m}">${cur.getDate()}</div>`;
+            }
+            html += `</div></div>`;
+        }
+        html += `</div>`;
+        container.innerHTML = html;
+
+        // Click mini-day → jump to day view
+        container.querySelectorAll('.mini-day:not(.other-month-mini):not(.empty)').forEach(cell => {
+            cell.addEventListener('click', () => {
+                const ds = cell.dataset.date;
+                if (!ds) return;
+                const [y2,m2,d2] = ds.split('-').map(Number);
+                this.currentDay = new Date(y2, m2-1, d2);
+                this.currentMonth = new Date(y2, m2-1, 1);
+                this.switchView('day');
+            });
+        });
+    },
+
+    // ─── Schedule (Agenda) View ───────────────────────
+    async _loadScheduleView() {
+        const y = this.currentMonth.getFullYear();
+        const m = this.currentMonth.getMonth();
+        const start = new Date(y, m, 1);
+        const end   = new Date(y, m+1, 1);
+        try {
+            const [recRes, holRes] = await Promise.all([
+                fetch(`/salary/api/records?start_date=${this.formatDate(start)}&end_date=${this.formatDate(end)}`),
+                fetch(`/salary/api/holidays?year=${y}`)
+            ]);
+            this.records  = await recRes.json();
+            this.holidays = holRes.ok ? await holRes.json() : {};
+        } catch(e) { this.records = []; }
+        this._renderScheduleView(start, end);
+        this.updateMonthlySummary(start, end);
+    },
+
+    _renderScheduleView(start, end) {
+        const container = document.getElementById('scheduleViewBody');
+        if (!container) return;
+        const todayStr = this.formatDate(new Date());
+        const DOW = ['日','一','二','三','四','五','六'];
+        const MONTH_ZH = ['一','二','三','四','五','六','七','八','九','十','十一','十二'];
+
+        // Group records by date
+        const grouped = {};
+        (this.records||[]).forEach(r => {
+            if (!grouped[r.date]) grouped[r.date] = [];
+            grouped[r.date].push(r);
+        });
+
+        // Collect all dates in range with or without records
+        const dates = [];
+        for (let d = new Date(start); d < end; d.setDate(d.getDate()+1)) {
+            dates.push(this.formatDate(new Date(d)));
+        }
+
+        // Only dates that have records (Agenda style)
+        const activeDates = dates.filter(ds => grouped[ds] && grouped[ds].length > 0);
+
+        if (activeDates.length === 0) {
+            container.innerHTML = `<div class="schedule-empty">本月無排班紀錄 📅</div>`;
+            return;
+        }
+
+        let html = '';
+        activeDates.forEach(ds => {
+            const dObj = new Date(ds + 'T00:00:00');
+            const hol  = (this.holidays||{})[ds];
+            const isT  = ds === todayStr;
+            html += `<div class="schedule-date-group">`;
+            html += `<div class="schedule-date-label ${isT?'sched-today':''} ${hol?'sched-holiday':''}"><span class="sched-day-num">${dObj.getDate()}</span>`;
+            html += `${MONTH_ZH[dObj.getMonth()]}月 週${DOW[dObj.getDay()]}`;
+            if (hol) html += ` 🎌 ${hol}`;
+            html += `</div>`;
+
+            (grouped[ds]||[]).sort((a,b) => (a.start_time||'').localeCompare(b.start_time||'')).forEach(r => {
+                const color = r.company_color || (r.type==='bonus' ? '#fcd34d' : '#38bdf8');
+                const timeStr = r.type==='shift'
+                    ? `${r.start_time} – ${r.end_time}`
+                    : '全天';
+                const title = r.type==='shift'
+                    ? `${r.company_name||'排班'} (${r.hours||0}h)`
+                    : `💰 獎金${r.note ? ' – '+r.note : ''}`;
+                html += `<div class="schedule-event-row" data-id="${r.id}">`;
+                html += `<span class="sched-color-dot" style="background:${color};"></span>`;
+                html += `<span class="sched-time">${timeStr}</span>`;
+                html += `<span class="sched-title">${title}</span>`;
+                html += `<span class="sched-amount">$${Math.round(r.amount)}</span>`;
+                html += `</div>`;
+            });
+            html += `</div>`;
+        });
+        container.innerHTML = html;
+
+        // Click rows to edit
+        container.querySelectorAll('.schedule-event-row').forEach(row => {
+            const rid = parseInt(row.dataset.id);
+            const rec = (this.records||[]).find(r => r.id===rid);
+            if (rec) row.addEventListener('click', () => this.openEditModal(rec));
+        });
     },
 
     // History
