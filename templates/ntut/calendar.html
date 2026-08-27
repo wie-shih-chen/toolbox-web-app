@@ -26,7 +26,23 @@
         padding: 16px;
         backdrop-filter: blur(10px);
         overflow-y: auto;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     }
+    .cal-sidebar.collapsed {
+        width: 0;
+        padding-left: 0;
+        padding-right: 0;
+        border-width: 0;
+        margin-right: -16px; /* offset the layout gap */
+        opacity: 0;
+        overflow: hidden;
+    }
+
+    /* Custom scrollbar for sidebar */
+    .cal-sidebar::-webkit-scrollbar { width: 6px; }
+    .cal-sidebar::-webkit-scrollbar-track { background: transparent; }
+    .cal-sidebar::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.1); border-radius: 10px; }
+    .cal-sidebar::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, 0.2); }
 
     .sidebar-header {
         display: flex;
@@ -166,6 +182,22 @@
         align-items: center;
         gap: 6px;
     }
+    #sidebarToggleBtn {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: transparent;
+        border: none;
+        color: var(--text-secondary);
+        border-radius: 8px;
+        padding: 4px;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+    #sidebarToggleBtn:hover {
+        background: rgba(255,255,255,0.1);
+        color: var(--text-primary);
+    }
     .cal-nav-group h2 {
         font-size: 1.05rem !important;
         font-weight: 700;
@@ -233,19 +265,19 @@
     .fc-theme-standard td,
     .fc-theme-standard th,
     .fc-theme-standard .fc-scrollgrid {
-        border-color: rgba(255, 255, 255, 0.08);
+        border-color: rgba(255, 255, 255, 0.05);
     }
 
     .fc-col-header-cell {
-        background: rgba(255, 255, 255, 0.04);
+        background: rgba(255, 255, 255, 0.02);
     }
 
     .fc-daygrid-day:hover {
-        background: rgba(255, 255, 255, 0.04) !important;
+        background: rgba(255, 255, 255, 0.03) !important;
     }
 
     .fc-day-today {
-        background: rgba(99, 102, 241, 0.08) !important;
+        background: rgba(99, 102, 241, 0.05) !important;
     }
 
     .fc-button {
@@ -269,6 +301,9 @@
     .fc-event {
         border: none !important;
         font-size: 0.78rem;
+        border-radius: 6px !important;
+        padding: 2px 4px !important;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.15);
     }
 
     /* List view specific overrides for dark theme */
@@ -323,23 +358,19 @@
         width: 100%;
         max-width: 440px;
         margin: 16px;
-        background: rgba(30, 30, 50, 0.95);
-        border: 1px solid rgba(255, 255, 255, 0.12);
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
+        background: rgba(30, 30, 50, 0.75);
+        border: 1px solid rgba(255, 255, 255, 0.15);
         border-radius: 20px;
         padding: 24px;
-        animation: slideUp .25s ease;
+        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+        animation: slideUp .3s cubic-bezier(0.16, 1, 0.3, 1);
     }
 
     @keyframes slideUp {
-        from {
-            transform: translateY(20px);
-            opacity: 0;
-        }
-
-        to {
-            transform: none;
-            opacity: 1;
-        }
+        from { transform: translateY(20px) scale(0.98); opacity: 0; }
+        to { transform: none; opacity: 1; }
     }
 
     .modal-header {
@@ -351,7 +382,9 @@
 
     .modal-header h3 {
         margin: 0;
-        font-size: 1.1rem;
+        font-size: 1.15rem;
+        font-weight: 700;
+        letter-spacing: 0.02em;
     }
 
     .btn-close-modal {
@@ -442,8 +475,9 @@
         height: 28px;
         border-radius: 50%;
         cursor: pointer;
-        border: 3px solid transparent;
-        transition: transform .15s, border-color .15s;
+        border: 2px solid transparent;
+        transition: transform .2s, border-color .2s;
+        position: relative;
     }
 
     .color-swatch:hover {
@@ -452,6 +486,19 @@
 
     .color-swatch.selected {
         border-color: white;
+        transform: scale(1.1);
+    }
+    .color-swatch.selected::after {
+        content: '✓';
+        position: absolute;
+        inset: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 14px;
+        font-weight: bold;
+        text-shadow: 0 1px 2px rgba(0,0,0,0.5);
     }
 
     .btn-submit {
@@ -529,6 +576,18 @@
             gap: 6px;
             padding: 6px 10px;
             margin-top: 10px;
+            max-height: 500px; /* for transition */
+            transition: all 0.3s ease;
+        }
+
+        .cal-sidebar.collapsed {
+            width: 100%;
+            max-height: 0;
+            padding: 0;
+            margin: 0;
+            opacity: 0;
+            border-width: 0;
+            overflow: hidden;
         }
 
         .sidebar-header {
@@ -782,22 +841,28 @@
     .btn-goto-source {
         display: flex;
         align-items: center;
-        gap: 6px;
+        justify-content: center;
+        gap: 8px;
         width: 100%;
-        padding: 10px 14px;
-        background: rgba(99, 102, 241, 0.12);
-        border: 1px solid rgba(99, 102, 241, 0.25);
+        padding: 12px 14px;
+        background: linear-gradient(135deg, rgba(99, 102, 241, 0.15), rgba(129, 140, 248, 0.15));
+        border: 1px solid rgba(99, 102, 241, 0.3);
         border-radius: 12px;
         color: #a5b4fc;
-        font-size: 0.9rem;
+        font-size: 0.95rem;
+        font-weight: 500;
         cursor: pointer;
         margin-top: 16px;
         text-decoration: none;
-        transition: background .2s;
+        transition: all 0.25s ease;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
     }
 
     .btn-goto-source:hover {
-        background: rgba(99, 102, 241, 0.22);
+        background: linear-gradient(135deg, rgba(99, 102, 241, 0.25), rgba(129, 140, 248, 0.25));
+        border-color: rgba(99, 102, 241, 0.5);
+        transform: translateY(-1px);
+        box-shadow: 0 6px 16px rgba(0,0,0,0.15);
     }
 </style>
 {% endblock %}
@@ -869,6 +934,9 @@
         <!-- Custom Toolbar -->
         <div class="cal-toolbar">
             <div class="cal-nav-group">
+                <button id="sidebarToggleBtn" title="收合/展開側邊欄">
+                    <span class="material-icons">menu</span>
+                </button>
                 <button class="btn-nav" id="custom-prev" style="padding:4px 9px; font-size:0.85rem;">◀</button>
                 <h2 id="custom-title">載入中...</h2>
                 <button class="btn-nav" id="custom-next" style="padding:4px 9px; font-size:0.85rem;">▶</button>
@@ -1127,6 +1195,71 @@
         });
 
         titleEl.textContent = fcCalendar.view.title;
+
+        // ── Sidebar Toggle Logic ──
+        const sidebar = document.querySelector('.cal-sidebar');
+        const toggleBtn = document.getElementById('sidebarToggleBtn');
+        const isCollapsed = localStorage.getItem('calSidebarCollapsed') === 'true';
+        if (isCollapsed && !isMobile) {
+            sidebar.classList.add('collapsed');
+        } else if (isMobile) {
+            // on mobile, default to collapsed
+            sidebar.classList.add('collapsed');
+        }
+
+        toggleBtn.addEventListener('click', () => {
+            sidebar.classList.toggle('collapsed');
+            const collapsedNow = sidebar.classList.contains('collapsed');
+            if (!isMobile) {
+                localStorage.setItem('calSidebarCollapsed', collapsedNow);
+            }
+            // Trigger calendar resize after transition
+            setTimeout(() => {
+                if (fcCalendar) fcCalendar.updateSize();
+            }, 300);
+        });
+
+        // ── Drag and Drop Logic for File Upload ──
+        const fileLabel = document.querySelector('.file-label');
+        const fileInput = document.getElementById('cal-file');
+        
+        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+            fileLabel.addEventListener(eventName, preventDefaults, false);
+        });
+        
+        function preventDefaults(e) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
+        
+        ['dragenter', 'dragover'].forEach(eventName => {
+            fileLabel.addEventListener(eventName, highlight, false);
+        });
+        
+        ['dragleave', 'drop'].forEach(eventName => {
+            fileLabel.addEventListener(eventName, unhighlight, false);
+        });
+        
+        function highlight(e) {
+            fileLabel.style.borderColor = 'rgba(99, 102, 241, 0.8)';
+            fileLabel.style.background = 'rgba(99, 102, 241, 0.15)';
+        }
+        
+        function unhighlight(e) {
+            fileLabel.style.borderColor = '';
+            fileLabel.style.background = '';
+        }
+        
+        fileLabel.addEventListener('drop', handleDrop, false);
+        
+        function handleDrop(e) {
+            const dt = e.dataTransfer;
+            const files = dt.files;
+            if (files.length) {
+                fileInput.files = files;
+                document.getElementById('file-name-display').textContent = files[0].name;
+            }
+        }
 
         // 載入內建日曆設定（名稱、顏色）並加入 EventSource
         await loadBuiltinCalendars();
