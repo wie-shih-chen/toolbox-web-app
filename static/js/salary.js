@@ -41,16 +41,6 @@ const salaryApp = {
                 } else if (rateInput) {
                     rateInput.placeholder = '留空則使用預設時薪';
                 }
-                
-                // Times
-                const startInput = document.getElementById('startTime');
-                const endInput = document.getElementById('endTime');
-                if (startInput) {
-                    startInput.value = (opt && opt.dataset.start) ? opt.dataset.start : (this.settings.default_start_time || '09:00');
-                }
-                if (endInput) {
-                    endInput.value = (opt && opt.dataset.end) ? opt.dataset.end : (this.settings.default_end_time || '18:00');
-                }
             });
         } catch(e) { console.warn('Company load failed', e); }
     },
