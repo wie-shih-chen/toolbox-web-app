@@ -334,26 +334,22 @@
     }
 
     /* ── Google Calendar Deep Mimicry ── */
-    /* 1. Today Indicator (Solid Blue Circle) */
-    .fc-day-today .fc-daygrid-day-top,
-    .fc-col-header-cell.fc-day-today .fc-col-header-cell-cushion {
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        margin-top: 4px;
-    }
+    /* 1. Today Indicator (Solid Blue Pill for Chinese text) */
     .fc-day-today .fc-daygrid-day-number,
     .fc-col-header-cell.fc-day-today .fc-col-header-cell-cushion {
         background-color: #4285F4; /* GC Blue */
         color: #fff !important;
-        border-radius: 50%;
-        width: 28px;
+        border-radius: 14px;
+        min-width: 28px;
         height: 28px;
-        display: flex;
+        padding: 0 6px;
+        display: inline-flex;
         align-items: center;
         justify-content: center;
         font-weight: 600;
         text-decoration: none !important;
+        white-space: nowrap;
+        margin: 2px;
     }
 
     /* 2. Now Indicator (Red Dot + Line) */
@@ -392,6 +388,20 @@
     /* 5. Section Divider for All-Day */
     .fc-scrollgrid-section-allDay > td {
         border-bottom: 2px solid rgba(255, 255, 255, 0.12) !important;
+    }
+    
+    /* 6. List View Fixes */
+    .fc-list-day-cushion {
+        background-color: rgba(255, 255, 255, 0.08) !important;
+    }
+    .fc-list-day-text, .fc-list-day-side-text {
+        color: var(--text-primary) !important;
+    }
+    .fc-list-event:hover td {
+        background-color: rgba(255, 255, 255, 0.05) !important;
+    }
+    .fc-list-empty {
+        background-color: transparent !important;
     }
     
     /* Clean up default link styling in headers */
