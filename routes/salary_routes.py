@@ -140,6 +140,11 @@ def update_company(company_id):
             db.session.add(new_reminder)
 
     db.session.commit()
+    
+    # Recalculate historical records so changes to break rules/hourly rate apply retroactively
+    from services.salary_service import SalaryService
+    SalaryService(current_user.id).recalculate_company_records(company.id)
+    
     return jsonify({'success': True})
 
 @salary_bp.route('/api/companies/<int:company_id>', methods=['DELETE'])
@@ -331,6 +336,10 @@ def handle_settings():
     if request.method == 'POST':
         data = request.json
         updated = service.update_settings(data)
+        
+        # Recalculate historical records for global changes
+        service.recalculate_company_records(company_id=None)
+        
         return jsonify(updated)
     return jsonify(service.get_settings())
 

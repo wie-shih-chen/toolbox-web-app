@@ -582,3 +582,19 @@ class SalaryService:
             'company_name': company_name,
             'company_color': company_color,
         }
+
+    def recalculate_company_records(self, company_id=None):
+        if not current_user.is_authenticated:
+            return
+        
+        query = SalaryRecord.query.filter_by(user_id=current_user.id, type='shift')
+        if company_id is not None:
+            query = query.filter_by(company_id=company_id)
+            
+        records = query.all()
+        for r in records:
+            # Re-trigger calculation by sending empty dict to update_record
+            # update_record will use existing start/end and recalculate hours/amount
+            self.update_record(r.id, {})
+            
+        db.session.commit()
