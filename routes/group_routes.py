@@ -72,14 +72,13 @@ def apply_vocab_pipeline(group, words_list, pipeline_config):
                 current_list = [w for w in current_list if w.get('score_range') in b_val]
                 
         elif b_type == 'star':
-            # Normalize: unwrap single-element list sort directives (e.g. ['sort_desc'] -> 'sort_desc')
-            star_val = b_val[0] if isinstance(b_val, list) and len(b_val) == 1 and isinstance(b_val[0], str) and b_val[0] in ('sort_asc', 'sort_desc') else b_val
-            if star_val == 'sort_asc':
+            # Normalize b_val to a plain string if it's a sort directive (handles both str and list forms)
+            if b_val == 'sort_asc' or (isinstance(b_val, list) and 'sort_asc' in b_val):
                 current_list.sort(key=lambda x: int(x.get('star', 0)))
-            elif star_val == 'sort_desc':
+            elif b_val == 'sort_desc' or (isinstance(b_val, list) and 'sort_desc' in b_val):
                 current_list.sort(key=lambda x: int(x.get('star', 0)), reverse=True)
             elif isinstance(b_val, list) and len(b_val) > 0:
-                stars = [int(v) for v in b_val]
+                stars = [int(v) for v in b_val if str(v).lstrip('-').isdigit()]
                 current_list = [w for w in current_list if int(w.get('star', 0)) in stars]
                 
         elif b_type == 'category':
