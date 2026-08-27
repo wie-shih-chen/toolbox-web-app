@@ -1042,10 +1042,11 @@ const salaryApp = {
     // ─── Day View ────────────────────────────────────
     async _loadDayView() {
         const dateStr = this.formatDate(this.currentDay);
+        const prevDay = new Date(this.currentDay); prevDay.setDate(prevDay.getDate() - 1);
         const nextDay = new Date(this.currentDay); nextDay.setDate(nextDay.getDate() + 1);
         try {
             const [recRes, holRes] = await Promise.all([
-                fetch(`/salary/api/records?start_date=${dateStr}&end_date=${this.formatDate(nextDay)}`),
+                fetch(`/salary/api/records?start_date=${this.formatDate(prevDay)}&end_date=${this.formatDate(nextDay)}`),
                 fetch(`/salary/api/holidays?year=${this.currentDay.getFullYear()}`)
             ]);
             this.records  = await recRes.json();
@@ -1083,21 +1084,34 @@ const salaryApp = {
         html += `</div>`;
         container.innerHTML = html;
 
-        // Place event blocks
-        dayRecords.forEach(r => {
+        const blocks = [];
+        (this.records || []).filter(r => r.type === 'shift').forEach(r => {
             const [sh,sm] = (r.start_time||'00:00').split(':').map(Number);
-            let   [eh,em] = (r.end_time||'00:00').split(':').map(Number);
-            if (eh < sh) eh += 24; // cross-day
-            const top    = (sm/60) * HOUR_H;
-            const height = Math.max(((eh + em/60) - (sh + sm/60)) * HOUR_H, 20);
-            const color  = r.company_color || '#38bdf8';
+            const [eh,em] = (r.end_time||'00:00').split(':').map(Number);
+            if (eh < sh || (eh === sh && em < sm)) {
+                blocks.push({ ...r, displayDate: r.date, sh, sm, eh: 24, em: 0, isCross: true });
+                const nd = new Date(r.date + 'T00:00:00');
+                nd.setDate(nd.getDate() + 1);
+                blocks.push({ ...r, displayDate: this.formatDate(nd), sh: 0, sm: 0, eh, em, isCross: true });
+            } else {
+                blocks.push({ ...r, displayDate: r.date, sh, sm, eh, em, isCross: false });
+            }
+        });
+
+        const dayBlocks = blocks.filter(b => b.displayDate === dateStr);
+
+        // Place event blocks
+        dayBlocks.forEach(b => {
+            const top    = (b.sm/60) * HOUR_H;
+            const height = Math.max(((b.eh + b.em/60) - (b.sh + b.sm/60)) * HOUR_H, 20);
+            const color  = b.company_color || '#38bdf8';
             const isHol  = holidayName;
             const block  = document.createElement('div');
             block.className = 'day-event-block';
             block.style.cssText = `top:${top}px;height:${height}px;background:${color}22;border-left:3px solid ${color};color:#fff;`;
-            block.innerHTML = `<b>${r.start_time}–${r.end_time}</b>${isHol?' ×2':''}<br>${r.company_name||''} $${Math.round(r.amount)}`;
-            block.onclick = (e) => { e.stopPropagation(); this.openEditModal(r); };
-            const col = container.querySelector(`[data-date="${dateStr}"][data-hour="${sh}"]`);
+            block.innerHTML = `<b>${b.start_time}–${b.end_time}</b>${isHol?' ×2':''}<br>${b.company_name||''} $${Math.round(b.amount)}`;
+            block.onclick = (e) => { e.stopPropagation(); this.openEditModal(b); };
+            const col = container.querySelector(`[data-date="${dateStr}"][data-hour="${b.sh}"]`);
             if (col) col.appendChild(block);
         });
 
@@ -1129,9 +1143,10 @@ const salaryApp = {
     async _loadWeekView() {
         const mon = this.currentWeekMonday;
         const sun = new Date(mon); sun.setDate(sun.getDate() + 7);
+        const prevMon = new Date(mon); prevMon.setDate(prevMon.getDate() - 1);
         try {
             const [recRes, holRes] = await Promise.all([
-                fetch(`/salary/api/records?start_date=${this.formatDate(mon)}&end_date=${this.formatDate(sun)}`),
+                fetch(`/salary/api/records?start_date=${this.formatDate(prevMon)}&end_date=${this.formatDate(sun)}`),
                 fetch(`/salary/api/holidays?year=${mon.getFullYear()}`)
             ]);
             this.records  = await recRes.json();
@@ -1190,21 +1205,32 @@ const salaryApp = {
         html += `</div>`;
         container.innerHTML = html;
 
-        // Place shift blocks
-        (this.records||[]).filter(r => r.type==='shift').forEach(r => {
+        const blocks = [];
+        (this.records || []).filter(r => r.type === 'shift').forEach(r => {
             const [sh,sm] = (r.start_time||'00:00').split(':').map(Number);
-            let   [eh,em] = (r.end_time||'00:00').split(':').map(Number);
-            if (eh < sh) eh += 24;
-            const top    = (sm/60) * HOUR_H;
-            const height = Math.max(((eh+em/60)-(sh+sm/60))*HOUR_H, 16);
-            const color  = r.company_color || '#38bdf8';
-            const isHol  = (this.holidays||{})[r.date];
+            const [eh,em] = (r.end_time||'00:00').split(':').map(Number);
+            if (eh < sh || (eh === sh && em < sm)) {
+                blocks.push({ ...r, displayDate: r.date, sh, sm, eh: 24, em: 0, isCross: true });
+                const nd = new Date(r.date + 'T00:00:00');
+                nd.setDate(nd.getDate() + 1);
+                blocks.push({ ...r, displayDate: this.formatDate(nd), sh: 0, sm: 0, eh, em, isCross: true });
+            } else {
+                blocks.push({ ...r, displayDate: r.date, sh, sm, eh, em, isCross: false });
+            }
+        });
+
+        // Place shift blocks
+        blocks.forEach(b => {
+            const top    = (b.sm/60) * HOUR_H;
+            const height = Math.max(((b.eh + b.em/60) - (b.sh + b.sm/60)) * HOUR_H, 16);
+            const color  = b.company_color || '#38bdf8';
+            const isHol  = (this.holidays||{})[b.date];
             const block  = document.createElement('div');
             block.className = 'week-event-block';
             block.style.cssText = `top:${top}px;height:${height}px;background:${color}33;border-left:3px solid ${color};color:#fff;`;
-            block.textContent = `${r.start_time}${isHol?' ×2':''}`;
-            block.onclick = (e) => { e.stopPropagation(); this.openEditModal(r); };
-            const cell = container.querySelector(`[data-date="${r.date}"][data-hour="${sh}"]`);
+            block.textContent = `${b.start_time}${isHol?' ×2':''}`;
+            block.onclick = (e) => { e.stopPropagation(); this.openEditModal(b); };
+            const cell = container.querySelector(`[data-date="${b.displayDate}"][data-hour="${b.sh}"]`);
             if (cell) cell.appendChild(block);
         });
 
