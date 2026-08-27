@@ -72,9 +72,11 @@ def apply_vocab_pipeline(group, words_list, pipeline_config):
                 current_list = [w for w in current_list if w.get('score_range') in b_val]
                 
         elif b_type == 'star':
-            if b_val == 'sort_asc':
+            # Normalize: unwrap single-element list sort directives (e.g. ['sort_desc'] -> 'sort_desc')
+            star_val = b_val[0] if isinstance(b_val, list) and len(b_val) == 1 and isinstance(b_val[0], str) and b_val[0] in ('sort_asc', 'sort_desc') else b_val
+            if star_val == 'sort_asc':
                 current_list.sort(key=lambda x: int(x.get('star', 0)))
-            elif b_val == 'sort_desc':
+            elif star_val == 'sort_desc':
                 current_list.sort(key=lambda x: int(x.get('star', 0)), reverse=True)
             elif isinstance(b_val, list) and len(b_val) > 0:
                 stars = [int(v) for v in b_val]
