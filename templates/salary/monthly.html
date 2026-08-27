@@ -6,56 +6,81 @@
 {% block extra_css %}
 <link rel="stylesheet" href="{{ url_for('static', filename='css/salary.css') }}?v=3.0">
 <style>
-    /* ── View Switcher ── */
+    /* ── Bottom View Switcher Tab Bar ── */
     .cal-view-switcher {
+        position: sticky;
+        bottom: 0;
+        left: 0;
+        right: 0;
         display: flex;
-        gap: 2px;
-        background: rgba(255, 255, 255, 0.06);
-        border-radius: 8px;
-        padding: 3px;
+        justify-content: space-around;
         align-items: center;
+        background: var(--card-bg, #1e1e1e);
+        border-top: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 14px 14px 0 0;
+        padding: 6px 8px calc(6px + env(safe-area-inset-bottom, 0px));
+        margin: 12px -4px 0;
+        z-index: 80;
+        box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.2);
     }
     .cal-view-btn {
-        padding: 4px 11px;
-        border-radius: 6px;
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 2px;
+        padding: 6px 4px;
+        border-radius: 8px;
         border: none;
         background: transparent;
         color: var(--text-secondary);
-        font-size: 0.78rem;
+        font-size: 0.72rem;
         font-weight: 500;
         cursor: pointer;
         transition: all 0.15s ease;
         white-space: nowrap;
+        min-width: 0;
     }
+    .cal-view-btn::before {
+        font-size: 1.1rem;
+        line-height: 1;
+        display: block;
+    }
+    #viewBtn-day::before    { content: '📅'; }
+    #viewBtn-week::before   { content: '📆'; }
+    #viewBtn-month::before  { content: '🗓️'; }
+    #viewBtn-year::before   { content: '📊'; }
+    #viewBtn-schedule::before { content: '⏰'; }
     .cal-view-btn:hover {
-        background: rgba(255,255,255,0.08);
+        background: rgba(255,255,255,0.06);
         color: var(--text-primary, #fff);
     }
     .cal-view-btn.active {
-        background: var(--accent, #38bdf8);
-        color: #fff;
-        font-weight: 600;
-        box-shadow: 0 1px 6px rgba(56,189,248,0.3);
+        color: var(--accent, #38bdf8);
+        font-weight: 700;
+    }
+    .cal-view-btn.active::before {
+        filter: drop-shadow(0 0 6px rgba(56,189,248,0.5));
     }
 
-    /* ── Header Controls Row ── */
+    /* ── Header Controls Row (nav only) ── */
     .cal-controls-row {
         display: flex;
         align-items: center;
-        justify-content: space-between;
         gap: 8px;
         margin-bottom: 10px;
-        flex-wrap: wrap;
     }
     .cal-nav-group {
         display: flex;
         align-items: center;
         gap: 6px;
+        flex: 1;
     }
     .cal-nav-group h2 {
         font-size: 0.95rem !important;
         font-weight: 700;
-        min-width: 100px;
+        flex: 1;
         text-align: center;
         margin: 0;
         white-space: nowrap;
@@ -350,22 +375,16 @@
 
     /* ── Responsive: tablet / large phone ── */
     @media (max-width: 640px) {
-        /* Controls row — stack vertically */
-        .cal-controls-row { flex-direction: column; align-items: stretch; gap: 8px; }
+        /* Controls row (nav only) — let it stretch */
+        .cal-controls-row { gap: 6px; margin-bottom: 8px; }
         .cal-nav-group { justify-content: space-between; }
-        #currentMonthLabel { font-size: 0.95rem !important; }
+        #currentMonthLabel { font-size: 0.9rem !important; }
 
-        /* View switcher — horizontal scroll so buttons don't wrap */
-        .cal-view-switcher {
-            overflow-x: auto;
-            -webkit-overflow-scrolling: touch;
-            scrollbar-width: none;
-            justify-content: flex-start;
-        }
-        .cal-view-switcher::-webkit-scrollbar { display: none; }
-        .cal-view-btn { flex-shrink: 0; padding: 5px 12px; font-size: 0.78rem; }
+        /* Bottom tab bar — larger touch targets */
+        .cal-view-btn { padding: 7px 4px; font-size: 0.7rem; }
+        .cal-view-btn::before { font-size: 1.2rem; }
 
-        /* Week view — smaller columns, horizontal scroll already enabled */
+        /* Week view — smaller columns */
         .week-grid { min-width: 440px; }
         .week-col-header { font-size: 0.65rem; padding: 4px 1px; }
         .week-col-header .wh-day-num { width: 20px; height: 20px; line-height: 20px; font-size: 0.78rem; }
@@ -449,21 +468,13 @@
 
 <div class="salary-monthly" data-current-month="{{ current_month }}">
 
-    <!-- Controls Row: Nav + View Switcher (single compact row) -->
+    <!-- Controls Row: Nav only (view switcher moved to bottom) -->
     <div class="cal-controls-row">
         <div class="cal-nav-group">
             <button class="btn btn-nav" id="prevMonthBtn" style="padding:4px 9px; font-size:0.85rem;">◀</button>
             <h2 id="currentMonthLabel">2024年 01月</h2>
             <button class="btn btn-nav" id="nextMonthBtn" style="padding:4px 9px; font-size:0.85rem;">▶</button>
             <button class="btn btn-secondary" id="thisMonthBtn" style="font-size:0.75rem; padding:4px 10px;">今天</button>
-        </div>
-        <!-- View Switcher -->
-        <div class="cal-view-switcher">
-            <button class="cal-view-btn" data-view="day" id="viewBtn-day">天</button>
-            <button class="cal-view-btn" data-view="week" id="viewBtn-week">週</button>
-            <button class="cal-view-btn active" data-view="month" id="viewBtn-month">月</button>
-            <button class="cal-view-btn" data-view="year" id="viewBtn-year">年</button>
-            <button class="cal-view-btn" data-view="schedule" id="viewBtn-schedule">時間表</button>
         </div>
     </div>
 
@@ -528,6 +539,15 @@
 
     <!-- ── Schedule (Agenda) View ── -->
     <div id="scheduleViewBody"></div>
+
+    <!-- ── Bottom View Switcher Tab Bar ── -->
+    <div class="cal-view-switcher">
+        <button class="cal-view-btn" data-view="day" id="viewBtn-day">天</button>
+        <button class="cal-view-btn" data-view="week" id="viewBtn-week">週</button>
+        <button class="cal-view-btn active" data-view="month" id="viewBtn-month">月</button>
+        <button class="cal-view-btn" data-view="year" id="viewBtn-year">年</button>
+        <button class="cal-view-btn" data-view="schedule" id="viewBtn-schedule">時間表</button>
+    </div>
 
 </div>
 
