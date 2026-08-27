@@ -142,8 +142,7 @@ def update_company(company_id):
     db.session.commit()
     
     # Recalculate historical records so changes to break rules/hourly rate apply retroactively
-    from services.salary_service import SalaryService
-    SalaryService(current_user.id).recalculate_company_records(company.id)
+    service.recalculate_company_records(company.id)
     
     return jsonify({'success': True})
 
