@@ -977,10 +977,31 @@ const salaryApp = {
         }
     },
 
-    openAddModalForDate(date) {
+    openAddModalForDate(date, startHour = null) {
         if (!this.isDateEditable(this.formatDate(date))) return;
 
         this.resetForm();
+        
+        if (startHour !== null) {
+            const currentStart = document.getElementById('startTime').value || '09:00';
+            const currentEnd = document.getElementById('endTime').value || '18:00';
+            let durationHours = 9;
+            try {
+                const [sH, sM] = currentStart.split(':').map(Number);
+                const [eH, eM] = currentEnd.split(':').map(Number);
+                let diff = (eH + eM/60) - (sH + sM/60);
+                if (diff < 0) diff += 24;
+                if (diff === 0) diff = 1;
+                durationHours = diff;
+            } catch(e) {}
+            
+            const sh = parseInt(startHour);
+            let eh = sh + Math.round(durationHours);
+            if (eh >= 24) eh -= 24;
+            
+            document.getElementById('startTime').value = String(sh).padStart(2, '0') + ':00';
+            document.getElementById('endTime').value = String(eh).padStart(2, '0') + ':00';
+        }
 
         const dateStr = this.formatDate(date);
         const holidayName = (this.holidays || {})[dateStr];
@@ -1109,7 +1130,8 @@ const salaryApp = {
         container.querySelectorAll('.day-col').forEach(cell => {
             cell.addEventListener('click', () => {
                 if (!this.isDateEditable(dateStr)) return;
-                this.openAddModalForDate(new Date(this.currentDay));
+                const dh = cell.dataset.hour;
+                this.openAddModalForDate(new Date(this.currentDay), dh ? parseInt(dh) : null);
             });
         });
     },
@@ -1209,7 +1231,8 @@ const salaryApp = {
             cell.addEventListener('click', () => {
                 const ds = cell.dataset.date;
                 if (!this.isDateEditable(ds)) return;
-                this.openAddModalForDate(new Date(ds + 'T00:00:00'));
+                const dh = cell.dataset.hour;
+                this.openAddModalForDate(new Date(ds + 'T00:00:00'), dh ? parseInt(dh) : null);
             });
         });
     },
