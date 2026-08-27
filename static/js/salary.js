@@ -370,11 +370,16 @@ const salaryApp = {
 
     goToToday() {
         const now = new Date();
+        this.currentDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        this.currentMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+        this.currentYear = now.getFullYear();
+        
         const day = now.getDay() || 7;
-        now.setDate(now.getDate() - day + 1);
-        this.currentWeekStart = now;
-        this.updateActionButtonsVisibility();
-        this.loadWeek();
+        const mon = new Date(this.currentDay);
+        mon.setDate(this.currentDay.getDate() - day + 1);
+        this.currentWeekMonday = mon;
+
+        this.loadCurrentView();
     },
 
     openAddModal(dayIndex) {
