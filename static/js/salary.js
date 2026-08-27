@@ -769,12 +769,15 @@ const salaryApp = {
         // Update tab active state
         document.querySelectorAll('.cal-view-btn').forEach(b => b.classList.toggle('active', b.dataset.view === mode));
         // Show/hide view bodies
+        // Show/hide view bodies — must use explicit display value, not '' (which falls back to CSS display:none)
         const ids = ['monthViewBody','weekViewBody','dayViewBody','yearViewBody','scheduleViewBody'];
         const map = { month:'monthViewBody', week:'weekViewBody', day:'dayViewBody', year:'yearViewBody', schedule:'scheduleViewBody' };
+        const displayVal = { monthViewBody:'flex', weekViewBody:'block', dayViewBody:'block', yearViewBody:'block', scheduleViewBody:'block' };
         ids.forEach(id => {
             const el = document.getElementById(id);
-            if (el) el.style.display = (id === map[mode]) ? '' : 'none';
+            if (el) el.style.display = (id === map[mode]) ? displayVal[id] : 'none';
         });
+
         this.updateNavLabel();
         this.loadCurrentView();
     },
