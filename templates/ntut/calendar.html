@@ -7,35 +7,37 @@
 <style>
     /* ── Layout ─────────────────────────────────── */
     .cal-layout {
-        display: flex;
-        gap: 16px;
-        height: calc(100vh - 160px);
+        position: relative;
+        height: calc(100vh - 120px);
         min-height: 500px;
+        overflow: hidden;
+        border-radius: 20px;
+        background: rgba(255, 255, 255, 0.02);
+        box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.05);
     }
 
-    /* ── Sidebar ─────────────────────────────────── */
+    /* ── Sidebar (Floating Glass Drawer) ────────── */
     .cal-sidebar {
-        width: 220px;
-        flex-shrink: 0;
-        display: flex;
-        flex-direction: column;
-        gap: 8px;
-        background: rgba(255, 255, 255, 0.05);
-        border: 1px solid rgba(255, 255, 255, 0.1);
-        border-radius: 18px;
-        padding: 16px;
-        backdrop-filter: blur(10px);
+        position: absolute;
+        top: 0;
+        left: 0;
+        z-index: 50;
+        width: 260px;
+        height: 100%;
+        background: rgba(20, 20, 30, 0.7);
+        border-right: 1px solid rgba(255, 255, 255, 0.1);
+        padding: 80px 16px 16px 16px; /* Space for toolbar */
+        backdrop-filter: blur(30px);
+        -webkit-backdrop-filter: blur(30px);
+        box-shadow: 10px 0 30px rgba(0, 0, 0, 0.5);
         overflow-y: auto;
-        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        transform: translateX(0);
+        transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.4s;
     }
     .cal-sidebar.collapsed {
-        width: 0;
-        padding-left: 0;
-        padding-right: 0;
-        border-width: 0;
-        margin-right: -16px; /* offset the layout gap */
+        transform: translateX(-100%);
         opacity: 0;
-        overflow: hidden;
+        pointer-events: none;
     }
 
     /* Custom scrollbar for sidebar */
@@ -157,25 +159,35 @@
 
     /* ── Main Calendar ────────────────────────────── */
     .cal-main {
-        flex: 1;
-        background: rgba(255, 255, 255, 0.03);
-        border: 1px solid rgba(255, 255, 255, 0.08);
-        border-radius: 18px;
-        padding: 16px;
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        padding-top: 70px; /* Space for dynamic island */
         overflow: hidden;
         display: flex;
         flex-direction: column;
     }
 
-    /* ── Custom Toolbar ────────────────────────────── */
+    /* ── Dynamic Island Toolbar ───────────────────── */
     .cal-toolbar {
+        position: absolute;
+        top: 16px;
+        left: 50%;
+        transform: translateX(-50%);
+        z-index: 60;
         display: flex;
         align-items: center;
-        justify-content: space-between;
-        gap: 10px;
-        margin-bottom: 12px;
-        flex-wrap: wrap;
-        flex-shrink: 0;
+        gap: 12px;
+        background: rgba(30, 30, 45, 0.75);
+        backdrop-filter: blur(30px);
+        -webkit-backdrop-filter: blur(30px);
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        border-radius: 100px;
+        padding: 6px 16px;
+        box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+        white-space: nowrap;
     }
     .cal-nav-group {
         display: flex;
@@ -246,10 +258,11 @@
         color: var(--text-primary, #fff);
     }
     .cal-view-btn.active {
-        background: var(--accent, #38bdf8);
+        background: linear-gradient(135deg, #6366f1, #8b5cf6);
         color: #fff;
         font-weight: 600;
-        box-shadow: 0 1px 6px rgba(56,189,248,0.3);
+        box-shadow: 0 2px 10px rgba(99, 102, 241, 0.4);
+        border-radius: 6px;
     }
 
     #calendar {
@@ -260,9 +273,9 @@
     /* FullCalendar dark theme overrides */
     .fc {
         --fc-page-bg-color: transparent;
-        --fc-neutral-bg-color: rgba(255, 255, 255, 0.03); /* Slightly darker for weekends/past */
+        --fc-neutral-bg-color: rgba(255, 255, 255, 0.02); /* Slightly darker for weekends/past */
         --fc-neutral-text-color: var(--text-secondary);
-        --fc-border-color: rgba(255, 255, 255, 0.08);
+        --fc-border-color: rgba(255, 255, 255, 0.03); /* Ultra minimal grid */
         --fc-today-bg-color: transparent; /* GC style: no background, just blue circle for date */
         --fc-now-indicator-color: #ea4335; /* Google Calendar Red */
         --fc-list-event-hover-bg-color: rgba(255, 255, 255, 0.05);
@@ -285,20 +298,30 @@
         background: rgba(255, 255, 255, 0.03) !important;
     }
 
-    /* Event Styling - Mimic Google Calendar */
+    /* Event Styling - Premium Neon Glow */
     .fc-event {
-        /* Let FullCalendar handle borders and display, just round the corners slightly */
-        border-radius: 4px;
+        border-radius: 6px !important;
+        border: none !important;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.2) !important;
+        transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s, filter 0.2s;
+        cursor: pointer;
     }
 
-    /* For timegrid events (Week/Day view), ensure borders separate overlapping events */
+    .fc-event:hover {
+        transform: translateY(-2px) scale(1.02);
+        filter: brightness(1.15);
+        box-shadow: 0 6px 20px rgba(0,0,0,0.4) !important;
+        z-index: 10 !important;
+    }
+
+    /* For timegrid events (Week/Day view) */
     .fc-timegrid-event {
-        box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+        margin-top: 1px !important;
     }
     
     .fc-v-event {
         /* Vertical events in timegrid */
-        border-color: var(--fc-page-bg-color, #1e1e32) !important; /* Use background color for border to separate overlapping events */
+        border-color: rgba(255,255,255,0.1) !important; 
         border-width: 1px !important;
     }
 
@@ -515,19 +538,19 @@
         width: 100%;
         max-width: 440px;
         margin: 16px;
-        backdrop-filter: blur(20px);
-        -webkit-backdrop-filter: blur(20px);
-        background: rgba(30, 30, 50, 0.75);
+        backdrop-filter: blur(40px);
+        -webkit-backdrop-filter: blur(40px);
+        background: rgba(20, 20, 30, 0.5);
         border: 1px solid rgba(255, 255, 255, 0.15);
-        border-radius: 20px;
+        border-radius: 24px;
         padding: 24px;
-        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
-        animation: slideUp .3s cubic-bezier(0.16, 1, 0.3, 1);
+        box-shadow: 0 30px 60px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255,255,255,0.1);
+        animation: modalEntrance .4s cubic-bezier(0.16, 1, 0.3, 1);
     }
 
-    @keyframes slideUp {
-        from { transform: translateY(20px) scale(0.98); opacity: 0; }
-        to { transform: none; opacity: 1; }
+    @keyframes modalEntrance {
+        from { transform: scale(0.92); opacity: 0; }
+        to { transform: scale(1); opacity: 1; }
     }
 
     .modal-header {
@@ -722,93 +745,46 @@
     /* ── Responsive ───────────────────────────────── */
     @media (max-width: 640px) {
         .cal-layout {
-            flex-direction: column;
-            height: calc(100vh - 120px);
-            gap: 10px;
+            height: calc(100vh - 100px);
         }
+
+        .cal-toolbar {
+            width: 95%;
+            max-width: 360px;
+            padding: 8px 12px;
+            gap: 8px;
+            overflow-x: auto;
+            justify-content: flex-start;
+            -webkit-overflow-scrolling: touch;
+            border-radius: 20px; /* better when wrapped */
+        }
+        .cal-toolbar::-webkit-scrollbar { display: none; }
 
         .cal-sidebar {
-            width: 100%;
-            flex-direction: column;
-            gap: 6px;
-            padding: 6px 10px;
-            margin-top: 10px;
-            max-height: 500px; /* for transition */
-            transition: all 0.3s ease;
+            width: 85%;
+            max-width: 300px;
+            padding-top: 80px;
+            box-shadow: 20px 0 50px rgba(0,0,0,0.8);
         }
-
         .cal-sidebar.collapsed {
-            width: 100%;
-            max-height: 0;
-            padding: 0;
-            margin: 0;
-            opacity: 0;
-            border-width: 0;
-            overflow: hidden;
+            transform: translateX(-100%);
         }
 
-        .sidebar-header {
-            width: 100%;
-            margin-bottom: 2px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-        }
-
-        #cal-list {
-            display: flex;
-            gap: 8px;
-            flex-wrap: nowrap;
-            overflow-x: auto;
-            padding-bottom: 6px;
-            -webkit-overflow-scrolling: touch;
+        .cal-main {
+            padding-top: 80px;
         }
 
         .cal-item {
-            padding: 6px 10px;
-            white-space: nowrap;
-            flex-shrink: 0;
-        }
-
-        .cal-empty {
-            white-space: nowrap;
-            padding: 10px;
+            white-space: normal;
         }
 
         .btn-edit-cal,
         .btn-del-cal {
             opacity: 1;
-            /* Always visible on touch screens */
         }
 
-        .cal-main {
-            height: auto;
-            flex: 1;
-            padding: 8px;
-            overflow-y: auto;
-        }
-
-        #calendar {
-            min-height: 400px;
-        }
-
-        /* Fullcalendar toolbar tweaks for mobile */
-        .cal-toolbar {
-            flex-direction: column;
-            align-items: stretch;
-        }
-        .cal-nav-group {
-            justify-content: space-between;
-            margin-bottom: 8px;
-        }
-        .cal-view-switcher {
-            justify-content: space-around;
-        }
-        .cal-view-btn {
-            flex: 1;
-            padding: 6px 4px;
-            font-size: 0.75rem;
-            text-align: center;
+        .fc-toolbar-title {
+            font-size: 1rem !important;
         }
     }
     /* ── Built-in Calendar Items ───────────────────── */
