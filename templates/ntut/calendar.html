@@ -147,10 +147,82 @@
         border-radius: 18px;
         padding: 16px;
         overflow: hidden;
+        display: flex;
+        flex-direction: column;
+    }
+
+    /* ── Custom Toolbar ────────────────────────────── */
+    .cal-toolbar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        margin-bottom: 12px;
+        flex-wrap: wrap;
+        flex-shrink: 0;
+    }
+    .cal-nav-group {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+    .cal-nav-group h2 {
+        font-size: 1.05rem !important;
+        font-weight: 700;
+        min-width: 110px;
+        text-align: center;
+        margin: 0;
+        white-space: nowrap;
+        color: var(--text-primary);
+    }
+    .btn-nav, .btn-secondary {
+        background: rgba(255, 255, 255, 0.08);
+        border: none;
+        color: var(--text-primary);
+        border-radius: 6px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: background .2s;
+    }
+    .btn-nav:hover, .btn-secondary:hover {
+        background: rgba(255, 255, 255, 0.15);
+    }
+    .cal-view-switcher {
+        display: flex;
+        gap: 2px;
+        background: rgba(255, 255, 255, 0.06);
+        border-radius: 9px;
+        padding: 3px;
+        align-items: center;
+    }
+    .cal-view-btn {
+        padding: 5px 12px;
+        border-radius: 6px;
+        border: none;
+        background: transparent;
+        color: var(--text-secondary);
+        font-size: 0.8rem;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.15s ease;
+        white-space: nowrap;
+    }
+    .cal-view-btn:hover {
+        background: rgba(255,255,255,0.08);
+        color: var(--text-primary, #fff);
+    }
+    .cal-view-btn.active {
+        background: var(--accent, #38bdf8);
+        color: #fff;
+        font-weight: 600;
+        box-shadow: 0 1px 6px rgba(56,189,248,0.3);
     }
 
     #calendar {
-        height: 100%;
+        flex: 1;
+        min-height: 0;
     }
 
     /* FullCalendar dark theme overrides */
@@ -505,22 +577,22 @@
         }
 
         /* Fullcalendar toolbar tweaks for mobile */
-        .fc-header-toolbar {
-            flex-wrap: wrap;
-            gap: 8px;
-            margin-bottom: 8px !important;
+        .cal-toolbar {
+            flex-direction: column;
+            align-items: stretch;
         }
-
-        .fc-toolbar-title {
-            font-size: 1.05rem !important;
-            width: 100%;
-            /* Force title to its own line if wrapped */
+        .cal-nav-group {
+            justify-content: space-between;
+            margin-bottom: 8px;
+        }
+        .cal-view-switcher {
+            justify-content: space-around;
+        }
+        .cal-view-btn {
+            flex: 1;
+            padding: 6px 4px;
+            font-size: 0.75rem;
             text-align: center;
-        }
-
-        .fc-button {
-            padding: 4px 8px !important;
-            font-size: 0.85rem !important;
         }
     }
     /* ── Built-in Calendar Items ───────────────────── */
@@ -794,6 +866,23 @@
 
     <!-- ── Main Calendar ── -->
     <div class="cal-main">
+        <!-- Custom Toolbar -->
+        <div class="cal-toolbar">
+            <div class="cal-nav-group">
+                <button class="btn-nav" id="custom-prev" style="padding:4px 9px; font-size:0.85rem;">◀</button>
+                <h2 id="custom-title">載入中...</h2>
+                <button class="btn-nav" id="custom-next" style="padding:4px 9px; font-size:0.85rem;">▶</button>
+                <button class="btn-secondary" id="custom-today" style="font-size:0.75rem; padding:4px 10px;">今天</button>
+            </div>
+            <div class="cal-view-switcher">
+                <button class="cal-view-btn" data-view="timeGridDay" id="viewBtn-day">天</button>
+                <button class="cal-view-btn" data-view="timeGridWeek" id="viewBtn-week">週</button>
+                <button class="cal-view-btn active" data-view="dayGridMonth" id="viewBtn-month">月</button>
+                <button class="cal-view-btn" data-view="multiMonthYear" id="viewBtn-year">年</button>
+                <button class="cal-view-btn" data-view="listMonth" id="viewBtn-schedule">時間表</button>
+            </div>
+        </div>
+
         <div id="calendar"></div>
     </div>
 
@@ -1006,11 +1095,7 @@
         fcCalendar = new FullCalendar.Calendar(el, {
             locale: 'zh-tw',
             initialView: 'dayGridMonth',
-            headerToolbar: {
-                left: isMobile ? 'prev,next' : 'prev,next today',
-                center: 'title',
-                right: isMobile ? 'today dayGridMonth,listMonth' : 'dayGridMonth,listMonth'
-            },
+            headerToolbar: false,
             buttonText: { today: '今天', month: '月', list: '列表' },
             height: '100%',
             contentHeight: isMobile ? 'auto' : undefined,
@@ -1021,6 +1106,27 @@
             }
         });
         fcCalendar.render();
+
+        // ── Custom Toolbar Logic ──
+        const titleEl = document.getElementById('custom-title');
+        fcCalendar.on('datesSet', (info) => {
+            titleEl.textContent = info.view.title;
+        });
+
+        document.getElementById('custom-prev').addEventListener('click', () => fcCalendar.prev());
+        document.getElementById('custom-next').addEventListener('click', () => fcCalendar.next());
+        document.getElementById('custom-today').addEventListener('click', () => fcCalendar.today());
+
+        const viewBtns = document.querySelectorAll('.cal-view-btn');
+        viewBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                viewBtns.forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                fcCalendar.changeView(btn.dataset.view);
+            });
+        });
+
+        titleEl.textContent = fcCalendar.view.title;
 
         // 載入內建日曆設定（名稱、顏色）並加入 EventSource
         await loadBuiltinCalendars();
