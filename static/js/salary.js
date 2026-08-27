@@ -301,36 +301,53 @@ const salaryApp = {
     },
 
     async refreshMonthlyTargetProgress() {
-        let activeDate;
-        if (this.currentView === 'day') activeDate = this.currentDay;
-        else if (this.currentView === 'week') activeDate = this.currentWeekMonday;
-        else if (this.currentView === 'year') activeDate = new Date(this.currentYear, 0, 1);
-        else activeDate = this.currentMonth;
+        let isYearly = false;
+        let start, end;
 
-        if (!activeDate) return;
+        if (this.currentView === 'year') {
+            isYearly = true;
+            const y = this.currentYear;
+            start = `${y}-01-01`;
+            end = `${y+1}-01-01`;
+        } else {
+            let activeDate;
+            if (this.currentView === 'day') activeDate = this.currentDay;
+            else if (this.currentView === 'week') activeDate = this.currentWeekMonday;
+            else activeDate = this.currentMonth;
 
-        const y = activeDate.getFullYear();
-        const m = activeDate.getMonth();
-        const start = this.formatDate(new Date(y, m, 1));
-        // Add 1 month to get first day of next month, our API usually does <= end_date or we just use end of month
-        const end = this.formatDate(new Date(y, m + 1, 0)); 
+            if (!activeDate) return;
+
+            const y = activeDate.getFullYear();
+            const m = activeDate.getMonth();
+            start = this.formatDate(new Date(y, m, 1));
+            // Add 1 month to get first day of next month, our API usually does <= end_date or we just use end of month
+            end = this.formatDate(new Date(y, m + 1, 0)); 
+        }
 
         try {
             const res = await fetch(`/salary/api/records?start_date=${start}&end_date=${end}`);
             const data = await res.json();
             const total = data.reduce((sum, r) => sum + r.amount, 0);
-            this.updateTargetProgress(total);
+            this.updateTargetProgress(total, isYearly);
         } catch (e) { console.error(e); }
     },
 
-    updateTargetProgress(currentAmount) {
+    updateTargetProgress(currentAmount, isYearly = false) {
         const targetContainer = document.getElementById('targetIncomeContainer');
         if (targetContainer && this.settings.target_income > 0) {
             targetContainer.style.display = 'block';
-            const percent = Math.min(100, (currentAmount / this.settings.target_income) * 100);
+            const target = isYearly ? this.settings.target_income * 12 : this.settings.target_income;
+            const percent = Math.min(100, (currentAmount / target) * 100);
 
             const bar = document.getElementById('targetIncomeBar');
             const txt = document.getElementById('targetIncomePercent');
+
+            try {
+                const label = targetContainer.children[0].children[0];
+                if (label) {
+                    label.textContent = isYearly ? '年目標達成率' : '月目標達成率';
+                }
+            } catch(e) {}
 
             if (bar) bar.style.width = `${percent}%`;
             if (txt) txt.textContent = `${percent.toFixed(1)}%`;
