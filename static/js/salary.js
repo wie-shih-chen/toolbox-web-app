@@ -1060,7 +1060,7 @@ const salaryApp = {
     _renderDayView(dateStr) {
         const container = document.getElementById('dayViewBody');
         if (!container) return;
-        const HOUR_H = 40; // px per hour
+        const HOUR_H = window.innerWidth < 480 ? 30 : 40; // px per hour (smaller on mobile)
         const holidayName = (this.holidays||{})[dateStr];
         const dayRecords  = (this.records||[]).filter(r => r.date === dateStr && r.type === 'shift');
         const bonuses     = (this.records||[]).filter(r => r.date === dateStr && r.type === 'bonus');
@@ -1143,7 +1143,7 @@ const salaryApp = {
     _renderWeekView() {
         const container = document.getElementById('weekViewBody');
         if (!container) return;
-        const HOUR_H  = 36;
+        const HOUR_H  = window.innerWidth < 480 ? 26 : 36; // smaller on mobile
         const todayStr = this.formatDate(new Date());
         const DOW = ['日','一','二','三','四','五','六'];
         const days = [];

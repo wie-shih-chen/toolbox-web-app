@@ -340,16 +340,82 @@
     }
     .sched-load-more button:hover { background: rgba(255,255,255,0.12); }
 
+    /* ── Responsive: tablet / large phone ── */
+    @media (max-width: 640px) {
+        /* Controls row — stack vertically */
+        .cal-controls-row { flex-direction: column; align-items: stretch; gap: 8px; }
+        .cal-nav-group { justify-content: space-between; }
+        #currentMonthLabel { font-size: 0.95rem !important; }
+
+        /* View switcher — horizontal scroll so buttons don't wrap */
+        .cal-view-switcher {
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+            scrollbar-width: none;
+            justify-content: flex-start;
+        }
+        .cal-view-switcher::-webkit-scrollbar { display: none; }
+        .cal-view-btn { flex-shrink: 0; padding: 5px 12px; font-size: 0.78rem; }
+
+        /* Week view — smaller columns, horizontal scroll already enabled */
+        .week-grid { min-width: 440px; }
+        .week-col-header { font-size: 0.65rem; padding: 4px 1px; }
+        .week-col-header .wh-day-num { width: 20px; height: 20px; line-height: 20px; font-size: 0.78rem; }
+        .week-time-col { font-size: 0.58rem; padding-right: 3px; }
+        .week-event-block { font-size: 0.58rem; padding: 1px 3px; }
+        .week-allday-chip { font-size: 0.6rem; }
+
+        /* Day view */
+        .day-event-block { font-size: 0.7rem; padding: 3px 6px; }
+
+        /* Year view — 2 columns */
+        .year-grid { grid-template-columns: repeat(2, 1fr); gap: 8px; }
+        .mini-month { padding: 8px 6px; }
+        .mini-month-title { font-size: 0.75rem; }
+        .mini-day { width: 18px; height: 18px; line-height: 18px; font-size: 0.6rem; }
+        .mini-dow { font-size: 0.5rem; }
+
+        /* Schedule view */
+        .schedule-event-row { flex-wrap: wrap; gap: 6px; padding: 7px 8px; }
+        .sched-time { min-width: 80px; font-size: 0.7rem; }
+        .sched-title { font-size: 0.8rem; }
+        .sched-amount { font-size: 0.75rem; }
+        .schedule-date-label { font-size: 0.75rem; }
+        .schedule-date-label .sched-day-num { width: 28px; height: 28px; font-size: 0.8rem; }
+    }
+
+    /* ── Responsive: small phone ── */
     @media (max-width: 480px) {
-        .cal-view-btn { padding: 5px 9px; font-size: 0.75rem; }
+        .cal-view-btn { padding: 5px 9px; font-size: 0.73rem; }
+
+        /* Month view */
         .calendar-day { min-height: 56px; padding: 2px; }
         .cal-day-header { font-size: 0.7rem; }
         .cal-item { font-size: 0.6rem; }
         .holiday-badge { max-width: 50px; font-size: 0.5rem; }
-        .year-grid { grid-template-columns: repeat(2, 1fr); }
-        .cal-controls-row { flex-direction: column; align-items: flex-start; }
+
+        /* Week view — tighter */
+        .week-grid { min-width: 380px; }
+        .week-col-header { font-size: 0.6rem; }
+        .week-col-header .wh-day-num { width: 18px; height: 18px; line-height: 18px; font-size: 0.7rem; }
+        .week-time-col { font-size: 0.52rem; width: 38px; }
+        .week-grid { grid-template-columns: 38px repeat(7, 1fr); }
+
+        /* Day view — time column narrower */
+        .day-grid { grid-template-columns: 38px 1fr; }
+
+        /* Year view — 2 columns (maintain) */
+        .year-grid { grid-template-columns: repeat(2, 1fr); gap: 6px; }
+        .mini-month { padding: 6px 4px; }
+        .mini-day { width: 16px; height: 16px; line-height: 16px; font-size: 0.55rem; }
+
+        /* Schedule view — time and title stack */
+        .schedule-event-row { flex-direction: column; align-items: flex-start; gap: 3px; }
+        .sched-time { min-width: unset; }
+        .sched-amount { align-self: flex-end; margin-top: -22px; }
     }
 </style>
+
 {% endblock %}
 
 {% block content %}
