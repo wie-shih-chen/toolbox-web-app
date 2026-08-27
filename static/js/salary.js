@@ -442,7 +442,7 @@ const salaryApp = {
         if (document.querySelector('.salary-dashboard')) {
             this.loadWeek();
         } else if (document.querySelector('.salary-monthly')) {
-            this.loadMonth();
+            this.loadCurrentView ? this.loadCurrentView() : this.loadMonth();
         } else if (document.querySelector('.salary-history')) {
             this.loadHistoryData();
         }
