@@ -285,26 +285,29 @@
         background: rgba(255, 255, 255, 0.03) !important;
     }
 
-    /* Event Styling */
+    /* Event Styling - Mimic Google Calendar */
     .fc-event {
-        border: none !important;
-        border-radius: 6px !important;
-        box-shadow: 0 1px 3px rgba(0,0,0,0.15);
-        overflow: hidden; /* Ensure inner content doesn't spill over rounded corners */
+        /* Let FullCalendar handle borders and display, just round the corners slightly */
+        border-radius: 4px;
     }
 
-    .fc-event-main {
-        padding: 2px 4px;
-        font-size: 0.78rem;
-        line-height: 1.3;
-        white-space: normal; /* Allow text wrapping */
-        word-break: break-word;
+    /* For timegrid events (Week/Day view), ensure borders separate overlapping events */
+    .fc-timegrid-event {
+        box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+    }
+    
+    .fc-v-event {
+        /* Vertical events in timegrid */
+        border-color: var(--fc-page-bg-color, #1e1e32) !important; /* Use background color for border to separate overlapping events */
+        border-width: 1px !important;
     }
 
-    /* Fix Week/Day view timegrid events overlapping too much when text wraps */
+    /* Ensure text in timegrid can wrap if needed, but hide overflow like Google Calendar */
     .fc-timegrid-event .fc-event-main {
-        padding: 4px;
+        padding: 2px 4px;
         font-size: 0.75rem;
+        line-height: 1.2;
+        overflow: hidden;
     }
 
     /* Popover (+N more) styling */
@@ -1245,9 +1248,17 @@
             locale: 'zh-tw',
             initialView: 'dayGridMonth',
             headerToolbar: false,
-            buttonText: { today: '今天', month: '月', list: '列表' },
+            buttonText: { today: '今天', month: '月', list: '列表', week: '週', day: '天', year: '年' },
             height: '100%',
             contentHeight: isMobile ? 'auto' : undefined,
+            dayMaxEvents: true, // Mimic Google Calendar's +N more
+            slotEventOverlap: true,
+            nowIndicator: true,
+            eventTimeFormat: {
+                hour: '2-digit',
+                minute: '2-digit',
+                hour12: false
+            },
             eventSources: [],
             noEventsContent: '沒有活動',
             eventClick: function (info) {
