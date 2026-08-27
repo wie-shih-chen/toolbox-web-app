@@ -260,11 +260,11 @@
     /* FullCalendar dark theme overrides */
     .fc {
         --fc-page-bg-color: transparent;
-        --fc-neutral-bg-color: rgba(255, 255, 255, 0.05);
+        --fc-neutral-bg-color: rgba(255, 255, 255, 0.03); /* Slightly darker for weekends/past */
         --fc-neutral-text-color: var(--text-secondary);
         --fc-border-color: rgba(255, 255, 255, 0.08);
-        --fc-today-bg-color: rgba(99, 102, 241, 0.08);
-        --fc-now-indicator-color: #f43f5e;
+        --fc-today-bg-color: transparent; /* GC style: no background, just blue circle for date */
+        --fc-now-indicator-color: #ea4335; /* Google Calendar Red */
         --fc-list-event-hover-bg-color: rgba(255, 255, 255, 0.05);
         
         color: var(--text-primary);
@@ -308,6 +308,79 @@
         font-size: 0.75rem;
         line-height: 1.2;
         overflow: hidden;
+    }
+
+    /* ── Google Calendar Deep Mimicry ── */
+    /* 1. Today Indicator (Solid Blue Circle) */
+    .fc-day-today .fc-daygrid-day-top,
+    .fc-col-header-cell.fc-day-today .fc-col-header-cell-cushion {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        margin-top: 4px;
+    }
+    .fc-day-today .fc-daygrid-day-number,
+    .fc-col-header-cell.fc-day-today .fc-col-header-cell-cushion {
+        background-color: #4285F4; /* GC Blue */
+        color: #fff !important;
+        border-radius: 50%;
+        width: 28px;
+        height: 28px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 600;
+        text-decoration: none !important;
+    }
+
+    /* 2. Now Indicator (Red Dot + Line) */
+    .fc-timegrid-now-indicator-arrow {
+        border: none !important;
+        background-color: var(--fc-now-indicator-color);
+        width: 11px;
+        height: 11px;
+        border-radius: 50%;
+        transform: translate(-6px, -5px) !important; /* Center on line */
+        margin: 0 !important;
+    }
+    .fc-timegrid-now-indicator-line {
+        border-color: var(--fc-now-indicator-color) !important;
+        border-width: 2px 0 0 !important;
+    }
+
+    /* 3. Weekends & Past Days Dimming */
+    .fc-day-sat, .fc-day-sun {
+        background-color: rgba(255, 255, 255, 0.015);
+    }
+    .fc-day-past .fc-daygrid-day-number, 
+    .fc-day-past .fc-daygrid-event {
+        opacity: 0.7;
+    }
+
+    /* 4. Time Axis Typography */
+    .fc-timegrid-slot-label-cushion {
+        font-size: 0.7rem !important;
+        color: var(--text-tertiary) !important;
+        font-weight: 400;
+        padding-right: 8px !important;
+        text-transform: lowercase;
+    }
+    
+    /* 5. Section Divider for All-Day */
+    .fc-scrollgrid-section-allDay > td {
+        border-bottom: 2px solid rgba(255, 255, 255, 0.12) !important;
+    }
+    
+    /* Clean up default link styling in headers */
+    .fc-col-header-cell-cushion {
+        color: var(--text-secondary);
+        font-weight: 500;
+        font-size: 0.9rem;
+        padding: 8px 4px !important;
+        text-decoration: none !important;
+    }
+    .fc-col-header-cell-cushion:hover {
+        color: var(--text-primary);
     }
 
     /* Popover (+N more) styling */
