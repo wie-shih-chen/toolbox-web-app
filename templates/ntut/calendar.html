@@ -307,6 +307,73 @@
         font-size: 0.75rem;
     }
 
+    /* Popover (+N more) styling */
+    .fc-popover {
+        background: rgba(30, 30, 50, 0.95) !important;
+        border: 1px solid rgba(255, 255, 255, 0.15) !important;
+        border-radius: 12px !important;
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5) !important;
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+        z-index: 100 !important;
+        overflow: hidden;
+    }
+
+    .fc-popover-header {
+        background: rgba(0, 0, 0, 0.2) !important;
+        padding: 8px 12px !important;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+
+    .fc-popover-title {
+        font-size: 0.9rem !important;
+        font-weight: 600;
+        color: var(--text-primary) !important;
+        letter-spacing: 0.02em;
+    }
+
+    .fc-popover-close {
+        opacity: 0.7 !important;
+        cursor: pointer !important;
+        transition: opacity 0.2s !important;
+        background: rgba(255, 255, 255, 0.1) !important;
+        border-radius: 6px;
+        padding: 2px 6px;
+    }
+
+    .fc-popover-close:hover {
+        opacity: 1 !important;
+        background: rgba(255, 255, 255, 0.2) !important;
+    }
+
+    .fc-popover-body {
+        padding: 8px !important;
+        max-height: 250px;
+        overflow-y: auto;
+    }
+
+    /* Scrollbar for popover */
+    .fc-popover-body::-webkit-scrollbar { width: 4px; }
+    .fc-popover-body::-webkit-scrollbar-track { background: transparent; }
+    .fc-popover-body::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.15); border-radius: 4px; }
+
+    .fc-more-link {
+        color: var(--accent, #a5b4fc) !important;
+        font-weight: 600 !important;
+        font-size: 0.75rem !important;
+        background: rgba(165, 180, 252, 0.15) !important;
+        padding: 2px 6px !important;
+        border-radius: 4px !important;
+        transition: background 0.2s;
+    }
+    .fc-more-link:hover {
+        background: rgba(165, 180, 252, 0.25) !important;
+        text-decoration: none !important;
+    }
+
     /* List view specific overrides for dark theme */
     .fc-list-day-cushion {
         background: rgba(255, 255, 255, 0.08) !important;
