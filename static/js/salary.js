@@ -983,20 +983,9 @@ const salaryApp = {
         this.resetForm();
         
         if (startHour !== null) {
-            const currentStart = document.getElementById('startTime').value || '09:00';
-            const currentEnd = document.getElementById('endTime').value || '18:00';
-            let durationHours = 9;
-            try {
-                const [sH, sM] = currentStart.split(':').map(Number);
-                const [eH, eM] = currentEnd.split(':').map(Number);
-                let diff = (eH + eM/60) - (sH + sM/60);
-                if (diff < 0) diff += 24;
-                if (diff === 0) diff = 1;
-                durationHours = diff;
-            } catch(e) {}
-            
+            // User clicked a specific 1-hour cell in Day/Week view
             const sh = parseInt(startHour);
-            let eh = sh + Math.round(durationHours);
+            let eh = sh + 1; // One grid cell is 1 hour
             if (eh >= 24) eh -= 24;
             
             document.getElementById('startTime').value = String(sh).padStart(2, '0') + ':00';
