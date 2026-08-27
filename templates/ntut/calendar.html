@@ -259,13 +259,22 @@
 
     /* FullCalendar dark theme overrides */
     .fc {
+        --fc-page-bg-color: transparent;
+        --fc-neutral-bg-color: rgba(255, 255, 255, 0.05);
+        --fc-neutral-text-color: var(--text-secondary);
+        --fc-border-color: rgba(255, 255, 255, 0.08);
+        --fc-today-bg-color: rgba(99, 102, 241, 0.08);
+        --fc-now-indicator-color: #f43f5e;
+        --fc-list-event-hover-bg-color: rgba(255, 255, 255, 0.05);
+        
         color: var(--text-primary);
+        font-family: inherit;
     }
 
     .fc-theme-standard td,
     .fc-theme-standard th,
     .fc-theme-standard .fc-scrollgrid {
-        border-color: rgba(255, 255, 255, 0.05);
+        border-color: var(--fc-border-color);
     }
 
     .fc-col-header-cell {
@@ -276,34 +285,26 @@
         background: rgba(255, 255, 255, 0.03) !important;
     }
 
-    .fc-day-today {
-        background: rgba(99, 102, 241, 0.05) !important;
-    }
-
-    .fc-button {
-        background: rgba(255, 255, 255, 0.1) !important;
-        border: none !important;
-        color: var(--text-primary) !important;
-    }
-
-    .fc-button:hover {
-        background: rgba(255, 255, 255, 0.2) !important;
-    }
-
-    .fc-button-primary:not(:disabled).fc-button-active {
-        background: rgba(99, 102, 241, 0.5) !important;
-    }
-
-    .fc-toolbar-title {
-        font-size: 1.1rem !important;
-    }
-
+    /* Event Styling */
     .fc-event {
         border: none !important;
-        font-size: 0.78rem;
         border-radius: 6px !important;
-        padding: 2px 4px !important;
         box-shadow: 0 1px 3px rgba(0,0,0,0.15);
+        overflow: hidden; /* Ensure inner content doesn't spill over rounded corners */
+    }
+
+    .fc-event-main {
+        padding: 2px 4px;
+        font-size: 0.78rem;
+        line-height: 1.3;
+        white-space: normal; /* Allow text wrapping */
+        word-break: break-word;
+    }
+
+    /* Fix Week/Day view timegrid events overlapping too much when text wraps */
+    .fc-timegrid-event .fc-event-main {
+        padding: 4px;
+        font-size: 0.75rem;
     }
 
     /* List view specific overrides for dark theme */
@@ -317,10 +318,6 @@
         border-color: rgba(255, 255, 255, 0.06) !important;
     }
 
-    .fc-list-event:hover td {
-        background: rgba(255, 255, 255, 0.05) !important;
-    }
-
     .fc-list-event-title,
     .fc-list-event-time {
         color: var(--text-secondary);
@@ -329,6 +326,17 @@
     .fc-list-empty {
         background: transparent !important;
         color: var(--text-tertiary) !important;
+    }
+    
+    /* Year view specific overrides */
+    .fc-multimonth-title {
+        color: var(--text-primary);
+        font-weight: 600;
+        font-size: 1.05rem;
+        margin-bottom: 8px;
+    }
+    .fc-multimonth-daygrid {
+        background: transparent !important;
     }
 
     /* ── Modal ────────────────────────────────────── */
