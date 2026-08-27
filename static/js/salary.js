@@ -300,16 +300,22 @@ const salaryApp = {
         }).join('');
     },
 
-    async updateMonthlyGoalForWeek() {
-        if (!this.currentWeekStart) return;
-        // Determine the month of the current week start
-        const y = this.currentWeekStart.getFullYear();
-        const m = this.currentWeekStart.getMonth();
+    async refreshMonthlyTargetProgress() {
+        let activeDate;
+        if (this.currentView === 'day') activeDate = this.currentDay;
+        else if (this.currentView === 'week') activeDate = this.currentWeekMonday;
+        else if (this.currentView === 'year') activeDate = new Date(this.currentYear, 0, 1);
+        else activeDate = this.currentMonth;
+
+        if (!activeDate) return;
+
+        const y = activeDate.getFullYear();
+        const m = activeDate.getMonth();
         const start = this.formatDate(new Date(y, m, 1));
-        const end = this.formatDate(new Date(y, m + 1, 0)); // Last day of month
+        // Add 1 month to get first day of next month, our API usually does <= end_date or we just use end of month
+        const end = this.formatDate(new Date(y, m + 1, 0)); 
 
         try {
-            // Fetch all records for this month to calculate total
             const res = await fetch(`/salary/api/records?start_date=${start}&end_date=${end}`);
             const data = await res.json();
             const total = data.reduce((sum, r) => sum + r.amount, 0);
@@ -833,15 +839,18 @@ const salaryApp = {
         this.loadCurrentView();
     },
 
-    loadCurrentView() {
+    async loadCurrentView() {
         this.updateNavLabel();
+        let p;
         switch (this.currentView) {
-            case 'day':      return this._loadDayView();
-            case 'week':     return this._loadWeekView();
-            case 'year':     return this._loadYearView();
-            case 'schedule': return this._loadScheduleView();
-            default:         return this.loadMonth();
+            case 'day':      p = this._loadDayView(); break;
+            case 'week':     p = this._loadWeekView(); break;
+            case 'year':     p = this._loadYearView(); break;
+            case 'schedule': p = this._loadScheduleView(); break;
+            default:         p = this.loadMonth(); break;
         }
+        await p;
+        this.refreshMonthlyTargetProgress();
     },
 
     async loadMonth() {
@@ -1035,7 +1044,6 @@ const salaryApp = {
         if (hEl) hEl.textContent = `${hours.toFixed(1)}h`;
         if (aEl) aEl.textContent = `$${Math.round(amount)}`;
 
-        this.updateTargetProgress(amount);
         this.renderCompanyBreakdown(filteredRecords);
     },
 
