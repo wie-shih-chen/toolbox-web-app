@@ -1227,8 +1227,8 @@ const salaryApp = {
             const isHol  = (this.holidays||{})[b.date];
             const block  = document.createElement('div');
             block.className = 'week-event-block';
-            block.style.cssText = `top:${top}px;height:${height}px;background:${color}33;border-left:3px solid ${color};color:#fff;`;
-            block.textContent = `${b.start_time}${isHol?' ×2':''}`;
+            block.style.cssText = `top:${top}px;height:${height}px;background:${color}33;border-left:3px solid ${color};color:#fff; overflow:hidden; font-size:0.7rem; line-height:1.2;`;
+            block.innerHTML = `<b>${b.start_time}–${b.end_time}</b>${isHol?' ×2':''}<br>${b.company_name||''} $${Math.round(b.amount)}`;
             block.onclick = (e) => { e.stopPropagation(); this.openEditModal(b); };
             const cell = container.querySelector(`[data-date="${b.displayDate}"][data-hour="${b.sh}"]`);
             if (cell) cell.appendChild(block);
