@@ -33,7 +33,7 @@ const salaryApp = {
             // Auto-fill rate and times when company changes
             sel.addEventListener('change', () => {
                 const opt = sel.options[sel.selectedIndex];
-                
+
                 // Rate
                 const rateInput = document.getElementById('shiftRate');
                 if (opt && opt.dataset.rate && rateInput && !rateInput.value) {
@@ -42,7 +42,7 @@ const salaryApp = {
                     rateInput.placeholder = '留空則使用預設時薪';
                 }
             });
-        } catch(e) { console.warn('Company load failed', e); }
+        } catch (e) { console.warn('Company load failed', e); }
     },
 
     bindEvents() {
@@ -60,9 +60,9 @@ const salaryApp = {
         addSafeListener('thisMonthBtn', 'click', () => {
             const n = new Date();
             this.currentMonth = new Date(n.getFullYear(), n.getMonth(), 1);
-            this.currentDay   = new Date(n.getFullYear(), n.getMonth(), n.getDate());
+            this.currentDay = new Date(n.getFullYear(), n.getMonth(), n.getDate());
             this.currentWeekMonday = this._getMondayOf(n);
-            this.currentYear  = n.getFullYear();
+            this.currentYear = n.getFullYear();
             this.loadCurrentView ? this.loadCurrentView() : this.loadMonth();
         });
 
@@ -230,7 +230,7 @@ const salaryApp = {
         const aEl = document.getElementById('weeklyAmount');
         if (hEl) hEl.textContent = `${hours.toFixed(1)}h`;
         if (aEl) aEl.textContent = `$${Math.round(amount)}`;
-        
+
         this.renderCompanyBreakdown(this.records);
     },
 
@@ -238,7 +238,7 @@ const salaryApp = {
         const container = document.getElementById('companyBreakdownContainer');
         const barContainer = document.getElementById('companyBreakdownBar');
         const listContainer = document.getElementById('companyBreakdownList');
-        
+
         if (!container || !barContainer || !listContainer) return;
 
         // Group by company
@@ -270,7 +270,7 @@ const salaryApp = {
         }
 
         container.style.display = 'block';
-        
+
         // Render Bar
         barContainer.innerHTML = statsArray.map(s => {
             const pct = (s.amount / totalAmount * 100).toFixed(1);
@@ -281,7 +281,7 @@ const salaryApp = {
         // Use CSS classes defined in salary.css for responsive layout
         listContainer.className = 'company-breakdown-list';
         listContainer.style = ''; // clear inline styles from older versions
-        
+
         listContainer.innerHTML = statsArray.map(s => {
             const pct = (s.amount / totalAmount * 100).toFixed(1);
             return `
@@ -308,7 +308,7 @@ const salaryApp = {
             isYearly = true;
             const y = this.currentYear;
             start = `${y}-01-01`;
-            end = `${y+1}-01-01`;
+            end = `${y + 1}-01-01`;
         } else {
             let activeDate;
             if (this.currentView === 'day') activeDate = this.currentDay;
@@ -321,7 +321,7 @@ const salaryApp = {
             const m = activeDate.getMonth();
             start = this.formatDate(new Date(y, m, 1));
             // Add 1 month to get first day of next month, our API usually does <= end_date or we just use end of month
-            end = this.formatDate(new Date(y, m + 1, 0)); 
+            end = this.formatDate(new Date(y, m + 1, 0));
         }
 
         try {
@@ -347,7 +347,7 @@ const salaryApp = {
                 if (label) {
                     label.textContent = isYearly ? '年目標達成率' : '月目標達成率';
                 }
-            } catch(e) {}
+            } catch (e) { }
 
             if (bar) bar.style.width = `${percent}%`;
             if (txt) txt.textContent = `${percent.toFixed(1)}%`;
@@ -373,7 +373,7 @@ const salaryApp = {
         this.currentDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
         this.currentMonth = new Date(now.getFullYear(), now.getMonth(), 1);
         this.currentYear = now.getFullYear();
-        
+
         const day = now.getDay() || 7;
         const mon = new Date(this.currentDay);
         mon.setDate(this.currentDay.getDate() - day + 1);
@@ -485,7 +485,7 @@ const salaryApp = {
                     input.disabled = false;
                 }
             });
-            
+
             // Move company selector to the active tab
             const companyGroup = document.getElementById('companyGroup');
             if (companyGroup) {
@@ -512,10 +512,10 @@ const salaryApp = {
         const companySel = document.getElementById('recordCompany');
         if (companySel) {
             companySel.value = '';
-            
+
             const lastCompanyId = localStorage.getItem('salary_last_company_id');
             let found = false;
-            
+
             if (lastCompanyId) {
                 for (let i = 0; i < companySel.options.length; i++) {
                     if (companySel.options[i].value === lastCompanyId) {
@@ -525,11 +525,11 @@ const salaryApp = {
                     }
                 }
             }
-            
+
             if (!found && companySel.options.length > 0) {
                 companySel.selectedIndex = 0;
             }
-            
+
             companySel.dispatchEvent(new Event('change'));
         }
     },
@@ -553,7 +553,7 @@ const salaryApp = {
             const toEpoch = (dateStr, timeStr) => {
                 const [y, m, d] = dateStr.split('-');
                 const [H, M] = timeStr.split(':');
-                return new Date(y, m-1, d, H, M).getTime();
+                return new Date(y, m - 1, d, H, M).getTime();
             };
             const getRange = (dateStr, startStr, endStr) => {
                 let s = toEpoch(dateStr, startStr);
@@ -563,12 +563,12 @@ const salaryApp = {
             };
 
             const [newS, newE] = getRange(data.date, data.start_time, data.end_time);
-            
+
             const clashes = this.records.filter(r => {
                 if (id && r.id == id) return false;
                 if (r.type !== 'shift') return false;
                 if (!r.start_time || !r.end_time) return false;
-                
+
                 // Only check records around the same date to save perf
                 if (Math.abs(new Date(r.date) - new Date(data.date)) > 2 * 24 * 3600 * 1000) return false;
 
@@ -662,10 +662,10 @@ const salaryApp = {
         try {
             const res = await fetch('/salary/api/export');
             const data = await res.json();
-            
+
             if (data.success) {
                 if (data.message) alert('✅ ' + data.message);
-                
+
                 if (data.csv_content) {
                     const blob = new Blob(['\ufeff' + data.csv_content], { type: 'text/csv;charset=utf-8-sig' });
                     const url = window.URL.createObjectURL(blob);
@@ -706,7 +706,7 @@ const salaryApp = {
 
             if (data.success) {
                 if (data.message) alert('✅ ' + data.message);
-                
+
                 if (data.csv_content) {
                     const blob = new Blob(['\ufeff' + data.csv_content], { type: 'text/csv;charset=utf-8-sig' });
                     const url = window.URL.createObjectURL(blob);
@@ -759,11 +759,11 @@ const salaryApp = {
     initMonthly() {
         const now = new Date();
         this.currentMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-        this.currentDay   = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        this.currentDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
         this.currentWeekMonday = this._getMondayOf(now);
-        this.currentYear  = now.getFullYear();
-        this.currentView  = 'month';   // day | week | month | year | schedule
-        this.holidays     = {};
+        this.currentYear = now.getFullYear();
+        this.currentView = 'month';   // day | week | month | year | schedule
+        this.holidays = {};
         this.bindEvents();
 
         // View switcher buttons
@@ -778,19 +778,47 @@ const salaryApp = {
         const d = new Date(date);
         const day = d.getDay() || 7;   // 0(Sun)→7
         d.setDate(d.getDate() - day + 1);
-        d.setHours(0,0,0,0);
+        d.setHours(0, 0, 0, 0);
         return d;
     },
 
     switchView(mode) {
+        const out = this.currentView;
+        if (out === 'day') {
+            this.currentWeekMonday = this._getMondayOf(this.currentDay);
+            this.currentMonth = new Date(this.currentDay.getFullYear(), this.currentDay.getMonth(), 1);
+            this.currentYear = this.currentDay.getFullYear();
+        } else if (out === 'week') {
+            const endOfWeek = new Date(this.currentWeekMonday);
+            endOfWeek.setDate(endOfWeek.getDate() + 6);
+            if (this.currentDay < this.currentWeekMonday || this.currentDay > endOfWeek) {
+                this.currentDay = new Date(this.currentWeekMonday);
+            }
+            this.currentMonth = new Date(this.currentWeekMonday.getFullYear(), this.currentWeekMonday.getMonth(), 1);
+            this.currentYear = this.currentWeekMonday.getFullYear();
+        } else if (out === 'month' || out === 'schedule') {
+            this.currentYear = this.currentMonth.getFullYear();
+            if (this.currentWeekMonday.getFullYear() !== this.currentMonth.getFullYear() || this.currentWeekMonday.getMonth() !== this.currentMonth.getMonth()) {
+                this.currentWeekMonday = this._getMondayOf(this.currentMonth);
+            }
+            if (this.currentDay.getFullYear() !== this.currentMonth.getFullYear() || this.currentDay.getMonth() !== this.currentMonth.getMonth()) {
+                this.currentDay = new Date(this.currentMonth);
+            }
+        } else if (out === 'year') {
+            if (this.currentMonth.getFullYear() !== this.currentYear) {
+                this.currentMonth = new Date(this.currentYear, 0, 1);
+            }
+            this.currentWeekMonday = this._getMondayOf(this.currentMonth);
+            this.currentDay = new Date(this.currentMonth);
+        }
+
         this.currentView = mode;
         // Update tab active state
         document.querySelectorAll('.cal-view-btn').forEach(b => b.classList.toggle('active', b.dataset.view === mode));
-        // Show/hide view bodies
         // Show/hide view bodies — must use explicit display value, not '' (which falls back to CSS display:none)
-        const ids = ['monthViewBody','weekViewBody','dayViewBody','yearViewBody','scheduleViewBody'];
-        const map = { month:'monthViewBody', week:'weekViewBody', day:'dayViewBody', year:'yearViewBody', schedule:'scheduleViewBody' };
-        const displayVal = { monthViewBody:'flex', weekViewBody:'block', dayViewBody:'block', yearViewBody:'block', scheduleViewBody:'block' };
+        const ids = ['monthViewBody', 'weekViewBody', 'dayViewBody', 'yearViewBody', 'scheduleViewBody'];
+        const map = { month: 'monthViewBody', week: 'weekViewBody', day: 'dayViewBody', year: 'yearViewBody', schedule: 'scheduleViewBody' };
+        const displayVal = { monthViewBody: 'flex', weekViewBody: 'block', dayViewBody: 'block', yearViewBody: 'block', scheduleViewBody: 'block' };
         ids.forEach(id => {
             const el = document.getElementById(id);
             if (el) el.style.display = (id === map[mode]) ? displayVal[id] : 'none';
@@ -802,22 +830,22 @@ const salaryApp = {
 
     updateNavLabel() {
         const label = document.getElementById('currentMonthLabel');
-        const prev  = document.getElementById('prevMonthBtn');
-        const next  = document.getElementById('nextMonthBtn');
+        const prev = document.getElementById('prevMonthBtn');
+        const next = document.getElementById('nextMonthBtn');
         if (!label) return;
-        const fmt = (y, m) => `${y}年 ${String(m+1).padStart(2,'0')}月`;
+        const fmt = (y, m) => `${y}年 ${String(m + 1).padStart(2, '0')}月`;
         switch (this.currentView) {
             case 'day': {
                 const d = this.currentDay;
-                label.textContent = `${d.getFullYear()}年${d.getMonth()+1}月${d.getDate()}日`;
+                label.textContent = `${d.getFullYear()}年${d.getMonth() + 1}月${d.getDate()}日`;
                 if (prev) prev.title = '上一天';
                 if (next) next.title = '下一天';
                 break;
             }
             case 'week': {
                 const ws = this.currentWeekMonday;
-                const we = new Date(ws); we.setDate(we.getDate()+6);
-                label.textContent = `${ws.getMonth()+1}/${ws.getDate()} – ${we.getMonth()+1}/${we.getDate()}`;
+                const we = new Date(ws); we.setDate(we.getDate() + 6);
+                label.textContent = `${ws.getMonth() + 1}/${ws.getDate()} – ${we.getMonth() + 1}/${we.getDate()}`;
                 if (prev) prev.title = '上一週';
                 if (next) next.title = '下一週';
                 break;
@@ -865,11 +893,11 @@ const salaryApp = {
         this.updateNavLabel();
         let p;
         switch (this.currentView) {
-            case 'day':      p = this._loadDayView(); break;
-            case 'week':     p = this._loadWeekView(); break;
-            case 'year':     p = this._loadYearView(); break;
+            case 'day': p = this._loadDayView(); break;
+            case 'week': p = this._loadWeekView(); break;
+            case 'year': p = this._loadYearView(); break;
             case 'schedule': p = this._loadScheduleView(); break;
-            default:         p = this.loadMonth(); break;
+            default: p = this.loadMonth(); break;
         }
         await p;
         this.refreshMonthlyTargetProgress();
@@ -974,16 +1002,16 @@ const salaryApp = {
                 const isCrossDay = r.type === 'shift' && r.start_time && r.end_time && r.end_time < r.start_time;
                 let breakMatch = (r.note || '').match(/\(已扣除休息 (\d+(\.\d+)?)h\)/);
                 let breakText = breakMatch ? ` (扣休 ${breakMatch[1]}h)` : '';
-                
+
                 let text = r.type === 'shift' ? `${r.start_time}${isCrossDay ? ' (+1日)' : ''}${breakText}` : `💰 獎金`;
                 if (isHolidayShift) text += ' ×2';
                 else if (isOvertimeShift) text += ' (加班)';
-                
+
                 const cColor = r.company_color || 'var(--text-secondary)';
                 item.style.borderLeftColor = cColor;
-                
+
                 item.innerHTML = `<span style="font-weight: 500; letter-spacing: 0.3px;">${text}</span>`;
-                
+
                 if (r.type === 'bonus') {
                     item.style.color = '#fcd34d';
                     item.style.borderLeftColor = '#fcd34d';
@@ -1012,13 +1040,13 @@ const salaryApp = {
         if (!this.isDateEditable(this.formatDate(date))) return;
 
         this.resetForm();
-        
+
         if (startHour !== null) {
             // User clicked a specific 1-hour cell in Day/Week view
             const sh = parseInt(startHour);
             let eh = sh + 1; // One grid cell is 1 hour
             if (eh >= 24) eh -= 24;
-            
+
             document.getElementById('startTime').value = String(sh).padStart(2, '0') + ':00';
             document.getElementById('endTime').value = String(eh).padStart(2, '0') + ':00';
         }
@@ -1079,12 +1107,12 @@ const salaryApp = {
                 fetch(`/salary/api/records?start_date=${this.formatDate(prevDay)}&end_date=${this.formatDate(nextDay)}`),
                 fetch(`/salary/api/holidays?year=${this.currentDay.getFullYear()}`)
             ]);
-            this.records  = await recRes.json();
+            this.records = await recRes.json();
             this.holidays = holRes.ok ? await holRes.json() : {};
-        } catch(e) { this.records = []; }
+        } catch (e) { this.records = []; }
         this._renderDayView(dateStr);
         const start = new Date(this.currentDay);
-        const end   = new Date(nextDay);
+        const end = new Date(nextDay);
         this.updateMonthlySummary(start, end);
     },
 
@@ -1092,17 +1120,17 @@ const salaryApp = {
         const container = document.getElementById('dayViewBody');
         if (!container) return;
         const HOUR_H = window.innerWidth < 480 ? 30 : 40; // px per hour (smaller on mobile)
-        const holidayName = (this.holidays||{})[dateStr];
-        const dayRecords  = (this.records||[]).filter(r => r.date === dateStr && r.type === 'shift');
-        const bonuses     = (this.records||[]).filter(r => r.date === dateStr && r.type === 'bonus');
-        const todayStr    = this.formatDate(new Date());
-        const isToday     = dateStr === todayStr;
+        const holidayName = (this.holidays || {})[dateStr];
+        const dayRecords = (this.records || []).filter(r => r.date === dateStr && r.type === 'shift');
+        const bonuses = (this.records || []).filter(r => r.date === dateStr && r.type === 'bonus');
+        const todayStr = this.formatDate(new Date());
+        const isToday = dateStr === todayStr;
 
         let html = `<div class="day-grid">`;
         // header row
-        html += `<div></div><div class="week-col-header ${isToday?'today-col':''}" style="border-bottom:1px solid rgba(255,255,255,0.1);padding:8px 4px;">`;
+        html += `<div></div><div class="week-col-header ${isToday ? 'today-col' : ''}" style="border-bottom:1px solid rgba(255,255,255,0.1);padding:8px 4px;">`;
         const d = this.currentDay;
-        const DOW = ['日','一','二','三','四','五','六'];
+        const DOW = ['日', '一', '二', '三', '四', '五', '六'];
         html += `週${DOW[d.getDay()]} <span class="wh-day-num">${d.getDate()}</span>`;
         if (holidayName) html += ` <span style="font-size:0.65rem;color:#fca5a5;">${holidayName}</span>`;
         html += `</div>`;
@@ -1116,8 +1144,8 @@ const salaryApp = {
 
         const blocks = [];
         (this.records || []).filter(r => r.type === 'shift').forEach(r => {
-            const [sh,sm] = (r.start_time||'00:00').split(':').map(Number);
-            const [eh,em] = (r.end_time||'00:00').split(':').map(Number);
+            const [sh, sm] = (r.start_time || '00:00').split(':').map(Number);
+            const [eh, em] = (r.end_time || '00:00').split(':').map(Number);
             if (eh < sh || (eh === sh && em < sm)) {
                 blocks.push({ ...r, displayDate: r.date, sh, sm, eh: 24, em: 0, isCross: true });
                 const nd = new Date(r.date + 'T00:00:00');
@@ -1132,14 +1160,14 @@ const salaryApp = {
 
         // Place event blocks
         dayBlocks.forEach(b => {
-            const top    = (b.sm/60) * HOUR_H;
-            const height = Math.max(((b.eh + b.em/60) - (b.sh + b.sm/60)) * HOUR_H, 20);
-            const color  = b.company_color || '#38bdf8';
-            const isHol  = holidayName;
-            const block  = document.createElement('div');
+            const top = (b.sm / 60) * HOUR_H;
+            const height = Math.max(((b.eh + b.em / 60) - (b.sh + b.sm / 60)) * HOUR_H, 20);
+            const color = b.company_color || '#38bdf8';
+            const isHol = holidayName;
+            const block = document.createElement('div');
             block.className = 'day-event-block';
             block.style.cssText = `top:${top}px;height:${height}px;background:${color}22;border-left:3px solid ${color};color:#fff;`;
-            block.innerHTML = `<b>${b.start_time}–${b.end_time}</b>${isHol?' ×2':''}<br>${b.company_name||''} $${Math.round(b.amount)}`;
+            block.innerHTML = `<b>${b.start_time}–${b.end_time}</b>${isHol ? ' ×2' : ''}<br>${b.company_name || ''} $${Math.round(b.amount)}`;
             block.onclick = (e) => { e.stopPropagation(); this.openEditModal(b); };
             const col = container.querySelector(`[data-date="${dateStr}"][data-hour="${b.sh}"]`);
             if (col) col.appendChild(block);
@@ -1179,9 +1207,9 @@ const salaryApp = {
                 fetch(`/salary/api/records?start_date=${this.formatDate(prevMon)}&end_date=${this.formatDate(sun)}`),
                 fetch(`/salary/api/holidays?year=${mon.getFullYear()}`)
             ]);
-            this.records  = await recRes.json();
+            this.records = await recRes.json();
             this.holidays = holRes.ok ? await holRes.json() : {};
-        } catch(e) { this.records = []; }
+        } catch (e) { this.records = []; }
         this._renderWeekView();
         this.updateMonthlySummary(mon, sun);
     },
@@ -1189,9 +1217,9 @@ const salaryApp = {
     _renderWeekView() {
         const container = document.getElementById('weekViewBody');
         if (!container) return;
-        const HOUR_H  = window.innerWidth < 480 ? 26 : 36; // smaller on mobile
+        const HOUR_H = window.innerWidth < 480 ? 26 : 36; // smaller on mobile
         const todayStr = this.formatDate(new Date());
-        const DOW = ['日','一','二','三','四','五','六'];
+        const DOW = ['日', '一', '二', '三', '四', '五', '六'];
         const days = [];
         for (let i = 0; i < 7; i++) {
             const d = new Date(this.currentWeekMonday);
@@ -1203,10 +1231,10 @@ const salaryApp = {
         // Time-col header placeholder
         html += `<div></div>`;
         days.forEach(d => {
-            const ds  = this.formatDate(d);
-            const hol = (this.holidays||{})[ds];
+            const ds = this.formatDate(d);
+            const hol = (this.holidays || {})[ds];
             const isT = ds === todayStr;
-            html += `<div class="week-col-header ${isT?'today-col':''}">`;
+            html += `<div class="week-col-header ${isT ? 'today-col' : ''}">`;
             html += `週${DOW[d.getDay()]} <span class="wh-day-num">${d.getDate()}</span>`;
             if (hol) html += `<br><span style="font-size:0.55rem;color:#fca5a5;">${hol}</span>`;
             html += `</div>`;
@@ -1216,7 +1244,7 @@ const salaryApp = {
         html += `<div class="week-time-col" style="font-size:0.6rem;padding-top:4px;">全天</div>`;
         days.forEach(d => {
             const ds = this.formatDate(d);
-            const bonuses = (this.records||[]).filter(r => r.date===ds && r.type==='bonus');
+            const bonuses = (this.records || []).filter(r => r.date === ds && r.type === 'bonus');
             html += `<div class="week-allday-row">`;
             bonuses.forEach(r => {
                 html += `<span class="week-allday-chip" style="background:#fcd34d22;color:#fcd34d;" data-id="${r.id}">💰$${Math.round(r.amount)}</span>`;
@@ -1237,8 +1265,8 @@ const salaryApp = {
 
         const blocks = [];
         (this.records || []).filter(r => r.type === 'shift').forEach(r => {
-            const [sh,sm] = (r.start_time||'00:00').split(':').map(Number);
-            const [eh,em] = (r.end_time||'00:00').split(':').map(Number);
+            const [sh, sm] = (r.start_time || '00:00').split(':').map(Number);
+            const [eh, em] = (r.end_time || '00:00').split(':').map(Number);
             if (eh < sh || (eh === sh && em < sm)) {
                 blocks.push({ ...r, displayDate: r.date, sh, sm, eh: 24, em: 0, isCross: true });
                 const nd = new Date(r.date + 'T00:00:00');
@@ -1251,14 +1279,14 @@ const salaryApp = {
 
         // Place shift blocks
         blocks.forEach(b => {
-            const top    = (b.sm/60) * HOUR_H;
-            const height = Math.max(((b.eh + b.em/60) - (b.sh + b.sm/60)) * HOUR_H, 16);
-            const color  = b.company_color || '#38bdf8';
-            const isHol  = (this.holidays||{})[b.date];
-            const block  = document.createElement('div');
+            const top = (b.sm / 60) * HOUR_H;
+            const height = Math.max(((b.eh + b.em / 60) - (b.sh + b.sm / 60)) * HOUR_H, 16);
+            const color = b.company_color || '#38bdf8';
+            const isHol = (this.holidays || {})[b.date];
+            const block = document.createElement('div');
             block.className = 'week-event-block';
             block.style.cssText = `top:${top}px;height:${height}px;background:${color}33;border-left:3px solid ${color};color:#fff; overflow:hidden; font-size:0.7rem; line-height:1.2;`;
-            block.innerHTML = `<b>${b.start_time}–${b.end_time}</b>${isHol?' ×2':''}<br>${b.company_name||''} $${Math.round(b.amount)}`;
+            block.innerHTML = `<b>${b.start_time}–${b.end_time}</b>${isHol ? ' ×2' : ''}<br>${b.company_name || ''} $${Math.round(b.amount)}`;
             block.onclick = (e) => { e.stopPropagation(); this.openEditModal(b); };
             const cell = container.querySelector(`[data-date="${b.displayDate}"][data-hour="${b.sh}"]`);
             if (cell) cell.appendChild(block);
@@ -1267,7 +1295,7 @@ const salaryApp = {
         // Bonus chips click
         container.querySelectorAll('[data-id]').forEach(chip => {
             const rid = parseInt(chip.dataset.id);
-            const rec = (this.records||[]).find(r => r.id===rid);
+            const rec = (this.records || []).find(r => r.id === rid);
             if (rec) chip.addEventListener('click', () => this.openEditModal(rec));
         });
 
@@ -1287,39 +1315,39 @@ const salaryApp = {
         const y = this.currentYear;
         try {
             const [recRes, holRes] = await Promise.all([
-                fetch(`/salary/api/records?start_date=${y}-01-01&end_date=${y+1}-01-01`),
+                fetch(`/salary/api/records?start_date=${y}-01-01&end_date=${y + 1}-01-01`),
                 fetch(`/salary/api/holidays?year=${y}`)
             ]);
-            this.records  = await recRes.json();
+            this.records = await recRes.json();
             this.holidays = holRes.ok ? await holRes.json() : {};
-        } catch(e) { this.records = []; }
+        } catch (e) { this.records = []; }
         this._renderYearView();
-        this.updateMonthlySummary(new Date(y,0,1), new Date(y+1,0,1));
+        this.updateMonthlySummary(new Date(y, 0, 1), new Date(y + 1, 0, 1));
     },
 
     _renderYearView() {
         const container = document.getElementById('yearViewBody');
         if (!container) return;
-        const todayStr  = this.formatDate(new Date());
-        const recordSet = new Set((this.records||[]).map(r => r.date));
-        const DOW_SHORT = ['一','二','三','四','五','六','日'];
+        const todayStr = this.formatDate(new Date());
+        const recordSet = new Set((this.records || []).map(r => r.date));
+        const DOW_SHORT = ['一', '二', '三', '四', '五', '六', '日'];
 
         let html = `<div class="year-grid">`;
         for (let m = 0; m < 12; m++) {
             html += `<div class="mini-month">`;
-            html += `<div class="mini-month-title">${m+1}月</div>`;
+            html += `<div class="mini-month-title">${m + 1}月</div>`;
             html += `<div class="mini-month-grid">`;
             DOW_SHORT.forEach(d => { html += `<div class="mini-dow">${d}</div>`; });
 
             const first = new Date(this.currentYear, m, 1);
             const start = new Date(first);
-            start.setDate(1 - (first.getDay()||7) + 1);
+            start.setDate(1 - (first.getDay() || 7) + 1);
             for (let i = 0; i < 42; i++) {
-                const cur = new Date(start); cur.setDate(start.getDate()+i);
-                const ds  = this.formatDate(cur);
+                const cur = new Date(start); cur.setDate(start.getDate() + i);
+                const ds = this.formatDate(cur);
                 const otherMon = cur.getMonth() !== m;
-                const isToday  = ds === todayStr;
-                const hasRec   = recordSet.has(ds);
+                const isToday = ds === todayStr;
+                const hasRec = recordSet.has(ds);
                 let cls = 'mini-day';
                 if (otherMon) cls += ' other-month-mini';
                 else if (isToday) cls += ' today-mini';
@@ -1336,9 +1364,9 @@ const salaryApp = {
             cell.addEventListener('click', () => {
                 const ds = cell.dataset.date;
                 if (!ds) return;
-                const [y2,m2,d2] = ds.split('-').map(Number);
-                this.currentDay = new Date(y2, m2-1, d2);
-                this.currentMonth = new Date(y2, m2-1, 1);
+                const [y2, m2, d2] = ds.split('-').map(Number);
+                this.currentDay = new Date(y2, m2 - 1, d2);
+                this.currentMonth = new Date(y2, m2 - 1, 1);
                 this.switchView('day');
             });
         });
@@ -1349,15 +1377,15 @@ const salaryApp = {
         const y = this.currentMonth.getFullYear();
         const m = this.currentMonth.getMonth();
         const start = new Date(y, m, 1);
-        const end   = new Date(y, m+1, 1);
+        const end = new Date(y, m + 1, 1);
         try {
             const [recRes, holRes] = await Promise.all([
                 fetch(`/salary/api/records?start_date=${this.formatDate(start)}&end_date=${this.formatDate(end)}`),
                 fetch(`/salary/api/holidays?year=${y}`)
             ]);
-            this.records  = await recRes.json();
+            this.records = await recRes.json();
             this.holidays = holRes.ok ? await holRes.json() : {};
-        } catch(e) { this.records = []; }
+        } catch (e) { this.records = []; }
         this._renderScheduleView(start, end);
         this.updateMonthlySummary(start, end);
     },
@@ -1366,19 +1394,19 @@ const salaryApp = {
         const container = document.getElementById('scheduleViewBody');
         if (!container) return;
         const todayStr = this.formatDate(new Date());
-        const DOW = ['日','一','二','三','四','五','六'];
-        const MONTH_ZH = ['一','二','三','四','五','六','七','八','九','十','十一','十二'];
+        const DOW = ['日', '一', '二', '三', '四', '五', '六'];
+        const MONTH_ZH = ['一', '二', '三', '四', '五', '六', '七', '八', '九', '十', '十一', '十二'];
 
         // Group records by date
         const grouped = {};
-        (this.records||[]).forEach(r => {
+        (this.records || []).forEach(r => {
             if (!grouped[r.date]) grouped[r.date] = [];
             grouped[r.date].push(r);
         });
 
         // Collect all dates in range with or without records
         const dates = [];
-        for (let d = new Date(start); d < end; d.setDate(d.getDate()+1)) {
+        for (let d = new Date(start); d < end; d.setDate(d.getDate() + 1)) {
             dates.push(this.formatDate(new Date(d)));
         }
 
@@ -1393,22 +1421,22 @@ const salaryApp = {
         let html = '';
         activeDates.forEach(ds => {
             const dObj = new Date(ds + 'T00:00:00');
-            const hol  = (this.holidays||{})[ds];
-            const isT  = ds === todayStr;
+            const hol = (this.holidays || {})[ds];
+            const isT = ds === todayStr;
             html += `<div class="schedule-date-group">`;
-            html += `<div class="schedule-date-label ${isT?'sched-today':''} ${hol?'sched-holiday':''}"><span class="sched-day-num">${dObj.getDate()}</span>`;
+            html += `<div class="schedule-date-label ${isT ? 'sched-today' : ''} ${hol ? 'sched-holiday' : ''}"><span class="sched-day-num">${dObj.getDate()}</span>`;
             html += `${MONTH_ZH[dObj.getMonth()]}月 週${DOW[dObj.getDay()]}`;
             if (hol) html += ` 🎌 ${hol}`;
             html += `</div>`;
 
-            (grouped[ds]||[]).sort((a,b) => (a.start_time||'').localeCompare(b.start_time||'')).forEach(r => {
-                const color = r.company_color || (r.type==='bonus' ? '#fcd34d' : '#38bdf8');
-                const timeStr = r.type==='shift'
+            (grouped[ds] || []).sort((a, b) => (a.start_time || '').localeCompare(b.start_time || '')).forEach(r => {
+                const color = r.company_color || (r.type === 'bonus' ? '#fcd34d' : '#38bdf8');
+                const timeStr = r.type === 'shift'
                     ? `${r.start_time} – ${r.end_time}`
                     : '全天';
-                const title = r.type==='shift'
-                    ? `${r.company_name||'排班'} (${r.hours||0}h)`
-                    : `💰 獎金${r.note ? ' – '+r.note : ''}`;
+                const title = r.type === 'shift'
+                    ? `${r.company_name || '排班'} (${r.hours || 0}h)`
+                    : `💰 獎金${r.note ? ' – ' + r.note : ''}`;
                 html += `<div class="schedule-event-row" data-id="${r.id}">`;
                 html += `<span class="sched-color-dot" style="background:${color};"></span>`;
                 html += `<span class="sched-time">${timeStr}</span>`;
@@ -1423,7 +1451,7 @@ const salaryApp = {
         // Click rows to edit
         container.querySelectorAll('.schedule-event-row').forEach(row => {
             const rid = parseInt(row.dataset.id);
-            const rec = (this.records||[]).find(r => r.id===rid);
+            const rec = (this.records || []).find(r => r.id === rid);
             if (rec) row.addEventListener('click', () => this.openEditModal(rec));
         });
     },
@@ -1512,15 +1540,15 @@ const salaryApp = {
                 const tr = document.createElement('tr');
                 tr.style.cursor = 'pointer';
                 tr.onclick = () => this.openEditModal(r);
-                
-                const companyHtml = r.company_name 
+
+                const companyHtml = r.company_name
                     ? `<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${r.company_color};margin-right:4px;"></span><span style="color:var(--text-secondary);font-size:0.85em;">${r.company_name}</span>`
                     : '';
-                    
+
                 let badges = '';
                 const noteStr = r.note || '';
                 const isCrossDay = r.type === 'shift' && r.start_time && r.end_time && r.end_time < r.start_time;
-                
+
                 if (isCrossDay) {
                     badges += '<span style="background: rgba(139, 92, 246, 0.2); color: #c4b5fd; font-size: 0.65rem; padding: 2px 6px; border-radius: 4px; margin-right: 4px; display: inline-block; margin-bottom: 4px;">🌙 跨日班</span><br>';
                 }
@@ -1530,7 +1558,7 @@ const salaryApp = {
                 if (noteStr.includes('勞基法加班')) {
                     badges += '<span style="background: rgba(245, 158, 11, 0.2); color: #fcd34d; font-size: 0.65rem; padding: 2px 6px; border-radius: 4px; margin-right: 4px; display: inline-block; margin-bottom: 4px;">🔥 勞基法加班</span><br>';
                 }
-                    
+
                 tr.innerHTML = r.type === 'shift' ? `
                     <td>${r.date}</td><td>排班</td><td>${r.start_time} - ${r.end_time}<br>${companyHtml}</td><td>${r.hours}</td><td>${r.rate}/hr -> $${Math.round(r.amount)}</td><td>${badges}${r.note || ''}</td>
                 ` : `
@@ -1664,7 +1692,7 @@ async function loadSalaryTrendChart() {
                                 const index = context[0].dataIndex;
                                 const details = data.company_details ? data.company_details[index] : null;
                                 if (!details || Object.keys(details).length === 0) return [];
-                                
+
                                 const sortedDetails = Object.entries(details).sort((a, b) => b[1] - a[1]);
                                 const lines = [''];
                                 lines.push('【各公司明細】');
