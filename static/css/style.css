@@ -457,21 +457,19 @@ textarea:focus {
 .mobile-bottom-nav {
     display: none;
     position: fixed;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    height: 55px;
-    background: rgba(25, 25, 25, 0.9);
-    /* Slightly more opaque for better contrast */
-    backdrop-filter: var(--ios-blur);
-    -webkit-backdrop-filter: var(--ios-blur);
-    border-top: 1px solid rgba(255, 255, 255, 0.08);
-    /* Subtle border boost */
+    bottom: calc(15px + env(safe-area-inset-bottom, 0px));
+    left: 15px;
+    right: 15px;
+    height: 60px;
+    background: rgba(30, 30, 35, 0.75);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 30px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5), inset 0 1px 1px rgba(255,255,255,0.05);
     justify-content: space-around;
     align-items: center;
-    padding-top: 4px;
-    padding-bottom: 12px;
-    /* Reduced padding for compact look */
+    padding: 0 10px;
     z-index: 5000;
 }
 
@@ -479,24 +477,35 @@ textarea:focus {
     display: flex;
     flex-direction: column;
     align-items: center;
-    color: var(--text-secondary);
-    font-size: 0.7rem;
-    gap: 2px;
-    transition: color 0.2s;
+    justify-content: center;
+    color: rgba(255, 255, 255, 0.4);
+    font-size: 0.65rem;
+    font-weight: 500;
+    gap: 3px;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     text-decoration: none;
+    flex: 1;
+    height: 100%;
 }
 
 .mobile-nav-item .material-icons {
     font-size: 22px;
     margin-bottom: 0;
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.mobile-nav-item:hover, .mobile-nav-item:focus {
+    color: rgba(255, 255, 255, 0.8);
+    text-decoration: none;
 }
 
 .mobile-nav-item.active {
-    color: var(--accent-color);
+    color: var(--accent-color, #38bdf8);
 }
 
-.mobile-nav-item .material-icons {
-    font-size: 24px;
+.mobile-nav-item.active .material-icons {
+    transform: translateY(-2px);
+    text-shadow: 0 4px 12px rgba(56, 189, 248, 0.6);
 }
 
 /* Glass Effect */
@@ -605,7 +614,7 @@ textarea:focus {
 
     .app-container {
         flex-direction: column;
-        padding-bottom: 65px;
+        padding-bottom: calc(90px + env(safe-area-inset-bottom, 0px));
     }
 
     .mobile-bottom-nav {
@@ -614,7 +623,7 @@ textarea:focus {
 
     .main-content {
         height: auto;
-        min-height: calc(100vh - 65px);
+        min-height: calc(100vh - 90px);
         overflow-y: visible;
     }
 
