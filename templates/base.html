@@ -179,6 +179,7 @@
 
     </div> <!-- End of .container -->
     
+    {% if current_user.is_authenticated %}
     <!-- Mobile Bottom Navigation -->
     <nav class="mobile-bottom-nav">
         {% set dock_map = {
@@ -204,6 +205,7 @@
             {% endif %}
         {% endfor %}
     </nav>
+    {% endif %}
 
         <!-- Feature Introduction Modal (Custom Implementation) -->
         <div class="modal" id="introModal" style="display: none;">
