@@ -1,6 +1,6 @@
 # 📊 工具箱 Web App - 完整架構總覽
 
-> **最後更新**：2026-06-16 | **版本**：v4.2（整合日曆全功能升級：內建日曆顯示設定、顏色主題、顯示/隱藏切換）  
+> **最後更新**：2026-09-01 | **版本**：v5.0（自訂快捷網址 · 動態首頁儀表板 · 手機版設定頁 · 日曆公司名稱顯示）
 > 這份文件整合了所有專案架構資訊，閱讀順序建議：Part 1 → Part 2 → Part 3 → Part 4
 
 ---
@@ -53,8 +53,8 @@ web_app/
 │   └── period_notify_service.py    # 🩸 生理期預測通知 (APScheduler 每日檢查 & 提前提醒)
 │
 ├── 🎨 templates/ (前端頁面 - Jinja2)
-│   ├── base.html                   # 基礎版型 (全局 Header / 底部/側邊 Nav / Modal 框架)
-│   ├── index.html                  # 首頁儀表板 (各模組 Widget 捷徑)
+│    ├── base.html                   # 基礎版型（全局 Header / 底部 Dock 動態渲染 / Modal 框架）
+│    ├── index.html                  # 首頁儀表板（動態 Widget 排序，支援自訂快捷網址區塊）
 │   ├── manual.html                 # 使用說明手冊
 │   │
 │   ├── auth/
@@ -62,7 +62,7 @@ web_app/
 │   │   ├── register.html           # 帳戶註冊
 │   │   ├── forgot_password.html    # 忘記密碼
 │   │   ├── reset_password.html     # 密碼重置
-│   │   └── settings.html           # ⚙️ 帳號設定 (個人資料 / LINE 多帳號管理 / 通知偏好)
+│    │   └── settings.html           # ⚙️ 帳號設定（個人資料 / LINE 多帳號管理 / 通知偏好 / 自訂快捷網址 / 版面排序）
 │   │
 │   ├── expense/
 │   │   ├── today.html              # 當日快速記帳
@@ -190,11 +190,15 @@ web_app/
 | `builtin_salary_color` | String(10) | 班表日曆自訂顏色（預設 `#6366f1`） |
 | `builtin_period_name` | String(50) | 週期追蹤日曆自訂名稱（預設「🩸 週期追蹤」） |
 | `builtin_period_color` | String(10) | 週期追蹤日曆自訂顏色（預設 `#ff4d4f`） |
+| `builtin_period_notify` | Boolean | 週期追蹤日曆靜音開關 |
 | `period_notify_enabled` | Boolean | 生理期提前通知 |
 | `period_notify_time` | String(5) | 通知時間（預設 08:00） |
 | `period_notify_days_before` | Integer | 提早幾天通知（預設 3） |
 | `period_notify_period` | Boolean | 月經來前通知開關 |
 | `period_notify_ovulation` | Boolean | 排卵期前通知開關 |
+| `dashboard_order` | Text (JSON) | 首頁 Widget 排序清單（例如 `["salary", "expense", ...]`） |
+| `dock_order` | Text (JSON) | 底部 Dock 排序清單（最多 5 項，可包含自訂連結 ID） |
+| `custom_links` | Text (JSON) | 自訂快捷網址清單（`[{id, title, url}, ...]`）|
 
 ---
 
@@ -221,6 +225,7 @@ web_app/
 | `rate` | Float | 時薪 |
 | `amount` | Integer | 金額 |
 | `note` | String(200) | 備註 |
+| `company_id` | FK → Company | 關聯公司（可 null，用於日曆顯示公司名稱）|
 
 ---
 
@@ -476,7 +481,34 @@ python scripts/maintenance/init_db.py  # 建立所有資料表
 
 ## 📋 Part 11: 版本更新記錄 (Changelog)
 
-### v4.2（2026-06-16）整合日曆全功能升級
+### v5.0（2026-09-01）自訂快捷網址 · 動態儀表板 · 手機版強化
+
+#### 自訂快捷網址（Custom Links）
+- **新功能**：使用者可在「設定 → 首頁與網址」新增任意外部連結，並自訂名稱。
+- **Google Favicon API**：自動擷取目標網站頭貼（`https://www.google.com/s2/favicons?domain=...&sz=64`），無頭貼時 fallback 為字母頭像（ui-avatars.com）。
+- **`onerror` 防呆**：所有 `<img>` 標籤加上 `onerror` 屬性，避免 404 噴 Console 錯誤。
+- **Modal 新增/編輯**：改為彈出 Modal 視窗（`#linkModal`）進行新增與編輯，列表只顯示圖示與名稱，避免長網址撐開版面。
+- **自動儲存**：新增/編輯/刪除後自動呼叫 `POST /auth/api/update-custom-links`，無需手動按儲存。
+- **資料結構**：存於 `UserSettings.custom_links`（JSON 字串），每筆格式為 `{id: 'link_xxx', title: '...', url: '...'}`。
+
+#### 動態首頁儀表板
+- **Widget 排序持久化**：使用者可在「設定 → 版面與導覽列設定」透過 SortableJS 拖曳排序首頁 Widget，順序存至 `UserSettings.dashboard_order`。
+- **自訂連結整合**：自訂快捷網址自動注入 `allTools` 與 `dockToolsMap`，可直接拖曳進「首頁板塊排序」或「底部 Dock 排序」清單。
+- **去重邏輯**：`main_routes.py` 伺服器端在渲染前對 `dashboard_order` 做 `dict.fromkeys()` 去重。
+
+#### 底部 Dock 動態渲染
+- **`get_dock_items` Context Processor**：在 `app.py` 新增 Jinja2 全局函數，動態合併系統工具 key 與自訂連結 ID，供 `base.html` 底部 Nav 渲染。
+- **自訂連結支援**：Dock 中的自訂連結顯示 favicon 頭貼，點擊後以 `target="_blank"` 開新分頁。
+
+#### 整合日曆 — 公司名稱顯示
+- **排班事件標題加公司前綴**：`internal_salary_events` API 在回傳 FullCalendar 事件時，若 `SalaryRecord.company_id` 有值，自動在 title 加上 `[公司名稱]` 前綴。
+- **詳情卡片**：點擊日曆事件跳出的 Modal 中，新增「🏢 公司：XXX」資訊列。
+- **ICS 訂閱同步**：`export_ics` API 匯出的 `.ics` 檔案中，排班事件的 `SUMMARY` 與 `DESCRIPTION` 也一並包含公司名稱。
+
+#### 設定頁手機版適配
+- **頁籤 (Tabs) 換行**：手機上改為 `flex-wrap: wrap`，2×2 排列，不再需要橫向滑動。
+- **各分頁 RWD**：LINE 卡片、自訂網址輸入框、通知選項等在 `≤ 768px` 下自動切換為直排。
+- **底部間距**：`padding-bottom: 80px` 確保內容不被底部 Dock 遮擋。
 
 #### 內建日曆顯示設定
 - **UserSettings 新增欄位**：`builtin_salary_name/color`、`builtin_period_name/color`，允許自訂班表與週期追蹤的顯示名稱與顏色。
