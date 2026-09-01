@@ -186,7 +186,7 @@
         {% for item in dock_items %}
             {% if item.is_custom %}
                 <a href="{{ item.url }}" target="_blank" rel="noopener noreferrer" class="mobile-nav-item">
-                    <img src="{{ item.img_icon }}" alt="Icon" style="width: 24px; height: 24px; border-radius: 4px; margin-bottom: 2px;">
+                    <img src="{{ item.img_icon }}" alt="Icon" style="width: 24px; height: 24px; border-radius: 4px; margin-bottom: 2px;" onerror="this.onerror=null; this.src='https://ui-avatars.com/api/?name={{ item.title|first|urlencode }}&background=1f2937&color=fff';">
                     <span class="nav-text">{{ item.title }}</span>
                 </a>
             {% else %}
