@@ -43,7 +43,16 @@ def index():
                 
         # Also, remove any custom links from dashboard_order that were deleted by the user
         valid_keys = set(['finance', 'salary', 'expense', 'downloader', 'countdown', 'reminder', 'calendar', 'period', 'shop', 'vocab'] + custom_keys)
-        dashboard_order = [key for key in dashboard_order if key in valid_keys]
+        dashboard_order = [k for k in dashboard_order if k in valid_keys]
+        
+        # Deduplicate while preserving order in case of corrupted DB data
+        seen = set()
+        deduped = []
+        for x in dashboard_order:
+            if x not in seen:
+                seen.add(x)
+                deduped.append(x)
+        dashboard_order = deduped
         
     return render_template('index.html', pinned_countdowns=pinned_countdowns, dashboard_order=dashboard_order, custom_links=custom_links_list)
 @main_bp.route('/manual')

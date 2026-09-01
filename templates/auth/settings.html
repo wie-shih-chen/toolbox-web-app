@@ -531,10 +531,11 @@
         </div>
         
         <div style="margin-top: 16px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 16px;">
-            <div style="display: flex; gap: 12px; flex-wrap: wrap;">
+            <div style="display: flex; gap: 12px; flex-wrap: wrap; align-items: center;">
                 <input type="text" id="newLinkName" class="form-input" placeholder="名稱 (如: YouTube)" style="flex: 1; min-width: 120px;">
                 <input type="url" id="newLinkUrl" class="form-input" placeholder="網址 (https://...)" style="flex: 2; min-width: 200px;">
-                <button type="button" class="btn-glow-cyan" onclick="addCustomLink()" style="padding: 10px 16px;">新增</button>
+                <button type="button" id="saveLinkBtn" class="btn-glow-cyan" onclick="addCustomLink()" style="padding: 10px 16px;">新增</button>
+                <button type="button" id="cancelEditBtn" class="btn btn-danger-glass" onclick="cancelEditLink()" style="padding: 10px 16px; display: none;">取消</button>
             </div>
         </div>
     </div>
@@ -1304,6 +1305,7 @@
 
     // --- Custom Links Logic ---
     let customLinks = {{ current_user.settings.custom_links|default('[]')|safe }};
+    let editingLinkIndex = -1;
     
     function renderCustomLinks() {
         const container = document.getElementById('customLinksList');
@@ -1325,9 +1327,14 @@
                         <span style="font-size: 0.8rem; color: var(--text-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${link.url}</span>
                     </div>
                 </div>
-                <button type="button" class="btn btn-danger-glass" onclick="removeCustomLink(${index})" style="padding: 6px; flex-shrink: 0;">
-                    <span class="material-icons" style="font-size: 18px;">delete</span>
-                </button>
+                <div style="display: flex; gap: 8px; flex-shrink: 0;">
+                    <button type="button" class="btn" onclick="editCustomLink(${index})" style="padding: 6px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); border-radius: 6px; color: var(--text-secondary);">
+                        <span class="material-icons" style="font-size: 18px;">edit</span>
+                    </button>
+                    <button type="button" class="btn btn-danger-glass" onclick="removeCustomLink(${index})" style="padding: 6px; border-radius: 6px;">
+                        <span class="material-icons" style="font-size: 18px;">delete</span>
+                    </button>
+                </div>
             `;
             container.appendChild(item);
         });
@@ -1349,15 +1356,39 @@
             url = 'https://' + url;
         }
         
-        // Generate a simple unique ID for sorting if needed
-        const id = 'link_' + Date.now();
+        if (editingLinkIndex >= 0) {
+            customLinks[editingLinkIndex].title = title;
+            customLinks[editingLinkIndex].url = url;
+            cancelEditLink();
+        } else {
+            // Generate a simple unique ID for sorting if needed
+            const id = 'link_' + Date.now();
+            customLinks.push({ id, title, url });
+            nameInput.value = '';
+            urlInput.value = '';
+        }
         
-        customLinks.push({ id, title, url });
-        
-        nameInput.value = '';
-        urlInput.value = '';
         renderCustomLinks();
         saveCustomLinks(false); // auto-save
+    }
+
+    function editCustomLink(index) {
+        const link = customLinks[index];
+        document.getElementById('newLinkName').value = link.title;
+        document.getElementById('newLinkUrl').value = link.url;
+        
+        editingLinkIndex = index;
+        
+        document.getElementById('saveLinkBtn').innerText = '儲存';
+        document.getElementById('cancelEditBtn').style.display = 'inline-flex';
+    }
+    
+    function cancelEditLink() {
+        editingLinkIndex = -1;
+        document.getElementById('newLinkName').value = '';
+        document.getElementById('newLinkUrl').value = '';
+        document.getElementById('saveLinkBtn').innerText = '新增';
+        document.getElementById('cancelEditBtn').style.display = 'none';
     }
 
     function removeCustomLink(index) {
