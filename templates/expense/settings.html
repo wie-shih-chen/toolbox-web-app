@@ -144,55 +144,44 @@
             <!-- Recurring Expense Modal -->
             <div id="recurringModal" class="expense-modal" style="display: none;">
                 <div class="expense-modal-overlay" onclick="closeRecurringModal()"></div>
-                <div class="expense-modal-content">
+                <div class="expense-modal-content" style="max-width: 500px;">
                     <div class="expense-modal-header">
                         <h3>
                             <span class="material-icons"
                                 style="vertical-align: middle; margin-right: 8px; color: var(--accent-color);">update</span>
-                            新增固定支出
+                            批次新增固定支出
                         </h3>
                         <button type="button" class="expense-modal-close" onclick="closeRecurringModal()">
                             <span class="material-icons">close</span>
                         </button>
                     </div>
                     <div class="expense-modal-body">
-                        <div class="expense-form-group">
-                            <label for="recurringName">
-                                <span class="material-icons"
-                                    style="font-size: 18px; vertical-align: middle; margin-right: 4px;">label</span>
-                                支出名稱
-                            </label>
-                            <input type="text" id="recurringName" class="expense-form-input" placeholder="例如：電話費、房租..."
-                                autocomplete="off">
+                        <div style="display: flex; gap: 10px; margin-bottom: 8px; font-size: 0.85rem; color: var(--text-secondary);">
+                            <div style="flex: 2">支出名稱</div>
+                            <div style="flex: 1.5">每月金額</div>
+                            <div style="flex: 1">每月幾號</div>
+                            <div style="width: 24px;"></div>
                         </div>
-                        <div class="expense-form-group">
-                            <label for="recurringAmount">
-                                <span class="material-icons"
-                                    style="font-size: 18px; vertical-align: middle; margin-right: 4px;">payments</span>
-                                每月金額
-                            </label>
-                            <input type="number" id="recurringAmount" class="expense-form-input" placeholder="0" min="0"
-                                step="0.01">
+                        <div id="recurringRowsContainer">
+                            <div class="recurring-input-row" style="display: flex; gap: 10px; margin-bottom: 10px; align-items: center;">
+                                <input type="text" class="expense-form-input rec-name" placeholder="例如：房租" style="flex: 2; margin-bottom: 0;">
+                                <input type="number" class="expense-form-input rec-amount" placeholder="0" min="0" step="0.01" style="flex: 1.5; margin-bottom: 0;">
+                                <input type="number" class="expense-form-input rec-day" placeholder="15" min="1" max="31" style="flex: 1; margin-bottom: 0;">
+                                <button type="button" class="btn-icon-small" onclick="this.parentElement.remove()" style="width: 24px;">
+                                    <span class="material-icons" style="font-size: 18px; color: var(--text-tertiary);">close</span>
+                                </button>
+                            </div>
                         </div>
-                        <div class="expense-form-group">
-                            <label for="recurringDay">
-                                <span class="material-icons"
-                                    style="font-size: 18px; vertical-align: middle; margin-right: 4px;">calendar_today</span>
-                                每月扣款日期
-                            </label>
-                            <input type="number" id="recurringDay" class="expense-form-input" placeholder="15" min="1"
-                                max="31">
-                            <small
-                                style="color: var(--text-tertiary); font-size: 0.85rem; margin-top: 4px; display: block;">請輸入
-                                1-31 之間的數字</small>
-                        </div>
+                        <button type="button" class="btn btn-secondary btn-block" onclick="addRecurringRow()" style="margin-top: 15px; padding: 8px; background: rgba(255,255,255,0.05); border: 1px dashed rgba(255,255,255,0.2);">
+                            <span class="material-icons" style="font-size: 18px; vertical-align: middle;">add</span> 新增一列
+                        </button>
                     </div>
                     <div class="expense-modal-footer">
                         <button type="button" class="btn btn-secondary" onclick="closeRecurringModal()">取消</button>
                         <button type="button" class="btn btn-primary" onclick="submitRecurring()">
                             <span class="material-icons"
                                 style="font-size: 16px; vertical-align: middle; margin-right: 4px;">check</span>
-                            確認新增
+                            確認批次新增
                         </button>
                     </div>
                 </div>
@@ -486,44 +475,94 @@
         document.getElementById('openAddRecurringBtn').onclick = () => {
             // Open modal
             document.getElementById('recurringModal').style.display = 'flex';
-            document.getElementById('recurringName').focus();
+            
+            // Ensure there's at least one empty row, otherwise add one
+            const container = document.getElementById('recurringRowsContainer');
+            if (container.children.length === 0) {
+                window.addRecurringRow();
+            }
+            
+            // Focus the first input if available
+            const firstInput = container.querySelector('.rec-name');
+            if (firstInput) firstInput.focus();
+        };
+
+        window.addRecurringRow = function() {
+            const container = document.getElementById('recurringRowsContainer');
+            const row = document.createElement('div');
+            row.className = 'recurring-input-row';
+            row.style.cssText = 'display: flex; gap: 10px; margin-bottom: 10px; align-items: center;';
+            row.innerHTML = `
+                <input type="text" class="expense-form-input rec-name" placeholder="例如：電話費" style="flex: 2; margin-bottom: 0;">
+                <input type="number" class="expense-form-input rec-amount" placeholder="0" min="0" step="0.01" style="flex: 1.5; margin-bottom: 0;">
+                <input type="number" class="expense-form-input rec-day" placeholder="15" min="1" max="31" style="flex: 1; margin-bottom: 0;">
+                <button type="button" class="btn-icon-small" onclick="this.parentElement.remove()" style="width: 24px;">
+                    <span class="material-icons" style="font-size: 18px; color: var(--text-tertiary);">close</span>
+                </button>
+            `;
+            container.appendChild(row);
+            
+            // Focus new row's name input
+            row.querySelector('.rec-name').focus();
         };
 
         // Close modal function
         window.closeRecurringModal = function() {
             document.getElementById('recurringModal').style.display = 'none';
             
-            // Clear inputs
-            document.getElementById('recurringName').value = '';
-            document.getElementById('recurringAmount').value = '';
-            document.getElementById('recurringDay').value = '';
+            // Reset to a single empty row
+            const container = document.getElementById('recurringRowsContainer');
+            container.innerHTML = `
+                <div class="recurring-input-row" style="display: flex; gap: 10px; margin-bottom: 10px; align-items: center;">
+                    <input type="text" class="expense-form-input rec-name" placeholder="例如：房租" style="flex: 2; margin-bottom: 0;">
+                    <input type="number" class="expense-form-input rec-amount" placeholder="0" min="0" step="0.01" style="flex: 1.5; margin-bottom: 0;">
+                    <input type="number" class="expense-form-input rec-day" placeholder="15" min="1" max="31" style="flex: 1; margin-bottom: 0;">
+                    <button type="button" class="btn-icon-small" onclick="this.parentElement.remove()" style="width: 24px;">
+                        <span class="material-icons" style="font-size: 18px; color: var(--text-tertiary);">close</span>
+                    </button>
+                </div>
+            `;
         };
 
         // Submit recurring expense
         window.submitRecurring = function () {
-            const name = document.getElementById('recurringName').value.trim();
-            const amount = parseFloat(document.getElementById('recurringAmount').value);
-            const day = parseInt(document.getElementById('recurringDay').value);
-
-            if (!name) {
-                alert('請輸入支出名稱');
-                return;
-            }
-
-            if (isNaN(amount) || amount <= 0) {
-                alert('請輸入有效金額');
-                return;
-            }
-
-            if (isNaN(day) || day < 1 || day > 31) {
-                alert('請輸入1-31之間的日期');
-                return;
-            }
-
-            // Get first category as default
+            const rows = document.querySelectorAll('.recurring-input-row');
+            let addedCount = 0;
             const category = expenseApp.settings.custom_categories[0]?.name || '其他';
 
-            expenseApp.settings.recurring_expenses.push({ name, amount, day, category });
+            let newExpenses = [...(expenseApp.settings.recurring_expenses || [])];
+
+            for (let row of rows) {
+                const name = row.querySelector('.rec-name').value.trim();
+                const amount = parseFloat(row.querySelector('.rec-amount').value);
+                const day = parseInt(row.querySelector('.rec-day').value);
+
+                // If any field is filled, try to process it
+                if (name || !isNaN(amount) || !isNaN(day)) {
+                    if (!name) {
+                        alert('請填寫支出名稱');
+                        return;
+                    }
+                    if (isNaN(amount) || amount <= 0) {
+                        alert(`請輸入「${name}」的有效金額`);
+                        return;
+                    }
+                    if (isNaN(day) || day < 1 || day > 31) {
+                        alert(`請輸入「${name}」每月扣款日期 (1-31)`);
+                        return;
+                    }
+                    
+                    newExpenses.push({ name, amount, day, category });
+                    addedCount++;
+                }
+            }
+
+            if (addedCount === 0) {
+                alert('請至少填寫一筆固定支出資料');
+                return;
+            }
+
+            expenseApp.settings.recurring_expenses = newExpenses;
             renderRecurringList();
             initSortable();
             saveSettings('recurring_expenses', expenseApp.settings.recurring_expenses);
