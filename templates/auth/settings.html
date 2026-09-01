@@ -538,12 +538,6 @@
             </div>
         </div>
     </div>
-    <div style="text-align: right;">
-        <button type="button" class="btn btn-primary" onclick="saveCustomLinks()" style="padding: 12px 24px;">
-            <span class="material-icons" style="font-size: 18px; margin-right: 6px; vertical-align: middle;">save</span>
-            儲存快捷網址
-        </button>
-    </div>
 </div>
 
 <!-- 4. Layout Settings -->
@@ -1360,19 +1354,16 @@
         nameInput.value = '';
         urlInput.value = '';
         renderCustomLinks();
+        saveCustomLinks(false); // auto-save
     }
 
     function removeCustomLink(index) {
         customLinks.splice(index, 1);
         renderCustomLinks();
+        saveCustomLinks(false); // auto-save
     }
 
-    async function saveCustomLinks() {
-        const btn = document.querySelector('button[onclick="saveCustomLinks()"]');
-        const originalText = btn.innerHTML;
-        btn.innerHTML = '<span class="material-icons" style="font-size:18px; margin-right:6px; vertical-align:middle;">sync</span> 儲存中...';
-        btn.style.opacity = '0.7';
-        
+    async function saveCustomLinks(showSuccessToast = true) {
         try {
             const response = await fetch('/api/update_custom_links', {
                 method: 'POST',
@@ -1381,16 +1372,13 @@
             });
             
             if (response.ok) {
-                showToast('快捷網址儲存成功！');
+                if (showSuccessToast) showToast('快捷網址儲存成功！');
             } else {
                 showToast('儲存失敗，請重試');
             }
         } catch (error) {
             console.error(error);
             showToast('網路錯誤');
-        } finally {
-            btn.innerHTML = originalText;
-            btn.style.opacity = '1';
         }
     }
     
