@@ -1174,8 +1174,12 @@
     const dashboardOrderStr = '{{ current_user.settings.dashboard_order|safe }}';
     const dockOrderStr = '{{ current_user.settings.dock_order|safe }}';
     
-    const dashboardOrder = (dashboardOrderStr && dashboardOrderStr !== 'None') ? JSON.parse(dashboardOrderStr) : [];
-    const dockOrder = (dockOrderStr && dockOrderStr !== 'None') ? JSON.parse(dockOrderStr) : ["main.index", "salary.index", "ntut.calendar", "expense.today"];
+    let dashboardOrder = (dashboardOrderStr && dashboardOrderStr !== 'None') ? JSON.parse(dashboardOrderStr) : [];
+    let dockOrder = (dockOrderStr && dockOrderStr !== 'None') ? JSON.parse(dockOrderStr) : ["main.index", "salary.index", "ntut.calendar", "expense.today"];
+    
+    // Deduplicate arrays in case corrupted data was saved
+    dashboardOrder = [...new Set(dashboardOrder)];
+    dockOrder = [...new Set(dockOrder)];
 
     function createSortableItem(id, item, isDock=false) {
         return `
