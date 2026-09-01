@@ -179,33 +179,36 @@
         text-shadow: 0 0 20px rgba(6, 199, 85, 0.4);
     }
 
-    /* Permission Toggle Badges */
+    /* Permission Toggle Badges (Redesigned) */
     .perm-toggle {
         display: inline-flex;
         align-items: center;
-        gap: 4px;
-        padding: 5px 12px;
+        gap: 6px;
+        padding: 6px 14px;
         border-radius: 20px;
-        font-size: 0.82rem;
-        font-weight: 600;
+        font-size: 0.85rem;
+        font-weight: 500;
         cursor: pointer;
         user-select: none;
-        border: 1px solid rgba(239,68,68,0.35);
-        background: rgba(239,68,68,0.1);
-        color: #f87171;
-        opacity: 0.7;
-        text-decoration: line-through;
-        transition: all 0.2s ease;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        background: rgba(255, 255, 255, 0.03);
+        color: var(--text-tertiary);
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .perm-toggle:hover {
+        background: rgba(255, 255, 255, 0.08);
+        color: var(--text-secondary);
     }
     .perm-toggle.active {
-        background: #06c755;
-        border-color: #06c755;
-        color: #fff;
-        opacity: 1;
-        text-decoration: none;
-        box-shadow: 0 2px 8px rgba(6,199,85,0.4);
+        background: linear-gradient(135deg, rgba(6, 199, 85, 0.2) 0%, rgba(6, 199, 85, 0.1) 100%);
+        border-color: rgba(6, 199, 85, 0.4);
+        color: #06c755;
+        box-shadow: 0 4px 12px rgba(6, 199, 85, 0.15);
     }
-    .perm-toggle:hover { opacity: 0.85; }
+    .perm-toggle.active:hover {
+        background: linear-gradient(135deg, rgba(6, 199, 85, 0.3) 0%, rgba(6, 199, 85, 0.15) 100%);
+        border-color: rgba(6, 199, 85, 0.6);
+    }
 
 
     .hidden-panel { display: none !important; }
@@ -455,7 +458,7 @@
                 <div id="lineBindingsList" style="margin-bottom: 16px;">
                     {% for b in line_bindings %}
                     <div class="line-binding-row" data-bid="{{ b.id }}" style="background: rgba(6,199,85,0.06); border: 1px solid rgba(6,199,85,0.15); border-radius: 14px; padding: 16px 18px; margin-bottom: 12px; display: flex; align-items: center; gap: 14px; flex-wrap: wrap;">
-                        <div class="line-icon" style="flex-shrink: 0;"><i class="fab fa-line"></i></div>
+                        <div class="line-icon" style="flex-shrink: 0;"><span class="material-icons">chat</span></div>
                         
                         <!-- Nickname -->
                         <input type="text" class="nickname-input glass-input" value="{{ b.nickname }}"
@@ -474,7 +477,7 @@
                         <!-- Auto-save status + Remove -->
                         <div style="display: flex; align-items: center; gap: 8px; flex-shrink: 0;">
                             <span class="save-status" style="font-size: 0.8rem; color: var(--text-tertiary); min-width: 48px; text-align: right;"></span>
-                            <button type="button" class="btn delete-binding-btn" style="background: rgba(239,68,68,0.15); color: #f87171; border: 1px solid rgba(239,68,68,0.3); padding: 7px 14px; font-size: 0.85rem; border-radius: 8px; font-weight: 600;">移除</button>
+                            <button type="button" class="btn delete-binding-btn btn-danger-glass" style="padding: 7px 14px; font-size: 0.85rem; border-radius: 8px; font-weight: 600;">移除</button>
                         </div>
 
                     </div>

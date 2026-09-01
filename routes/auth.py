@@ -277,6 +277,14 @@ def settings():
                     db.session.commit()
                     flash('密碼更新成功')
 
+    # Clear expired binding code
+    from datetime import datetime
+    if current_user.settings.binding_code and current_user.settings.binding_expiry:
+        if current_user.settings.binding_expiry < datetime.now():
+            current_user.settings.binding_code = None
+            current_user.settings.binding_expiry = None
+            db.session.commit()
+
     # Prepare view data
     # Prepare view data
     try:
