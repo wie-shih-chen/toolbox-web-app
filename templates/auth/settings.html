@@ -1189,7 +1189,11 @@
         `;
     }
 
+    let layoutsInitialized = false;
     function initLayouts() {
+        if (layoutsInitialized) return;
+        layoutsInitialized = true;
+        
         // Dashboard
         const dashContainer = document.getElementById('dashboardSortable');
         const defaultDash = Object.keys(allTools);
