@@ -188,8 +188,8 @@
             'target': '_blank',
             'rel': 'noopener noreferrer',
             'classes': 'widget-medium',
-            'bg': 'linear-gradient(135deg, #1f2937 0%, #0f172a 100%)',
-            'icon': 'link',
+            'bg': 'rgba(255, 255, 255, 0.05)',
+            'img_icon': 'https://www.google.com/s2/favicons?domain=' + link.url + '&sz=64',
             'title': link.title,
             'desc': '自訂快捷網址'
         }
@@ -201,8 +201,12 @@
         {% set w = widgets_data.get(widget_key) %}
         {% if w %}
         <a href="{{ w.url }}" {% if w.target %}target="{{ w.target }}"{% endif %} {% if w.rel %}rel="{{ w.rel }}"{% endif %} class="tool-card glass {{ w.classes }}">
-            <div class="widget-icon" style="background: {{ w.bg }};">
-                <span class="material-icons">{{ w.icon }}</span>
+            <div class="widget-icon" style="background: {{ w.bg }}; overflow: hidden;">
+                {% if w.img_icon %}
+                    <img src="{{ w.img_icon }}" alt="Icon" style="width: 100%; height: 100%; object-fit: cover;">
+                {% else %}
+                    <span class="material-icons">{{ w.icon }}</span>
+                {% endif %}
             </div>
             <div class="widget-content">
                 <h3>{{ w.title }}</h3>

@@ -1318,9 +1318,12 @@
             const item = document.createElement('div');
             item.style.cssText = 'display: flex; align-items: center; justify-content: space-between; background: rgba(255,255,255,0.05); padding: 12px 16px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.05);';
             item.innerHTML = `
-                <div style="display: flex; flex-direction: column; overflow: hidden; padding-right: 12px;">
-                    <span style="font-weight: 600; font-size: 1rem; color: var(--text-primary); margin-bottom: 4px;">${link.title}</span>
-                    <span style="font-size: 0.8rem; color: var(--text-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${link.url}</span>
+                <div style="display: flex; align-items: center; gap: 12px; overflow: hidden; padding-right: 12px;">
+                    <img src="https://www.google.com/s2/favicons?domain=${link.url}&sz=64" alt="icon" style="width: 24px; height: 24px; border-radius: 4px; flex-shrink: 0; background: white;">
+                    <div style="display: flex; flex-direction: column; overflow: hidden;">
+                        <span style="font-weight: 600; font-size: 1rem; color: var(--text-primary); margin-bottom: 2px;">${link.title}</span>
+                        <span style="font-size: 0.8rem; color: var(--text-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${link.url}</span>
+                    </div>
                 </div>
                 <button type="button" class="btn btn-danger-glass" onclick="removeCustomLink(${index})" style="padding: 6px; flex-shrink: 0;">
                     <span class="material-icons" style="font-size: 18px;">delete</span>
