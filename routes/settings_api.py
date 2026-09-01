@@ -160,6 +160,33 @@ def register_settings_api(auth_bp):
             db.session.rollback()
             return jsonify({'error': f'Server error: {str(e)}'}), 500
 
+    @auth_bp.route('/api/update_custom_links', methods=['POST'])
+    @login_required
+    def update_custom_links():
+        try:
+            data = request.json
+            links = data.get('custom_links', [])
+            
+            if not isinstance(links, list):
+                return jsonify({'error': 'Invalid format: expected array'}), 400
+            
+            valid_links = [l for l in links if isinstance(l, dict) and 'id' in l and 'title' in l and 'url' in l]
+            
+            json_str = json.dumps(valid_links, ensure_ascii=False)
+            current_user.settings.custom_links = json_str
+            db.session.commit()
+            
+            return jsonify({
+                'success': True,
+                'saved_count': len(valid_links),
+                'data': valid_links
+            })
+            
+        except Exception as e:
+            print(f"[ERROR] Exception in update_custom_links: {str(e)}")
+            db.session.rollback()
+            return jsonify({'error': f'Server error: {str(e)}'}), 500
+
     @auth_bp.route('/api/update_layout', methods=['POST'])
     @login_required
     def update_layout():

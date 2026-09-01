@@ -156,6 +156,7 @@ class UserSettings(db.Model):
     custom_categories = db.Column(db.Text, default='[]')      # JSON list of category objects
     recurring_expenses = db.Column(db.Text, default='[]')     # JSON list of recurring expense objects
     quick_shortcuts = db.Column(db.Text, default='[]')        # JSON list of shortcut strings
+    custom_links = db.Column(db.Text, default='[]')           # JSON list of {"id": "...", "title": "...", "url": "..."}
     
     # LINE Bot Integration
     line_user_id = db.Column(db.String(255), nullable=True)   # The user's unique LINE User ID

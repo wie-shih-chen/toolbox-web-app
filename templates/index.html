@@ -181,6 +181,21 @@
     }
 } %}
 
+{% for link in custom_links %}
+    {% set _ = widgets_data.update({
+        link.id: {
+            'url': link.url,
+            'target': '_blank',
+            'rel': 'noopener noreferrer',
+            'classes': 'widget-medium',
+            'bg': 'linear-gradient(135deg, #1f2937 0%, #0f172a 100%)',
+            'icon': 'link',
+            'title': link.title,
+            'desc': '自訂快捷網址'
+        }
+    }) %}
+{% endfor %}
+
 <div class="dashboard-grid ios-widgets">
     {% for widget_key in dashboard_order %}
         {% set w = widgets_data.get(widget_key) %}
