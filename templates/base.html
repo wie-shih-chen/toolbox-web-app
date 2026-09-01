@@ -182,26 +182,19 @@
     {% if current_user.is_authenticated %}
     <!-- Mobile Bottom Navigation -->
     <nav class="mobile-bottom-nav">
-        {% set dock_map = {
-            'main.index': {'title': '首頁', 'icon': 'home', 'ep_match': 'main.index'},
-            'salary.index': {'title': '薪資', 'icon': 'payments', 'ep_match': 'salary'},
-            'ntut.calendar': {'title': '日曆', 'icon': 'school', 'ep_match': 'ntut'},
-            'expense.today': {'title': '記帳', 'icon': 'account_balance_wallet', 'ep_match': 'expense'},
-            'countdown.index': {'title': '倒數', 'icon': 'hourglass_empty', 'ep_match': 'countdown'},
-            'reminder.index': {'title': '提醒', 'icon': 'notifications_active', 'ep_match': 'reminder'},
-            'period.dashboard': {'title': '生理期', 'icon': 'water_drop', 'ep_match': 'period'},
-            'vocab.index': {'title': '單字', 'icon': 'spellcheck', 'ep_match': 'vocab'},
-            'group.index': {'title': '群組', 'icon': 'group', 'ep_match': 'group'}
-        } %}
-        {% set dock_items = parse_dock_order(current_user) %}
-        {% for ep in dock_items %}
-            {% set item = dock_map.get(ep) %}
-            {% if item %}
-            <a href="{{ url_for(ep) }}"
-                class="mobile-nav-item {% if item.ep_match in request.endpoint %}active{% endif %}">
-                <span class="material-icons">{{ item.icon }}</span>
-                <span class="nav-text">{{ item.title }}</span>
-            </a>
+        {% set dock_items = get_dock_items(current_user) %}
+        {% for item in dock_items %}
+            {% if item.is_custom %}
+                <a href="{{ item.url }}" target="_blank" rel="noopener noreferrer" class="mobile-nav-item">
+                    <img src="{{ item.img_icon }}" alt="Icon" style="width: 24px; height: 24px; border-radius: 4px; margin-bottom: 2px;">
+                    <span class="nav-text">{{ item.title }}</span>
+                </a>
+            {% else %}
+                <a href="{{ url_for(item.ep) }}"
+                    class="mobile-nav-item {% if item.ep_match in request.endpoint %}active{% endif %}">
+                    <span class="material-icons">{{ item.icon }}</span>
+                    <span class="nav-text">{{ item.title }}</span>
+                </a>
             {% endif %}
         {% endfor %}
     </nav>

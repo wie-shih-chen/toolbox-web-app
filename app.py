@@ -43,15 +43,55 @@ def load_user_from_request(request):
 @app.context_processor
 def inject_globals():
     import json
-    def parse_dock_order(user):
+    def get_dock_items(user):
+        import json
         default = ["main.index", "salary.index", "ntut.calendar", "expense.today"]
-        if user and user.is_authenticated and user.settings and user.settings.dock_order:
+        dock_order = default
+        if user and user.is_authenticated and hasattr(user, 'settings') and user.settings and user.settings.dock_order:
             try:
-                return json.loads(user.settings.dock_order)
+                dock_order = json.loads(user.settings.dock_order)
             except:
-                return default
-        return default
-    return dict(parse_dock_order=parse_dock_order)
+                pass
+                
+        custom_links = []
+        if user and user.is_authenticated and hasattr(user, 'settings') and user.settings and user.settings.custom_links:
+            try:
+                custom_links = json.loads(user.settings.custom_links)
+            except:
+                pass
+                
+        cl_map = { l['id']: l for l in custom_links }
+        
+        dock_map = {
+            'main.index': {'title': '首頁', 'icon': 'home', 'ep_match': 'main.index'},
+            'salary.index': {'title': '薪資', 'icon': 'payments', 'ep_match': 'salary'},
+            'ntut.calendar': {'title': '日曆', 'icon': 'school', 'ep_match': 'ntut'},
+            'expense.today': {'title': '記帳', 'icon': 'account_balance_wallet', 'ep_match': 'expense'},
+            'countdown.index': {'title': '倒數', 'icon': 'hourglass_empty', 'ep_match': 'countdown'},
+            'reminder.index': {'title': '提醒', 'icon': 'notifications_active', 'ep_match': 'reminder'},
+            'period.dashboard': {'title': '生理期', 'icon': 'water_drop', 'ep_match': 'period'},
+            'vocab.index': {'title': '單字', 'icon': 'spellcheck', 'ep_match': 'vocab'},
+            'group.index': {'title': '群組', 'icon': 'group', 'ep_match': 'group'}
+        }
+        
+        items = []
+        for key in dock_order:
+            if key in dock_map:
+                item = dock_map[key]
+                item['is_custom'] = False
+                item['ep'] = key
+                items.append(item)
+            elif key in cl_map:
+                l = cl_map[key]
+                items.append({
+                    'title': l['title'],
+                    'img_icon': f"https://www.google.com/s2/favicons?domain={l['url']}&sz=64",
+                    'url': l['url'],
+                    'is_custom': True
+                })
+        return items
+        
+    return dict(get_dock_items=get_dock_items)
 
 # Register Blueprints
 with app.app_context():

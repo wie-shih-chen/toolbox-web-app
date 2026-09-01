@@ -1179,13 +1179,33 @@
     dashboardOrder = [...new Set(dashboardOrder)];
     dockOrder = [...new Set(dockOrder)];
 
+    let customLinks = {{ current_user.settings.custom_links|default('[]')|safe }};
+    
+    customLinks.forEach(link => {
+        allTools[link.id] = {
+            title: link.title,
+            icon: 'link',
+            img_icon: `https://www.google.com/s2/favicons?domain=${link.url}&sz=64`
+        };
+        dockToolsMap[link.id] = {
+            title: link.title,
+            icon: 'link',
+            id: link.id,
+            img_icon: `https://www.google.com/s2/favicons?domain=${link.url}&sz=64`
+        };
+    });
+
     function createSortableItem(id, item, isDock=false) {
+        let iconHtml = item.img_icon 
+            ? `<img src="${item.img_icon}" style="width:24px;height:24px;border-radius:4px;">`
+            : `<span class="material-icons" style="color: #4ecdc4;">${item.icon}</span>`;
+            
         return `
             <div data-id="${id}" style="display: flex; align-items: center; gap: 12px; padding: 10px; background: rgba(255,255,255,0.05); margin-bottom: 8px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1);">
                 <div class="drag-handle" style="cursor: grab; display: flex; align-items: center; padding: 5px;">
                     <span class="material-icons" style="color: var(--text-tertiary);">drag_indicator</span>
                 </div>
-                <span class="material-icons" style="color: #4ecdc4;">${item.icon}</span>
+                ${iconHtml}
                 <span style="color: white; font-size: 0.95rem;">${item.title}</span>
             </div>
         `;
@@ -1304,7 +1324,7 @@
     };
 
     // --- Custom Links Logic ---
-    let customLinks = {{ current_user.settings.custom_links|default('[]')|safe }};
+    // let customLinks is declared above globally so it can be injected into layouts
     let editingLinkIndex = -1;
     
     function renderCustomLinks() {
