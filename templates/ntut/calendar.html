@@ -1613,6 +1613,7 @@
             // Extra info rows
             const rows = [];
             if (props.source_type === 'salary') {
+                if (props.company_name) rows.push(`🏢 公司：${props.company_name}`);
                 if (props.hours)  rows.push(`⏱ 工時：${props.hours.toFixed(1)} 小時`);
                 if (props.rate)   rows.push(`💰 時薪：$${props.rate}`);
                 if (props.amount) rows.push(`💵 薪資：$${props.amount.toLocaleString()}`);

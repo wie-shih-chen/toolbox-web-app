@@ -310,9 +310,14 @@ def internal_salary_events():
         user_id=current_user.id, type='shift'
     ).order_by(SalaryRecord.date.asc()).all()
 
+    from models import Company
+    companies = {c.id: c.name for c in Company.query.filter_by(user_id=current_user.id).all()}
+
     events = []
     for r in records:
-        title = f'{label} {r.start_time}–{r.end_time}'
+        company_name = companies.get(r.company_id, '')
+        prefix = f"[{company_name}] " if company_name else ""
+        title = f'{prefix}{label} {r.start_time}–{r.end_time}'
         if r.hours:
             title += f' ({r.hours:.1f}h)'
         events.append({
@@ -328,6 +333,7 @@ def internal_salary_events():
                 'readonly':     True,
                 'source_type':  'salary',
                 'source_label': label,
+                'company_name': company_name,
                 'hours':        r.hours,
                 'rate':         r.rate,
                 'amount':       r.amount,
@@ -436,13 +442,17 @@ def export_ics():
 
     # --- 排班 ---
     if 'salary' in include_set:
+        from models import Company
+        companies = {c.id: c.name for c in Company.query.filter_by(user_id=matched_user_id).all()}
         records = SalaryRecord.query.filter_by(
             user_id=matched_user_id, type='shift'
         ).all()
         for r in records:
             ev = ICSEvent()
             ev.add('uid', f'salary-{r.id}@toolbox')
-            title = f'🏷 上班'
+            company_name = companies.get(r.company_id, '')
+            prefix = f"[{company_name}] " if company_name else ""
+            title = f'{prefix}🏷 上班'
             if r.hours:
                 title += f' ({r.hours:.1f}h)'
             ev.add('summary', title)
@@ -462,6 +472,7 @@ def export_ics():
                 ev.add('dtend',   date.fromisoformat(r.date) + timedelta(days=1))
 
             desc_parts = []
+            if company_name: desc_parts.append(f'公司：{company_name}')
             if r.hours:   desc_parts.append(f'工時：{r.hours:.1f} 小時')
             if r.rate:    desc_parts.append(f'時薪：${r.rate:.0f}')
             if r.amount:  desc_parts.append(f'薪資：${r.amount:,}')
