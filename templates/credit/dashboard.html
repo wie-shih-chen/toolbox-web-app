@@ -348,9 +348,10 @@
                             <td style="font-weight: 500; color: #f43f5e;">{{ pc.name }}</td>
                             <td style="color: rgba(255,255,255,0.5);">
                                 {% if pc.category == 'pe' %}▲ 體育
+                                {% elif pc.category == 'free_elective' %}△ 跨域及自由選修 (必修)
                                 {% else %}▲ 校訂共同必修{% endif %}
                             </td>
-                            <td style="text-align: center; font-weight: 600; color: rgba(255,255,255,0.4);">0.0</td>
+                            <td style="text-align: center; font-weight: 600; color: rgba(255,255,255,0.4);">{{ "%.1f"|format(pc.credits) }}</td>
                             <td style="text-align: center;">
                                 <span class="badge-fail" style="background: rgba(244, 63, 94, 0.1); color: #f43f5e; padding: 4px 8px; border-radius: 4px; font-size: 0.8rem;">未修</span>
                             </td>
@@ -543,8 +544,9 @@ async function addCourseGlobal(btn, courseNo, name, credits, courseType, semeste
     const isMyClass = fullCourse && fullCourse.class && fullCourse.class.some(cls => cls.code === myClassCode);
     
     let category = 'free_elective'; // 預設為跨域及自由選修 (外系)
-    const commonKeywords = ['國文', '英文', '通識', '歷史', '勞作教育', '全民國防', '大學入門', '工程倫理', '服務學習'];
+    const commonKeywords = ['國文', '國語文實務應用', '專業英文', '英文', '通識', '歷史', '勞作教育', '全民國防', '大學入門', '工程倫理', '服務學習'];
     if(name.includes('體育')) category = 'pe';
+    else if(name.includes('永續公民實踐')) category = 'free_elective';
     else if(commonKeywords.some(k => name.includes(k))) category = 'common_required';
     else if(isMyClass && courseType === '▲') category = 'major_required';
     else if(isMyClass && courseType === '△') category = 'major_elective';
