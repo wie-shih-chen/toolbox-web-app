@@ -322,7 +322,7 @@
                     <span class="material-icons" style="color: #10b981;">view_list</span>
                     我的課程記錄
                 </div>
-                <button class="btn-action" style="width: auto; padding: 8px 16px; font-size: 0.9rem;">
+                <button onclick="openManualAddModal()" class="btn-action" style="width: auto; padding: 8px 16px; font-size: 0.9rem;">
                     + 手動新增
                 </button>
             </div>
@@ -642,4 +642,131 @@ async function saveCourseEdit() {
         </div>
     </div>
 </div>
+
+<!-- Manual Add Course Modal -->
+<div class="modal" id="manualAddModal" style="display: none; align-items: center; justify-content: center; position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 1000; padding: 20px;">
+    <div class="glass-panel" style="width: 100%; max-width: 400px; padding: 24px; position: relative;">
+        <h3 style="margin-top: 0; color: white; margin-bottom: 20px; font-size: 1.2rem;">
+            <span class="material-icons" style="color: #10b981; vertical-align: middle; margin-right: 4px;">add_circle</span> 手動新增課程
+        </h3>
+        
+        <div class="form-group" style="margin-bottom: 16px;">
+            <label class="glass-label">學期 (例如: 113-1)</label>
+            <input type="text" id="addSemester" class="glass-input" placeholder="留空將使用目前下拉選單學期">
+        </div>
+
+        <div class="form-group" style="margin-bottom: 16px;">
+            <label class="glass-label">課程名稱 (必填)</label>
+            <input type="text" id="addName" class="glass-input" required>
+        </div>
+        
+        <div class="form-group" style="margin-bottom: 16px;">
+            <label class="glass-label">學分數 (必填)</label>
+            <input type="number" step="0.5" id="addCredits" class="glass-input" value="3" required>
+        </div>
+        
+        <div class="form-group" style="margin-bottom: 16px;">
+            <label class="glass-label">課程分類</label>
+            <select id="addCategory" class="glass-input">
+                <option value="major_required">系訂專業必修</option>
+                <option value="major_elective">專業選修</option>
+                <option value="common_required">校訂共同必修</option>
+                <option value="free_elective">跨域及自由選修</option>
+                <option value="pe">體育</option>
+            </select>
+        </div>
+        
+        <div class="form-group" style="margin-bottom: 24px;">
+            <label class="glass-label">成績 / 狀態</label>
+            <select id="addGrade" class="glass-input">
+                <option value="ongoing">修課中</option>
+                <option value="pass">及格 (抵免/通過)</option>
+                <option value="A+">A+</option>
+                <option value="A">A</option>
+                <option value="A-">A-</option>
+                <option value="B+">B+</option>
+                <option value="B">B</option>
+                <option value="B-">B-</option>
+                <option value="C+">C+</option>
+                <option value="C">C</option>
+                <option value="C-">C-</option>
+                <option value="D">D</option>
+                <option value="F">不及格 (F)</option>
+            </select>
+        </div>
+        
+        <div style="display: flex; gap: 12px;">
+            <button onclick="closeManualAddModal()" class="btn-action" style="background: rgba(255,255,255,0.1); color: white; border: none;">取消</button>
+            <button onclick="submitManualAdd(this)" class="btn-action" style="background: linear-gradient(135deg, #10b981, #059669); color: white; border: none;">新增</button>
+        </div>
+    </div>
+</div>
+
+<script>
+function openManualAddModal() {
+    // 預設學期為當前下拉選單選擇的學期
+    const semLevel = document.getElementById('fetchSemesterLevel').value.split(',');
+    const entryYear = parseInt('{{ setting.entry_year }}') || 113;
+    const year = entryYear + parseInt(semLevel[0]) - 1;
+    const sem = semLevel[1];
+    document.getElementById('addSemester').value = `${year}-${sem}`;
+    
+    document.getElementById('addName').value = '';
+    document.getElementById('addCredits').value = '3';
+    document.getElementById('addCategory').value = 'major_elective';
+    document.getElementById('addGrade').value = 'ongoing';
+    
+    document.getElementById('manualAddModal').style.display = 'flex';
+}
+
+function closeManualAddModal() {
+    document.getElementById('manualAddModal').style.display = 'none';
+}
+
+async function submitManualAdd(btn) {
+    const semester = document.getElementById('addSemester').value.trim();
+    const name = document.getElementById('addName').value.trim();
+    const credits = document.getElementById('addCredits').value;
+    const category = document.getElementById('addCategory').value;
+    const grade = document.getElementById('addGrade').value;
+    
+    if(!name || !credits) {
+        alert('請填寫課程名稱與學分數！');
+        return;
+    }
+    
+    const oldHtml = btn.innerHTML;
+    btn.innerHTML = '<span class="material-icons" style="animation: spin 1s linear infinite;">autorenew</span>';
+    btn.disabled = true;
+    
+    try {
+        const res = await fetch(`{{ url_for('credit.add_course') }}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                course_no: '', // Manual add might not have a course no
+                name: name,
+                credits: parseFloat(credits),
+                category: category,
+                grade: grade,
+                semester: semester
+            })
+        });
+        const data = await res.json();
+        
+        if(data.success) {
+            closeManualAddModal();
+            window.location.reload(); // Reload to show the manually added course properly sorted
+        } else {
+            alert(data.error || '新增失敗');
+            btn.innerHTML = oldHtml;
+            btn.disabled = false;
+        }
+    } catch(e) {
+        alert('網路錯誤');
+        btn.innerHTML = oldHtml;
+        btn.disabled = false;
+    }
+}
+</script>
 {% endblock %}

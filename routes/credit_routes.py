@@ -112,19 +112,21 @@ def add_course():
         grade=data.get('grade', 'ongoing')
     )
     
-    # 自動判斷分類
-    category = 'major_elective'
-    ctype = data.get('courseType', '')
-    name = data.get('name', '')
-    if ctype == '▲':
-        category = 'major_required'
-    elif '體育' in name:
-        category = 'pe'
-    elif ctype == '★':
+    # 自動判斷分類或使用指定分類
+    category = data.get('category')
+    if not category:
         category = 'major_elective'
-    elif ctype == '△':
-        category = 'free_elective'
-        
+        ctype = data.get('courseType', '')
+        name = data.get('name', '')
+        if ctype == '▲':
+            category = 'major_required'
+        elif '體育' in name:
+            category = 'pe'
+        elif ctype == '★':
+            category = 'major_elective'
+        elif ctype == '△':
+            category = 'free_elective'
+            
     course.category = category
     db.session.add(course)
     db.session.commit()
