@@ -411,7 +411,8 @@ function updateProgressUI(progress, percentages) {
     document.getElementById('bar_common').style.width = percentages.common + '%';
 }
 
-let allCourses = [];
+let currentCohortCourses = [];
+let globalCoursesCache = null;
 
 async function fetchCourses() {
     const semLevel = document.getElementById('fetchSemesterLevel').value.split(',');
@@ -426,9 +427,8 @@ async function fetchCourses() {
     if(!code) return alert('請輸入班級代碼');
     
     const container = document.getElementById('courseResults');
-    container.innerHTML = `<div style="text-align: center; color: rgba(255,255,255,0.6); font-size: 0.9rem; margin-top: 20px;"><span class="material-icons" style="animation: spin 1s linear infinite;">autorenew</span> 載入 ${year}學年度第${sem}學期 全校課表中...<br><span style="font-size: 0.8rem; opacity: 0.7;">(初次載入需約1-2秒)</span></div>`;
+    container.innerHTML = `<div style="text-align: center; color: rgba(255,255,255,0.6); font-size: 0.9rem; margin-top: 20px;"><span class="material-icons" style="animation: spin 1s linear infinite;">autorenew</span> 載入 ${year}學年度第${sem}學期 班級課表中...<br><span style="font-size: 0.8rem; opacity: 0.7;">(初次載入需約1-2秒)</span></div>`;
     
-    // Add spin animation dynamically if it doesn't exist
     if(!document.getElementById('spinStyle')) {
         const style = document.createElement('style');
         style.id = 'spinStyle';
@@ -438,43 +438,64 @@ async function fetchCourses() {
     
     try {
         const res = await fetch(`https://gnehs.github.io/ntut-course-crawler-node/${year}/${sem}/main.json`);
+        if(!res.ok) throw new Error(`API returned ${res.status}`);
         
-        if(!res.ok) {
-            throw new Error(`API returned ${res.status}`);
-        }
+        currentCohortCourses = await res.json();
         
-        allCourses = await res.json();
-        filterCourses();
+        // Add semester tag for consistency
+        currentCohortCourses = currentCohortCourses.map(c => ({...c, semester: `${year}-${sem}`}));
         
+        renderCourses();
     } catch(e) {
         console.error(e);
-        const container = document.getElementById('courseResults');
         container.innerHTML = `<div style="text-align: center; color: #f87171; font-size: 0.9rem; margin-top: 20px;">無法取得 ${year}學年度第${sem}學期 的課表，可能是該學期資料不存在。</div>`;
     }
 }
 
-function filterCourses() {
+async function renderCourses() {
     const code = document.getElementById('fetchClass').value;
     const keyword = document.getElementById('courseSearch').value.trim().toLowerCase();
     const container = document.getElementById('courseResults');
     
-    // If the data is not loaded yet but they try to search, load it.
-    if(!allCourses.length && keyword) {
-        fetchCourses();
-        return;
-    }
-    if(!allCourses.length) return;
-    
     let filtered = [];
+    
     if (keyword) {
-        // Search mode: global across all loaded courses
-        filtered = allCourses.filter(c => 
+        // Global Search Mode across all semesters
+        if (!globalCoursesCache) {
+            container.innerHTML = `<div style="text-align: center; color: rgba(255,255,255,0.6); font-size: 0.9rem; margin-top: 20px;"><span class="material-icons" style="animation: spin 1s linear infinite;">autorenew</span> 首次全域搜尋準備中...<br><span style="font-size: 0.8rem; opacity: 0.7;">(正在載入歷年所有課程，這可能需要幾秒鐘)</span></div>`;
+            
+            const entryYear = parseInt('{{ setting.entry_year }}') || 113;
+            const semestersToFetch = [];
+            // Fetch from entryYear-1 to entryYear+4
+            for(let y = entryYear - 1; y <= entryYear + 4; y++) {
+                semestersToFetch.push(`${y}/1`, `${y}/2`);
+            }
+            
+            const promises = semestersToFetch.map(async (semStr) => {
+                try {
+                    const res = await fetch(`https://gnehs.github.io/ntut-course-crawler-node/${semStr}/main.json`);
+                    if(res.ok) {
+                        const data = await res.json();
+                        const semFormat = semStr.replace('/', '-');
+                        return data.map(c => ({...c, semester: semFormat}));
+                    }
+                } catch(e) {}
+                return [];
+            });
+            
+            const results = await Promise.all(promises);
+            globalCoursesCache = results.flat();
+        }
+        
+        filtered = globalCoursesCache.filter(c => 
             (c.name && c.name.zh && c.name.zh.toLowerCase().includes(keyword)) || 
-            (c.id && c.id.toLowerCase().includes(keyword))
+            (c.id && c.id.toLowerCase().includes(keyword)) ||
+            (c.code && c.code.toLowerCase().includes(keyword))
         );
     } else {
         // Default cohort mode
-        filtered = allCourses.filter(c => c.class && c.class.some(cls => cls.code === code));
+        if(!currentCohortCourses.length) return;
+        filtered = currentCohortCourses.filter(c => c.class && c.class.some(cls => cls.code === code));
     }
     
     if(filtered.length > 100) {
@@ -482,11 +503,6 @@ function filterCourses() {
     }
     
     if(filtered.length > 0) {
-        const yearOffset = parseInt(document.getElementById('fetchSemesterLevel').value.split(',')[0]) - 1;
-        const entryYear = parseInt('{{ setting.entry_year }}') || 113;
-        const year = entryYear + yearOffset;
-        const sem = document.getElementById('fetchSemesterLevel').value.split(',')[1];
-        
         let html = '';
         if (keyword && filtered.length === 100) {
             html += `<div style="font-size: 0.8rem; color: #f59e0b; text-align: center; margin-bottom: 10px;">搜尋結果過多，僅顯示前 100 筆</div>`;
@@ -497,14 +513,17 @@ function filterCourses() {
             return `
             <div class="course-result-item">
                 <div>
-                    <div style="font-weight: 600; color: white; margin-bottom: 4px;">${c.name.zh}</div>
-                    <div style="font-size: 0.8rem; color: rgba(255,255,255,0.5); display: flex; gap: 12px;">
-                        <span>${c.id}</span>
+                    <div style="font-weight: 600; color: white; margin-bottom: 4px;">
+                        <span style="font-size: 0.7rem; background: rgba(255,255,255,0.2); padding: 2px 6px; border-radius: 4px; margin-right: 4px; vertical-align: middle;">${c.semester}</span>
+                        ${c.name.zh}
+                    </div>
+                    <div style="font-size: 0.8rem; color: rgba(255,255,255,0.5); display: flex; gap: 12px; margin-top: 4px;">
+                        <span>${c.id} / ${c.code || ''}</span>
                         <span>${requiredText}</span>
                         <span>學分: ${c.credit}</span>
                     </div>
                 </div>
-                <button class="btn-add" onclick="addCourse(this, '${c.id}', '${c.name.zh}', ${c.credit}, '${c.courseType}')">
+                <button class="btn-add" onclick="addCourseGlobal(this, '${c.id}', '${c.name.zh}', ${c.credit}, '${c.courseType}', '${c.semester}')">
                     <span class="material-icons" style="font-size: 20px;">add</span>
                 </button>
             </div>
@@ -512,6 +531,77 @@ function filterCourses() {
         container.innerHTML = html;
     } else {
         container.innerHTML = `<div style="text-align: center; color: #f87171; font-size: 0.9rem; margin-top: 20px;">找不到符合條件的課程。<br><span style="font-size: 0.8rem; color: rgba(255,255,255,0.5);">請確認關鍵字或班級代碼是否正確。</span></div>`;
+    }
+}
+
+async function addCourseGlobal(btn, courseNo, name, credits, courseType, semester) {
+    const oldHtml = btn.innerHTML;
+    btn.innerHTML = '<span class="material-icons" style="font-size: 20px; animation: spin 1s linear infinite;">autorenew</span>';
+    btn.disabled = true;
+    
+    try {
+        const res = await fetch(`{{ url_for('credit.add_course') }}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                course_no: courseNo,
+                name: name,
+                credits: credits,
+                courseType: courseType,
+                semester: semester
+            })
+        });
+        const data = await res.json();
+        
+        if(data.success) {
+            btn.innerHTML = '<span class="material-icons" style="font-size: 20px; color: #10b981;">check</span>';
+            btn.style.background = 'rgba(16, 185, 129, 0.1)';
+            
+            // Append to table
+            const tbody = document.querySelector('.glass-table tbody');
+            if(tbody.querySelector('tr td[colspan]')) {
+                tbody.innerHTML = '';
+            }
+            
+            let category = 'major_elective';
+            if(courseType === '▲') category = 'major_required';
+            else if(name.includes('體育')) category = 'pe';
+            else if(courseType === '★') category = 'major_elective';
+            else if(courseType === '△') category = 'free_elective';
+
+            const newRow = document.createElement('tr');
+            newRow.innerHTML = `
+                <td style="color: rgba(255,255,255,0.6);">${semester}</td>
+                <td style="font-weight: 500;">${name}</td>
+                <td style="color: rgba(255,255,255,0.7);">${category === 'major_required' ? '系訂專業必修' : (category === 'major_elective' ? '專業選修' : (category === 'common_required' ? '校訂共同必修' : (category === 'free_elective' ? '跨域及自由選修' : (category === 'pe' ? '體育' : category))))}</td>
+                <td style="text-align: center; font-weight: 600;">${credits}</td>
+                <td style="text-align: center;"><span class="badge-ongoing">修課中</span></td>
+                <td style="text-align: center; display: flex; gap: 6px; justify-content: center; border-bottom: none; padding-top: 18px;">
+                    <button onclick="openEditModal(${data.id}, '${name}', ${credits}, '${category}', 'ongoing')" class="btn-add" style="background: rgba(129, 140, 248, 0.1); color: #818cf8; width: 28px; height: 28px; margin: 0;">
+                        <span class="material-icons" style="font-size: 16px;">edit</span>
+                    </button>
+                    <button onclick="deleteCourse(${data.id}, this)" class="btn-add" style="background: rgba(244, 63, 94, 0.1); color: #f43f5e; width: 28px; height: 28px; margin: 0;">
+                        <span class="material-icons" style="font-size: 16px;">delete</span>
+                    </button>
+                </td>
+            `;
+            tbody.appendChild(newRow);
+            updateProgressUI(data.progress, data.percentages);
+            
+            setTimeout(() => {
+                btn.innerHTML = oldHtml;
+                btn.disabled = false;
+                btn.style.background = '';
+            }, 2000);
+        } else {
+            alert(data.error || '新增失敗');
+            btn.innerHTML = oldHtml;
+            btn.disabled = false;
+        }
+    } catch(e) {
+        alert('網路錯誤');
+        btn.innerHTML = oldHtml;
+        btn.disabled = false;
     }
 }
 
