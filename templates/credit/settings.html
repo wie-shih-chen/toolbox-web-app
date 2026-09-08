@@ -1,80 +1,261 @@
 {% extends 'base.html' %}
-{% block title %}學分設定 - 北科大{% endblock %}
+{% block title %}學分設定 - 工具箱{% endblock %}
 
 {% block content %}
-<div class="max-w-3xl mx-auto space-y-6">
-    <div class="flex items-center justify-between">
-        <h2 class="text-2xl font-bold text-gray-800 dark:text-gray-100">
+<style>
+    /* iOS Glass Settings Theme */
+    .settings-container {
+        max-width: 800px;
+        margin: 0 auto;
+        padding-bottom: 80px;
+    }
+
+    .settings-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 30px;
+    }
+
+    .settings-title {
+        font-size: 2rem;
+        font-weight: 700;
+        margin: 0;
+        background: linear-gradient(135deg, #fff 0%, #a5a5a5 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        letter-spacing: -0.5px;
+    }
+
+    .glass-panel {
+        background: rgba(255, 255, 255, 0.03);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 24px;
+        padding: 24px;
+        margin-bottom: 24px;
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
+    }
+
+    .section-title {
+        font-size: 1.25rem;
+        font-weight: 600;
+        color: #ffffff;
+        margin-bottom: 20px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .form-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 20px;
+    }
+
+    @media (max-width: 640px) {
+        .form-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    .form-group {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    .glass-label {
+        font-size: 0.9rem;
+        font-weight: 500;
+        color: rgba(255, 255, 255, 0.7);
+        margin-left: 4px;
+    }
+
+    .glass-input {
+        width: 100%;
+        background: rgba(0, 0, 0, 0.2);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 12px;
+        padding: 14px 16px;
+        color: #fff;
+        font-size: 1rem;
+        font-family: inherit;
+        transition: all 0.3s ease;
+    }
+
+    .glass-input:focus {
+        outline: none;
+        border-color: rgba(67, 56, 202, 0.6);
+        background: rgba(0, 0, 0, 0.3);
+        box-shadow: 0 0 0 4px rgba(67, 56, 202, 0.15);
+    }
+
+    .glass-input::placeholder {
+        color: rgba(255, 255, 255, 0.3);
+    }
+
+    .input-hint {
+        font-size: 0.8rem;
+        color: rgba(255, 255, 255, 0.4);
+        margin-left: 4px;
+    }
+
+    .btn-save {
+        width: 100%;
+        background: linear-gradient(135deg, #4f46e5 0%, #3730a3 100%);
+        color: white;
+        border: none;
+        border-radius: 14px;
+        padding: 16px;
+        font-size: 1.1rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        box-shadow: 0 8px 25px rgba(79, 70, 229, 0.3);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .btn-save:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 12px 30px rgba(79, 70, 229, 0.4);
+    }
+    
+    .btn-save:active {
+        transform: translateY(1px);
+    }
+
+    .back-btn {
+        background: rgba(255, 255, 255, 0.05);
+        color: white;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 20px;
+        padding: 8px 16px;
+        font-size: 0.9rem;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+
+    .back-btn:hover {
+        background: rgba(255, 255, 255, 0.1);
+    }
+
+    .welcome-banner {
+        background: linear-gradient(135deg, rgba(67, 56, 202, 0.15) 0%, rgba(49, 46, 129, 0.1) 100%);
+        border: 1px solid rgba(67, 56, 202, 0.3);
+        border-radius: 16px;
+        padding: 16px 20px;
+        margin-bottom: 24px;
+        color: #e0e7ff;
+        font-size: 0.95rem;
+        line-height: 1.5;
+        display: flex;
+        gap: 12px;
+    }
+</style>
+
+<div class="settings-container">
+    <div class="settings-header">
+        <h2 class="settings-title">
             {% if is_new %}🎓 歡迎使用北科大學分計算機{% else %}⚙️ 學分設定{% endif %}
         </h2>
         {% if not is_new %}
-        <a href="{{ url_for('credit.index') }}" class="text-sm text-indigo-600 hover:text-indigo-500 dark:text-indigo-400">返回儀表板</a>
+        <a href="{{ url_for('credit.index') }}" class="back-btn">
+            <span class="material-icons" style="font-size: 18px;">arrow_back</span>
+            返回儀表板
+        </a>
         {% endif %}
     </div>
 
     {% if is_new %}
-    <div class="bg-blue-50 dark:bg-blue-900/30 p-4 rounded-xl border border-blue-200 dark:border-blue-800">
-        <p class="text-blue-800 dark:text-blue-200">
-            要開始計算學分，請先填寫你的系所與入學年度，以及畢業學分門檻。
-            這些設定之後隨時可以修改。
-        </p>
+    <div class="welcome-banner">
+        <span class="material-icons" style="color: #818cf8; font-size: 24px;">info</span>
+        <div>
+            <strong>初次設定</strong><br>
+            要開始計算學分，請先填寫你的系所與入學年度，以及畢業學分門檻。這些設定之後隨時可以修改。
+        </div>
     </div>
     {% endif %}
 
-    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 p-6">
-        <form id="settingsForm" class="space-y-6">
-            <h3 class="text-lg font-medium text-gray-900 dark:text-white border-b border-gray-200 dark:border-gray-700 pb-2">基本學籍資料</h3>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">入學學年度 (例如: 113)</label>
-                    <input type="number" name="entry_year" class="w-full rounded-xl border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-indigo-500 focus:border-indigo-500" value="{{ setting.entry_year if setting else 113 }}" required>
+    <form id="settingsForm">
+        <!-- 基本學籍資料 -->
+        <div class="glass-panel">
+            <div class="section-title">
+                <span class="material-icons" style="color: #4f46e5;">badge</span>
+                基本學籍資料
+            </div>
+            
+            <div class="form-grid">
+                <div class="form-group">
+                    <label class="glass-label">入學學年度</label>
+                    <input type="number" name="entry_year" class="glass-input" placeholder="例如: 113" value="{{ setting.entry_year if setting else 113 }}" required>
                 </div>
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">系所名稱 (例如: 資工系)</label>
-                    <input type="text" name="department" class="w-full rounded-xl border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-indigo-500 focus:border-indigo-500" value="{{ setting.department if setting else '' }}" required>
+                
+                <div class="form-group">
+                    <label class="glass-label">系所名稱</label>
+                    <input type="text" name="department" class="glass-input" placeholder="例如: 資工系" value="{{ setting.department if setting else '' }}" required>
                 </div>
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">班級代碼 (查課表用，例如: 2676)</label>
-                    <input type="text" name="class_code" class="w-full rounded-xl border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-indigo-500 focus:border-indigo-500" value="{{ setting.class_code if setting else '' }}" placeholder="請輸入4位數字代碼" required>
-                    <p class="text-xs text-gray-500 mt-1">代碼可從學校課表網址的 code 參數找到</p>
+                
+                <div class="form-group">
+                    <label class="glass-label">班級代碼 (查課表用)</label>
+                    <input type="text" name="class_code" class="glass-input" placeholder="請輸入4位數字代碼 (例如: 2676)" value="{{ setting.class_code if setting else '' }}" required>
+                    <span class="input-hint">代碼可從學校課表網址的 code 參數找到</span>
                 </div>
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">班級名稱 (例如: 資工四)</label>
-                    <input type="text" name="class_name" class="w-full rounded-xl border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-indigo-500 focus:border-indigo-500" value="{{ setting.class_name if setting else '' }}">
+                
+                <div class="form-group">
+                    <label class="glass-label">班級名稱 (選填)</label>
+                    <input type="text" name="class_name" class="glass-input" placeholder="例如: 資工四" value="{{ setting.class_name if setting else '' }}">
                 </div>
             </div>
+        </div>
 
-            <h3 class="text-lg font-medium text-gray-900 dark:text-white border-b border-gray-200 dark:border-gray-700 pb-2 pt-4">畢業學分門檻</h3>
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">畢業總學分</label>
-                    <input type="number" name="total_required" class="w-full rounded-xl border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-indigo-500 focus:border-indigo-500" value="{{ setting.total_required if setting else 128 }}" required>
+        <!-- 畢業學分門檻 -->
+        <div class="glass-panel">
+            <div class="section-title">
+                <span class="material-icons" style="color: #e11d48;">verified</span>
+                畢業學分門檻
+            </div>
+            
+            <div class="form-grid">
+                <div class="form-group">
+                    <label class="glass-label">畢業總學分</label>
+                    <input type="number" name="total_required" class="glass-input" value="{{ setting.total_required if setting else 128 }}" required>
                 </div>
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">校訂共同必修</label>
-                    <input type="number" name="common_required" class="w-full rounded-xl border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-indigo-500 focus:border-indigo-500" value="{{ setting.common_required if setting else 28 }}" required>
+                
+                <div class="form-group">
+                    <label class="glass-label">校訂共同必修</label>
+                    <input type="number" name="common_required" class="glass-input" value="{{ setting.common_required if setting else 28 }}" required>
                 </div>
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">系訂專業必修</label>
-                    <input type="number" name="major_required_credits" class="w-full rounded-xl border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-indigo-500 focus:border-indigo-500" value="{{ setting.major_required_credits if setting else 64 }}" required>
+                
+                <div class="form-group">
+                    <label class="glass-label">系訂專業必修</label>
+                    <input type="number" name="major_required_credits" class="glass-input" value="{{ setting.major_required_credits if setting else 64 }}" required>
                 </div>
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">專業選修</label>
-                    <input type="number" name="major_elective_credits" class="w-full rounded-xl border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-indigo-500 focus:border-indigo-500" value="{{ setting.major_elective_credits if setting else 20 }}" required>
+                
+                <div class="form-group">
+                    <label class="glass-label">專業選修</label>
+                    <input type="number" name="major_elective_credits" class="glass-input" value="{{ setting.major_elective_credits if setting else 20 }}" required>
                 </div>
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">跨域/自由選修</label>
-                    <input type="number" name="free_elective_credits" class="w-full rounded-xl border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-indigo-500 focus:border-indigo-500" value="{{ setting.free_elective_credits if setting else 16 }}" required>
+                
+                <div class="form-group">
+                    <label class="glass-label">跨域/自由選修</label>
+                    <input type="number" name="free_elective_credits" class="glass-input" value="{{ setting.free_elective_credits if setting else 16 }}" required>
                 </div>
             </div>
+        </div>
 
-            <div class="flex justify-end pt-4">
-                <button type="submit" class="px-6 py-2 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors">
-                    儲存設定並繼續
-                </button>
-            </div>
-        </form>
-    </div>
+        <button type="submit" class="btn-save" id="saveBtn">
+            <span class="material-icons">save</span>
+            儲存設定並繼續
+        </button>
+    </form>
 </div>
 {% endblock %}
 
@@ -82,6 +263,12 @@
 <script>
 document.getElementById('settingsForm').addEventListener('submit', async (e) => {
     e.preventDefault();
+    const btn = document.getElementById('saveBtn');
+    const originalText = btn.innerHTML;
+    
+    btn.innerHTML = '<span class="material-icons" style="animation: spin 1s linear infinite;">autorenew</span> 儲存中...';
+    btn.disabled = true;
+    
     const formData = new FormData(e.target);
     
     try {
@@ -91,14 +278,29 @@ document.getElementById('settingsForm').addEventListener('submit', async (e) => 
         });
         const data = await res.json();
         if(data.success) {
-            window.location.href = '{{ url_for("credit.index") }}';
+            btn.innerHTML = '<span class="material-icons">check</span> 已儲存';
+            btn.style.background = 'linear-gradient(135deg, #059669 0%, #047857 100%)';
+            setTimeout(() => {
+                window.location.href = '{{ url_for("credit.index") }}';
+            }, 600);
         } else {
             alert('儲存失敗：' + (data.error || '未知錯誤'));
+            btn.innerHTML = originalText;
+            btn.disabled = false;
         }
     } catch(err) {
         console.error(err);
         alert('儲存失敗');
+        btn.innerHTML = originalText;
+        btn.disabled = false;
     }
 });
+
+// Add spin animation
+const style = document.createElement('style');
+style.innerHTML = `
+    @keyframes spin { 100% { transform: rotate(360deg); } }
+`;
+document.head.appendChild(style);
 </script>
 {% endblock %}

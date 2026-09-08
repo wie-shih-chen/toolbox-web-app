@@ -1,134 +1,356 @@
 {% extends 'base.html' %}
-{% block title %}學分儀表板 - 北科大{% endblock %}
+{% block title %}學分儀表板 - 工具箱{% endblock %}
 
 {% block content %}
-<div class="max-w-6xl mx-auto space-y-6">
-    <div class="flex items-center justify-between">
-        <h2 class="text-2xl font-bold text-gray-800 dark:text-gray-100">
-            🎓 學分追蹤 - {{ setting.department }} ({{ setting.entry_year }}學年度)
+<style>
+    /* Dashboard Glass Theme */
+    .dashboard-container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding-bottom: 80px;
+    }
+
+    .dashboard-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 30px;
+    }
+
+    .dashboard-title {
+        font-size: 1.8rem;
+        font-weight: 700;
+        margin: 0;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        background: linear-gradient(135deg, #fff 0%, #a5a5a5 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+    }
+
+    .glass-panel {
+        background: rgba(255, 255, 255, 0.03);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 24px;
+        padding: 24px;
+        margin-bottom: 24px;
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
+    }
+
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 20px;
+        margin-bottom: 30px;
+    }
+
+    @media (max-width: 900px) {
+        .stats-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+    @media (max-width: 500px) {
+        .stats-grid { grid-template-columns: 1fr; }
+    }
+
+    .stat-card {
+        background: rgba(255, 255, 255, 0.02);
+        border: 1px solid rgba(255, 255, 255, 0.05);
+        border-radius: 20px;
+        padding: 20px;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .stat-label {
+        font-size: 0.85rem;
+        color: rgba(255, 255, 255, 0.6);
+        margin-bottom: 8px;
+    }
+
+    .stat-value {
+        font-size: 2.2rem;
+        font-weight: 700;
+        color: white;
+        display: flex;
+        align-items: baseline;
+        gap: 6px;
+    }
+
+    .stat-total {
+        font-size: 1rem;
+        color: rgba(255, 255, 255, 0.4);
+        font-weight: 500;
+    }
+
+    .progress-bar-bg {
+        width: 100%;
+        height: 6px;
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 10px;
+        margin-top: 16px;
+        overflow: hidden;
+    }
+
+    .progress-bar-fill {
+        height: 100%;
+        border-radius: 10px;
+        transition: width 1s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    /* Main Content Grid */
+    .main-grid {
+        display: grid;
+        grid-template-columns: 350px 1fr;
+        gap: 24px;
+    }
+    
+    @media (max-width: 900px) {
+        .main-grid { grid-template-columns: 1fr; }
+    }
+
+    .section-title {
+        font-size: 1.2rem;
+        font-weight: 600;
+        color: white;
+        margin-bottom: 20px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .glass-input {
+        width: 100%;
+        background: rgba(0, 0, 0, 0.2);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 12px;
+        padding: 12px 14px;
+        color: #fff;
+        font-size: 0.95rem;
+        margin-bottom: 12px;
+        transition: all 0.3s;
+    }
+
+    .glass-input:focus {
+        outline: none;
+        border-color: rgba(67, 56, 202, 0.6);
+        background: rgba(0, 0, 0, 0.3);
+    }
+
+    .btn-action {
+        width: 100%;
+        background: rgba(67, 56, 202, 0.2);
+        color: #818cf8;
+        border: 1px solid rgba(67, 56, 202, 0.3);
+        border-radius: 12px;
+        padding: 12px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+    .btn-action:hover {
+        background: rgba(67, 56, 202, 0.4);
+        color: white;
+    }
+
+    .course-result-item {
+        background: rgba(0, 0, 0, 0.15);
+        border: 1px solid rgba(255, 255, 255, 0.05);
+        border-radius: 12px;
+        padding: 12px 16px;
+        margin-bottom: 10px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        transition: all 0.2s;
+    }
+    .course-result-item:hover {
+        background: rgba(255, 255, 255, 0.05);
+        border-color: rgba(255, 255, 255, 0.15);
+    }
+
+    .btn-add {
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.1);
+        border: none;
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+    .btn-add:hover {
+        background: #4f46e5;
+        transform: scale(1.1);
+    }
+
+    .glass-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+    .glass-table th {
+        text-align: left;
+        padding: 12px 16px;
+        color: rgba(255, 255, 255, 0.5);
+        font-weight: 500;
+        font-size: 0.9rem;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    }
+    .glass-table td {
+        padding: 14px 16px;
+        color: rgba(255, 255, 255, 0.9);
+        font-size: 0.95rem;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.02);
+    }
+    .glass-table tr:hover td {
+        background: rgba(255, 255, 255, 0.02);
+    }
+
+    .badge-ongoing {
+        background: rgba(56, 189, 248, 0.15);
+        color: #38bdf8;
+        padding: 4px 10px;
+        border-radius: 12px;
+        font-size: 0.8rem;
+        font-weight: 600;
+    }
+</style>
+
+<div class="dashboard-container">
+    <div class="dashboard-header">
+        <h2 class="dashboard-title">
+            <span class="material-icons" style="color: #4f46e5; font-size: 32px;">school</span>
+            {{ setting.department }} ({{ setting.entry_year }}學年度)
         </h2>
-        <a href="{{ url_for('credit.settings') }}" class="text-sm text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100">
-            ⚙️ 設定
+        <a href="{{ url_for('credit.settings') }}" style="color: rgba(255,255,255,0.6); display: flex; align-items: center; gap: 6px;">
+            <span class="material-icons" style="font-size: 18px;">settings</span> 設定
         </a>
     </div>
 
     <!-- 進度總覽 -->
-    <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+    <div class="stats-grid">
         <!-- 總學分進度 -->
-        <div class="bg-white dark:bg-gray-800 rounded-2xl p-4 shadow-sm border border-gray-100 dark:border-gray-700">
-            <h3 class="text-sm text-gray-500 dark:text-gray-400">總學分進度</h3>
-            <div class="mt-2 flex items-baseline gap-2">
-                <span class="text-3xl font-bold text-gray-900 dark:text-white">0</span>
-                <span class="text-sm text-gray-500">/ {{ setting.total_required }}</span>
+        <div class="stat-card">
+            <div class="stat-label">總學分進度</div>
+            <div class="stat-value">
+                0 <span class="stat-total">/ {{ setting.total_required }}</span>
             </div>
-            <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2 mt-3">
-                <div class="bg-indigo-600 h-2 rounded-full" style="width: 0%"></div>
+            <div class="progress-bar-bg">
+                <div class="progress-bar-fill" style="background: linear-gradient(90deg, #6366f1, #8b5cf6); width: 0%;"></div>
             </div>
         </div>
         
         <!-- 專業必修 -->
-        <div class="bg-white dark:bg-gray-800 rounded-2xl p-4 shadow-sm border border-gray-100 dark:border-gray-700">
-            <h3 class="text-sm text-gray-500 dark:text-gray-400">系訂專業必修</h3>
-            <div class="mt-2 flex items-baseline gap-2">
-                <span class="text-3xl font-bold text-gray-900 dark:text-white">0</span>
-                <span class="text-sm text-gray-500">/ {{ setting.major_required_credits }}</span>
+        <div class="stat-card">
+            <div class="stat-label">系訂專業必修</div>
+            <div class="stat-value">
+                0 <span class="stat-total">/ {{ setting.major_required_credits }}</span>
             </div>
-            <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2 mt-3">
-                <div class="bg-blue-500 h-2 rounded-full" style="width: 0%"></div>
+            <div class="progress-bar-bg">
+                <div class="progress-bar-fill" style="background: linear-gradient(90deg, #3b82f6, #06b6d4); width: 0%;"></div>
             </div>
         </div>
 
         <!-- 專業選修 -->
-        <div class="bg-white dark:bg-gray-800 rounded-2xl p-4 shadow-sm border border-gray-100 dark:border-gray-700">
-            <h3 class="text-sm text-gray-500 dark:text-gray-400">專業選修</h3>
-            <div class="mt-2 flex items-baseline gap-2">
-                <span class="text-3xl font-bold text-gray-900 dark:text-white">0</span>
-                <span class="text-sm text-gray-500">/ {{ setting.major_elective_credits }}</span>
+        <div class="stat-card">
+            <div class="stat-label">專業選修</div>
+            <div class="stat-value">
+                0 <span class="stat-total">/ {{ setting.major_elective_credits }}</span>
             </div>
-            <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2 mt-3">
-                <div class="bg-green-500 h-2 rounded-full" style="width: 0%"></div>
+            <div class="progress-bar-bg">
+                <div class="progress-bar-fill" style="background: linear-gradient(90deg, #10b981, #34d399); width: 0%;"></div>
             </div>
         </div>
 
         <!-- 共同必修 -->
-        <div class="bg-white dark:bg-gray-800 rounded-2xl p-4 shadow-sm border border-gray-100 dark:border-gray-700">
-            <h3 class="text-sm text-gray-500 dark:text-gray-400">校訂共同必修</h3>
-            <div class="mt-2 flex items-baseline gap-2">
-                <span class="text-3xl font-bold text-gray-900 dark:text-white">0</span>
-                <span class="text-sm text-gray-500">/ {{ setting.common_required }}</span>
+        <div class="stat-card">
+            <div class="stat-label">校訂共同必修</div>
+            <div class="stat-value">
+                0 <span class="stat-total">/ {{ setting.common_required }}</span>
             </div>
-            <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2 mt-3">
-                <div class="bg-orange-500 h-2 rounded-full" style="width: 0%"></div>
+            <div class="progress-bar-bg">
+                <div class="progress-bar-fill" style="background: linear-gradient(90deg, #f59e0b, #fbbf24); width: 0%;"></div>
             </div>
         </div>
     </div>
 
-    <!-- 匯入與管理 -->
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <!-- 從北科系統匯入 -->
-        <div class="md:col-span-1 bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 p-5">
-            <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-4">🔍 從課表尋找課程</h3>
-            
-            <div class="space-y-3">
-                <div class="grid grid-cols-2 gap-2">
-                    <input type="text" id="fetchYear" class="w-full rounded-xl border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white text-sm" value="113" placeholder="學年(113)">
-                    <select id="fetchSem" class="w-full rounded-xl border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white text-sm">
-                        <option value="1">上學期(1)</option>
-                        <option value="2">下學期(2)</option>
-                    </select>
-                </div>
-                <input type="text" id="fetchClass" class="w-full rounded-xl border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white text-sm" value="{{ setting.class_code }}" placeholder="班級代碼 (例如: 2676)">
-                <button onclick="fetchCourses()" class="w-full px-4 py-2 bg-indigo-50 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-300 rounded-xl hover:bg-indigo-100 dark:hover:bg-indigo-800/50 transition">
-                    載入課表
-                </button>
+    <!-- 主要內容區 -->
+    <div class="main-grid">
+        <!-- 左側：從北科系統匯入 -->
+        <div class="glass-panel">
+            <div class="section-title">
+                <span class="material-icons" style="color: #38bdf8;">search</span>
+                從課表尋找課程
             </div>
+            
+            <div style="display: flex; gap: 10px; margin-bottom: 12px;">
+                <input type="text" id="fetchYear" class="glass-input" style="margin-bottom: 0;" value="113" placeholder="學年(113)">
+                <select id="fetchSem" class="glass-input" style="margin-bottom: 0;">
+                    <option value="1">上學期(1)</option>
+                    <option value="2">下學期(2)</option>
+                </select>
+            </div>
+            <input type="text" id="fetchClass" class="glass-input" value="{{ setting.class_code }}" placeholder="班級代碼 (例如: 2676)">
+            
+            <button onclick="fetchCourses()" class="btn-action">
+                載入課表
+            </button>
 
             <!-- 課表結果容器 -->
-            <div id="courseResults" class="mt-4 space-y-2 max-h-96 overflow-y-auto">
-                <div class="text-sm text-gray-500 dark:text-gray-400 text-center py-4">點擊上方載入按鈕，可將課程直接加入清單</div>
+            <div id="courseResults" style="margin-top: 20px; max-height: 400px; overflow-y: auto; padding-right: 8px;">
+                <div style="text-align: center; color: rgba(255,255,255,0.4); font-size: 0.9rem; margin-top: 30px;">
+                    點擊上方載入按鈕，可將課程直接加入清單
+                </div>
             </div>
         </div>
 
-        <!-- 已修課程清單 -->
-        <div class="md:col-span-2 bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 p-5">
-            <div class="flex items-center justify-between mb-4">
-                <h3 class="text-lg font-medium text-gray-900 dark:text-white">📋 我的課程記錄</h3>
-                <button class="px-3 py-1.5 text-sm bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600">
+        <!-- 右側：已修課程清單 -->
+        <div class="glass-panel">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <div class="section-title" style="margin-bottom: 0;">
+                    <span class="material-icons" style="color: #10b981;">view_list</span>
+                    我的課程記錄
+                </div>
+                <button class="btn-action" style="width: auto; padding: 8px 16px; font-size: 0.9rem;">
                     + 手動新增
                 </button>
             </div>
 
-            <div class="overflow-x-auto">
-                <table class="w-full text-left border-collapse">
+            <div style="overflow-x: auto;">
+                <table class="glass-table">
                     <thead>
-                        <tr class="border-b border-gray-200 dark:border-gray-700 text-sm text-gray-500 dark:text-gray-400">
-                            <th class="pb-2 font-medium">學期</th>
-                            <th class="pb-2 font-medium">課號</th>
-                            <th class="pb-2 font-medium">課程名稱</th>
-                            <th class="pb-2 font-medium">分類</th>
-                            <th class="pb-2 font-medium text-center">學分</th>
-                            <th class="pb-2 font-medium text-center">成績</th>
+                        <tr>
+                            <th>學期</th>
+                            <th>課號</th>
+                            <th>課程名稱</th>
+                            <th>分類</th>
+                            <th style="text-align: center;">學分</th>
+                            <th style="text-align: center;">成績</th>
                         </tr>
                     </thead>
-                    <tbody class="text-sm divide-y divide-gray-100 dark:divide-gray-700">
+                    <tbody>
                         {% for course in courses %}
-                        <tr class="hover:bg-gray-50 dark:hover:bg-gray-750">
-                            <td class="py-3 text-gray-600 dark:text-gray-300">{{ course.semester }}</td>
-                            <td class="py-3 text-gray-600 dark:text-gray-300 font-mono">{{ course.course_no }}</td>
-                            <td class="py-3 text-gray-900 dark:text-gray-100 font-medium">{{ course.name }}</td>
-                            <td class="py-3 text-gray-600 dark:text-gray-300">{{ course.category }}</td>
-                            <td class="py-3 text-gray-900 dark:text-gray-100 text-center">{{ course.credits }}</td>
-                            <td class="py-3 text-center">
+                        <tr>
+                            <td style="color: rgba(255,255,255,0.6);">{{ course.semester }}</td>
+                            <td style="font-family: monospace; color: rgba(255,255,255,0.5);">{{ course.course_no }}</td>
+                            <td style="font-weight: 500;">{{ course.name }}</td>
+                            <td style="color: rgba(255,255,255,0.7);">{{ course.category }}</td>
+                            <td style="text-align: center; font-weight: 600;">{{ course.credits }}</td>
+                            <td style="text-align: center;">
                                 {% if course.grade == 'ongoing' %}
-                                <span class="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-md">修課中</span>
+                                <span class="badge-ongoing">修課中</span>
                                 {% else %}
-                                <span class="font-medium text-gray-900 dark:text-gray-100">{{ course.grade }}</span>
+                                {{ course.grade }}
                                 {% endif %}
                             </td>
                         </tr>
                         {% else %}
                         <tr>
-                            <td colspan="6" class="py-8 text-center text-gray-500 dark:text-gray-400">
+                            <td colspan="6" style="text-align: center; padding: 40px 20px; color: rgba(255,255,255,0.4);">
                                 尚未新增任何課程。從左側課表匯入或手動新增。
                             </td>
                         </tr>
@@ -151,7 +373,7 @@ async function fetchCourses() {
     if(!code) return alert('請輸入班級代碼');
     
     const container = document.getElementById('courseResults');
-    container.innerHTML = '<div class="text-center py-4 text-sm text-gray-500">載入中...</div>';
+    container.innerHTML = '<div style="text-align: center; color: rgba(255,255,255,0.6); font-size: 0.9rem; margin-top: 20px;">載入中...</div>';
     
     try {
         const res = await fetch(`{{ url_for('credit.fetch_courses') }}?year=${year}&sem=${sem}&code=${code}`);
@@ -159,31 +381,30 @@ async function fetchCourses() {
         
         if(data.success && data.courses.length > 0) {
             container.innerHTML = data.courses.map(c => `
-                <div class="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700/50 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-700 transition cursor-pointer" onclick="addCourse('${c.course_no}', '${c.name}', ${c.credits})">
+                <div class="course-result-item">
                     <div>
-                        <div class="text-sm font-medium text-gray-900 dark:text-white">${c.name}</div>
-                        <div class="text-xs text-gray-500 dark:text-gray-400 flex gap-2">
-                            <span>${c.course_no}</span>
+                        <div style="font-weight: 600; color: white; margin-bottom: 4px;">${c.name}</div>
+                        <div style="font-size: 0.8rem; color: rgba(255,255,255,0.5); display: flex; gap: 12px;">
+                            <span style="font-family: monospace;">${c.course_no}</span>
                             <span>${c.required}</span>
                             <span>學分: ${c.credits}</span>
                         </div>
                     </div>
-                    <button class="w-6 h-6 rounded-full bg-white dark:bg-gray-600 shadow-sm flex items-center justify-center text-indigo-600 dark:text-indigo-400 text-lg font-bold">
-                        +
+                    <button class="btn-add" onclick="addCourse('${c.course_no}', '${c.name}', ${c.credits})">
+                        <span class="material-icons" style="font-size: 20px;">add</span>
                     </button>
                 </div>
             `).join('');
         } else {
-            container.innerHTML = '<div class="text-center py-4 text-sm text-red-500">找不到課表資料，請確認代碼是否正確。</div>';
+            container.innerHTML = '<div style="text-align: center; color: #f87171; font-size: 0.9rem; margin-top: 20px;">找不到課表資料，請確認代碼是否正確。</div>';
         }
     } catch(e) {
-        container.innerHTML = '<div class="text-center py-4 text-sm text-red-500">網路錯誤，請稍後再試。</div>';
+        container.innerHTML = '<div style="text-align: center; color: #f87171; font-size: 0.9rem; margin-top: 20px;">網路錯誤，請稍後再試。</div>';
     }
 }
 
 function addCourse(courseNo, name, credits) {
-    // TODO: 實作將此課程加入個人清單的 API
-    alert(`準備新增課程: ${name} (${credits}學分)`);
+    alert(`準備新增課程: ${name} (${credits}學分)\n（此功能即將實作）`);
 }
 </script>
 {% endblock %}
