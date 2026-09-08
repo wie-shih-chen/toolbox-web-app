@@ -108,11 +108,7 @@ def index():
         if not sustainable:
             pinned_courses.append({"name": "永續公民實踐", "category": "free_elective", "credits": 1.0, "status": "missing"})
             
-    # 英文畢業門檻 (需要1門)
-    english_threshold = [c for c in courses if '英文' in c.name and ('門檻' in c.name or '檢定' in c.name or '能力' in c.name)]
-    if not english_threshold:
-        pinned_courses.append({"name": "英文能力畢業門檻", "category": "common_required", "credits": 0.0, "status": "missing"})
-        
+    # 英文畢業門檻不再強制顯示為缺少的課程
     # 體育
     pe_courses = [c for c in courses if c.category == 'pe' or '體育' in c.name]
     if setting.entry_year >= 109:

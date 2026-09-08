@@ -343,10 +343,28 @@
 
         <!-- 右側：已修課程清單 -->
         <div class="glass-panel">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 10px;">
                 <div class="section-title" style="margin-bottom: 0;">
                     <span class="material-icons" style="color: #10b981;">view_list</span>
                     我的課程記錄
+                </div>
+                <div style="display: flex; gap: 10px;">
+                    <select id="filterCategory" class="glass-input" style="padding: 6px 12px; height: auto; min-width: 140px;" onchange="filterMyCourses()">
+                        <option value="all">全部分類</option>
+                        <option value="major_required">系訂專業必修</option>
+                        <option value="major_elective">專業選修</option>
+                        <option value="common_required">校訂共同必修</option>
+                        <option value="liberal_arts">通識博雅</option>
+                        <option value="free_elective">跨域及自由選修</option>
+                        <option value="pe">體育</option>
+                    </select>
+                    <select id="filterStatus" class="glass-input" style="padding: 6px 12px; height: auto; min-width: 120px;" onchange="filterMyCourses()">
+                        <option value="all">全部狀態</option>
+                        <option value="ongoing">修課中</option>
+                        <option value="pass">已修畢</option>
+                        <option value="fail">未及格</option>
+                        <option value="missing">未修</option>
+                    </select>
                 </div>
             </div>
 
@@ -362,9 +380,9 @@
                             <th style="width: 40px;"></th>
                         </tr>
                     </thead>
-                    <tbody>
+                    <tbody id="myCoursesBody">
                         {% for pc in pinned_courses %}
-                        <tr style="background: rgba(244, 63, 94, 0.05);">
+                        <tr class="course-row" data-category="{{ pc.category }}" data-status="{{ pc.status }}" style="background: rgba(244, 63, 94, 0.05);">
                             <td style="color: rgba(255,255,255,0.4);">-</td>
                             <td style="font-weight: 500; color: #f43f5e;">{{ pc.name }}</td>
                             <td style="color: rgba(255,255,255,0.5);">
@@ -381,7 +399,7 @@
                         {% endfor %}
                         
                         {% for course in courses|sort(attribute='semester') %}
-                        <tr data-course-no="{{ course.course_no }}">
+                        <tr class="course-row" data-course-no="{{ course.course_no }}" data-category="{{ course.category }}" data-status="{{ course.grade }}">
                             <td style="color: rgba(255,255,255,0.6);">{{ course.semester }}</td>
                             <td style="font-weight: 500;">{{ course.name }}</td>
                             <td style="color: rgba(255,255,255,0.7);">
@@ -435,6 +453,28 @@
         </div>
     </div>
 </div>
+
+<script>
+function filterMyCourses() {
+    const categoryFilter = document.getElementById('filterCategory').value;
+    const statusFilter = document.getElementById('filterStatus').value;
+    
+    const rows = document.querySelectorAll('#myCoursesBody .course-row');
+    rows.forEach(row => {
+        const rowCategory = row.getAttribute('data-category');
+        const rowStatus = row.getAttribute('data-status');
+        
+        let categoryMatch = (categoryFilter === 'all') || (categoryFilter === rowCategory);
+        let statusMatch = (statusFilter === 'all') || (statusFilter === rowStatus);
+        
+        if (categoryMatch && statusMatch) {
+            row.style.display = '';
+        } else {
+            row.style.display = 'none';
+        }
+    });
+}
+</script>
 {% endblock %}
 
 {% block extra_js %}
@@ -624,7 +664,10 @@ async function addCourseGlobal(btn, courseNo, name, credits, courseType, semeste
             else if(data.status === 'fail') badgeHtml = '<span class="badge-fail" style="background: rgba(244, 63, 94, 0.1); color: #f43f5e; padding: 4px 8px; border-radius: 4px; font-size: 0.8rem;">未及格</span>';
 
             const newRow = document.createElement('tr');
+            newRow.className = 'course-row';
             newRow.setAttribute('data-course-no', courseNo);
+            newRow.setAttribute('data-category', category);
+            newRow.setAttribute('data-status', data.status || 'ongoing');
             newRow.innerHTML = `
                 <td style="color: rgba(255,255,255,0.6);">${semester}</td>
                 <td style="font-weight: 500;">${name}</td>
@@ -707,7 +750,10 @@ async function addCourse(btn, courseNo, name, credits, courseType) {
             else if(courseType === '△') category = 'free_elective';
 
             const newRow = document.createElement('tr');
+            newRow.className = 'course-row';
             newRow.setAttribute('data-course-no', courseNo);
+            newRow.setAttribute('data-category', category);
+            newRow.setAttribute('data-status', 'ongoing');
             newRow.innerHTML = `
                 <td style="color: rgba(255,255,255,0.6);">${semester}</td>
                 <td style="font-weight: 500;">${name}</td>
