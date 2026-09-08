@@ -195,23 +195,32 @@
             <div class="form-grid">
                 <div class="form-group">
                     <label class="glass-label">入學學年度</label>
-                    <input type="number" name="entry_year" class="glass-input" placeholder="例如: 113" value="{{ setting.entry_year if setting else 113 }}" required>
+                    <input type="number" id="entryYear" name="entry_year" class="glass-input" placeholder="例如: 113" value="{{ setting.entry_year if setting else 113 }}" required>
                 </div>
                 
                 <div class="form-group">
                     <label class="glass-label">系所名稱</label>
-                    <input type="text" name="department" class="glass-input" placeholder="例如: 資工系" value="{{ setting.department if setting else '' }}" required>
+                    <select id="departmentSelect" name="department" class="glass-input" required>
+                        <option value="">請先輸入學年度...</option>
+                        {% if setting and setting.department %}
+                        <option value="{{ setting.department }}" selected>{{ setting.department }}</option>
+                        {% endif %}
+                    </select>
                 </div>
                 
                 <div class="form-group">
-                    <label class="glass-label">班級代碼 (查課表用)</label>
-                    <input type="text" name="class_code" class="glass-input" placeholder="請輸入4位數字代碼 (例如: 2676)" value="{{ setting.class_code if setting else '' }}" required>
-                    <span class="input-hint">代碼可從學校課表網址的 code 參數找到</span>
+                    <label class="glass-label">班級名稱</label>
+                    <select id="classSelect" name="class_name" class="glass-input" required>
+                        <option value="">請先選擇系所...</option>
+                        {% if setting and setting.class_name %}
+                        <option value="{{ setting.class_name }}" selected>{{ setting.class_name }}</option>
+                        {% endif %}
+                    </select>
                 </div>
                 
                 <div class="form-group">
-                    <label class="glass-label">班級名稱 (選填)</label>
-                    <input type="text" name="class_name" class="glass-input" placeholder="例如: 資工四" value="{{ setting.class_name if setting else '' }}">
+                    <label class="glass-label">班級代碼 (自動帶入)</label>
+                    <input type="text" id="classCode" name="class_code" class="glass-input" value="{{ setting.class_code if setting else '' }}" readonly style="opacity: 0.7; cursor: not-allowed;">
                 </div>
             </div>
         </div>
@@ -221,32 +230,33 @@
             <div class="section-title">
                 <span class="material-icons" style="color: #e11d48;">verified</span>
                 畢業學分門檻
+                <span id="rulesStatus" style="font-size: 0.8rem; margin-left: 10px; color: #10b981; display: none; font-weight: normal;">已自動匯入！</span>
             </div>
             
             <div class="form-grid">
                 <div class="form-group">
                     <label class="glass-label">畢業總學分</label>
-                    <input type="number" name="total_required" class="glass-input" value="{{ setting.total_required if setting else 128 }}" required>
+                    <input type="number" id="totalRequired" name="total_required" class="glass-input" value="{{ setting.total_required if setting else 128 }}" required>
                 </div>
                 
                 <div class="form-group">
                     <label class="glass-label">校訂共同必修</label>
-                    <input type="number" name="common_required" class="glass-input" value="{{ setting.common_required if setting else 28 }}" required>
+                    <input type="number" id="commonRequired" name="common_required" class="glass-input" value="{{ setting.common_required if setting else 28 }}" required>
                 </div>
                 
                 <div class="form-group">
                     <label class="glass-label">系訂專業必修</label>
-                    <input type="number" name="major_required_credits" class="glass-input" value="{{ setting.major_required_credits if setting else 64 }}" required>
+                    <input type="number" id="majorRequired" name="major_required_credits" class="glass-input" value="{{ setting.major_required_credits if setting else 64 }}" required>
                 </div>
                 
                 <div class="form-group">
                     <label class="glass-label">專業選修</label>
-                    <input type="number" name="major_elective_credits" class="glass-input" value="{{ setting.major_elective_credits if setting else 20 }}" required>
+                    <input type="number" id="majorElective" name="major_elective_credits" class="glass-input" value="{{ setting.major_elective_credits if setting else 20 }}" required>
                 </div>
                 
                 <div class="form-group">
                     <label class="glass-label">跨域/自由選修</label>
-                    <input type="number" name="free_elective_credits" class="glass-input" value="{{ setting.free_elective_credits if setting else 16 }}" required>
+                    <input type="number" id="freeElective" name="free_elective_credits" class="glass-input" value="{{ setting.free_elective_credits if setting else 16 }}" required>
                 </div>
             </div>
         </div>
@@ -261,6 +271,165 @@
 
 {% block scripts %}
 <script>
+let departmentData = [];
+
+// DOM Elements
+const entryYearInput = document.getElementById('entryYear');
+const deptSelect = document.getElementById('departmentSelect');
+const classSelect = document.getElementById('classSelect');
+const classCodeInput = document.getElementById('classCode');
+
+const rulesStatus = document.getElementById('rulesStatus');
+const fields = {
+    total: document.getElementById('totalRequired'),
+    common: document.getElementById('commonRequired'),
+    majorReq: document.getElementById('majorRequired'),
+    majorElec: document.getElementById('majorElective'),
+    freeElec: document.getElementById('freeElective')
+};
+
+// Fetch departments on load or year change
+async function fetchDepartments() {
+    const year = entryYearInput.value;
+    if(!year) return;
+    
+    deptSelect.innerHTML = '<option value="">載入中...</option>';
+    try {
+        const res = await fetch(`https://gnehs.github.io/ntut-course-crawler-node/${year}/1/department.json`);
+        departmentData = await res.json();
+        
+        // Preserve current selection if exists
+        const currentVal = deptSelect.value;
+        
+        deptSelect.innerHTML = '<option value="">-- 請選擇系所 --</option>';
+        departmentData.forEach(dept => {
+            const opt = document.createElement('option');
+            opt.value = dept.name;
+            opt.textContent = dept.name;
+            deptSelect.appendChild(opt);
+        });
+        
+        // Restore selection
+        if(currentVal && Array.from(deptSelect.options).some(o => o.value === currentVal)) {
+            deptSelect.value = currentVal;
+            // Also trigger class population manually since we restored the value
+            populateClasses(currentVal);
+        }
+    } catch(err) {
+        deptSelect.innerHTML = '<option value="">載入失敗，請重試或確認網路</option>';
+    }
+}
+
+function populateClasses(deptName) {
+    if(!deptName) {
+        classSelect.innerHTML = '<option value="">請先選擇系所...</option>';
+        return;
+    }
+    
+    const dept = departmentData.find(d => d.name === deptName);
+    if(dept && dept.class) {
+        const currentVal = classSelect.value;
+        classSelect.innerHTML = '<option value="">-- 請選擇班級 --</option>';
+        dept.class.forEach(c => {
+            const opt = document.createElement('option');
+            opt.value = c.name;
+            opt.dataset.id = c.id;
+            opt.textContent = c.name;
+            classSelect.appendChild(opt);
+        });
+        
+        if(currentVal && Array.from(classSelect.options).some(o => o.value === currentVal)) {
+            classSelect.value = currentVal;
+        }
+    }
+}
+
+async function fetchRules(deptName) {
+    const year = entryYearInput.value;
+    rulesStatus.style.display = 'none';
+    
+    try {
+        const res = await fetch(`https://gnehs.github.io/ntut-course-crawler-node/${year}/standard.json`);
+        const data = await res.json();
+        
+        // Look in 四技 by default
+        let rules = [];
+        if(data['四技'] && data['四技'][deptName]) {
+            rules = data['四技'][deptName].rules;
+        } else {
+            // Search other education levels if not found
+            for(const level of Object.values(data)) {
+                if(level[deptName] && level[deptName].rules) {
+                    rules = level[deptName].rules;
+                    break;
+                }
+            }
+        }
+        
+        if(rules && rules.length > 0) {
+            parseRules(rules);
+        }
+    } catch(e) {
+        console.error("無法載入畢業門檻:", e);
+    }
+}
+
+function parseRules(rules) {
+    let extracted = false;
+    
+    rules.forEach(rule => {
+        // 總學分
+        const totalMatch = rule.match(/最低畢業學分[：:]\s*(\d+)/);
+        if(totalMatch) { fields.total.value = totalMatch[1]; extracted = true; }
+        
+        // 共同必修
+        const commonMatch = rule.match(/共同必修[：:]\s*(\d+)/);
+        if(commonMatch) { fields.common.value = commonMatch[1]; extracted = true; }
+        
+        // 專業必修
+        const majorReqMatch = rule.match(/專業必修\s*(\d+)/);
+        if(majorReqMatch) { fields.majorReq.value = majorReqMatch[1]; extracted = true; }
+        
+        // 專業選修
+        const majorElecMatch = rule.match(/專業選修\s*(\d+)/);
+        if(majorElecMatch) { fields.majorElec.value = majorElecMatch[1]; extracted = true; }
+        
+        // 跨域及自由選修
+        const freeElecMatch = rule.match(/(?:跨域及自由選修|自由選修)\s*(\d+)/);
+        if(freeElecMatch) { fields.freeElec.value = freeElecMatch[1]; extracted = true; }
+    });
+    
+    if(extracted) {
+        rulesStatus.style.display = 'inline';
+        
+        // Add a subtle flash effect to fields to show they updated
+        Object.values(fields).forEach(f => {
+            const oldBg = f.style.background;
+            f.style.background = 'rgba(16, 185, 129, 0.2)';
+            setTimeout(() => { f.style.background = oldBg; }, 1000);
+        });
+    }
+}
+
+// Event Listeners
+entryYearInput.addEventListener('change', fetchDepartments);
+
+deptSelect.addEventListener('change', (e) => {
+    const val = e.target.value;
+    populateClasses(val);
+    fetchRules(val);
+});
+
+classSelect.addEventListener('change', (e) => {
+    const selectedOpt = e.target.options[e.target.selectedIndex];
+    if(selectedOpt && selectedOpt.dataset.id) {
+        classCodeInput.value = selectedOpt.dataset.id;
+    }
+});
+
+// Initialize on page load
+fetchDepartments();
+
 document.getElementById('settingsForm').addEventListener('submit', async (e) => {
     e.preventDefault();
     const btn = document.getElementById('saveBtn');
