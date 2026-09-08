@@ -286,12 +286,19 @@
                 <span class="material-icons" style="color: #38bdf8;">search</span>
                 從課表尋找課程
             </div>
-            
-            <div style="display: flex; gap: 10px; margin-bottom: 12px;">
-                <input type="text" id="fetchYear" class="glass-input" style="margin-bottom: 0;" value="113" placeholder="學年(113)">
-                <select id="fetchSem" class="glass-input" style="margin-bottom: 0;">
-                    <option value="1">上學期(1)</option>
-                    <option value="2">下學期(2)</option>
+            <!-- Semester Select (Calculated from Entry Year) -->
+            <div style="margin-bottom: 12px;">
+                <select id="fetchSemesterLevel" class="glass-input" style="margin-bottom: 0;">
+                    <option value="1,1">一年級 (大一) 上學期</option>
+                    <option value="1,2">一年級 (大一) 下學期</option>
+                    <option value="2,1">二年級 (大二) 上學期</option>
+                    <option value="2,2">二年級 (大二) 下學期</option>
+                    <option value="3,1">三年級 (大三) 上學期</option>
+                    <option value="3,2">三年級 (大三) 下學期</option>
+                    <option value="4,1">四年級 (大四) 上學期</option>
+                    <option value="4,2">四年級 (大四) 下學期</option>
+                    <option value="5,1">五年級 (大五/碩一) 上學期</option>
+                    <option value="5,2">五年級 (大五/碩一) 下學期</option>
                 </select>
             </div>
             <input type="text" id="fetchClass" class="glass-input" value="{{ setting.class_code }}" placeholder="班級代碼 (例如: 2676)">
@@ -375,14 +382,19 @@
 {% block extra_js %}
 <script>
 async function fetchCourses() {
-    const year = document.getElementById('fetchYear').value;
-    const sem = document.getElementById('fetchSem').value;
+    const semLevel = document.getElementById('fetchSemesterLevel').value.split(',');
+    const entryYear = parseInt('{{ setting.entry_year }}') || 113;
+    const yearOffset = parseInt(semLevel[0]) - 1;
+    
+    const year = entryYear + yearOffset;
+    const sem = semLevel[1];
+    
     const code = document.getElementById('fetchClass').value;
     
     if(!code) return alert('請輸入班級代碼');
     
     const container = document.getElementById('courseResults');
-    container.innerHTML = '<div style="text-align: center; color: rgba(255,255,255,0.6); font-size: 0.9rem; margin-top: 20px;"><span class="material-icons" style="animation: spin 1s linear infinite;">autorenew</span> 載入課表中...<br><span style="font-size: 0.8rem; opacity: 0.7;">(初次載入需約1-2秒)</span></div>';
+    container.innerHTML = `<div style="text-align: center; color: rgba(255,255,255,0.6); font-size: 0.9rem; margin-top: 20px;"><span class="material-icons" style="animation: spin 1s linear infinite;">autorenew</span> 載入 ${year}學年度第${sem}學期 課表中...<br><span style="font-size: 0.8rem; opacity: 0.7;">(初次載入需約1-2秒)</span></div>`;
     
     // Add spin animation dynamically if it doesn't exist
     if(!document.getElementById('spinStyle')) {
@@ -395,6 +407,11 @@ async function fetchCourses() {
     try {
         // 直接從 gnehs 靜態 API 抓取全校課表，避免後端被 PythonAnywhere 阻擋
         const res = await fetch(`https://gnehs.github.io/ntut-course-crawler-node/${year}/${sem}/main.json`);
+        
+        if(!res.ok) {
+            throw new Error(`API returned ${res.status}`);
+        }
+        
         const allCourses = await res.json();
         
         // 篩選該班級的課程
@@ -419,17 +436,19 @@ async function fetchCourses() {
                 </div>
             `}).join('');
         } else {
-            container.innerHTML = '<div style="text-align: center; color: #f87171; font-size: 0.9rem; margin-top: 20px;">找不到課表資料，請確認代碼是否正確。</div>';
+            container.innerHTML = `<div style="text-align: center; color: #f87171; font-size: 0.9rem; margin-top: 20px;">找不到 ${year}學年度第${sem}學期 的課表資料。<br><span style="font-size: 0.8rem; color: rgba(255,255,255,0.5);">請確認「班級代碼」在此學期是否正確。</span></div>`;
         }
     } catch(e) {
         console.error(e);
-        container.innerHTML = '<div style="text-align: center; color: #f87171; font-size: 0.9rem; margin-top: 20px;">網路錯誤，請稍後再試。</div>';
+        container.innerHTML = `<div style="text-align: center; color: #f87171; font-size: 0.9rem; margin-top: 20px;">無法取得 ${year}學年度第${sem}學期 的課表，可能是該學期資料不存在。</div>`;
     }
 }
 
 async function addCourse(courseNo, name, credits, courseType) {
-    const year = document.getElementById('fetchYear').value;
-    const sem = document.getElementById('fetchSem').value;
+    const semLevel = document.getElementById('fetchSemesterLevel').value.split(',');
+    const entryYear = parseInt('{{ setting.entry_year }}') || 113;
+    const year = entryYear + parseInt(semLevel[0]) - 1;
+    const sem = semLevel[1];
     const semester = `${year}-${sem}`;
     
     try {
