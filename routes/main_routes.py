@@ -25,7 +25,7 @@ def index():
             pass
 
     # Default full list of tools
-    default_order = ['finance', 'salary', 'expense', 'downloader', 'countdown', 'reminder', 'calendar', 'period', 'shop', 'vocab']
+    default_order = ['finance', 'salary', 'expense', 'downloader', 'countdown', 'reminder', 'calendar', 'period', 'shop', 'vocab', 'credit']
     
     # Auto-append custom links to the end of dashboard_order if they are not already there
     custom_keys = [link['id'] for link in custom_links_list]
@@ -42,7 +42,7 @@ def index():
                 dashboard_order.append(tool)
                 
         # Also, remove any custom links from dashboard_order that were deleted by the user
-        valid_keys = set(['finance', 'salary', 'expense', 'downloader', 'countdown', 'reminder', 'calendar', 'period', 'shop', 'vocab'] + custom_keys)
+        valid_keys = set(['finance', 'salary', 'expense', 'downloader', 'countdown', 'reminder', 'calendar', 'period', 'shop', 'vocab', 'credit'] + custom_keys)
         dashboard_order = [k for k in dashboard_order if k in valid_keys]
         
         # Deduplicate while preserving order in case of corrupted DB data
