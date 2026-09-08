@@ -48,10 +48,10 @@
     }
 
     @media (max-width: 900px) {
-        .stats-grid { grid-template-columns: repeat(2, 1fr); }
+        .stats-grid { grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 20px; }
     }
     @media (max-width: 500px) {
-        .stats-grid { grid-template-columns: 1fr; }
+        .stats-grid { grid-template-columns: repeat(2, 1fr); gap: 10px; margin-bottom: 16px; }
     }
 
     .stat-card {
@@ -107,18 +107,23 @@
     }
     
     @media (max-width: 900px) {
-        .main-grid { grid-template-columns: 1fr; }
+        .main-grid { grid-template-columns: 1fr; gap: 16px; }
     }
     
     @media (max-width: 600px) {
-        .dashboard-container { padding-bottom: 40px; }
-        .dashboard-header { flex-direction: column; align-items: flex-start; gap: 12px; }
-        .dashboard-title { font-size: 1.4rem; }
-        .glass-panel { padding: 16px; margin-bottom: 16px; border-radius: 16px; }
-        .stat-card { padding: 16px; border-radius: 16px; }
-        .stat-value { font-size: 1.8rem; }
-        .stat-total { font-size: 0.85rem; }
-        .section-title { font-size: 1.1rem; }
+        .dashboard-container { padding-bottom: 20px; }
+        .dashboard-header { flex-direction: column; align-items: flex-start; gap: 8px; margin-bottom: 16px; }
+        .dashboard-title { font-size: 1.2rem; }
+        .glass-panel { padding: 12px; margin-bottom: 12px; border-radius: 12px; }
+        .stat-card { padding: 10px 12px; border-radius: 12px; }
+        .stat-label { font-size: 0.75rem; margin-bottom: 4px; }
+        .stat-value { font-size: 1.4rem; }
+        .stat-total { font-size: 0.75rem; }
+        .section-title { font-size: 1rem; margin-bottom: 12px; }
+        
+        /* Reduce input sizes */
+        .glass-input { padding: 8px 10px; font-size: 0.85rem; margin-bottom: 8px; }
+        .btn-action { padding: 8px; font-size: 0.9rem; }
     }
 
     .section-title {
@@ -222,8 +227,8 @@
     }
     
     @media (max-width: 600px) {
-        .glass-table th { padding: 8px 10px; font-size: 0.8rem; white-space: nowrap; }
-        .glass-table td { padding: 10px 10px; font-size: 0.85rem; white-space: nowrap; }
+        .glass-table th { padding: 6px 8px; font-size: 0.75rem; white-space: nowrap; }
+        .glass-table td { padding: 8px 8px; font-size: 0.8rem; white-space: nowrap; }
     }
 
     .badge-ongoing {
