@@ -1,0 +1,104 @@
+{% extends 'base.html' %}
+{% block title %}學分設定 - 北科大{% endblock %}
+
+{% block content %}
+<div class="max-w-3xl mx-auto space-y-6">
+    <div class="flex items-center justify-between">
+        <h2 class="text-2xl font-bold text-gray-800 dark:text-gray-100">
+            {% if is_new %}🎓 歡迎使用北科大學分計算機{% else %}⚙️ 學分設定{% endif %}
+        </h2>
+        {% if not is_new %}
+        <a href="{{ url_for('credit.index') }}" class="text-sm text-indigo-600 hover:text-indigo-500 dark:text-indigo-400">返回儀表板</a>
+        {% endif %}
+    </div>
+
+    {% if is_new %}
+    <div class="bg-blue-50 dark:bg-blue-900/30 p-4 rounded-xl border border-blue-200 dark:border-blue-800">
+        <p class="text-blue-800 dark:text-blue-200">
+            要開始計算學分，請先填寫你的系所與入學年度，以及畢業學分門檻。
+            這些設定之後隨時可以修改。
+        </p>
+    </div>
+    {% endif %}
+
+    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 p-6">
+        <form id="settingsForm" class="space-y-6">
+            <h3 class="text-lg font-medium text-gray-900 dark:text-white border-b border-gray-200 dark:border-gray-700 pb-2">基本學籍資料</h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">入學學年度 (例如: 113)</label>
+                    <input type="number" name="entry_year" class="w-full rounded-xl border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-indigo-500 focus:border-indigo-500" value="{{ setting.entry_year if setting else 113 }}" required>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">系所名稱 (例如: 資工系)</label>
+                    <input type="text" name="department" class="w-full rounded-xl border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-indigo-500 focus:border-indigo-500" value="{{ setting.department if setting else '' }}" required>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">班級代碼 (查課表用，例如: 2676)</label>
+                    <input type="text" name="class_code" class="w-full rounded-xl border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-indigo-500 focus:border-indigo-500" value="{{ setting.class_code if setting else '' }}" placeholder="請輸入4位數字代碼" required>
+                    <p class="text-xs text-gray-500 mt-1">代碼可從學校課表網址的 code 參數找到</p>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">班級名稱 (例如: 資工四)</label>
+                    <input type="text" name="class_name" class="w-full rounded-xl border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-indigo-500 focus:border-indigo-500" value="{{ setting.class_name if setting else '' }}">
+                </div>
+            </div>
+
+            <h3 class="text-lg font-medium text-gray-900 dark:text-white border-b border-gray-200 dark:border-gray-700 pb-2 pt-4">畢業學分門檻</h3>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">畢業總學分</label>
+                    <input type="number" name="total_required" class="w-full rounded-xl border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-indigo-500 focus:border-indigo-500" value="{{ setting.total_required if setting else 128 }}" required>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">校訂共同必修</label>
+                    <input type="number" name="common_required" class="w-full rounded-xl border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-indigo-500 focus:border-indigo-500" value="{{ setting.common_required if setting else 28 }}" required>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">系訂專業必修</label>
+                    <input type="number" name="major_required_credits" class="w-full rounded-xl border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-indigo-500 focus:border-indigo-500" value="{{ setting.major_required_credits if setting else 64 }}" required>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">專業選修</label>
+                    <input type="number" name="major_elective_credits" class="w-full rounded-xl border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-indigo-500 focus:border-indigo-500" value="{{ setting.major_elective_credits if setting else 20 }}" required>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">跨域/自由選修</label>
+                    <input type="number" name="free_elective_credits" class="w-full rounded-xl border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-indigo-500 focus:border-indigo-500" value="{{ setting.free_elective_credits if setting else 16 }}" required>
+                </div>
+            </div>
+
+            <div class="flex justify-end pt-4">
+                <button type="submit" class="px-6 py-2 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors">
+                    儲存設定並繼續
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.getElementById('settingsForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const formData = new FormData(e.target);
+    
+    try {
+        const res = await fetch('{{ url_for("credit.settings") }}', {
+            method: 'POST',
+            body: formData
+        });
+        const data = await res.json();
+        if(data.success) {
+            window.location.href = '{{ url_for("credit.index") }}';
+        } else {
+            alert('儲存失敗：' + (data.error || '未知錯誤'));
+        }
+    } catch(err) {
+        console.error(err);
+        alert('儲存失敗');
+    }
+});
+</script>
+{% endblock %}

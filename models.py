@@ -167,7 +167,7 @@ class UserSettings(db.Model):
     
     # Layout Preferences
     dashboard_order = db.Column(db.Text, default='[]')
-    dock_order = db.Column(db.Text, default='["main.index", "salary.index", "ntut.calendar", "expense.today"]')
+    dock_order = db.Column(db.Text, default='["main.index", "salary.index", "credit.index", "ntut.calendar", "expense.today"]')
 
     # Calendar notification settings
     calendar_notify_enabled = db.Column(db.Boolean, default=True)
@@ -513,3 +513,112 @@ class GroupDailyAssignment(db.Model):
     words_json = db.Column(db.Text, nullable=False) # JSON encoded list of word dicts: [{"word": "apple", "definition": "蘋果", ...}]
 
     __table_args__ = (db.UniqueConstraint('group_id', 'date', name='uq_group_date'),)
+
+# ─────────────────────────────────────────────
+# 北科大學分計算工具
+# ─────────────────────────────────────────────
+
+class CreditSetting(db.Model):
+    """使用者的學分設定（系所、入學年度、畢業門檻等）"""
+    __tablename__ = 'credit_settings'
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False, unique=True)
+
+    # 基本學籍資訊
+    department = db.Column(db.String(100), default='')       # 系所名稱，e.g. 資工系
+    college    = db.Column(db.String(50), default='')        # 學院，e.g. 電資學院
+    entry_year = db.Column(db.Integer, default=113)          # 入學學年度
+    class_code = db.Column(db.String(20), default='')        # 北科班級代碼（用於查課表）e.g. 2676
+    class_name = db.Column(db.String(50), default='')        # 班級名稱 e.g. 資工四
+
+    # 畢業學分門檻（從官方系統預載，也可手動覆蓋）
+    total_required          = db.Column(db.Integer, default=132)   # 最低畢業總學分
+    common_required         = db.Column(db.Integer, default=28)    # 校訂共同必修
+    major_required_credits  = db.Column(db.Integer, default=64)    # 系訂專業必修
+    major_elective_credits  = db.Column(db.Integer, default=20)    # 專業選修
+    free_elective_credits   = db.Column(db.Integer, default=20)    # 跨域及自由選修
+    liberal_arts_required   = db.Column(db.Integer, default=18)    # 通識博雅總學分（含在 common_required 內）
+
+    # 特殊情況
+    has_transfer      = db.Column(db.Boolean, default=False)  # 是否為轉系生
+    has_double_major  = db.Column(db.Boolean, default=False)  # 雙主修
+    double_major_dept = db.Column(db.String(100), default='')
+    double_major_req  = db.Column(db.Integer, default=0)      # 雙主修額外學分
+    has_minor         = db.Column(db.Boolean, default=False)  # 輔系
+    minor_dept        = db.Column(db.String(100), default='')
+    minor_req         = db.Column(db.Integer, default=0)      # 輔系學分
+
+    # 英語畢業門檻
+    english_threshold = db.Column(db.Integer, default=550)    # TOEIC 門檻分數
+    english_passed    = db.Column(db.Boolean, default=False)
+    english_method    = db.Column(db.String(50), default='')  # TOEIC / 其他語言 / 修課替代
+    english_score     = db.Column(db.Integer, nullable=True)
+
+    # 體育出席（北科 8 學期體育，0 學分但必修）
+    pe_semesters_required = db.Column(db.Integer, default=8)
+    pe_semesters_done     = db.Column(db.Integer, default=0)
+
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    courses = db.relationship('CreditCourse', backref='setting', lazy=True,
+                              cascade='all, delete-orphan')
+
+
+class CreditCourse(db.Model):
+    """使用者已修或計畫修的課程記錄"""
+    __tablename__ = 'credit_courses'
+    id = db.Column(db.Integer, primary_key=True)
+    setting_id = db.Column(db.Integer, db.ForeignKey('credit_settings.id'), nullable=False)
+    user_id    = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+
+    # 課程基本資訊
+    course_no   = db.Column(db.String(20), default='')       # 北科課號 e.g. 333564
+    name        = db.Column(db.String(100), nullable=False)  # 課程名稱
+    credits     = db.Column(db.Float, default=3.0)           # 學分數（體育=0）
+    hours       = db.Column(db.Integer, default=0)           # 時數
+    semester    = db.Column(db.String(10), default='')       # e.g. 113-1, 113-2
+
+    # 課程分類
+    # 值: common_chinese / common_english_y1 / common_english_y2 /
+    #     liberal_arts / university_intro / pe /
+    #     major_required / major_elective / free_elective
+    category    = db.Column(db.String(30), default='major_required')
+
+    # 通識博雅向度（category='liberal_arts' 時有效）
+    # 值: humanities / social / natural / innovation / other
+    liberal_arts_dimension = db.Column(db.String(30), default='')
+
+    # 成績
+    # 值: A+/A/A-/B+/B/B-/C+/C/C-/D/F/pass/fail/ongoing（修課中）
+    grade       = db.Column(db.String(10), default='ongoing')
+    passed      = db.Column(db.Boolean, default=None)        # None=修課中, True=及格, False=不及格
+
+    # 特殊標記
+    is_exempted   = db.Column(db.Boolean, default=False)     # 是否為抵免課程
+    original_course = db.Column(db.String(100), default='')  # 抵免原始課程名稱
+    is_summer     = db.Column(db.Boolean, default=False)     # 是否為暑修
+
+    # 體育出席（category='pe' 時有效）
+    pe_attendance = db.Column(db.Integer, nullable=True)
+    pe_total      = db.Column(db.Integer, nullable=True)
+
+    notes = db.Column(db.String(200), default='')
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    @property
+    def is_passed(self):
+        """根據成績判斷是否及格"""
+        if self.grade == 'ongoing':
+            return None
+        if self.grade in ('F', 'fail'):
+            return False
+        return True
+
+    @property
+    def counts_toward_graduation(self):
+        """是否計入畢業學分（F/不及格/體育不計學分）"""
+        if self.category == 'pe':
+            return False  # 體育 0 學分
+        return self.is_passed is not False  # 及格或修課中（預計及格）
+

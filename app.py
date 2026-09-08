@@ -45,7 +45,7 @@ def inject_globals():
     import json
     def get_dock_items(user):
         import json
-        default = ["main.index", "salary.index", "ntut.calendar", "expense.today"]
+        default = ["main.index", "salary.index", "credit.index", "ntut.calendar", "expense.today"]
         dock_order = default
         if user and user.is_authenticated and hasattr(user, 'settings') and user.settings and user.settings.dock_order:
             try:
@@ -65,13 +65,14 @@ def inject_globals():
         dock_map = {
             'main.index': {'title': '首頁', 'icon': 'home', 'ep_match': 'main.index'},
             'salary.index': {'title': '薪資', 'icon': 'payments', 'ep_match': 'salary'},
-            'ntut.calendar': {'title': '日曆', 'icon': 'school', 'ep_match': 'ntut'},
+            'ntut.calendar': {'title': '日曆', 'icon': 'calendar_today', 'ep_match': 'ntut'},
             'expense.today': {'title': '記帳', 'icon': 'account_balance_wallet', 'ep_match': 'expense'},
             'countdown.index': {'title': '倒數', 'icon': 'hourglass_empty', 'ep_match': 'countdown'},
             'reminder.index': {'title': '提醒', 'icon': 'notifications_active', 'ep_match': 'reminder'},
             'period.dashboard': {'title': '生理期', 'icon': 'water_drop', 'ep_match': 'period'},
             'vocab.index': {'title': '單字', 'icon': 'spellcheck', 'ep_match': 'vocab'},
-            'group.index': {'title': '群組', 'icon': 'group', 'ep_match': 'group'}
+            'group.index': {'title': '群組', 'icon': 'group', 'ep_match': 'group'},
+            'credit.index': {'title': '學分', 'icon': 'school', 'ep_match': 'credit'}
         }
         
         items = []
@@ -105,6 +106,7 @@ with app.app_context():
     from routes.auth import auth_bp
     from routes.admin import admin_bp
     from routes.finance_routes import finance_bp
+    from routes.credit_routes import credit_bp
 
     app.register_blueprint(main_bp)
     app.register_blueprint(salary_bp, url_prefix='/salary')
@@ -114,6 +116,7 @@ with app.app_context():
     app.register_blueprint(auth_bp)
     app.register_blueprint(admin_bp, url_prefix='/admin')
     app.register_blueprint(finance_bp, url_prefix='/finance')
+    app.register_blueprint(credit_bp, url_prefix='/credit')
     
     from services.line_service import LineService
     from routes.line_routes import line_bp, register_line_handlers
