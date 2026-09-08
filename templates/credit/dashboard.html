@@ -577,9 +577,17 @@ async function addCourseGlobal(btn, courseNo, name, credits, courseType, semeste
     
     let category = 'free_elective'; // 預設為跨域及自由選修 (外系)
     const commonKeywords = ['國文', '國語文實務應用', '專業英文', '英文', '通識', '歷史', '勞作教育', '全民國防', '大學入門', '工程倫理', '服務學習'];
+    
+    // 判斷是否為博雅/通識課程
+    const isLiberalArts = fullCourse && (
+        (fullCourse.class && fullCourse.class.some(cls => cls.name.includes('博雅') || cls.name.includes('通識'))) ||
+        (fullCourse.notes && fullCourse.notes.includes('向度')) ||
+        (fullCourse.name && typeof fullCourse.name === 'object' && (fullCourse.name.zh.includes('博雅') || fullCourse.name.zh.includes('通識')))
+    );
+
     if(name.includes('體育')) category = 'pe';
     else if(name.includes('永續公民實踐')) category = 'free_elective';
-    else if(commonKeywords.some(k => name.includes(k))) category = 'common_required';
+    else if(isLiberalArts || commonKeywords.some(k => name.includes(k))) category = 'common_required';
     else if(isMyClass && courseType === '▲') category = 'major_required';
     else if(isMyClass && courseType === '△') category = 'major_elective';
     

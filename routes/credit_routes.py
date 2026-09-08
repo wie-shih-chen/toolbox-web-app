@@ -195,7 +195,7 @@ def add_course():
         ctype = data.get('courseType', '')
         name = data.get('name', '')
         
-        common_keywords = ['國文', '國語文實務應用', '專業英文', '英文', '通識', '歷史', '勞作教育', '全民國防', '大學入門', '工程倫理', '服務學習']
+        common_keywords = ['國文', '國語文實務應用', '專業英文', '英文', '通識', '博雅', '歷史', '勞作教育', '全民國防', '大學入門', '工程倫理', '服務學習']
         
         if '體育' in name:
             category = 'pe'
