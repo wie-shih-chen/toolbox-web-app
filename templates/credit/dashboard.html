@@ -359,7 +359,7 @@
                         {% endfor %}
                         
                         {% for course in courses|sort(attribute='semester') %}
-                        <tr>
+                        <tr data-course-no="{{ course.course_no }}">
                             <td style="color: rgba(255,255,255,0.6);">{{ course.semester }}</td>
                             <td style="font-weight: 500;">{{ course.name }}</td>
                             <td style="color: rgba(255,255,255,0.7);">
@@ -478,18 +478,22 @@ async function renderCourses() {
     
     if(!currentCohortCourses.length) return;
     
-    let filtered = [];
+    let filtered = currentCohortCourses;
+    
+    // Filter out already added courses
+    const addedCourseNos = Array.from(document.querySelectorAll('tr[data-course-no]')).map(tr => tr.getAttribute('data-course-no'));
+    filtered = filtered.filter(c => !addedCourseNos.includes(c.id.toString()));
     
     if (keyword) {
         // Search Mode: filter across ALL courses in the CURRENT semester
-        filtered = currentCohortCourses.filter(c => 
+        filtered = filtered.filter(c => 
             (c.name && c.name.zh && c.name.zh.toLowerCase().includes(keyword)) || 
             (c.id && c.id.toLowerCase().includes(keyword)) ||
             (c.code && c.code.toLowerCase().includes(keyword))
         );
     } else {
         // Default cohort mode: filter by class code in the CURRENT semester
-        filtered = currentCohortCourses.filter(c => c.class && c.class.some(cls => cls.code === code));
+        filtered = filtered.filter(c => c.class && c.class.some(cls => cls.code === code));
     }
     
     if(filtered.length > 100) {
@@ -570,6 +574,7 @@ async function addCourseGlobal(btn, courseNo, name, credits, courseType, semeste
             else if(data.status === 'fail') badgeHtml = '<span class="badge-fail" style="background: rgba(244, 63, 94, 0.1); color: #f43f5e; padding: 4px 8px; border-radius: 4px; font-size: 0.8rem;">未及格</span>';
 
             const newRow = document.createElement('tr');
+            newRow.setAttribute('data-course-no', courseNo);
             newRow.innerHTML = `
                 <td style="color: rgba(255,255,255,0.6);">${semester}</td>
                 <td style="font-weight: 500;">${name}</td>
@@ -587,6 +592,7 @@ async function addCourseGlobal(btn, courseNo, name, credits, courseType, semeste
             `;
             tbody.appendChild(newRow);
             updateProgressUI(data.progress, data.percentages);
+            renderCourses();
             
             setTimeout(() => {
                 btn.innerHTML = oldHtml;
@@ -651,6 +657,7 @@ async function addCourse(btn, courseNo, name, credits, courseType) {
             else if(courseType === '△') category = 'free_elective';
 
             const newRow = document.createElement('tr');
+            newRow.setAttribute('data-course-no', courseNo);
             newRow.innerHTML = `
                 <td style="color: rgba(255,255,255,0.6);">${semester}</td>
                 <td style="font-weight: 500;">${name}</td>
@@ -669,6 +676,7 @@ async function addCourse(btn, courseNo, name, credits, courseType) {
             tbody.appendChild(newRow);
             
             updateProgressUI(data.progress, data.percentages);
+            renderCourses();
             
             setTimeout(() => {
                 btn.innerHTML = oldHtml;
@@ -690,16 +698,18 @@ async function addCourse(btn, courseNo, name, credits, courseType) {
 async function deleteCourse(id, btnElement) {
     if(!confirm('確定要刪除這筆課程嗎？')) return;
     
-    const row = btnElement.closest('tr');
-    
     try {
         const res = await fetch(`{{ url_for('credit.delete_course', course_id=0) }}`.replace('0', id), {
             method: 'POST'
         });
         const data = await res.json();
         if(data.success) {
-            row.remove();
+            const tr = btnElement.closest('tr');
+            tr.remove();
             updateProgressUI(data.progress, data.percentages);
+            if (typeof renderCourses === 'function') {
+                renderCourses();
+            }
         } else {
             alert('刪除失敗');
         }
