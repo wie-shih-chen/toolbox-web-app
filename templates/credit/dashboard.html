@@ -286,6 +286,12 @@
                 <span class="material-icons" style="color: #38bdf8;">search</span>
                 從課表尋找課程
             </div>
+
+            <div style="margin-bottom: 16px; position: relative;">
+                <span class="material-icons" style="position: absolute; left: 12px; top: 12px; color: rgba(255,255,255,0.4); font-size: 18px;">search</span>
+                <input type="text" id="courseSearch" class="glass-input" placeholder="全域搜尋此學期課名或課號..." onkeyup="filterCourses()" style="margin-bottom: 0; padding-left: 36px;">
+            </div>
+
             <!-- Semester Select (Calculated from Entry Year) -->
             <div style="margin-bottom: 12px;">
                 <select id="fetchSemesterLevel" class="glass-input" style="margin-bottom: 0;" onchange="fetchCourses()">
@@ -300,14 +306,12 @@
                     <option value="5,1">五年級 (大五/碩一) 上學期</option>
                     <option value="5,2">五年級 (大五/碩一) 下學期</option>
                 </select>
+                <div style="font-size: 0.8rem; color: rgba(255,255,255,0.5); margin-top: 4px; text-align: right;">
+                    (切換學期會自動載入班級預設課表)
+                </div>
             </div>
             <input type="hidden" id="fetchClass" value="{{ setting.class_code }}">
             
-            <div style="margin-top: 16px; position: relative;">
-                <span class="material-icons" style="position: absolute; left: 12px; top: 12px; color: rgba(255,255,255,0.4); font-size: 18px;">search</span>
-                <input type="text" id="courseSearch" class="glass-input" placeholder="搜尋全校課名或課號... (清空即顯示班級預設課表)" onkeyup="filterCourses()" style="margin-bottom: 0; padding-left: 36px;">
-            </div>
-
             <!-- 課表結果容器 -->
             <div id="courseResults" style="margin-top: 20px; max-height: 400px; overflow-y: auto; padding-right: 8px;">
                 <div style="text-align: center; color: rgba(255,255,255,0.4); font-size: 0.9rem; margin-top: 30px;">
@@ -338,11 +342,25 @@
                         </tr>
                     </thead>
                     <tbody>
-                        {% for course in courses %}
+                        {% for course in courses|sort(attribute='semester') %}
                         <tr>
                             <td style="color: rgba(255,255,255,0.6);">{{ course.semester }}</td>
                             <td style="font-weight: 500;">{{ course.name }}</td>
-                            <td style="color: rgba(255,255,255,0.7);">{{ course.category }}</td>
+                            <td style="color: rgba(255,255,255,0.7);">
+                                {% if course.category == 'major_required' %}
+                                系訂專業必修
+                                {% elif course.category == 'major_elective' %}
+                                專業選修
+                                {% elif course.category == 'common_required' %}
+                                校訂共同必修
+                                {% elif course.category == 'free_elective' %}
+                                跨域及自由選修
+                                {% elif course.category == 'pe' %}
+                                體育
+                                {% else %}
+                                {{ course.category }}
+                                {% endif %}
+                            </td>
                             <td style="text-align: center; font-weight: 600;">{{ course.credits }}</td>
                             <td style="text-align: center;">
                                 {% if course.grade == 'ongoing' %}
@@ -393,6 +411,8 @@ function updateProgressUI(progress, percentages) {
     document.getElementById('bar_common').style.width = percentages.common + '%';
 }
 
+let allCourses = [];
+
 async function fetchCourses() {
     const semLevel = document.getElementById('fetchSemesterLevel').value.split(',');
     const entryYear = parseInt('{{ setting.entry_year }}') || 113;
@@ -406,7 +426,7 @@ async function fetchCourses() {
     if(!code) return alert('請輸入班級代碼');
     
     const container = document.getElementById('courseResults');
-    container.innerHTML = `<div style="text-align: center; color: rgba(255,255,255,0.6); font-size: 0.9rem; margin-top: 20px;"><span class="material-icons" style="animation: spin 1s linear infinite;">autorenew</span> 載入 ${year}學年度第${sem}學期 課表中...<br><span style="font-size: 0.8rem; opacity: 0.7;">(初次載入需約1-2秒)</span></div>`;
+    container.innerHTML = `<div style="text-align: center; color: rgba(255,255,255,0.6); font-size: 0.9rem; margin-top: 20px;"><span class="material-icons" style="animation: spin 1s linear infinite;">autorenew</span> 載入 ${year}學年度第${sem}學期 全校課表中...<br><span style="font-size: 0.8rem; opacity: 0.7;">(初次載入需約1-2秒)</span></div>`;
     
     // Add spin animation dynamically if it doesn't exist
     if(!document.getElementById('spinStyle')) {
@@ -417,7 +437,6 @@ async function fetchCourses() {
     }
     
     try {
-        // 直接從 gnehs 靜態 API 抓取全校課表，避免後端被 PythonAnywhere 阻擋
         const res = await fetch(`https://gnehs.github.io/ntut-course-crawler-node/${year}/${sem}/main.json`);
         
         if(!res.ok) {
@@ -439,11 +458,16 @@ function filterCourses() {
     const keyword = document.getElementById('courseSearch').value.trim().toLowerCase();
     const container = document.getElementById('courseResults');
     
+    // If the data is not loaded yet but they try to search, load it.
+    if(!allCourses.length && keyword) {
+        fetchCourses();
+        return;
+    }
     if(!allCourses.length) return;
     
     let filtered = [];
     if (keyword) {
-        // Search mode
+        // Search mode: global across all loaded courses
         filtered = allCourses.filter(c => 
             (c.name && c.name.zh && c.name.zh.toLowerCase().includes(keyword)) || 
             (c.id && c.id.toLowerCase().includes(keyword))
