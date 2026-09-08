@@ -237,10 +237,10 @@
         <div class="stat-card">
             <div class="stat-label">總學分進度</div>
             <div class="stat-value">
-                0 <span class="stat-total">/ {{ setting.total_required }}</span>
+                <span id="val_total">{{ progress.total }}</span> <span class="stat-total">/ {{ setting.total_required }}</span>
             </div>
             <div class="progress-bar-bg">
-                <div class="progress-bar-fill" style="background: linear-gradient(90deg, #6366f1, #8b5cf6); width: 0%;"></div>
+                <div id="bar_total" class="progress-bar-fill" style="background: linear-gradient(90deg, #6366f1, #8b5cf6); width: {{ percentages.total }}%;"></div>
             </div>
         </div>
         
@@ -248,10 +248,10 @@
         <div class="stat-card">
             <div class="stat-label">系訂專業必修</div>
             <div class="stat-value">
-                0 <span class="stat-total">/ {{ setting.major_required_credits }}</span>
+                <span id="val_major_req">{{ progress.major_req }}</span> <span class="stat-total">/ {{ setting.major_required_credits }}</span>
             </div>
             <div class="progress-bar-bg">
-                <div class="progress-bar-fill" style="background: linear-gradient(90deg, #3b82f6, #06b6d4); width: 0%;"></div>
+                <div id="bar_major_req" class="progress-bar-fill" style="background: linear-gradient(90deg, #3b82f6, #06b6d4); width: {{ percentages.major_req }}%;"></div>
             </div>
         </div>
 
@@ -259,10 +259,10 @@
         <div class="stat-card">
             <div class="stat-label">專業選修</div>
             <div class="stat-value">
-                0 <span class="stat-total">/ {{ setting.major_elective_credits }}</span>
+                <span id="val_major_elec">{{ progress.major_elec }}</span> <span class="stat-total">/ {{ setting.major_elective_credits }}</span>
             </div>
             <div class="progress-bar-bg">
-                <div class="progress-bar-fill" style="background: linear-gradient(90deg, #10b981, #34d399); width: 0%;"></div>
+                <div id="bar_major_elec" class="progress-bar-fill" style="background: linear-gradient(90deg, #10b981, #34d399); width: {{ percentages.major_elec }}%;"></div>
             </div>
         </div>
 
@@ -270,10 +270,10 @@
         <div class="stat-card">
             <div class="stat-label">校訂共同必修</div>
             <div class="stat-value">
-                0 <span class="stat-total">/ {{ setting.common_required }}</span>
+                <span id="val_common">{{ progress.common }}</span> <span class="stat-total">/ {{ setting.common_required }}</span>
             </div>
             <div class="progress-bar-bg">
-                <div class="progress-bar-fill" style="background: linear-gradient(90deg, #f59e0b, #fbbf24); width: 0%;"></div>
+                <div id="bar_common" class="progress-bar-fill" style="background: linear-gradient(90deg, #f59e0b, #fbbf24); width: {{ percentages.common }}%;"></div>
             </div>
         </div>
     </div>
@@ -379,6 +379,22 @@
 
 {% block extra_js %}
 <script>
+function updateProgressUI(progress, percentages) {
+    if (!progress || !percentages) return;
+    
+    document.getElementById('val_total').innerText = progress.total;
+    document.getElementById('bar_total').style.width = percentages.total + '%';
+    
+    document.getElementById('val_major_req').innerText = progress.major_req;
+    document.getElementById('bar_major_req').style.width = percentages.major_req + '%';
+    
+    document.getElementById('val_major_elec').innerText = progress.major_elec;
+    document.getElementById('bar_major_elec').style.width = percentages.major_elec + '%';
+    
+    document.getElementById('val_common').innerText = progress.common;
+    document.getElementById('bar_common').style.width = percentages.common + '%';
+}
+
 async function fetchCourses() {
     const semLevel = document.getElementById('fetchSemesterLevel').value.split(',');
     const entryYear = parseInt('{{ setting.entry_year }}') || 113;
@@ -501,6 +517,8 @@ async function addCourse(btn, courseNo, name, credits, courseType) {
             `;
             tbody.appendChild(newRow);
             
+            updateProgressUI(data.progress, data.percentages);
+            
             setTimeout(() => {
                 btn.innerHTML = oldHtml;
                 btn.disabled = false;
@@ -530,6 +548,7 @@ async function deleteCourse(id, btnElement) {
         const data = await res.json();
         if(data.success) {
             row.remove();
+            updateProgressUI(data.progress, data.percentages);
         } else {
             alert('刪除失敗');
         }
@@ -541,7 +560,7 @@ async function deleteCourse(id, btnElement) {
 // Edit Modal Logic
 function openEditModal(id, name, credits, category, grade) {
     document.getElementById('editCourseId').value = id;
-    document.getElementById('editCourseName').textContent = name;
+    document.getElementById('editCourseName').innerText = name;
     document.getElementById('editCredits').value = credits;
     document.getElementById('editCategory').value = category;
     document.getElementById('editGrade').value = grade;
