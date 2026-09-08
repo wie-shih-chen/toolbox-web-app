@@ -347,8 +347,8 @@
                             <td style="color: rgba(255,255,255,0.4);">-</td>
                             <td style="font-weight: 500; color: #f43f5e;">{{ pc.name }}</td>
                             <td style="color: rgba(255,255,255,0.5);">
-                                {% if pc.category == 'pe' %}體育
-                                {% else %}校訂共同必修{% endif %}
+                                {% if pc.category == 'pe' %}▲ 體育
+                                {% else %}▲ 校訂共同必修{% endif %}
                             </td>
                             <td style="text-align: center; font-weight: 600; color: rgba(255,255,255,0.4);">0.0</td>
                             <td style="text-align: center;">
@@ -364,15 +364,15 @@
                             <td style="font-weight: 500;">{{ course.name }}</td>
                             <td style="color: rgba(255,255,255,0.7);">
                                 {% if course.category == 'major_required' %}
-                                系訂專業必修
+                                ▲ 系訂專業必修
                                 {% elif course.category == 'major_elective' %}
-                                專業選修
+                                △ 專業選修
                                 {% elif course.category == 'common_required' %}
-                                校訂共同必修
+                                ▲ 校訂共同必修
                                 {% elif course.category == 'free_elective' %}
-                                跨域及自由選修
+                                △ 跨域及自由選修
                                 {% elif course.category == 'pe' %}
-                                體育
+                                ▲ 體育
                                 {% else %}
                                 {{ course.category }}
                                 {% endif %}
@@ -573,7 +573,7 @@ async function addCourseGlobal(btn, courseNo, name, credits, courseType, semeste
             newRow.innerHTML = `
                 <td style="color: rgba(255,255,255,0.6);">${semester}</td>
                 <td style="font-weight: 500;">${name}</td>
-                <td style="color: rgba(255,255,255,0.7);">${category === 'major_required' ? '系訂專業必修' : (category === 'major_elective' ? '專業選修' : (category === 'common_required' ? '校訂共同必修' : (category === 'free_elective' ? '跨域及自由選修' : (category === 'pe' ? '體育' : category))))}</td>
+                <td style="color: rgba(255,255,255,0.7);">${category === 'major_required' ? '▲ 系訂專業必修' : (category === 'major_elective' ? '△ 專業選修' : (category === 'common_required' ? '▲ 校訂共同必修' : (category === 'free_elective' ? '△ 跨域及自由選修' : (category === 'pe' ? '▲ 體育' : category))))}</td>
                 <td style="text-align: center; font-weight: 600;">${credits}</td>
                 <td style="text-align: center;">${badgeHtml}</td>
                 <td style="text-align: center; display: flex; gap: 6px; justify-content: center; border-bottom: none; padding-top: 18px;">
