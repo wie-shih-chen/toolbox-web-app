@@ -359,7 +359,7 @@
                                 <button onclick="openEditModal({{ course.id }}, '{{ course.name }}', {{ course.credits }}, '{{ course.category }}', '{{ course.grade }}')" class="btn-add" style="background: rgba(129, 140, 248, 0.1); color: #818cf8; width: 28px; height: 28px; margin: 0;">
                                     <span class="material-icons" style="font-size: 16px;">edit</span>
                                 </button>
-                                <button onclick="deleteCourse({{ course.id }})" class="btn-add" style="background: rgba(244, 63, 94, 0.1); color: #f43f5e; width: 28px; height: 28px; margin: 0;">
+                                <button onclick="deleteCourse({{ course.id }}, this)" class="btn-add" style="background: rgba(244, 63, 94, 0.1); color: #f43f5e; width: 28px; height: 28px; margin: 0;">
                                     <span class="material-icons" style="font-size: 16px;">delete</span>
                                 </button>
                             </td>
@@ -444,12 +444,16 @@ async function fetchCourses() {
     }
 }
 
-async function addCourse(courseNo, name, credits, courseType) {
+async function addCourse(btn, courseNo, name, credits, courseType) {
     const semLevel = document.getElementById('fetchSemesterLevel').value.split(',');
     const entryYear = parseInt('{{ setting.entry_year }}') || 113;
     const year = entryYear + parseInt(semLevel[0]) - 1;
     const sem = semLevel[1];
     const semester = `${year}-${sem}`;
+    
+    const oldHtml = btn.innerHTML;
+    btn.innerHTML = '<span class="material-icons" style="font-size: 20px; animation: spin 1s linear infinite;">autorenew</span>';
+    btn.disabled = true;
     
     try {
         const res = await fetch(`{{ url_for('credit.add_course') }}`, {
@@ -466,18 +470,62 @@ async function addCourse(courseNo, name, credits, courseType) {
         const data = await res.json();
         
         if(data.success) {
-            // Reload page to show new course in table
-            window.location.reload();
+            // Visual feedback
+            btn.innerHTML = '<span class="material-icons" style="font-size: 20px; color: #10b981;">check</span>';
+            btn.style.background = 'rgba(16, 185, 129, 0.1)';
+            
+            // Append to table
+            const tbody = document.querySelector('.glass-table tbody');
+            if(tbody.querySelector('tr td[colspan]')) {
+                tbody.innerHTML = '';
+            }
+            
+            let category = 'major_elective';
+            if(courseType === '▲') category = 'major_required';
+            else if(name.includes('體育')) category = 'pe';
+            else if(courseType === '★') category = 'major_elective';
+            else if(courseType === '△') category = 'free_elective';
+
+            const newRow = document.createElement('tr');
+            newRow.innerHTML = `
+                <td style="color: rgba(255,255,255,0.6);">${semester}</td>
+                <td style="font-family: monospace; color: rgba(255,255,255,0.5);">${courseNo}</td>
+                <td style="font-weight: 500;">${name}</td>
+                <td style="color: rgba(255,255,255,0.7);">${category}</td>
+                <td style="text-align: center; font-weight: 600;">${credits}</td>
+                <td style="text-align: center;"><span class="badge-ongoing">修課中</span></td>
+                <td style="text-align: center; display: flex; gap: 6px; justify-content: center; border-bottom: none; padding-top: 18px;">
+                    <button onclick="openEditModal(${data.id}, '${name}', ${credits}, '${category}', 'ongoing')" class="btn-add" style="background: rgba(129, 140, 248, 0.1); color: #818cf8; width: 28px; height: 28px; margin: 0;">
+                        <span class="material-icons" style="font-size: 16px;">edit</span>
+                    </button>
+                    <button onclick="deleteCourse(${data.id}, this)" class="btn-add" style="background: rgba(244, 63, 94, 0.1); color: #f43f5e; width: 28px; height: 28px; margin: 0;">
+                        <span class="material-icons" style="font-size: 16px;">delete</span>
+                    </button>
+                </td>
+            `;
+            tbody.appendChild(newRow);
+            
+            setTimeout(() => {
+                btn.innerHTML = oldHtml;
+                btn.disabled = false;
+                btn.style.background = '';
+            }, 2000);
         } else {
             alert(data.error || '新增失敗');
+            btn.innerHTML = oldHtml;
+            btn.disabled = false;
         }
     } catch(e) {
         alert('網路錯誤');
+        btn.innerHTML = oldHtml;
+        btn.disabled = false;
     }
 }
 
-async function deleteCourse(id) {
+async function deleteCourse(id, btnElement) {
     if(!confirm('確定要刪除這筆課程嗎？')) return;
+    
+    const row = btnElement.closest('tr');
     
     try {
         const res = await fetch(`{{ url_for('credit.delete_course', course_id=0) }}`.replace('0', id), {
@@ -485,7 +533,7 @@ async function deleteCourse(id) {
         });
         const data = await res.json();
         if(data.success) {
-            window.location.reload();
+            row.remove();
         } else {
             alert('刪除失敗');
         }
