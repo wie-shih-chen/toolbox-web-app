@@ -306,6 +306,11 @@
             <button onclick="fetchCourses()" class="btn-action">
                 載入課表
             </button>
+            
+            <div style="margin-top: 16px; position: relative;">
+                <span class="material-icons" style="position: absolute; left: 12px; top: 12px; color: rgba(255,255,255,0.4); font-size: 18px;">search</span>
+                <input type="text" id="courseSearch" class="glass-input" placeholder="搜尋全校課名或課號..." onkeyup="filterCourses()" style="margin-bottom: 0; padding-left: 36px;">
+            </div>
 
             <!-- 課表結果容器 -->
             <div id="courseResults" style="margin-top: 20px; max-height: 400px; overflow-y: auto; padding-right: 8px;">
@@ -426,34 +431,70 @@ async function fetchCourses() {
             throw new Error(`API returned ${res.status}`);
         }
         
-        const allCourses = await res.json();
+        allCourses = await res.json();
+        filterCourses();
         
-        // 篩選該班級的課程
-        const classCourses = allCourses.filter(c => c.class && c.class.some(cls => cls.code === code));
-        
-        if(classCourses.length > 0) {
-            container.innerHTML = classCourses.map(c => {
-                const requiredText = c.courseType === '▲' ? '必修' : (c.courseType === '△' ? '選修' : '其他');
-                return `
-                <div class="course-result-item">
-                    <div>
-                        <div style="font-weight: 600; color: white; margin-bottom: 4px;">${c.name.zh}</div>
-                        <div style="font-size: 0.8rem; color: rgba(255,255,255,0.5); display: flex; gap: 12px;">
-                            <span>${requiredText}</span>
-                            <span>學分: ${c.credit}</span>
-                        </div>
-                    </div>
-                    <button class="btn-add" onclick="addCourse(this, '${c.id}', '${c.name.zh}', ${c.credit}, '${c.courseType}')">
-                        <span class="material-icons" style="font-size: 20px;">add</span>
-                    </button>
-                </div>
-            `}).join('');
-        } else {
-            container.innerHTML = `<div style="text-align: center; color: #f87171; font-size: 0.9rem; margin-top: 20px;">找不到 ${year}學年度第${sem}學期 的課表資料。<br><span style="font-size: 0.8rem; color: rgba(255,255,255,0.5);">請確認「班級代碼」在此學期是否正確。</span></div>`;
-        }
     } catch(e) {
         console.error(e);
+        const container = document.getElementById('courseResults');
         container.innerHTML = `<div style="text-align: center; color: #f87171; font-size: 0.9rem; margin-top: 20px;">無法取得 ${year}學年度第${sem}學期 的課表，可能是該學期資料不存在。</div>`;
+    }
+}
+
+function filterCourses() {
+    const code = document.getElementById('fetchClass').value;
+    const keyword = document.getElementById('courseSearch').value.trim().toLowerCase();
+    const container = document.getElementById('courseResults');
+    
+    if(!allCourses.length) return;
+    
+    let filtered = [];
+    if (keyword) {
+        // Search mode
+        filtered = allCourses.filter(c => 
+            (c.name && c.name.zh && c.name.zh.toLowerCase().includes(keyword)) || 
+            (c.id && c.id.toLowerCase().includes(keyword))
+        );
+    } else {
+        // Default cohort mode
+        filtered = allCourses.filter(c => c.class && c.class.some(cls => cls.code === code));
+    }
+    
+    if(filtered.length > 100) {
+        filtered = filtered.slice(0, 100);
+    }
+    
+    if(filtered.length > 0) {
+        const yearOffset = parseInt(document.getElementById('fetchSemesterLevel').value.split(',')[0]) - 1;
+        const entryYear = parseInt('{{ setting.entry_year }}') || 113;
+        const year = entryYear + yearOffset;
+        const sem = document.getElementById('fetchSemesterLevel').value.split(',')[1];
+        
+        let html = '';
+        if (keyword && filtered.length === 100) {
+            html += `<div style="font-size: 0.8rem; color: #f59e0b; text-align: center; margin-bottom: 10px;">搜尋結果過多，僅顯示前 100 筆</div>`;
+        }
+        
+        html += filtered.map(c => {
+            const requiredText = c.courseType === '▲' ? '必修' : (c.courseType === '△' ? '選修' : '其他');
+            return `
+            <div class="course-result-item">
+                <div>
+                    <div style="font-weight: 600; color: white; margin-bottom: 4px;">${c.name.zh}</div>
+                    <div style="font-size: 0.8rem; color: rgba(255,255,255,0.5); display: flex; gap: 12px;">
+                        <span>${c.id}</span>
+                        <span>${requiredText}</span>
+                        <span>學分: ${c.credit}</span>
+                    </div>
+                </div>
+                <button class="btn-add" onclick="addCourse(this, '${c.id}', '${c.name.zh}', ${c.credit}, '${c.courseType}')">
+                    <span class="material-icons" style="font-size: 20px;">add</span>
+                </button>
+            </div>
+        `}).join('');
+        container.innerHTML = html;
+    } else {
+        container.innerHTML = `<div style="text-align: center; color: #f87171; font-size: 0.9rem; margin-top: 20px;">找不到符合條件的課程。<br><span style="font-size: 0.8rem; color: rgba(255,255,255,0.5);">請確認關鍵字或班級代碼是否正確。</span></div>`;
     }
 }
 
