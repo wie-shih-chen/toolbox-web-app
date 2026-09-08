@@ -412,7 +412,6 @@ function updateProgressUI(progress, percentages) {
 }
 
 let currentCohortCourses = [];
-let globalCoursesCache = null;
 
 async function fetchCourses() {
     const semLevel = document.getElementById('fetchSemesterLevel').value.split(',');
@@ -457,44 +456,19 @@ async function renderCourses() {
     const keyword = document.getElementById('courseSearch').value.trim().toLowerCase();
     const container = document.getElementById('courseResults');
     
+    if(!currentCohortCourses.length) return;
+    
     let filtered = [];
     
     if (keyword) {
-        // Global Search Mode across all semesters
-        if (!globalCoursesCache) {
-            container.innerHTML = `<div style="text-align: center; color: rgba(255,255,255,0.6); font-size: 0.9rem; margin-top: 20px;"><span class="material-icons" style="animation: spin 1s linear infinite;">autorenew</span> 首次全域搜尋準備中...<br><span style="font-size: 0.8rem; opacity: 0.7;">(正在載入歷年所有課程，這可能需要幾秒鐘)</span></div>`;
-            
-            const entryYear = parseInt('{{ setting.entry_year }}') || 113;
-            const semestersToFetch = [];
-            // Fetch from entryYear-1 to entryYear+4
-            for(let y = entryYear - 1; y <= entryYear + 4; y++) {
-                semestersToFetch.push(`${y}/1`, `${y}/2`);
-            }
-            
-            const promises = semestersToFetch.map(async (semStr) => {
-                try {
-                    const res = await fetch(`https://gnehs.github.io/ntut-course-crawler-node/${semStr}/main.json`);
-                    if(res.ok) {
-                        const data = await res.json();
-                        const semFormat = semStr.replace('/', '-');
-                        return data.map(c => ({...c, semester: semFormat}));
-                    }
-                } catch(e) {}
-                return [];
-            });
-            
-            const results = await Promise.all(promises);
-            globalCoursesCache = results.flat();
-        }
-        
-        filtered = globalCoursesCache.filter(c => 
+        // Search Mode: filter across ALL courses in the CURRENT semester
+        filtered = currentCohortCourses.filter(c => 
             (c.name && c.name.zh && c.name.zh.toLowerCase().includes(keyword)) || 
             (c.id && c.id.toLowerCase().includes(keyword)) ||
             (c.code && c.code.toLowerCase().includes(keyword))
         );
     } else {
-        // Default cohort mode
-        if(!currentCohortCourses.length) return;
+        // Default cohort mode: filter by class code in the CURRENT semester
         filtered = currentCohortCourses.filter(c => c.class && c.class.some(cls => cls.code === code));
     }
     
