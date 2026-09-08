@@ -46,6 +46,36 @@ def index():
         return render_template('credit/settings.html', is_new=True)
     
     courses = CreditCourse.query.filter_by(setting_id=setting.id).all()
+    
+    # 自動將過期的「修課中」課程改為「已修畢」
+    auto_passed_courses = []
+    try:
+        import datetime
+        now = datetime.datetime.now()
+        current_roc_year = now.year - 1911
+        if now.month < 8 and now.month >= 2:
+            current_sem = 2
+            current_roc_year -= 1
+        else:
+            current_sem = 1
+            if now.month < 2:
+                current_roc_year -= 1
+
+        for c in courses:
+            if c.grade == 'ongoing' and c.semester:
+                try:
+                    c_y, c_s = map(int, c.semester.split('-'))
+                    if c_y < current_roc_year or (c_y == current_roc_year and c_s < current_sem):
+                        c.grade = 'pass'
+                        auto_passed_courses.append(c.name)
+                except:
+                    pass
+        if auto_passed_courses:
+            from web_app.extensions import db
+            db.session.commit()
+    except Exception:
+        pass
+        
     progress, percentages = get_progress(setting)
     
     # 計算缺少的 0 學分校訂必修
@@ -79,7 +109,8 @@ def index():
                            courses=courses,
                            pinned_courses=pinned_courses,
                            progress=progress,
-                           percentages=percentages)
+                           percentages=percentages,
+                           auto_passed_courses=auto_passed_courses)
 
 
 @credit_bp.route('/settings', methods=['GET', 'POST'])

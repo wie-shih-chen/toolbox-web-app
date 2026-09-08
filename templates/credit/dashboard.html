@@ -800,4 +800,9 @@ async function saveCourseEdit() {
         fetchCourses();
     });
 </script>
+{% if auto_passed_courses %}
+<script>
+    alert("系統通知：\n\n一個學期已經過去了，系統已自動將以下修課中的課程標記為「已修畢」！\n- " + {{ auto_passed_courses | tojson }}.join("\n- "));
+</script>
+{% endif %}
 {% endblock %}
