@@ -568,7 +568,7 @@ async function renderCourses() {
         );
     } else {
         // Default cohort mode: filter by class code in the CURRENT semester
-        filtered = filtered.filter(c => c.class && c.class.some(cls => cls.code === code));
+        filtered = filtered.filter(c => c.class && c.class.some(cls => cls.code == code));
     }
     
     if(filtered.length > 100) {
@@ -613,9 +613,9 @@ async function addCourseGlobal(btn, courseNo, name, credits, courseType, semeste
     btn.disabled = true;
     
     // 精準判斷分類 (本系/外系)
-    const fullCourse = currentCohortCourses.find(c => c.id === courseNo);
+    const fullCourse = currentCohortCourses.find(c => c.id == courseNo);
     const myClassCode = document.getElementById('fetchClass').value;
-    const isMyClass = fullCourse && fullCourse.class && fullCourse.class.some(cls => cls.code === myClassCode);
+    const isMyClass = fullCourse && fullCourse.class && fullCourse.class.some(cls => cls.code == myClassCode);
     
     let category = 'free_elective'; // 預設為跨域及自由選修 (外系)
     const commonKeywords = ['國文', '國語文實務應用', '專業英文', '英文', '通識', '歷史', '勞作教育', '全民國防', '大學入門', '工程倫理', '服務學習'];
@@ -632,7 +632,7 @@ async function addCourseGlobal(btn, courseNo, name, credits, courseType, semeste
     else if(isLiberalArts) category = 'liberal_arts';
     else if(commonKeywords.some(k => name.includes(k))) category = 'common_required';
     else if(isMyClass && courseType === '▲') category = 'major_required';
-    else if(isMyClass && courseType === '△') category = 'major_elective';
+    else if(isMyClass && (courseType === '△' || courseType === '★' || courseType === '☆' || courseType === '○')) category = 'major_elective';
     
     try {
         const res = await fetch(`{{ url_for('credit.add_course') }}`, {
