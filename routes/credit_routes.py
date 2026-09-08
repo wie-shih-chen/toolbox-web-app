@@ -10,17 +10,30 @@ credit_bp = Blueprint('credit', __name__, url_prefix='/credit')
 def get_progress(setting):
     courses = CreditCourse.query.filter_by(setting_id=setting.id).all()
     progress = {'total': 0, 'major_req': 0, 'major_elec': 0, 'common': 0, 'free': 0}
+    ongoing_progress = {'total': 0, 'major_req': 0, 'major_elec': 0, 'common': 0, 'free': 0}
+    
     for c in courses:
         if c.grade not in ['F', 'fail'] and c.category != 'pe':
-            progress['total'] += c.credits
-            if c.category == 'major_required':
-                progress['major_req'] += c.credits
-            elif c.category == 'major_elective':
-                progress['major_elec'] += c.credits
-            elif c.category == 'common_required':
-                progress['common'] += c.credits
-            elif c.category == 'free_elective':
-                progress['free'] += c.credits
+            if c.grade == 'ongoing':
+                ongoing_progress['total'] += c.credits
+                if c.category == 'major_required':
+                    ongoing_progress['major_req'] += c.credits
+                elif c.category == 'major_elective':
+                    ongoing_progress['major_elec'] += c.credits
+                elif c.category == 'common_required':
+                    ongoing_progress['common'] += c.credits
+                elif c.category == 'free_elective':
+                    ongoing_progress['free'] += c.credits
+            else:
+                progress['total'] += c.credits
+                if c.category == 'major_required':
+                    progress['major_req'] += c.credits
+                elif c.category == 'major_elective':
+                    progress['major_elec'] += c.credits
+                elif c.category == 'common_required':
+                    progress['common'] += c.credits
+                elif c.category == 'free_elective':
+                    progress['free'] += c.credits
                 
     def calc_percent(current, required):
         if not required or required == 0:
@@ -35,7 +48,7 @@ def get_progress(setting):
         'common': calc_percent(progress['common'], setting.common_required),
         'free': calc_percent(progress['free'], setting.free_elective_credits)
     }
-    return progress, percentages
+    return progress, ongoing_progress, percentages
 
 @credit_bp.route('/')
 @login_required
@@ -76,7 +89,7 @@ def index():
     except Exception:
         pass
         
-    progress, percentages = get_progress(setting)
+    progress, ongoing_progress, percentages = get_progress(setting)
     
     # 計算缺少的 0 學分校訂必修
     pinned_courses = []
@@ -123,6 +136,7 @@ def index():
                            courses=courses,
                            pinned_courses=pinned_courses,
                            progress=progress,
+                           ongoing_progress=ongoing_progress,
                            percentages=percentages,
                            auto_passed_courses=auto_passed_courses)
 
@@ -232,8 +246,8 @@ def add_course():
     db.session.add(course)
     db.session.commit()
     
-    progress, percentages = get_progress(setting)
-    return jsonify({"success": True, "id": course.id, "status": status, "progress": progress, "percentages": percentages})
+    progress, ongoing_progress, percentages = get_progress(setting)
+    return jsonify({"success": True, "id": course.id, "status": status, "progress": progress, "ongoing_progress": ongoing_progress, "percentages": percentages})
 
 @credit_bp.route('/api/delete_course/<int:course_id>', methods=['POST'])
 @login_required
@@ -246,8 +260,8 @@ def delete_course(course_id):
     db.session.delete(course)
     db.session.commit()
     
-    progress, percentages = get_progress(setting)
-    return jsonify({"success": True, "progress": progress, "percentages": percentages})
+    progress, ongoing_progress, percentages = get_progress(setting)
+    return jsonify({"success": True, "progress": progress, "ongoing_progress": ongoing_progress, "percentages": percentages})
 
 @credit_bp.route('/api/edit_course/<int:course_id>', methods=['POST'])
 @login_required
@@ -268,5 +282,5 @@ def edit_course(course_id):
     setting = CreditSetting.query.filter_by(id=course.setting_id).first()
     db.session.commit()
     
-    progress, percentages = get_progress(setting)
-    return jsonify({"success": True, "progress": progress, "percentages": percentages})
+    progress, ongoing_progress, percentages = get_progress(setting)
+    return jsonify({"success": True, "progress": progress, "ongoing_progress": ongoing_progress, "percentages": percentages})
