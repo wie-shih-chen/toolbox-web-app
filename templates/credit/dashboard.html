@@ -538,8 +538,10 @@ async function addCourseGlobal(btn, courseNo, name, credits, courseType, semeste
             }
             
             let category = 'major_elective';
-            if(courseType === '▲') category = 'major_required';
-            else if(name.includes('體育')) category = 'pe';
+            const commonKeywords = ['國文', '英文', '通識', '歷史', '勞作教育', '全民國防'];
+            if(name.includes('體育')) category = 'pe';
+            else if(commonKeywords.some(k => name.includes(k))) category = 'common_required';
+            else if(courseType === '▲') category = 'major_required';
             else if(courseType === '★') category = 'major_elective';
             else if(courseType === '△') category = 'free_elective';
 

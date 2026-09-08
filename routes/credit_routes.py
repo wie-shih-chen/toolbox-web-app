@@ -118,10 +118,15 @@ def add_course():
         category = 'major_elective'
         ctype = data.get('courseType', '')
         name = data.get('name', '')
-        if ctype == '▲':
-            category = 'major_required'
-        elif '體育' in name:
+        
+        common_keywords = ['國文', '英文', '通識', '歷史', '勞作教育', '全民國防']
+        
+        if '體育' in name:
             category = 'pe'
+        elif any(k in name for k in common_keywords):
+            category = 'common_required'
+        elif ctype == '▲':
+            category = 'major_required'
         elif ctype == '★':
             category = 'major_elective'
         elif ctype == '△':
