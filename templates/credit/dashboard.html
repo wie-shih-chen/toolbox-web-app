@@ -537,6 +537,18 @@ async function addCourseGlobal(btn, courseNo, name, credits, courseType, semeste
     btn.innerHTML = '<span class="material-icons" style="font-size: 20px; animation: spin 1s linear infinite;">autorenew</span>';
     btn.disabled = true;
     
+    // 精準判斷分類 (本系/外系)
+    const fullCourse = currentCohortCourses.find(c => c.id === courseNo);
+    const myClassCode = document.getElementById('fetchClass').value;
+    const isMyClass = fullCourse && fullCourse.class && fullCourse.class.some(cls => cls.code === myClassCode);
+    
+    let category = 'free_elective'; // 預設為跨域及自由選修 (外系)
+    const commonKeywords = ['國文', '英文', '通識', '歷史', '勞作教育', '全民國防', '大學入門', '工程倫理', '服務學習'];
+    if(name.includes('體育')) category = 'pe';
+    else if(commonKeywords.some(k => name.includes(k))) category = 'common_required';
+    else if(isMyClass && courseType === '▲') category = 'major_required';
+    else if(isMyClass && courseType === '△') category = 'major_elective';
+    
     try {
         const res = await fetch(`{{ url_for('credit.add_course') }}`, {
             method: 'POST',
@@ -546,7 +558,8 @@ async function addCourseGlobal(btn, courseNo, name, credits, courseType, semeste
                 name: name,
                 credits: credits,
                 courseType: courseType,
-                semester: semester
+                semester: semester,
+                category: category
             })
         });
         const data = await res.json();
@@ -560,14 +573,6 @@ async function addCourseGlobal(btn, courseNo, name, credits, courseType, semeste
             if(tbody.querySelector('tr td[colspan]')) {
                 tbody.innerHTML = '';
             }
-            
-            let category = 'major_elective';
-            const commonKeywords = ['國文', '英文', '通識', '歷史', '勞作教育', '全民國防', '大學入門', '工程倫理'];
-            if(name.includes('體育')) category = 'pe';
-            else if(commonKeywords.some(k => name.includes(k))) category = 'common_required';
-            else if(courseType === '▲') category = 'major_required';
-            else if(courseType === '★') category = 'major_elective';
-            else if(courseType === '△') category = 'free_elective';
             
             let badgeHtml = '<span class="badge-ongoing">修課中</span>';
             if(data.status === 'pass') badgeHtml = '<span class="badge-pass" style="background: rgba(16, 185, 129, 0.1); color: #10b981; padding: 4px 8px; border-radius: 4px; font-size: 0.8rem;">已修畢</span>';
