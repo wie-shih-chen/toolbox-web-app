@@ -48,9 +48,25 @@ def index():
     courses = CreditCourse.query.filter_by(setting_id=setting.id).all()
     progress, percentages = get_progress(setting)
     
+    # 計算缺少的 0 學分校訂必修
+    pinned_courses = []
+    
+    # 勞作教育 (需要2門)
+    service_learning = [c for c in courses if '勞作教育' in c.name or '服務學習' in c.name]
+    if len(service_learning) < 1:
+        pinned_courses.append({"name": "勞作教育 (上)", "category": "common_required", "credits": 0.0, "status": "missing"})
+    if len(service_learning) < 2:
+        pinned_courses.append({"name": "勞作教育 (下)", "category": "common_required", "credits": 0.0, "status": "missing"})
+        
+    # 英文畢業門檻 (需要1門)
+    english_threshold = [c for c in courses if '英文' in c.name and ('門檻' in c.name or '檢定' in c.name or '能力' in c.name)]
+    if not english_threshold:
+        pinned_courses.append({"name": "英文能力畢業門檻", "category": "common_required", "credits": 0.0, "status": "missing"})
+    
     return render_template('credit/dashboard.html', 
                            setting=setting, 
                            courses=courses,
+                           pinned_courses=pinned_courses,
                            progress=progress,
                            percentages=percentages)
 
@@ -109,7 +125,7 @@ def add_course():
         ctype = data.get('courseType', '')
         name = data.get('name', '')
         
-        common_keywords = ['國文', '英文', '通識', '歷史', '勞作教育', '全民國防']
+        common_keywords = ['國文', '英文', '通識', '歷史', '勞作教育', '全民國防', '大學入門', '工程倫理']
         
         if '體育' in name:
             category = 'pe'
