@@ -330,6 +330,7 @@
                             <th>分類</th>
                             <th style="text-align: center;">學分</th>
                             <th style="text-align: center;">成績</th>
+                            <th style="width: 40px;"></th>
                         </tr>
                     </thead>
                     <tbody>
@@ -346,6 +347,14 @@
                                 {% else %}
                                 {{ course.grade }}
                                 {% endif %}
+                            </td>
+                            <td style="text-align: center; display: flex; gap: 6px; justify-content: center; border-bottom: none; padding-top: 18px;">
+                                <button onclick="openEditModal({{ course.id }}, '{{ course.name }}', {{ course.credits }}, '{{ course.category }}', '{{ course.grade }}')" class="btn-add" style="background: rgba(129, 140, 248, 0.1); color: #818cf8; width: 28px; height: 28px; margin: 0;">
+                                    <span class="material-icons" style="font-size: 16px;">edit</span>
+                                </button>
+                                <button onclick="deleteCourse({{ course.id }})" class="btn-add" style="background: rgba(244, 63, 94, 0.1); color: #f43f5e; width: 28px; height: 28px; margin: 0;">
+                                    <span class="material-icons" style="font-size: 16px;">delete</span>
+                                </button>
                             </td>
                         </tr>
                         {% else %}
@@ -373,38 +382,182 @@ async function fetchCourses() {
     if(!code) return alert('請輸入班級代碼');
     
     const container = document.getElementById('courseResults');
-    container.innerHTML = '<div style="text-align: center; color: rgba(255,255,255,0.6); font-size: 0.9rem; margin-top: 20px;">載入中...</div>';
+    container.innerHTML = '<div style="text-align: center; color: rgba(255,255,255,0.6); font-size: 0.9rem; margin-top: 20px;"><span class="material-icons" style="animation: spin 1s linear infinite;">autorenew</span> 載入課表中...<br><span style="font-size: 0.8rem; opacity: 0.7;">(初次載入需約1-2秒)</span></div>';
+    
+    // Add spin animation dynamically if it doesn't exist
+    if(!document.getElementById('spinStyle')) {
+        const style = document.createElement('style');
+        style.id = 'spinStyle';
+        style.innerHTML = '@keyframes spin { 100% { transform: rotate(360deg); } }';
+        document.head.appendChild(style);
+    }
     
     try {
-        const res = await fetch(`{{ url_for('credit.fetch_courses') }}?year=${year}&sem=${sem}&code=${code}`);
-        const data = await res.json();
+        // 直接從 gnehs 靜態 API 抓取全校課表，避免後端被 PythonAnywhere 阻擋
+        const res = await fetch(`https://gnehs.github.io/ntut-course-crawler-node/${year}/${sem}/main.json`);
+        const allCourses = await res.json();
         
-        if(data.success && data.courses.length > 0) {
-            container.innerHTML = data.courses.map(c => `
+        // 篩選該班級的課程
+        const classCourses = allCourses.filter(c => c.class && c.class.some(cls => cls.code === code));
+        
+        if(classCourses.length > 0) {
+            container.innerHTML = classCourses.map(c => {
+                const requiredText = c.courseType === '▲' ? '必修' : (c.courseType === '△' ? '選修' : '其他');
+                return `
                 <div class="course-result-item">
                     <div>
-                        <div style="font-weight: 600; color: white; margin-bottom: 4px;">${c.name}</div>
+                        <div style="font-weight: 600; color: white; margin-bottom: 4px;">${c.name.zh}</div>
                         <div style="font-size: 0.8rem; color: rgba(255,255,255,0.5); display: flex; gap: 12px;">
-                            <span style="font-family: monospace;">${c.course_no}</span>
-                            <span>${c.required}</span>
-                            <span>學分: ${c.credits}</span>
+                            <span style="font-family: monospace;">${c.id}</span>
+                            <span>${requiredText}</span>
+                            <span>學分: ${c.credit}</span>
                         </div>
                     </div>
-                    <button class="btn-add" onclick="addCourse('${c.course_no}', '${c.name}', ${c.credits})">
+                    <button class="btn-add" onclick="addCourse('${c.id}', '${c.name.zh}', ${c.credit}, '${c.courseType}')">
                         <span class="material-icons" style="font-size: 20px;">add</span>
                     </button>
                 </div>
-            `).join('');
+            `}).join('');
         } else {
             container.innerHTML = '<div style="text-align: center; color: #f87171; font-size: 0.9rem; margin-top: 20px;">找不到課表資料，請確認代碼是否正確。</div>';
         }
     } catch(e) {
+        console.error(e);
         container.innerHTML = '<div style="text-align: center; color: #f87171; font-size: 0.9rem; margin-top: 20px;">網路錯誤，請稍後再試。</div>';
     }
 }
 
-function addCourse(courseNo, name, credits) {
-    alert(`準備新增課程: ${name} (${credits}學分)\n（此功能即將實作）`);
+async function addCourse(courseNo, name, credits, courseType) {
+    const year = document.getElementById('fetchYear').value;
+    const sem = document.getElementById('fetchSem').value;
+    const semester = `${year}-${sem}`;
+    
+    try {
+        const res = await fetch(`{{ url_for('credit.add_course') }}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                course_no: courseNo,
+                name: name,
+                credits: credits,
+                courseType: courseType,
+                semester: semester
+            })
+        });
+        const data = await res.json();
+        
+        if(data.success) {
+            // Reload page to show new course in table
+            window.location.reload();
+        } else {
+            alert(data.error || '新增失敗');
+        }
+    } catch(e) {
+        alert('網路錯誤');
+    }
+}
+
+async function deleteCourse(id) {
+    if(!confirm('確定要刪除這筆課程嗎？')) return;
+    
+    try {
+        const res = await fetch(`{{ url_for('credit.delete_course', course_id=0) }}`.replace('0', id), {
+            method: 'POST'
+        });
+        const data = await res.json();
+        if(data.success) {
+            window.location.reload();
+        } else {
+            alert('刪除失敗');
+        }
+    } catch(e) {
+        alert('網路錯誤');
+    }
+}
+
+// Edit Modal Logic
+function openEditModal(id, name, credits, category, grade) {
+    document.getElementById('editCourseId').value = id;
+    document.getElementById('editCourseName').textContent = name;
+    document.getElementById('editCredits').value = credits;
+    document.getElementById('editCategory').value = category;
+    document.getElementById('editGrade').value = grade;
+    document.getElementById('editModal').style.display = 'flex';
+}
+
+function closeEditModal() {
+    document.getElementById('editModal').style.display = 'none';
+}
+
+async function saveCourseEdit() {
+    const id = document.getElementById('editCourseId').value;
+    const credits = document.getElementById('editCredits').value;
+    const category = document.getElementById('editCategory').value;
+    const grade = document.getElementById('editGrade').value;
+    
+    try {
+        const res = await fetch(`{{ url_for('credit.edit_course', course_id=0) }}`.replace('0', id), {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ credits, category, grade })
+        });
+        const data = await res.json();
+        if(data.success) {
+            window.location.reload();
+        } else {
+            alert(data.error || '儲存失敗');
+        }
+    } catch(e) {
+        alert('網路錯誤');
+    }
 }
 </script>
+
+<!-- Edit Course Modal -->
+<div class="modal" id="editModal" style="display: none; align-items: center; justify-content: center; position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 1000; padding: 20px;">
+    <div class="glass-panel" style="width: 100%; max-width: 400px; padding: 24px; position: relative;">
+        <input type="hidden" id="editCourseId">
+        <h3 style="margin-top: 0; color: white; margin-bottom: 20px; font-size: 1.2rem;">編輯課程：<span id="editCourseName" style="color: #818cf8;"></span></h3>
+        
+        <div class="form-group" style="margin-bottom: 16px;">
+            <label class="glass-label">學分數</label>
+            <input type="number" step="0.5" id="editCredits" class="glass-input">
+        </div>
+        
+        <div class="form-group" style="margin-bottom: 16px;">
+            <label class="glass-label">課程分類</label>
+            <select id="editCategory" class="glass-input">
+                <option value="major_required">系訂專業必修</option>
+                <option value="major_elective">專業選修</option>
+                <option value="common_required">校訂共同必修</option>
+                <option value="free_elective">跨域及自由選修</option>
+                <option value="pe">體育</option>
+            </select>
+        </div>
+        
+        <div class="form-group" style="margin-bottom: 24px;">
+            <label class="glass-label">成績 / 狀態</label>
+            <select id="editGrade" class="glass-input">
+                <option value="ongoing">修課中</option>
+                <option value="pass">及格 (抵免/通過)</option>
+                <option value="A+">A+</option>
+                <option value="A">A</option>
+                <option value="A-">A-</option>
+                <option value="B+">B+</option>
+                <option value="B">B</option>
+                <option value="B-">B-</option>
+                <option value="C+">C+</option>
+                <option value="C">C</option>
+                <option value="C-">C-</option>
+                <option value="D">D</option>
+                <option value="F">不及格 (F)</option>
+            </select>
+        </div>
+        
+        <div style="display: flex; gap: 12px;">
+            <button onclick="closeEditModal()" class="btn-action" style="background: rgba(255,255,255,0.1); color: white; border: none;">取消</button>
+            <button onclick="saveCourseEdit()" class="btn-action" style="background: linear-gradient(135deg, #4f46e5, #3730a3); color: white; border: none;">儲存變更</button>
+        </div>
+    </div>
+</div>
 {% endblock %}

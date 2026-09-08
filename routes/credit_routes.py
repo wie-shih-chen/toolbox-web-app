@@ -50,45 +50,84 @@ def settings():
     return render_template('credit/settings.html', setting=setting, is_new=False)
 
 
-@credit_bp.route('/api/fetch_courses')
+@credit_bp.route('/api/add_course', methods=['POST'])
 @login_required
-def fetch_courses():
-    """從北科大教務系統即時抓取某班級的課表"""
-    year = request.args.get('year', '113')
-    sem = request.args.get('sem', '1')
-    code = request.args.get('code') # 班級代碼 e.g. 2676 (資工四)
+def add_course():
+    """手動或匯入新增課程"""
+    setting = CreditSetting.query.filter_by(user_id=current_user.id).first()
+    if not setting:
+        return jsonify({"success": False, "error": "請先完成設定"})
+        
+    data = request.json
     
-    if not code:
-        return jsonify({"success": False, "error": "Missing class code"})
-        
-    url = f"https://aps.ntut.edu.tw/course/tw/Subj.jsp?format=-4&year={year}&sem={sem}&code={code}"
+    # Check if already added
+    existing = CreditCourse.query.filter_by(
+        setting_id=setting.id, 
+        course_no=data.get('course_no', '')
+    ).first()
     
-    try:
-        resp = requests.get(url, headers={"User-Agent": "Mozilla/5.0"})
-        resp.encoding = 'big5' # 北科大網頁編碼通常是 big5 或 utf-8，需要測試。如果是 utf8 可以改。
-        soup = BeautifulSoup(resp.text, 'html.parser')
+    if existing and data.get('course_no'):
+        return jsonify({"success": False, "error": "此課程已經在清單中"})
+
+    # Determine category intelligently based on NTUT standard
+    course_type = data.get('courseType', '') # △/▲/★
+    name = data.get('name', '')
+    category = data.get('category', 'major_elective') # Default to major elective
+    
+    if course_type == '▲':
+        category = 'major_required'
+    elif '體育' in name:
+        category = 'pe'
+    elif course_type == '★':
+        category = 'major_elective'
+    elif course_type == '△':
+        category = 'free_elective'
+
+    new_course = CreditCourse(
+        setting_id=setting.id,
+        user_id=current_user.id,
+        course_no=data.get('course_no', ''),
+        name=name,
+        credits=float(data.get('credits', 3.0)),
+        semester=data.get('semester', ''),
+        category=category,
+        grade='ongoing'
+    )
+    
+    db.session.add(new_course)
+    db.session.commit()
+    return jsonify({"success": True, "id": new_course.id})
+
+@credit_bp.route('/api/delete_course/<int:course_id>', methods=['POST'])
+@login_required
+def delete_course(course_id):
+    """刪除課程"""
+    course = CreditCourse.query.get_or_404(course_id)
+    if course.user_id != current_user.id:
+        return jsonify({"success": False, "error": "Unauthorized"}), 403
         
-        courses = []
-        # 尋找課表中的資料列 (避開標題)
-        for tr in soup.find_all('tr'):
-            tds = tr.find_all('td')
-            if len(tds) >= 12: # 確保是一般的課程列
-                # 確認第一欄是課號 (數字)
-                course_no = tds[0].text.strip()
-                if re.match(r'^\d+$', course_no):
-                    # 抓取課程資訊
-                    courses.append({
-                        "course_no": course_no,
-                        "name": tds[1].text.strip(),
-                        "stage": tds[2].text.strip(),
-                        "credits": tds[3].text.strip(),
-                        "hours": tds[4].text.strip(),
-                        "required": tds[5].text.strip(), # 必選修
-                        "teacher": tds[6].text.strip()
-                    })
-                    
-        return jsonify({"success": True, "courses": courses})
+    db.session.delete(course)
+    db.session.commit()
+    return jsonify({"success": True})
+
+@credit_bp.route('/api/edit_course/<int:course_id>', methods=['POST'])
+@login_required
+def edit_course(course_id):
+    """編輯課程"""
+    course = CreditCourse.query.get_or_404(course_id)
+    if course.user_id != current_user.id:
+        return jsonify({"success": False, "error": "Unauthorized"}), 403
         
-    except Exception as e:
-        return jsonify({"success": False, "error": str(e)})
+    data = request.json
+    
+    if 'credits' in data:
+        course.credits = float(data['credits'])
+    if 'category' in data:
+        course.category = data['category']
+    if 'grade' in data:
+        course.grade = data['grade']
+        course.passed = True if data['grade'] not in ['F', 'fail', 'ongoing'] else (False if data['grade'] in ['F', 'fail'] else None)
+        
+    db.session.commit()
+    return jsonify({"success": True})
 
