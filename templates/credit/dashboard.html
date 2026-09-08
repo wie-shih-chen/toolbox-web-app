@@ -301,7 +301,7 @@
                     <option value="5,2">五年級 (大五/碩一) 下學期</option>
                 </select>
             </div>
-            <input type="text" id="fetchClass" class="glass-input" value="{{ setting.class_code }}" placeholder="班級代碼 (例如: 2676)">
+            <input type="hidden" id="fetchClass" value="{{ setting.class_code }}">
             
             <button onclick="fetchCourses()" class="btn-action">
                 載入課表
@@ -332,7 +332,6 @@
                     <thead>
                         <tr>
                             <th>學期</th>
-                            <th>課號</th>
                             <th>課程名稱</th>
                             <th>分類</th>
                             <th style="text-align: center;">學分</th>
@@ -344,7 +343,6 @@
                         {% for course in courses %}
                         <tr>
                             <td style="color: rgba(255,255,255,0.6);">{{ course.semester }}</td>
-                            <td style="font-family: monospace; color: rgba(255,255,255,0.5);">{{ course.course_no }}</td>
                             <td style="font-weight: 500;">{{ course.name }}</td>
                             <td style="color: rgba(255,255,255,0.7);">{{ course.category }}</td>
                             <td style="text-align: center; font-weight: 600;">{{ course.credits }}</td>
@@ -425,12 +423,11 @@ async function fetchCourses() {
                     <div>
                         <div style="font-weight: 600; color: white; margin-bottom: 4px;">${c.name.zh}</div>
                         <div style="font-size: 0.8rem; color: rgba(255,255,255,0.5); display: flex; gap: 12px;">
-                            <span style="font-family: monospace;">${c.id}</span>
                             <span>${requiredText}</span>
                             <span>學分: ${c.credit}</span>
                         </div>
                     </div>
-                    <button class="btn-add" onclick="addCourse('${c.id}', '${c.name.zh}', ${c.credit}, '${c.courseType}')">
+                    <button class="btn-add" onclick="addCourse(this, '${c.id}', '${c.name.zh}', ${c.credit}, '${c.courseType}')">
                         <span class="material-icons" style="font-size: 20px;">add</span>
                     </button>
                 </div>
@@ -489,7 +486,6 @@ async function addCourse(btn, courseNo, name, credits, courseType) {
             const newRow = document.createElement('tr');
             newRow.innerHTML = `
                 <td style="color: rgba(255,255,255,0.6);">${semester}</td>
-                <td style="font-family: monospace; color: rgba(255,255,255,0.5);">${courseNo}</td>
                 <td style="font-weight: 500;">${name}</td>
                 <td style="color: rgba(255,255,255,0.7);">${category}</td>
                 <td style="text-align: center; font-weight: 600;">${credits}</td>

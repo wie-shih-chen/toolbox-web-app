@@ -194,14 +194,15 @@
             
             <div class="form-grid">
                 <div class="form-group">
-                    <label class="glass-label">入學學年度</label>
-                    <input type="number" id="entryYear" name="entry_year" class="glass-input" placeholder="例如: 113" value="{{ setting.entry_year if setting else 113 }}" required>
+                    <label class="glass-label">入學年度</label>
+                    <input type="number" id="entryYear" name="entry_year" class="glass-input" value="{{ setting.entry_year if setting else 113 }}" required>
+                    <div style="font-size: 0.8rem; color: rgba(255,255,255,0.5); margin-top: -10px; margin-bottom: 15px;">(重要：這將決定您四年的班級代碼，例如：113)</div>
                 </div>
                 
                 <div class="form-group">
                     <label class="glass-label">系所名稱</label>
                     <select id="departmentSelect" name="department" class="glass-input" required>
-                        <option value="">請先輸入學年度...</option>
+                        <option value="">載入中...</option>
                         {% if setting and setting.department %}
                         <option value="{{ setting.department }}" selected>{{ setting.department }}</option>
                         {% endif %}
