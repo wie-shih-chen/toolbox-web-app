@@ -62,6 +62,17 @@ def index():
     english_threshold = [c for c in courses if '英文' in c.name and ('門檻' in c.name or '檢定' in c.name or '能力' in c.name)]
     if not english_threshold:
         pinned_courses.append({"name": "英文能力畢業門檻", "category": "common_required", "credits": 0.0, "status": "missing"})
+        
+    # 體育 (109學年度後入學需4門必修)
+    pe_courses = [c for c in courses if c.category == 'pe' or '體育' in c.name]
+    if len(pe_courses) < 1:
+        pinned_courses.append({"name": "體育 (一)", "category": "pe", "credits": 0.0, "status": "missing"})
+    if len(pe_courses) < 2:
+        pinned_courses.append({"name": "體育 (二)", "category": "pe", "credits": 0.0, "status": "missing"})
+    if len(pe_courses) < 3:
+        pinned_courses.append({"name": "體育 (三)", "category": "pe", "credits": 0.0, "status": "missing"})
+    if len(pe_courses) < 4:
+        pinned_courses.append({"name": "體育 (四)", "category": "pe", "credits": 0.0, "status": "missing"})
     
     return render_template('credit/dashboard.html', 
                            setting=setting, 

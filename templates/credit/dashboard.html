@@ -346,7 +346,10 @@
                         <tr style="background: rgba(244, 63, 94, 0.05);">
                             <td style="color: rgba(255,255,255,0.4);">-</td>
                             <td style="font-weight: 500; color: #f43f5e;">{{ pc.name }}</td>
-                            <td style="color: rgba(255,255,255,0.5);">校訂共同必修</td>
+                            <td style="color: rgba(255,255,255,0.5);">
+                                {% if pc.category == 'pe' %}體育
+                                {% else %}校訂共同必修{% endif %}
+                            </td>
                             <td style="text-align: center; font-weight: 600; color: rgba(255,255,255,0.4);">0.0</td>
                             <td style="text-align: center;">
                                 <span class="badge-fail" style="background: rgba(244, 63, 94, 0.1); color: #f43f5e; padding: 4px 8px; border-radius: 4px; font-size: 0.8rem;">未修</span>
@@ -589,7 +592,7 @@ async function addCourseGlobal(btn, courseNo, name, credits, courseType, semeste
                 btn.innerHTML = oldHtml;
                 btn.disabled = false;
                 btn.style.background = '';
-                if(name.includes('勞作教育') || name.includes('服務學習') || name.includes('英文') || name.includes('大學入門') || name.includes('工程倫理')) {
+                if(name.includes('勞作教育') || name.includes('服務學習') || name.includes('英文') || name.includes('大學入門') || name.includes('工程倫理') || name.includes('體育')) {
                     window.location.reload();
                 }
             }, 2000);
