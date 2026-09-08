@@ -337,7 +337,7 @@
                             <th>課程名稱</th>
                             <th>分類</th>
                             <th style="text-align: center;">學分</th>
-                            <th style="text-align: center;">成績</th>
+                            <th style="text-align: center;">狀態</th>
                             <th style="width: 40px;"></th>
                         </tr>
                     </thead>
@@ -365,8 +365,12 @@
                             <td style="text-align: center;">
                                 {% if course.grade == 'ongoing' %}
                                 <span class="badge-ongoing">修課中</span>
+                                {% elif course.grade == 'pass' %}
+                                <span class="badge-pass" style="background: rgba(16, 185, 129, 0.1); color: #10b981; padding: 4px 8px; border-radius: 4px; font-size: 0.8rem;">已修畢</span>
+                                {% elif course.grade == 'fail' %}
+                                <span class="badge-fail" style="background: rgba(244, 63, 94, 0.1); color: #f43f5e; padding: 4px 8px; border-radius: 4px; font-size: 0.8rem;">未及格</span>
                                 {% else %}
-                                {{ course.grade }}
+                                <span class="badge-pass" style="background: rgba(16, 185, 129, 0.1); color: #10b981; padding: 4px 8px; border-radius: 4px; font-size: 0.8rem;">已修畢</span>
                                 {% endif %}
                             </td>
                             <td style="text-align: center; display: flex; gap: 6px; justify-content: center; border-bottom: none; padding-top: 18px;">
@@ -544,6 +548,10 @@ async function addCourseGlobal(btn, courseNo, name, credits, courseType, semeste
             else if(courseType === '▲') category = 'major_required';
             else if(courseType === '★') category = 'major_elective';
             else if(courseType === '△') category = 'free_elective';
+            
+            let badgeHtml = '<span class="badge-ongoing">修課中</span>';
+            if(data.status === 'pass') badgeHtml = '<span class="badge-pass" style="background: rgba(16, 185, 129, 0.1); color: #10b981; padding: 4px 8px; border-radius: 4px; font-size: 0.8rem;">已修畢</span>';
+            else if(data.status === 'fail') badgeHtml = '<span class="badge-fail" style="background: rgba(244, 63, 94, 0.1); color: #f43f5e; padding: 4px 8px; border-radius: 4px; font-size: 0.8rem;">未及格</span>';
 
             const newRow = document.createElement('tr');
             newRow.innerHTML = `
@@ -551,9 +559,9 @@ async function addCourseGlobal(btn, courseNo, name, credits, courseType, semeste
                 <td style="font-weight: 500;">${name}</td>
                 <td style="color: rgba(255,255,255,0.7);">${category === 'major_required' ? '系訂專業必修' : (category === 'major_elective' ? '專業選修' : (category === 'common_required' ? '校訂共同必修' : (category === 'free_elective' ? '跨域及自由選修' : (category === 'pe' ? '體育' : category))))}</td>
                 <td style="text-align: center; font-weight: 600;">${credits}</td>
-                <td style="text-align: center;"><span class="badge-ongoing">修課中</span></td>
+                <td style="text-align: center;">${badgeHtml}</td>
                 <td style="text-align: center; display: flex; gap: 6px; justify-content: center; border-bottom: none; padding-top: 18px;">
-                    <button onclick="openEditModal(${data.id}, '${name}', ${credits}, '${category}', 'ongoing')" class="btn-add" style="background: rgba(129, 140, 248, 0.1); color: #818cf8; width: 28px; height: 28px; margin: 0;">
+                    <button onclick="openEditModal(${data.id}, '${name}', ${credits}, '${category}', '${data.status || 'ongoing'}')" class="btn-add" style="background: rgba(129, 140, 248, 0.1); color: #818cf8; width: 28px; height: 28px; margin: 0;">
                         <span class="material-icons" style="font-size: 16px;">edit</span>
                     </button>
                     <button onclick="deleteCourse(${data.id}, this)" class="btn-add" style="background: rgba(244, 63, 94, 0.1); color: #f43f5e; width: 28px; height: 28px; margin: 0;">
@@ -742,21 +750,11 @@ async function saveCourseEdit() {
         </div>
         
         <div class="form-group" style="margin-bottom: 24px;">
-            <label class="glass-label">成績 / 狀態</label>
+            <label class="glass-label">狀態</label>
             <select id="editGrade" class="glass-input">
                 <option value="ongoing">修課中</option>
-                <option value="pass">及格 (抵免/通過)</option>
-                <option value="A+">A+</option>
-                <option value="A">A</option>
-                <option value="A-">A-</option>
-                <option value="B+">B+</option>
-                <option value="B">B</option>
-                <option value="B-">B-</option>
-                <option value="C+">C+</option>
-                <option value="C">C</option>
-                <option value="C-">C-</option>
-                <option value="D">D</option>
-                <option value="F">不及格 (F)</option>
+                <option value="pass">已修畢</option>
+                <option value="fail">未及格</option>
             </select>
         </div>
         

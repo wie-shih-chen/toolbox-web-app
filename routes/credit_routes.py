@@ -102,16 +102,6 @@ def add_course():
     if existing and data.get('course_no'):
         return jsonify({"success": False, "error": "此課程已經在清單中"})
         
-    course = CreditCourse(
-        setting_id=setting.id,
-        user_id=current_user.id,
-        semester=data.get('semester', ''),
-        course_no=data.get('course_no', ''),
-        name=data.get('name', ''),
-        credits=float(data.get('credits', 0)),
-        grade=data.get('grade', 'ongoing')
-    )
-    
     # 自動判斷分類或使用指定分類
     category = data.get('category')
     if not category:
@@ -132,12 +122,44 @@ def add_course():
         elif ctype == '△':
             category = 'free_elective'
             
-    course.category = category
+    # 根據時間判斷預設狀態 (修課中 or 已修畢)
+    course_sem = data.get('semester', '')
+    status = 'ongoing'
+    try:
+        import datetime
+        now = datetime.datetime.now()
+        current_roc_year = now.year - 1911
+        # 8月(含)到隔年1月為上學期(1)
+        if now.month < 8 and now.month >= 2:
+            current_sem = 2
+            current_roc_year -= 1
+        else:
+            current_sem = 1
+            if now.month < 2:
+                current_roc_year -= 1
+                
+        c_y, c_s = map(int, course_sem.split('-'))
+        if c_y < current_roc_year or (c_y == current_roc_year and c_s < current_sem):
+            status = 'pass'
+    except Exception as e:
+        pass
+
+    course = CreditCourse(
+        setting_id=setting.id,
+        user_id=current_user.id,
+        semester=course_sem,
+        course_no=data.get('course_no', ''),
+        name=data.get('name', ''),
+        credits=float(data.get('credits', 0)),
+        grade=status,
+        category=category
+    )
+    
     db.session.add(course)
     db.session.commit()
     
     progress, percentages = get_progress(setting)
-    return jsonify({"success": True, "id": course.id, "progress": progress, "percentages": percentages})
+    return jsonify({"success": True, "id": course.id, "status": status, "progress": progress, "percentages": percentages})
 
 @credit_bp.route('/api/delete_course/<int:course_id>', methods=['POST'])
 @login_required
