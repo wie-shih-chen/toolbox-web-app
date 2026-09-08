@@ -20,7 +20,7 @@ def get_progress(setting):
                     ongoing_progress['major_req'] += c.credits
                 elif c.category == 'major_elective':
                     ongoing_progress['major_elec'] += c.credits
-                elif c.category == 'common_required':
+                elif c.category in ['common_required', 'liberal_arts']:
                     ongoing_progress['common'] += c.credits
                 elif c.category == 'free_elective':
                     ongoing_progress['free'] += c.credits
@@ -30,7 +30,7 @@ def get_progress(setting):
                     progress['major_req'] += c.credits
                 elif c.category == 'major_elective':
                     progress['major_elec'] += c.credits
-                elif c.category == 'common_required':
+                elif c.category in ['common_required', 'liberal_arts']:
                     progress['common'] += c.credits
                 elif c.category == 'free_elective':
                     progress['free'] += c.credits
@@ -195,12 +195,15 @@ def add_course():
         ctype = data.get('courseType', '')
         name = data.get('name', '')
         
-        common_keywords = ['國文', '國語文實務應用', '專業英文', '英文', '通識', '博雅', '歷史', '勞作教育', '全民國防', '大學入門', '工程倫理', '服務學習']
+        common_keywords = ['國文', '國語文實務應用', '專業英文', '英文', '勞作教育', '全民國防', '大學入門', '工程倫理', '服務學習']
+        liberal_arts_keywords = ['通識', '博雅', '歷史']
         
         if '體育' in name:
             category = 'pe'
         elif '永續公民實踐' in name:
             category = 'free_elective'
+        elif any(k in name for k in liberal_arts_keywords):
+            category = 'liberal_arts'
         elif any(k in name for k in common_keywords):
             category = 'common_required'
         elif ctype == '▲':

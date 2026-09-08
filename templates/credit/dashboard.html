@@ -391,6 +391,8 @@
                                 △ 專業選修
                                 {% elif course.category == 'common_required' %}
                                 ▲ 校訂共同必修
+                                {% elif course.category == 'liberal_arts' %}
+                                ▲ 通識博雅
                                 {% elif course.category == 'free_elective' %}
                                 △ 跨域及自由選修
                                 {% elif course.category == 'pe' %}
@@ -587,7 +589,8 @@ async function addCourseGlobal(btn, courseNo, name, credits, courseType, semeste
 
     if(name.includes('體育')) category = 'pe';
     else if(name.includes('永續公民實踐')) category = 'free_elective';
-    else if(isLiberalArts || commonKeywords.some(k => name.includes(k))) category = 'common_required';
+    else if(isLiberalArts) category = 'liberal_arts';
+    else if(commonKeywords.some(k => name.includes(k))) category = 'common_required';
     else if(isMyClass && courseType === '▲') category = 'major_required';
     else if(isMyClass && courseType === '△') category = 'major_elective';
     
@@ -625,7 +628,7 @@ async function addCourseGlobal(btn, courseNo, name, credits, courseType, semeste
             newRow.innerHTML = `
                 <td style="color: rgba(255,255,255,0.6);">${semester}</td>
                 <td style="font-weight: 500;">${name}</td>
-                <td style="color: rgba(255,255,255,0.7);">${category === 'major_required' ? '▲ 系訂專業必修' : (category === 'major_elective' ? '△ 專業選修' : (category === 'common_required' ? '▲ 校訂共同必修' : (category === 'free_elective' ? '△ 跨域及自由選修' : (category === 'pe' ? '▲ 體育' : category))))}</td>
+                <td style="color: rgba(255,255,255,0.7);">${category === 'major_required' ? '▲ 系訂專業必修' : (category === 'major_elective' ? '△ 專業選修' : (category === 'common_required' ? '▲ 校訂共同必修' : (category === 'liberal_arts' ? '▲ 通識博雅' : (category === 'free_elective' ? '△ 跨域及自由選修' : (category === 'pe' ? '▲ 體育' : category)))))}</td>
                 <td style="text-align: center; font-weight: 600;">${credits}</td>
                 <td style="text-align: center;">${badgeHtml}</td>
                 <td style="text-align: center; display: flex; gap: 6px; justify-content: center; border-bottom: none; padding-top: 18px;">
@@ -820,6 +823,7 @@ async function saveCourseEdit() {
                 <option value="major_required">系訂專業必修</option>
                 <option value="major_elective">專業選修</option>
                 <option value="common_required">校訂共同必修</option>
+                <option value="liberal_arts">通識博雅</option>
                 <option value="free_elective">跨域及自由選修</option>
                 <option value="pe">體育</option>
             </select>
