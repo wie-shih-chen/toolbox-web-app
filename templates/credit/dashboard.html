@@ -308,9 +308,23 @@
             </div>
         </div>
 
-        <!-- 通識博雅 -->
+        <!-- 共同必修與通識博雅 (合併區塊) -->
         <div class="stat-card">
-            <div class="stat-label">通識博雅</div>
+            <!-- 基礎共同科目 -->
+            <div class="stat-label">基礎共同科目</div>
+            <div class="stat-value">
+                <span id="val_common">{{ progress.common }}</span>
+                <span id="ongoing_common" class="stat-ongoing" style="display: {% if ongoing_progress.common > 0 %}inline{% else %}none{% endif %};">(+{{ ongoing_progress.common }})</span>
+                <span class="stat-total">/ {{ setting.common_required }}</span>
+            </div>
+            <div class="progress-bar-bg" style="margin-bottom: 15px;">
+                <div id="bar_common" class="progress-bar-fill" style="background: linear-gradient(90deg, #f59e0b, #fbbf24); width: {{ percentages.common }}%;"></div>
+            </div>
+
+            <hr style="border: 0; border-top: 1px dashed rgba(255,255,255,0.1); margin: 0 0 15px 0;">
+
+            <!-- 通識博雅 -->
+            <div class="stat-label">通識博雅學分</div>
             <div class="stat-value">
                 <span id="val_liberal_arts">{{ progress.liberal_arts }}</span>
                 <span id="ongoing_liberal_arts" class="stat-ongoing" style="display: {% if ongoing_progress.liberal_arts > 0 %}inline{% else %}none{% endif %};">(+{{ ongoing_progress.liberal_arts }})</span>
@@ -318,19 +332,6 @@
             </div>
             <div class="progress-bar-bg">
                 <div id="bar_liberal_arts" class="progress-bar-fill" style="background: linear-gradient(90deg, #d946ef, #a855f7); width: {{ percentages.liberal_arts }}%;"></div>
-            </div>
-        </div>
-        
-        <!-- 校訂共同必修 -->
-        <div class="stat-card">
-            <div class="stat-label">基礎共同科目</div>
-            <div class="stat-value">
-                <span id="val_common">{{ progress.common }}</span>
-                <span id="ongoing_common" class="stat-ongoing" style="display: {% if ongoing_progress.common > 0 %}inline{% else %}none{% endif %};">(+{{ ongoing_progress.common }})</span>
-                <span class="stat-total">/ {{ setting.common_required }}</span>
-            </div>
-            <div class="progress-bar-bg">
-                <div id="bar_common" class="progress-bar-fill" style="background: linear-gradient(90deg, #f59e0b, #fbbf24); width: {{ percentages.common }}%;"></div>
             </div>
         </div>
         
@@ -436,7 +437,9 @@
                         {% for pc in pinned_courses %}
                         <tr class="course-row" data-category="{{ pc.category }}" data-status="{{ pc.status }}" style="background: rgba(244, 63, 94, 0.05);">
                             <td style="color: rgba(255,255,255,0.4);">-</td>
-                            <td style="font-weight: 500; color: #f43f5e;">{{ pc.name }}</td>
+                            <td style="font-weight: 500; color: #f43f5e;">
+                                {{ pc.name }}
+                            </td>
                             <td style="color: rgba(255,255,255,0.5);">
                                 {% if pc.category == 'pe' %}▲ 體育
                                 {% elif pc.category == 'free_elective' %}△ 跨域及自由選修 (必修)
@@ -453,7 +456,12 @@
                         {% for course in courses|sort(attribute='semester') %}
                         <tr class="course-row" data-course-no="{{ course.course_no }}" data-category="{{ course.category }}" data-status="{{ course.grade }}">
                             <td style="color: rgba(255,255,255,0.6);">{{ course.semester }}</td>
-                            <td style="font-weight: 500;">{{ course.name }}</td>
+                            <td style="font-weight: 500;">
+                                {{ course.name }}
+                                {% if course.course_no %}
+                                <div style="font-size: 0.75rem; color: rgba(255,255,255,0.4); font-weight: normal; margin-top: 2px;">{{ course.course_no }}</div>
+                                {% endif %}
+                            </td>
                             <td style="color: rgba(255,255,255,0.7);">
                                 {% if course.category == 'major_required' %}
                                 ▲ 系訂專業必修
@@ -537,7 +545,10 @@ function exportCSV() {
             const cols = row.querySelectorAll('td');
             if (cols.length >= 5) {
                 const semester = cols[0].innerText.trim();
-                const name = cols[1].innerText.trim().replace(/"/g, '""');
+                let name = cols[1].innerText.trim().replace(/"/g, '""');
+                if (name.includes('\n')) {
+                    name = name.replace(/\n/, ' (課號: ') + ')';
+                }
                 const category = cols[2].innerText.trim().replace(/"/g, '""');
                 const credits = cols[3].innerText.trim();
                 const status = cols[4].innerText.trim();
