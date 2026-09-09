@@ -84,6 +84,17 @@
         font-weight: 500;
     }
 
+    .stat-ongoing {
+        font-size: 0.9rem;
+        color: rgba(255,255,255,0.5);
+        font-weight: 500;
+        margin-left: 4px;
+    }
+
+    @media (max-width: 600px) {
+        .stat-ongoing { font-size: 0.75rem; }
+    }
+
     .progress-bar-bg {
         width: 100%;
         height: 6px;
@@ -112,18 +123,18 @@
     
     @media (max-width: 600px) {
         .dashboard-container { padding-bottom: 20px; }
-        .dashboard-header { flex-direction: column; align-items: flex-start; gap: 8px; margin-bottom: 16px; }
-        .dashboard-title { font-size: 1.2rem; }
-        .glass-panel { padding: 12px; margin-bottom: 12px; border-radius: 12px; }
-        .stat-card { padding: 10px 12px; border-radius: 12px; }
-        .stat-label { font-size: 0.75rem; margin-bottom: 4px; }
-        .stat-value { font-size: 1.4rem; }
-        .stat-total { font-size: 0.75rem; }
-        .section-title { font-size: 1rem; margin-bottom: 12px; }
+        .dashboard-header { flex-direction: row; align-items: center; gap: 8px; margin-bottom: 12px; justify-content: space-between; }
+        .dashboard-title { font-size: 1.1rem; }
+        .glass-panel { padding: 10px; margin-bottom: 10px; border-radius: 12px; }
+        .stat-card { padding: 8px 10px; border-radius: 12px; }
+        .stat-label { font-size: 0.7rem; margin-bottom: 2px; }
+        .stat-value { font-size: 1.2rem; flex-wrap: wrap; gap: 4px; }
+        .stat-total { font-size: 0.7rem; }
+        .section-title { font-size: 0.95rem; margin-bottom: 10px; }
         
         /* Reduce input sizes */
-        .glass-input { padding: 8px 10px; font-size: 0.85rem; margin-bottom: 8px; }
-        .btn-action { padding: 8px; font-size: 0.9rem; }
+        .glass-input { padding: 6px 8px; font-size: 0.8rem; margin-bottom: 6px; }
+        .btn-action { padding: 6px; font-size: 0.85rem; }
     }
 
     .section-title {
@@ -259,7 +270,7 @@
             <div class="stat-label">總學分進度</div>
             <div class="stat-value">
                 <span id="val_total">{{ progress.total }}</span>
-                <span id="ongoing_total" style="font-size: 0.9rem; color: rgba(255,255,255,0.5); font-weight: 500; margin-left: 4px; display: {% if ongoing_progress.total > 0 %}inline{% else %}none{% endif %};">(+{{ ongoing_progress.total }})</span>
+                <span id="ongoing_total" class="stat-ongoing" style="display: {% if ongoing_progress.total > 0 %}inline{% else %}none{% endif %};">(+{{ ongoing_progress.total }})</span>
                 <span class="stat-total">/ {{ setting.total_required }}</span>
             </div>
             <div class="progress-bar-bg">
@@ -272,7 +283,7 @@
             <div class="stat-label">系訂專業必修</div>
             <div class="stat-value">
                 <span id="val_major_req">{{ progress.major_req }}</span>
-                <span id="ongoing_major_req" style="font-size: 0.9rem; color: rgba(255,255,255,0.5); font-weight: 500; margin-left: 4px; display: {% if ongoing_progress.major_req > 0 %}inline{% else %}none{% endif %};">(+{{ ongoing_progress.major_req }})</span>
+                <span id="ongoing_major_req" class="stat-ongoing" style="display: {% if ongoing_progress.major_req > 0 %}inline{% else %}none{% endif %};">(+{{ ongoing_progress.major_req }})</span>
                 <span class="stat-total">/ {{ setting.major_required_credits }}</span>
             </div>
             <div class="progress-bar-bg">
@@ -285,7 +296,7 @@
             <div class="stat-label">專業選修</div>
             <div class="stat-value">
                 <span id="val_major_elec">{{ progress.major_elec }}</span>
-                <span id="ongoing_major_elec" style="font-size: 0.9rem; color: rgba(255,255,255,0.5); font-weight: 500; margin-left: 4px; display: {% if ongoing_progress.major_elec > 0 %}inline{% else %}none{% endif %};">(+{{ ongoing_progress.major_elec }})</span>
+                <span id="ongoing_major_elec" class="stat-ongoing" style="display: {% if ongoing_progress.major_elec > 0 %}inline{% else %}none{% endif %};">(+{{ ongoing_progress.major_elec }})</span>
                 <span class="stat-total">/ {{ setting.major_elective_credits }}</span>
             </div>
             <div class="progress-bar-bg">
@@ -298,7 +309,7 @@
             <div class="stat-label">校訂共同必修</div>
             <div class="stat-value">
                 <span id="val_common">{{ progress.common }}</span>
-                <span id="ongoing_common" style="font-size: 0.9rem; color: rgba(255,255,255,0.5); font-weight: 500; margin-left: 4px; display: {% if ongoing_progress.common > 0 %}inline{% else %}none{% endif %};">(+{{ ongoing_progress.common }})</span>
+                <span id="ongoing_common" class="stat-ongoing" style="display: {% if ongoing_progress.common > 0 %}inline{% else %}none{% endif %};">(+{{ ongoing_progress.common }})</span>
                 <span class="stat-total">/ {{ setting.common_required }}</span>
             </div>
             <div class="progress-bar-bg">
@@ -311,7 +322,7 @@
             <div class="stat-label">跨域及自由選修</div>
             <div class="stat-value">
                 <span id="val_free">{{ progress.free }}</span>
-                <span id="ongoing_free" style="font-size: 0.9rem; color: rgba(255,255,255,0.5); font-weight: 500; margin-left: 4px; display: {% if ongoing_progress.free > 0 %}inline{% else %}none{% endif %};">(+{{ ongoing_progress.free }})</span>
+                <span id="ongoing_free" class="stat-ongoing" style="display: {% if ongoing_progress.free > 0 %}inline{% else %}none{% endif %};">(+{{ ongoing_progress.free }})</span>
                 <span class="stat-total">/ {{ setting.free_elective_credits }}</span>
             </div>
             <div class="progress-bar-bg">
