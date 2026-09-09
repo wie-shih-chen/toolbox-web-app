@@ -463,7 +463,7 @@
                         <tr class="course-row" data-course-no="{{ course.course_no }}" data-category="{{ course.category }}" data-status="{{ course.grade }}">
                             <td style="color: rgba(255,255,255,0.6);">{{ course.semester }}</td>
                             <td style="font-weight: 500;">
-                                {{ course.name }}
+                                {{ course.name }}{% if course.category == 'liberal_arts' %} <span style="color: #d946ef; font-size: 0.85em;">(通識)</span>{% endif %}
                                 {% if course.course_no %}
                                 <div style="font-size: 0.75rem; color: rgba(255,255,255,0.4); font-weight: normal; margin-top: 2px;">{{ course.course_no }}</div>
                                 {% endif %}
@@ -771,7 +771,7 @@ async function addCourseGlobal(btn, courseNo, name, credits, courseType, semeste
             newRow.innerHTML = `
                 <td style="color: rgba(255,255,255,0.6);">${semester}</td>
                 <td style="font-weight: 500;">
-                    ${name}
+                    ${name}${category === 'liberal_arts' ? ' <span style="color: #d946ef; font-size: 0.85em;">(通識)</span>' : ''}
                     ${courseNo ? `<div style="font-size: 0.75rem; color: rgba(255,255,255,0.4); font-weight: normal; margin-top: 2px;">${courseNo}</div>` : ''}
                 </td>
                 <td style="color: rgba(255,255,255,0.7);">${category === 'major_required' ? '▲ 系訂專業必修' : (category === 'major_elective' ? '△ 專業選修' : (category === 'common_required' ? '▲ 校訂共同必修' : (category === 'liberal_arts' ? '▲ 通識博雅' : (category === 'free_elective' ? '△ 跨域及自由選修' : (category === 'pe' ? '▲ 體育' : category)))))}</td>
