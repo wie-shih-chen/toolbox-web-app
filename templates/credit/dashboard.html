@@ -117,6 +117,10 @@
         gap: 24px;
     }
     
+    .main-grid > div {
+        min-width: 0; /* Prevents grid blowout from wide tables */
+    }
+    
     @media (max-width: 900px) {
         .main-grid { grid-template-columns: 1fr; gap: 16px; }
     }
