@@ -412,8 +412,9 @@
                         <option value="all">全部分類</option>
                         <option value="major_required">系訂專業必修</option>
                         <option value="major_elective">專業選修</option>
-                        <option value="common_required">校訂共同必修</option>
-                        <option value="liberal_arts">通識博雅</option>
+                        <option value="common_all">校訂共同必修 (含通識)</option>
+                        <option value="common_required">基礎共同科目</option>
+                        <option value="liberal_arts">通識</option>
                         <option value="free_elective">跨域及自由選修</option>
                         <option value="pe">體育</option>
                     </select>
@@ -530,7 +531,15 @@ function filterMyCourses() {
         const rowCategory = row.getAttribute('data-category');
         const rowStatus = row.getAttribute('data-status');
         
-        let categoryMatch = (categoryFilter === 'all') || (categoryFilter === rowCategory);
+        let categoryMatch = false;
+        if (categoryFilter === 'all') {
+            categoryMatch = true;
+        } else if (categoryFilter === 'common_all') {
+            categoryMatch = (rowCategory === 'common_required' || rowCategory === 'liberal_arts');
+        } else {
+            categoryMatch = (categoryFilter === rowCategory);
+        }
+        
         let statusMatch = (statusFilter === 'all') || (statusFilter === rowStatus);
         
         if (categoryMatch && statusMatch) {
