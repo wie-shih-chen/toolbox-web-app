@@ -427,6 +427,9 @@
                     </select>
                 </div>
             </div>
+            <div style="display: flex; justify-content: flex-end; margin-bottom: 12px; font-size: 0.85rem; color: rgba(255,255,255,0.7);">
+                共 <span id="listTotalCount" style="color: white; font-weight: bold; margin: 0 4px;">0</span> 筆課程，合計 <span id="listTotalCredits" style="color: #10b981; font-weight: bold; margin: 0 4px;">0.0</span> 學分
+            </div>
 
             <div style="overflow-x: auto;">
                 <table class="glass-table">
@@ -527,6 +530,10 @@ function filterMyCourses() {
     const statusFilter = document.getElementById('filterStatus').value;
     
     const rows = document.querySelectorAll('#myCoursesBody .course-row');
+    
+    let visibleCount = 0;
+    let totalCredits = 0.0;
+    
     rows.forEach(row => {
         const rowCategory = row.getAttribute('data-category');
         const rowStatus = row.getAttribute('data-status');
@@ -544,11 +551,31 @@ function filterMyCourses() {
         
         if (categoryMatch && statusMatch) {
             row.style.display = '';
+            visibleCount++;
+            
+            // Calculate credits
+            const creditCell = row.querySelector('td:nth-child(4)');
+            if (creditCell) {
+                const cred = parseFloat(creditCell.innerText.trim());
+                if (!isNaN(cred)) {
+                    totalCredits += cred;
+                }
+            }
         } else {
             row.style.display = 'none';
         }
     });
+    
+    const countEl = document.getElementById('listTotalCount');
+    const creditsEl = document.getElementById('listTotalCredits');
+    if (countEl) countEl.innerText = visibleCount;
+    if (creditsEl) creditsEl.innerText = totalCredits.toFixed(1);
 }
+
+// 初始化過濾器和總數
+document.addEventListener('DOMContentLoaded', () => {
+    filterMyCourses();
+});
 
 function exportCSV() {
     let csvContent = "data:text/csv;charset=utf-8,\uFEFF";
@@ -798,6 +825,7 @@ async function addCourseGlobal(btn, courseNo, name, credits, courseType, semeste
             tbody.appendChild(newRow);
             updateProgressUI(data.progress, data.ongoing_progress, data.percentages);
             renderCourses();
+            filterMyCourses();
             
             setTimeout(() => {
                 btn.innerHTML = oldHtml;
@@ -918,6 +946,7 @@ async function deleteCourse(id, btnElement) {
             if (typeof renderCourses === 'function') {
                 renderCourses();
             }
+            filterMyCourses();
         } else {
             alert('刪除失敗');
         }
