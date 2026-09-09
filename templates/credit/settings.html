@@ -241,8 +241,13 @@
                 </div>
                 
                 <div class="form-group">
-                    <label class="glass-label">校訂共同必修</label>
-                    <input type="number" id="commonRequired" name="common_required" class="glass-input" value="{{ setting.common_required if setting else 28 }}" required>
+                    <label class="glass-label">基礎共同科目</label>
+                    <input type="number" id="commonRequired" name="common_required" class="glass-input" value="{{ setting.common_required if setting else 16 }}" required>
+                </div>
+                
+                <div class="form-group">
+                    <label class="glass-label">通識博雅學分</label>
+                    <input type="number" id="liberalArtsRequired" name="liberal_arts_required" class="glass-input" value="{{ setting.liberal_arts_required if setting else 12 }}" required>
                 </div>
                 
                 <div class="form-group">

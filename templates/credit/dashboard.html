@@ -308,9 +308,22 @@
             </div>
         </div>
 
-        <!-- 共同必修 -->
+        <!-- 通識博雅 -->
         <div class="stat-card">
-            <div class="stat-label">校訂共同必修</div>
+            <div class="stat-label">通識博雅</div>
+            <div class="stat-value">
+                <span id="val_liberal_arts">{{ progress.liberal_arts }}</span>
+                <span id="ongoing_liberal_arts" class="stat-ongoing" style="display: {% if ongoing_progress.liberal_arts > 0 %}inline{% else %}none{% endif %};">(+{{ ongoing_progress.liberal_arts }})</span>
+                <span class="stat-total">/ {{ setting.liberal_arts_required }}</span>
+            </div>
+            <div class="progress-bar-bg">
+                <div id="bar_liberal_arts" class="progress-bar-fill" style="background: linear-gradient(90deg, #d946ef, #a855f7); width: {{ percentages.liberal_arts }}%;"></div>
+            </div>
+        </div>
+        
+        <!-- 校訂共同必修 -->
+        <div class="stat-card">
+            <div class="stat-label">基礎共同科目</div>
             <div class="stat-value">
                 <span id="val_common">{{ progress.common }}</span>
                 <span id="ongoing_common" class="stat-ongoing" style="display: {% if ongoing_progress.common > 0 %}inline{% else %}none{% endif %};">(+{{ ongoing_progress.common }})</span>
@@ -571,6 +584,7 @@ function updateProgressUI(progress, ongoing_progress, percentages) {
     updateCard('major_req', progress.major_req, ongoing_progress?.major_req || 0, percentages.major_req);
     updateCard('major_elec', progress.major_elec, ongoing_progress?.major_elec || 0, percentages.major_elec);
     updateCard('common', progress.common, ongoing_progress?.common || 0, percentages.common);
+    updateCard('liberal_arts', progress.liberal_arts, ongoing_progress?.liberal_arts || 0, percentages.liberal_arts);
     updateCard('free', progress.free, ongoing_progress?.free || 0, percentages.free);
 }
 

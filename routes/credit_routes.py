@@ -9,8 +9,8 @@ credit_bp = Blueprint('credit', __name__, url_prefix='/credit')
 
 def get_progress(setting):
     courses = CreditCourse.query.filter_by(setting_id=setting.id).all()
-    progress = {'total': 0, 'major_req': 0, 'major_elec': 0, 'common': 0, 'free': 0}
-    ongoing_progress = {'total': 0, 'major_req': 0, 'major_elec': 0, 'common': 0, 'free': 0}
+    progress = {'total': 0, 'major_req': 0, 'major_elec': 0, 'common': 0, 'liberal_arts': 0, 'free': 0}
+    ongoing_progress = {'total': 0, 'major_req': 0, 'major_elec': 0, 'common': 0, 'liberal_arts': 0, 'free': 0}
     
     for c in courses:
         if c.grade not in ['F', 'fail'] and c.category != 'pe':
@@ -20,8 +20,10 @@ def get_progress(setting):
                     ongoing_progress['major_req'] += c.credits
                 elif c.category == 'major_elective':
                     ongoing_progress['major_elec'] += c.credits
-                elif c.category in ['common_required', 'liberal_arts']:
+                elif c.category == 'common_required':
                     ongoing_progress['common'] += c.credits
+                elif c.category == 'liberal_arts':
+                    ongoing_progress['liberal_arts'] += c.credits
                 elif c.category == 'free_elective':
                     ongoing_progress['free'] += c.credits
             else:
@@ -30,8 +32,10 @@ def get_progress(setting):
                     progress['major_req'] += c.credits
                 elif c.category == 'major_elective':
                     progress['major_elec'] += c.credits
-                elif c.category in ['common_required', 'liberal_arts']:
+                elif c.category == 'common_required':
                     progress['common'] += c.credits
+                elif c.category == 'liberal_arts':
+                    progress['liberal_arts'] += c.credits
                 elif c.category == 'free_elective':
                     progress['free'] += c.credits
                 
@@ -46,6 +50,7 @@ def get_progress(setting):
         'major_req': calc_percent(progress['major_req'], setting.major_required_credits),
         'major_elec': calc_percent(progress['major_elec'], setting.major_elective_credits),
         'common': calc_percent(progress['common'], setting.common_required),
+        'liberal_arts': calc_percent(progress['liberal_arts'], setting.liberal_arts_required),
         'free': calc_percent(progress['free'], setting.free_elective_credits)
     }
     return progress, ongoing_progress, percentages
@@ -154,11 +159,13 @@ def settings():
         setting.class_name = request.form.get('class_name', '')
         
         # 門檻設定
-        setting.total_required = int(request.form.get('total_required', 128))
-        setting.common_required = int(request.form.get('common_required', 28))
-        setting.major_required_credits = int(request.form.get('major_required_credits', 58))
-        setting.major_elective_credits = int(request.form.get('major_elective_credits', 26))
-        setting.free_elective_credits = int(request.form.get('free_elective_credits', 16))
+        data = request.form
+        setting.total_required = int(data.get('total_required', 128))
+        setting.common_required = int(data.get('common_required', 16))
+        setting.major_required_credits = int(data.get('major_required_credits', 64))
+        setting.major_elective_credits = int(data.get('major_elective_credits', 20))
+        setting.free_elective_credits = int(data.get('free_elective_credits', 20))
+        setting.liberal_arts_required = int(data.get('liberal_arts_required', 12))
         
         db.session.commit()
         return jsonify({"success": True})
