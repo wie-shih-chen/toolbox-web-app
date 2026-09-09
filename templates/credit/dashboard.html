@@ -383,6 +383,9 @@
                 <div class="section-title" style="margin-bottom: 0;">
                     <span class="material-icons" style="color: #10b981;">view_list</span>
                     我的課程記錄
+                    <button onclick="exportCSV()" class="btn-action" style="padding: 4px 10px; font-size: 0.8rem; width: auto; margin-left: 12px; display: inline-flex; align-items: center; gap: 4px;">
+                        <span class="material-icons" style="font-size: 14px;">download</span> 匯出 CSV
+                    </button>
                 </div>
                 <div style="display: flex; gap: 10px;">
                     <select id="filterCategory" class="glass-input" style="padding: 6px 12px; height: auto; min-width: 140px;" onchange="filterMyCourses()">
@@ -509,6 +512,35 @@ function filterMyCourses() {
             row.style.display = 'none';
         }
     });
+}
+
+function exportCSV() {
+    let csvContent = "data:text/csv;charset=utf-8,\uFEFF";
+    csvContent += "學期,課程名稱,分類,學分,狀態\n";
+    
+    const rows = document.querySelectorAll('#myCoursesBody tr');
+    rows.forEach(row => {
+        if (row.style.display !== 'none') {
+            const cols = row.querySelectorAll('td');
+            if (cols.length >= 5) {
+                const semester = cols[0].innerText.trim();
+                const name = cols[1].innerText.trim().replace(/"/g, '""');
+                const category = cols[2].innerText.trim().replace(/"/g, '""');
+                const credits = cols[3].innerText.trim();
+                const status = cols[4].innerText.trim();
+                
+                csvContent += `"${semester}","${name}","${category}","${credits}","${status}"\n`;
+            }
+        }
+    });
+    
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", "課程記錄.csv");
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
 }
 </script>
 {% endblock %}
