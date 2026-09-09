@@ -309,29 +309,35 @@
         </div>
 
         <!-- 共同必修與通識博雅 (合併區塊) -->
-        <div class="stat-card">
-            <!-- 基礎共同科目 -->
-            <div class="stat-label">基礎共同科目</div>
+        <div class="stat-card" style="display: flex; flex-direction: column;">
+            <div class="stat-label">校訂共同必修</div>
             <div class="stat-value">
-                <span id="val_common">{{ progress.common }}</span>
-                <span id="ongoing_common" class="stat-ongoing" style="display: {% if ongoing_progress.common > 0 %}inline{% else %}none{% endif %};">(+{{ ongoing_progress.common }})</span>
-                <span class="stat-total">/ {{ setting.common_required }}</span>
+                <span id="val_common_total">{{ progress.common + progress.liberal_arts }}</span>
+                <span id="ongoing_common_total" class="stat-ongoing" style="display: {% if (ongoing_progress.common + ongoing_progress.liberal_arts) > 0 %}inline{% else %}none{% endif %};">(+{{ ongoing_progress.common + ongoing_progress.liberal_arts }})</span>
+                <span class="stat-total">/ {{ setting.common_required + setting.liberal_arts_required }}</span>
             </div>
-            <div class="progress-bar-bg" style="margin-bottom: 15px;">
-                <div id="bar_common" class="progress-bar-fill" style="background: linear-gradient(90deg, #f59e0b, #fbbf24); width: {{ percentages.common }}%;"></div>
+            <div class="progress-bar-bg" style="margin-bottom: 12px;">
+                <div id="bar_common_total" class="progress-bar-fill" style="background: linear-gradient(90deg, #f59e0b, #fbbf24); width: {{ percentages.common_total }}%;"></div>
             </div>
 
-            <hr style="border: 0; border-top: 1px dashed rgba(255,255,255,0.1); margin: 0 0 15px 0;">
+            <hr style="border: 0; border-top: 1px dashed rgba(255,255,255,0.15); margin: 0 0 12px 0;">
 
-            <!-- 通識博雅 -->
-            <div class="stat-label">通識博雅學分</div>
-            <div class="stat-value">
-                <span id="val_liberal_arts">{{ progress.liberal_arts }}</span>
-                <span id="ongoing_liberal_arts" class="stat-ongoing" style="display: {% if ongoing_progress.liberal_arts > 0 %}inline{% else %}none{% endif %};">(+{{ ongoing_progress.liberal_arts }})</span>
-                <span class="stat-total">/ {{ setting.liberal_arts_required }}</span>
+            <div style="display: flex; justify-content: space-between; font-size: 0.85rem; color: rgba(255,255,255,0.8); margin-bottom: 6px;">
+                <span>基礎共同科目</span>
+                <span>
+                    <span id="val_common_sub">{{ progress.common }}</span>
+                    <span id="ongoing_common_sub" style="color: #60a5fa; display: {% if ongoing_progress.common > 0 %}inline{% else %}none{% endif %};">(+{{ ongoing_progress.common }})</span>
+                    <span style="opacity: 0.5;">/ {{ setting.common_required }}</span>
+                </span>
             </div>
-            <div class="progress-bar-bg">
-                <div id="bar_liberal_arts" class="progress-bar-fill" style="background: linear-gradient(90deg, #d946ef, #a855f7); width: {{ percentages.liberal_arts }}%;"></div>
+            
+            <div style="display: flex; justify-content: space-between; font-size: 0.85rem; color: rgba(255,255,255,0.8);">
+                <span>通識博雅學分</span>
+                <span>
+                    <span id="val_liberal_arts_sub">{{ progress.liberal_arts }}</span>
+                    <span id="ongoing_liberal_arts_sub" style="color: #60a5fa; display: {% if ongoing_progress.liberal_arts > 0 %}inline{% else %}none{% endif %};">(+{{ ongoing_progress.liberal_arts }})</span>
+                    <span style="opacity: 0.5;">/ {{ setting.liberal_arts_required }}</span>
+                </span>
             </div>
         </div>
         
@@ -594,8 +600,9 @@ function updateProgressUI(progress, ongoing_progress, percentages) {
     updateCard('total', progress.total, ongoing_progress?.total || 0, percentages.total);
     updateCard('major_req', progress.major_req, ongoing_progress?.major_req || 0, percentages.major_req);
     updateCard('major_elec', progress.major_elec, ongoing_progress?.major_elec || 0, percentages.major_elec);
-    updateCard('common', progress.common, ongoing_progress?.common || 0, percentages.common);
-    updateCard('liberal_arts', progress.liberal_arts, ongoing_progress?.liberal_arts || 0, percentages.liberal_arts);
+    updateCard('common_total', progress.common + progress.liberal_arts, (ongoing_progress?.common || 0) + (ongoing_progress?.liberal_arts || 0), percentages.common_total);
+    updateCard('common_sub', progress.common, ongoing_progress?.common || 0, 0);
+    updateCard('liberal_arts_sub', progress.liberal_arts, ongoing_progress?.liberal_arts || 0, 0);
     updateCard('free', progress.free, ongoing_progress?.free || 0, percentages.free);
 }
 
@@ -763,7 +770,10 @@ async function addCourseGlobal(btn, courseNo, name, credits, courseType, semeste
             newRow.setAttribute('data-status', data.status || 'ongoing');
             newRow.innerHTML = `
                 <td style="color: rgba(255,255,255,0.6);">${semester}</td>
-                <td style="font-weight: 500;">${name}</td>
+                <td style="font-weight: 500;">
+                    ${name}
+                    ${courseNo ? `<div style="font-size: 0.75rem; color: rgba(255,255,255,0.4); font-weight: normal; margin-top: 2px;">${courseNo}</div>` : ''}
+                </td>
                 <td style="color: rgba(255,255,255,0.7);">${category === 'major_required' ? '▲ 系訂專業必修' : (category === 'major_elective' ? '△ 專業選修' : (category === 'common_required' ? '▲ 校訂共同必修' : (category === 'liberal_arts' ? '▲ 通識博雅' : (category === 'free_elective' ? '△ 跨域及自由選修' : (category === 'pe' ? '▲ 體育' : category)))))}</td>
                 <td style="text-align: center; font-weight: 600;">${credits}</td>
                 <td style="text-align: center;">${badgeHtml}</td>

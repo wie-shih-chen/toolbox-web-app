@@ -51,6 +51,7 @@ def get_progress(setting):
         'major_elec': calc_percent(progress['major_elec'], setting.major_elective_credits),
         'common': calc_percent(progress['common'], setting.common_required),
         'liberal_arts': calc_percent(progress['liberal_arts'], setting.liberal_arts_required),
+        'common_total': calc_percent(progress['common'] + progress['liberal_arts'], setting.common_required + setting.liberal_arts_required),
         'free': calc_percent(progress['free'], setting.free_elective_credits)
     }
     return progress, ongoing_progress, percentages
