@@ -169,4 +169,30 @@
 
 {% block extra_js %}
 <script src="{{ url_for('static', filename='js/expense.js') }}"></script>
+<script>
+    if (typeof expenseApp !== 'undefined') {
+        expenseApp.settings = expenseApp.settings || {};
+        try {
+            const injectedCats = {{ custom_categories| tojson | safe }};
+            if (injectedCats && Array.isArray(injectedCats) && injectedCats.length > 0) {
+                expenseApp.settings.custom_categories = injectedCats;
+            } else {
+                expenseApp.settings.custom_categories = [
+                    { name: '飲食', emoji: '🍽️', color: 'var(--cat-food)' },
+                    { name: '衣著', emoji: '👕', color: 'var(--cat-clothing)' },
+                    { name: '居住', emoji: '🏠', color: 'var(--cat-housing)' },
+                    { name: '交通', emoji: '🚌', color: 'var(--cat-transport)' },
+                    { name: '教育', emoji: '📖', color: 'var(--cat-edu)' },
+                    { name: '娛樂', emoji: '🎮', color: 'var(--cat-play)' },
+                    { name: '其他', emoji: '📦', color: 'var(--cat-other)' }
+                ];
+            }
+            if (typeof expenseApp.populateCategorySelect === 'function') {
+                expenseApp.populateCategorySelect();
+            }
+        } catch (e) {
+            console.error("Injection Error:", e);
+        }
+    }
+</script>
 {% endblock %}

@@ -12,7 +12,13 @@ expense_service = ExpenseService()
 def index():
     """本週期記帳"""
     start, end = expense_service.get_current_period()
-    return render_template('expense/dashboard.html', start_date=start, end_date=end)
+    settings = expense_service.get_settings()
+    try:
+        import json
+        custom_categories = json.loads(settings.get('custom_categories') or '[]')
+    except:
+        custom_categories = []
+    return render_template('expense/dashboard.html', start_date=start, end_date=end, custom_categories=custom_categories)
 
 @expense_bp.route('/today')
 @login_required
@@ -41,7 +47,12 @@ def today():
 @login_required
 def history():
     settings = expense_service.get_settings()
-    return render_template('expense/history.html', settings=settings)
+    try:
+        import json
+        custom_categories = json.loads(settings.get('custom_categories') or '[]')
+    except:
+        custom_categories = []
+    return render_template('expense/history.html', settings=settings, custom_categories=custom_categories)
 
 @expense_bp.route('/settings')
 @login_required
@@ -80,20 +91,6 @@ def add_record():
     data = request.json
     if not data or 'amount' not in data:
         return jsonify({"error": "Missing data"}), 400
-    
-    # Default category emoji mapping help
-    categories = {
-        "飲食": "🍽️ 飲食",
-        "衣著": "👕 衣著",
-        "居住": "🏠 居住",
-        "交通": "🚌 交通",
-        "教育": "📖 教育",
-        "娛樂": "🎮 娛樂",
-        "其他": "📦 其他"
-    }
-    
-    if data.get('category') in categories:
-        data['category'] = categories[data['category']]
     
     record = expense_service.add_record(data)
     return jsonify(record), 201
@@ -151,6 +148,13 @@ def export_records():
     except:
         methods = ['download']
 
+    # Get custom categories for mapping emojis
+    try:
+        custom_categories = json.loads(current_user.settings.custom_categories or '[]')
+        emoji_map = {c['name']: c.get('emoji', '📦') for c in custom_categories if 'name' in c}
+    except:
+        emoji_map = {}
+
     # 1. Email
     if 'email' in methods and current_user.email:
         # Get full data for email rendering
@@ -195,13 +199,10 @@ def export_records():
         records = summary_data.get('records', [])
         for r in records:
             cat_full = r.get('category', '其他')
-            parts = cat_full.split(' ')
-            if len(parts) > 1:
-                emoji = parts[0]
-                cat_name = parts[1]
-            else:
-                emoji = '📦' # Fallback emoji if no space
-                cat_name = cat_full
+            cat_name = cat_full.split(' ')[1] if ' ' in cat_full else cat_full
+            emoji = emoji_map.get(cat_name, '📦')
+            if ' ' in cat_full and emoji == '📦':
+                emoji = cat_full.split(' ')[0]
                 
             category_stats[cat_name]['count'] += 1
             category_stats[cat_name]['amount'] += int(r['amount'])
