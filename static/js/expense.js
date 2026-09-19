@@ -969,25 +969,6 @@ expenseApp.initSettings = function () {
         this.saveSettings();
     });
 
-    // Handle Recurring Add
-    document.getElementById('openAddRecurringBtn').addEventListener('click', () => {
-        // Simple prompt flow for V1
-        const name = prompt('固定支出名稱 (如: Netflix)');
-        if (!name) return;
-        const amount = prompt('金額 (如: 390)');
-        if (!amount) return;
-        const day = prompt('每月幾號扣款? (1-31)');
-        if (!day) return;
-
-        this.settings.recurring_expenses.push({
-            id: Date.now(),
-            name,
-            amount: parseInt(amount),
-            day: parseInt(day),
-            category: '其他' // Default, maybe ask prompt?
-        });
-        this.renderSettingsLists();
-        this.saveSettings();
     });
 
     // Intercept Submit
@@ -1144,26 +1125,7 @@ expenseApp.editCategory = function (idx) {
     this.saveSettings();
 };
 
-expenseApp.editRecurring = function (idx) {
-    const rec = this.settings.recurring_expenses[idx];
-    const newName = prompt('修改名稱:', rec.name);
-    if (newName === null) return;
 
-    const newAmount = prompt('修改金額:', rec.amount);
-    if (newAmount === null) return;
-
-    const newDay = prompt('修改扣款日 (1-31):', rec.day);
-    if (newDay === null) return;
-
-    this.settings.recurring_expenses[idx] = {
-        ...rec,
-        name: newName || rec.name,
-        amount: parseInt(newAmount) || rec.amount,
-        day: parseInt(newDay) || rec.day
-    };
-    this.renderSettingsLists();
-    this.saveSettings();
-};
 
 expenseApp.editShortcut = function (idx) {
     const item = this.settings.quick_shortcuts[idx];
