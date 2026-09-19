@@ -141,55 +141,6 @@
                 <input type="hidden" name="quick_shortcuts" id="quickShortcutsInput">
             </div>
 
-            <!-- Recurring Expense Modal -->
-            <div id="recurringModal" class="expense-modal" style="display: none;">
-                <div class="expense-modal-overlay" onclick="closeRecurringModal()"></div>
-                <div class="expense-modal-content" style="max-width: 400px;">
-                    <div class="expense-modal-header">
-                        <h3 id="recurringModalTitle">
-                            <span class="material-icons"
-                                style="vertical-align: middle; margin-right: 8px; color: var(--accent-color);">update</span>
-                            新增固定支出
-                        </h3>
-                        <button type="button" class="expense-modal-close" onclick="closeRecurringModal()">
-                            <span class="material-icons">close</span>
-                        </button>
-                    </div>
-                    <div class="expense-modal-body" style="padding: 20px;">
-                        <input type="hidden" id="recEditIndex" value="-1">
-                        
-                        <div class="form-group" style="margin-bottom: 15px;">
-                            <label style="display: block; margin-bottom: 5px; color: var(--text-secondary); font-size: 0.9rem;">支出名稱</label>
-                            <input type="text" id="recEditName" class="expense-form-input" placeholder="例如：房租、Netflix..." style="width: 100%; box-sizing: border-box;">
-                        </div>
-                        
-                        <div class="form-group" style="margin-bottom: 15px;">
-                            <label style="display: block; margin-bottom: 5px; color: var(--text-secondary); font-size: 0.9rem;">每月金額 (NTD)</label>
-                            <input type="number" id="recEditAmount" class="expense-form-input" placeholder="0" min="0" style="width: 100%; box-sizing: border-box;">
-                        </div>
-                        
-                        <div class="form-group" style="margin-bottom: 15px;">
-                            <label style="display: block; margin-bottom: 5px; color: var(--text-secondary); font-size: 0.9rem;">每月幾號扣款 (1-31)</label>
-                            <input type="number" id="recEditDay" class="expense-form-input" placeholder="15" min="1" max="31" style="width: 100%; box-sizing: border-box;">
-                        </div>
-                        
-                        <div class="form-group" style="margin-bottom: 15px;">
-                            <label style="display: block; margin-bottom: 5px; color: var(--text-secondary); font-size: 0.9rem;">類別</label>
-                            <select id="recEditCategory" class="expense-form-input" style="width: 100%; box-sizing: border-box; appearance: auto;">
-                                <!-- Dynamically populated -->
-                            </select>
-                        </div>
-                    </div>
-                    <div class="expense-modal-footer">
-                        <button type="button" class="btn btn-secondary" onclick="closeRecurringModal()">取消</button>
-                        <button type="button" class="btn btn-primary" onclick="submitRecurring()">
-                            <span class="material-icons"
-                                style="font-size: 16px; vertical-align: middle; margin-right: 4px;">check</span>
-                            儲存
-                        </button>
-                    </div>
-                </div>
-            </div>
 
             <button type="submit" class="btn btn-primary btn-block settings-btn-save">
                 儲存設定
@@ -205,6 +156,56 @@
                 記帳週期說明：系統自動以每月 <strong>{{ settings.billing_cycle_start_day or 10 }} 號</strong> 為起始點，至下個月 <strong>{{
                     settings.billing_cycle_start_day or 10 }} 號</strong> 為一個週期（不包含末日）。這與薪水計算工具的週期保持一致。
             </div>
+        </div>
+    </div>
+</div>
+
+<!-- Recurring Expense Modal -->
+<div id="recurringModal" class="expense-modal" style="display: none;">
+    <div class="expense-modal-overlay" onclick="closeRecurringModal()"></div>
+    <div class="expense-modal-content" style="max-width: 400px;">
+        <div class="expense-modal-header">
+            <h3 id="recurringModalTitle">
+                <span class="material-icons"
+                    style="vertical-align: middle; margin-right: 8px; color: var(--accent-color);">update</span>
+                新增固定支出
+            </h3>
+            <button type="button" class="expense-modal-close" onclick="closeRecurringModal()">
+                <span class="material-icons">close</span>
+            </button>
+        </div>
+        <div class="expense-modal-body" style="padding: 20px;">
+            <input type="hidden" id="recEditIndex" value="-1">
+            
+            <div class="form-group" style="margin-bottom: 15px;">
+                <label style="display: block; margin-bottom: 5px; color: var(--text-secondary); font-size: 0.9rem;">支出名稱</label>
+                <input type="text" id="recEditName" class="expense-form-input" placeholder="例如：房租、Netflix..." style="width: 100%; box-sizing: border-box;">
+            </div>
+            
+            <div class="form-group" style="margin-bottom: 15px;">
+                <label style="display: block; margin-bottom: 5px; color: var(--text-secondary); font-size: 0.9rem;">每月金額 (NTD)</label>
+                <input type="number" id="recEditAmount" class="expense-form-input" placeholder="0" min="0" style="width: 100%; box-sizing: border-box;">
+            </div>
+            
+            <div class="form-group" style="margin-bottom: 15px;">
+                <label style="display: block; margin-bottom: 5px; color: var(--text-secondary); font-size: 0.9rem;">每月幾號扣款 (1-31)</label>
+                <input type="number" id="recEditDay" class="expense-form-input" placeholder="15" min="1" max="31" style="width: 100%; box-sizing: border-box;">
+            </div>
+            
+            <div class="form-group" style="margin-bottom: 15px;">
+                <label style="display: block; margin-bottom: 5px; color: var(--text-secondary); font-size: 0.9rem;">類別</label>
+                <select id="recEditCategory" class="expense-form-input" style="width: 100%; box-sizing: border-box; appearance: auto;">
+                    <!-- Dynamically populated -->
+                </select>
+            </div>
+        </div>
+        <div class="expense-modal-footer">
+            <button type="button" class="btn btn-secondary" onclick="closeRecurringModal()">取消</button>
+            <button type="button" class="btn btn-primary" onclick="submitRecurring()">
+                <span class="material-icons"
+                    style="font-size: 16px; vertical-align: middle; margin-right: 4px;">check</span>
+                儲存
+            </button>
         </div>
     </div>
 </div>
