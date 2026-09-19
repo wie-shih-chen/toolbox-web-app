@@ -969,8 +969,6 @@ expenseApp.initSettings = function () {
         this.saveSettings();
     });
 
-    });
-
     // Intercept Submit
     document.getElementById('settingsForm').addEventListener('submit', (e) => {
         e.preventDefault();
