@@ -271,7 +271,7 @@ class ConverterService:
             raise RuntimeError(f'解密失敗：{e}')
 
     @staticmethod
-    def pdf_to_docx(src_path: str, out_dir: str) -> str:
+    def pdf_to_docx(src_path: str, out_dir: str, password: str = '') -> str:
         """
         Convert PDF → DOCX.
         Uses pdf2docx (PyMuPDF-based). LibreOffice cannot export PDF to DOCX.
@@ -285,13 +285,15 @@ class ConverterService:
                 '請先在伺服器執行: pip install pdf2docx')
 
         try:
-            cv = Pdf2DocxConverter(src_path)
+            cv = Pdf2DocxConverter(src_path, password=password)
             cv.convert(out_path, start=0, end=None)
             cv.close()
             if os.path.exists(out_path) and os.path.getsize(out_path) > 0:
                 return out_path
             raise RuntimeError('pdf2docx 未產生檔案')
         except Exception as e:
+            if 'Require password' in str(e) or 'password' in str(e).lower():
+                raise ValueError('NEEDS_PASSWORD')
             raise RuntimeError(f'PDF 轉 DOCX 失敗: {e}')
 
     @staticmethod
@@ -368,7 +370,7 @@ class ConverterService:
 
         # PDF → DOCX: use pdf2docx for better layout
         if src_ext == '.pdf' and target_fmt == 'docx':
-            return ConverterService.pdf_to_docx(src_path, out_dir)
+            return ConverterService.pdf_to_docx(src_path, out_dir, password=password)
 
         # PDF → PPTX: embed each page as a slide image (zero layout drift)
         if src_ext == '.pdf' and target_fmt == 'pptx':
