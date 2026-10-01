@@ -51,3 +51,4 @@ python-pptx
 msoffcrypto-tool
 gunicorn
 beautifulsoup4
+psycopg2-binary
