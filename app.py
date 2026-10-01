@@ -149,6 +149,9 @@ with app.app_context():
     from routes.converter_routes import converter_bp
     app.register_blueprint(converter_bp)
 
+    from routes.cron_routes import cron_bp
+    app.register_blueprint(cron_bp, url_prefix='/api')
+
 
 
     # Initialize Scheduler
