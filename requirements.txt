@@ -50,3 +50,4 @@ pdf2docx
 python-pptx
 msoffcrypto-tool
 gunicorn
+beautifulsoup4
