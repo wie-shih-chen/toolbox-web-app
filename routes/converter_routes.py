@@ -65,10 +65,11 @@ def convert():
     if size > ConverterService.MAX_FILE_SIZE:
         return jsonify({'success': False, 'error': f'檔案超過 32 MB 限制 (目前：{ConverterService.human_size(size)})'}), 400
 
-    task       = request.form.get('task', 'doc_convert')
-    target_fmt = request.form.get('target_fmt', 'pdf').lower().strip('.')
-    password   = request.form.get('password', '')
-    quality    = request.form.get('quality', 'medium')
+    task        = request.form.get('task', 'doc_convert')
+    target_fmt  = request.form.get('target_fmt', 'pdf').lower().strip('.')
+    password    = request.form.get('password', '')
+    doc_password = request.form.get('doc_password', '')   # for encrypted Office files
+    quality     = request.form.get('quality', 'medium')
     img_quality = int(request.form.get('img_quality', 85))
 
     # Save upload to temp dir
@@ -126,7 +127,8 @@ def convert():
 
         else:
             # doc_convert — supports PDF or Office docs
-            out_path = ConverterService.doc_to_format(src_path, target_fmt, tmp_dir)
+            out_path = ConverterService.doc_to_format(src_path, target_fmt, tmp_dir,
+                                                      password=doc_password)
 
         if not out_path or not os.path.exists(out_path):
             return jsonify({'success': False, 'error': '轉換失敗：未產生輸出檔案'}), 500
@@ -155,6 +157,12 @@ def convert():
         })
 
     except ValueError as e:
+        if str(e) == 'NEEDS_PASSWORD':
+            return jsonify({
+                'success': False,
+                'needs_password': True,
+                'error': '檔案已加密，請輸入密碼後再轉換'
+            }), 200
         return jsonify({'success': False, 'error': str(e)}), 400
     except RuntimeError as e:
         return jsonify({'success': False, 'error': str(e)}), 500

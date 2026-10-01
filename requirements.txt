@@ -48,3 +48,4 @@ pymongo[srv]
 pikepdf
 pdf2docx
 python-pptx
+msoffcrypto-tool

@@ -524,11 +524,35 @@
       </button>
       <p class="limit-note">⚡ 使用 LibreOffice 本地轉換，資料不離開伺服器</p>
 
+      <!-- Password prompt — shown only when server detects an encrypted file -->
+      <div id="doc-password-wrap" style="display:none; margin-top:14px;
+           background:rgba(255,180,0,0.08); border:1px solid rgba(255,180,0,0.3);
+           border-radius:14px; padding:14px 16px;">
+        <div style="display:flex; align-items:center; gap:8px; margin-bottom:10px;
+                    font-size:0.88rem; color:#ffd060; font-weight:600;">
+          <span class="material-icons" style="font-size:18px;">lock</span>
+          檔案已加密，請輸入開啟密碼
+        </div>
+        <div style="display:flex; gap:10px;">
+          <input type="password" id="doc-file-password" placeholder="輸入檔案密碼…"
+                 autocomplete="off"
+                 style="flex:1; padding:10px 14px; border-radius:10px;
+                        background:rgba(255,255,255,0.07);
+                        border:1px solid rgba(255,255,255,0.15);
+                        color:#fff; font-size:0.95rem; outline:none;">
+          <button class="btn-convert" style="width:auto; padding:10px 20px; margin-top:0;"
+                  onclick="doConvertWithPassword()">
+            <span class="material-icons" style="font-size:18px;">lock_open</span> 解密並轉換
+          </button>
+        </div>
+      </div>
+
       <div class="progress-wrap" id="prog-doc">
         <div class="progress-bar-bg"><div class="progress-bar-fill" id="prog-doc-fill"></div></div>
         <div class="progress-label" id="prog-doc-label">轉換中，請稍候…</div>
       </div>
       <div class="result-card" id="res-doc"></div>
+
     </div>
   </div>
 
@@ -972,6 +996,10 @@ async function doConvert(mode) {
     if (!pw) { alert('請輸入 PDF 密碼'); progEl.style.display = 'none'; return; }
     fd.append('password', pw);
   }
+  if (mode === 'doc') {
+    const docPw = document.getElementById('doc-file-password').value;
+    if (docPw) fd.append('doc_password', docPw);
+  }
   if (mode === 'compress') fd.append('quality', state.compress.fmt || 'medium');
   if (mode === 'img') fd.append('img_quality', document.getElementById('img-quality').value);
 
@@ -990,6 +1018,10 @@ async function doConvert(mode) {
     setTimeout(() => { progEl.style.display = 'none'; }, 400);
 
     if (data.success) {
+      // Hide password prompt on success
+      document.getElementById('doc-password-wrap').style.display = 'none';
+      document.getElementById('doc-file-password').value = '';
+
       resEl.className = 'result-card';
       resEl.innerHTML = `
         <div class="result-header">
@@ -1013,6 +1045,14 @@ async function doConvert(mode) {
         <a href="${data.download_url}" class="btn-download">
           <span class="material-icons">download</span> 下載檔案
         </a>`;
+
+    } else if (data.needs_password && mode === 'doc') {
+      // Server detected encryption — show the password prompt
+      document.getElementById('doc-password-wrap').style.display = 'block';
+      document.getElementById('doc-file-password').focus();
+      // Don't show error card; the prompt IS the feedback
+      return;
+
     } else {
       resEl.className = 'result-card error-card';
       resEl.innerHTML = `
@@ -1036,6 +1076,15 @@ async function doConvert(mode) {
       <p style="color:var(--text-secondary); font-size:0.9rem;">${err.message}</p>`;
     resEl.style.display = 'block';
   }
+}
+
+function doConvertWithPassword() {
+  const pw = document.getElementById('doc-file-password').value;
+  if (!pw) {
+    alert('請輸入檔案密碼');
+    return;
+  }
+  doConvert('doc');
 }
 
 // ──────────────────────────────────────────────

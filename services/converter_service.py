@@ -33,6 +33,13 @@ try:
 except ImportError:
     HAS_PPTX = False
 
+# Optional: msoffcrypto — detect / decrypt password-protected Office files
+try:
+    import msoffcrypto
+    HAS_MSOFFCRYPTO = True
+except ImportError:
+    HAS_MSOFFCRYPTO = False
+
 
 class ConverterService:
     """
@@ -126,20 +133,22 @@ class ConverterService:
         if candidates:
             return os.path.join(out_dir, candidates[0])
 
-        # Still nothing — check if it's a real error or just warnings
-        stderr = result.stderr.strip()
-        is_only_warnings = all(
-            any(p in line for p in NON_FATAL_PATTERNS)
-            for line in stderr.splitlines()
-            if line.strip()
-        )
+        # Still nothing — filter out known non-fatal warning lines and show real error
+        warning_keywords = [
+            'failed to launch javaldx', 'java may not function',
+            'javaldx', 'WARNING', 'Warning',
+        ]
+        real_errors = [
+            line for line in stderr.splitlines()
+            if line.strip() and not any(kw in line for kw in warning_keywords)
+        ]
+        real_error_msg = '\n'.join(real_errors).strip()
 
-        if is_only_warnings:
+        if not real_error_msg:
             raise RuntimeError(
-                'LibreOffice 未產生輸出檔案，但沒有明確錯誤訊息。'
-                '可能是不支援該格式的轉換，或來源檔案損毀。')
+                'LibreOffice 未產生輸出檔案。可能是不支援該格式的轉換，或來源檔案損毀 / 討證保護。')
 
-        raise RuntimeError(f'LibreOffice 轉換失敗：{stderr or result.stdout.strip()}')
+        raise RuntimeError(f'LibreOffice 轉換失敗：{real_error_msg}')
 
 
     # ------------------------------------------------------------------ #
@@ -209,6 +218,57 @@ class ConverterService:
                 f'不支援此轉換：{src_label} → .{target_fmt.upper()}。'
                 f'支援的輸出格式：{", ".join(sorted(allowed)) or "無"}')
 
+    OFFICE_EXTS = {'.doc', '.docx', '.ppt', '.pptx', '.xls', '.xlsx'}
+
+    @staticmethod
+    def _is_office_encrypted(path: str) -> bool:
+        """
+        Return True if the file is a password-protected Office document.
+        Uses msoffcrypto when available; falls back to a ZIP-header heuristic.
+        """
+        if not HAS_MSOFFCRYPTO:
+            # Heuristic: encrypted OOXML files are NOT valid ZIPs
+            import zipfile
+            try:
+                with zipfile.ZipFile(path, 'r'):
+                    return False   # opens fine → not encrypted
+            except zipfile.BadZipFile:
+                ext = os.path.splitext(path)[1].lower()
+                return ext in ConverterService.OFFICE_EXTS
+            except Exception:
+                return False
+
+        try:
+            with open(path, 'rb') as f:
+                office_file = msoffcrypto.OfficeFile(f)
+                return office_file.is_encrypted()
+        except Exception:
+            return False
+
+    @staticmethod
+    def decrypt_office(src_path: str, password: str, out_dir: str) -> str:
+        """
+        Decrypt a password-protected Office file using msoffcrypto.
+        Returns path to the decrypted copy (same extension).
+        """
+        if not HAS_MSOFFCRYPTO:
+            raise RuntimeError(
+                'msoffcrypto-tool 未安裝，無法解密 Office 檔案。'
+                '請先在伺服器執行: pip install msoffcrypto-tool')
+        ext      = os.path.splitext(src_path)[1].lower()
+        base     = os.path.splitext(os.path.basename(src_path))[0]
+        out_path = os.path.join(out_dir, f"{base}_decrypted{ext}")
+        try:
+            with open(src_path, 'rb') as f:
+                office_file = msoffcrypto.OfficeFile(f)
+                office_file.load_key(password=password)
+                with open(out_path, 'wb') as fout:
+                    office_file.decrypt(fout)
+            return out_path
+        except msoffcrypto.exceptions.InvalidKeyError:
+            raise ValueError('密碼錯誤，請重新確認後再試。')
+        except Exception as e:
+            raise RuntimeError(f'解密失敗：{e}')
 
     @staticmethod
     def pdf_to_docx(src_path: str, out_dir: str) -> str:
@@ -286,11 +346,25 @@ class ConverterService:
         return out_path
 
     @staticmethod
-    def doc_to_format(src_path: str, target_fmt: str, out_dir: str) -> str:
-        """Generic document conversion with validation + explicit LibreOffice filters."""
+    def doc_to_format(src_path: str, target_fmt: str, out_dir: str,
+                      password: str = '') -> str:
+        """Generic document conversion with validation + explicit LibreOffice filters.
+
+        If the source file is an encrypted Office document, you must supply
+        `password`. The file will be decrypted first, then converted.
+        If the file is encrypted but no password is given, raises a special
+        ValueError('NEEDS_PASSWORD') so callers can prompt the user.
+        """
         src_ext = ConverterService._ext(src_path)
-        # Validate: raises ValueError for unsupported combos (e.g. docx→pptx)
         ConverterService.validate_conversion(src_ext, target_fmt)
+
+        # ── Handle encrypted Office files ──
+        if src_ext in ConverterService.OFFICE_EXTS and ConverterService._is_office_encrypted(src_path):
+            if not password:
+                raise ValueError('NEEDS_PASSWORD')
+            # Decrypt to a temp file, then continue with the decrypted copy
+            src_path = ConverterService.decrypt_office(src_path, password, out_dir)
+            src_ext  = ConverterService._ext(src_path)
 
         # PDF → DOCX: use pdf2docx for better layout
         if src_ext == '.pdf' and target_fmt == 'docx':
@@ -300,7 +374,6 @@ class ConverterService:
         if src_ext == '.pdf' and target_fmt == 'pptx':
             if HAS_PPTX:
                 return ConverterService.pdf_to_pptx_via_images(src_path, out_dir)
-            # fallback: LibreOffice (poor quality but better than nothing)
 
         lo_fmt = ConverterService._LO_FILTERS.get(target_fmt, target_fmt)
         return ConverterService._libreoffice_convert(src_path, lo_fmt, out_dir)
