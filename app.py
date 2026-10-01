@@ -145,6 +145,9 @@ with app.app_context():
     from routes.group_routes import group_bp
     app.register_blueprint(group_bp, url_prefix='/group')
 
+    from routes.converter_routes import converter_bp
+    app.register_blueprint(converter_bp)
+
 
 
     # Initialize Scheduler

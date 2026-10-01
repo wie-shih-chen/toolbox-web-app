@@ -45,3 +45,4 @@ google-genai
 PyJWT>=2.8.0
 Pillow
 pymongo[srv]
+pikepdf

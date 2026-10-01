@@ -1,0 +1,951 @@
+{% extends "base.html" %}
+
+{% block title %}檔案轉換器 - CoreX{% endblock %}
+
+{% block extra_css %}
+<style>
+  /* ── Page ── */
+  .converter-page {
+    max-width: 780px;
+    margin: 0 auto;
+    padding-bottom: 60px;
+    animation: fade-in 0.4s ease-out;
+  }
+
+  .converter-header {
+    text-align: center;
+    margin-bottom: 28px;
+  }
+
+  .converter-header h1 {
+    font-size: 1.8rem;
+    font-weight: 800;
+    color: #fff;
+    margin-bottom: 6px;
+    letter-spacing: -0.5px;
+  }
+
+  .converter-header p {
+    color: var(--text-secondary);
+    font-size: 0.95rem;
+  }
+
+  /* ── Tab Navigation ── */
+  .tab-nav {
+    display: flex;
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 16px;
+    padding: 4px;
+    gap: 4px;
+    margin-bottom: 24px;
+    overflow-x: auto;
+  }
+
+  .tab-btn {
+    flex: 1;
+    min-width: 120px;
+    padding: 10px 14px;
+    border: none;
+    background: transparent;
+    color: var(--text-secondary);
+    border-radius: 12px;
+    font-size: 0.85rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    font-family: var(--font-main);
+  }
+
+  .tab-btn.active {
+    background: var(--accent-color);
+    color: #0f172a;
+    font-weight: 700;
+    box-shadow: 0 4px 15px rgba(78,205,196,0.3);
+  }
+
+  .tab-btn:not(.active):hover {
+    background: rgba(255,255,255,0.08);
+    color: #fff;
+  }
+
+  /* ── Tab Panels ── */
+  .tab-panel {
+    display: none;
+  }
+
+  .tab-panel.active {
+    display: block;
+    animation: fade-in 0.3s ease-out;
+  }
+
+  /* ── Card ── */
+  .conv-card {
+    background: var(--ios-bg);
+    border: 1px solid var(--ios-border);
+    border-radius: 20px;
+    padding: 24px;
+    margin-bottom: 16px;
+    backdrop-filter: var(--ios-blur);
+  }
+
+  .conv-card h3 {
+    font-size: 1rem;
+    font-weight: 600;
+    margin-bottom: 16px;
+    color: #fff;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .conv-card h3 .material-icons {
+    font-size: 1.1rem;
+    color: var(--accent-color);
+  }
+
+  /* ── Drop Zone ── */
+  .dropzone {
+    border: 2px dashed rgba(78,205,196,0.35);
+    border-radius: 16px;
+    padding: 36px 20px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.25s ease;
+    position: relative;
+  }
+
+  .dropzone:hover,
+  .dropzone.drag-over {
+    border-color: var(--accent-color);
+    background: rgba(78,205,196,0.06);
+  }
+
+  .dropzone input[type="file"] {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    cursor: pointer;
+    width: 100%;
+    height: 100%;
+  }
+
+  .dropzone .dz-icon {
+    font-size: 3rem;
+    margin-bottom: 12px;
+    display: block;
+    color: var(--accent-color);
+    opacity: 0.8;
+  }
+
+  .dropzone .dz-title {
+    font-size: 1rem;
+    font-weight: 600;
+    color: #fff;
+    margin-bottom: 4px;
+  }
+
+  .dropzone .dz-sub {
+    font-size: 0.82rem;
+    color: var(--text-secondary);
+  }
+
+  .dropzone .dz-selected {
+    margin-top: 14px;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    background: rgba(78,205,196,0.12);
+    border-radius: 10px;
+    padding: 10px 16px;
+    font-size: 0.88rem;
+    font-weight: 500;
+    color: var(--accent-color);
+  }
+
+  /* ── Format Grid ── */
+  .format-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 20px;
+  }
+
+  .fmt-btn {
+    padding: 7px 16px;
+    border-radius: 10px;
+    border: 1.5px solid rgba(255,255,255,0.12);
+    background: rgba(255,255,255,0.05);
+    color: var(--text-secondary);
+    font-size: 0.82rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    font-family: var(--font-main);
+  }
+
+  .fmt-btn.selected {
+    border-color: var(--accent-color);
+    background: rgba(78,205,196,0.15);
+    color: var(--accent-color);
+  }
+
+  .fmt-btn:hover:not(.selected) {
+    border-color: rgba(255,255,255,0.25);
+    color: #fff;
+    background: rgba(255,255,255,0.08);
+  }
+
+  /* ── Form Elements ── */
+  .form-row {
+    display: flex;
+    gap: 12px;
+    align-items: flex-end;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+  }
+
+  .form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    flex: 1;
+    min-width: 160px;
+  }
+
+  .form-group label {
+    font-size: 0.82rem;
+    color: var(--text-secondary);
+    font-weight: 500;
+  }
+
+  .form-group input,
+  .form-group select {
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.12);
+    border-radius: 10px;
+    padding: 10px 14px;
+    color: #fff;
+    font-size: 0.9rem;
+    outline: none;
+    font-family: var(--font-main);
+    transition: border-color 0.2s;
+  }
+
+  .form-group input:focus,
+  .form-group select:focus {
+    border-color: var(--accent-color);
+  }
+
+  .form-group select option {
+    background: #1a1a1a;
+  }
+
+  /* ── Convert Button ── */
+  .btn-convert {
+    width: 100%;
+    padding: 14px;
+    background: linear-gradient(135deg, var(--accent-color), #45b7af);
+    border: none;
+    border-radius: 14px;
+    color: #0f172a;
+    font-size: 1rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.25s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    font-family: var(--font-main);
+    margin-top: 4px;
+  }
+
+  .btn-convert:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(78,205,196,0.4);
+  }
+
+  .btn-convert:active:not(:disabled) {
+    transform: translateY(0);
+  }
+
+  .btn-convert:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  /* ── Progress ── */
+  .progress-wrap {
+    display: none;
+    margin-top: 16px;
+  }
+
+  .progress-bar-bg {
+    background: rgba(255,255,255,0.06);
+    border-radius: 100px;
+    height: 6px;
+    overflow: hidden;
+    margin-bottom: 8px;
+  }
+
+  .progress-bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent-color), #45b7af);
+    border-radius: 100px;
+    width: 0%;
+    transition: width 0.4s ease;
+    animation: shimmer-bar 1.5s infinite;
+  }
+
+  @keyframes shimmer-bar {
+    0%   { filter: brightness(1); }
+    50%  { filter: brightness(1.3); }
+    100% { filter: brightness(1); }
+  }
+
+  .progress-label {
+    font-size: 0.82rem;
+    color: var(--text-secondary);
+    text-align: center;
+  }
+
+  /* ── Result Card ── */
+  .result-card {
+    display: none;
+    background: rgba(46,213,115,0.08);
+    border: 1px solid rgba(46,213,115,0.25);
+    border-radius: 16px;
+    padding: 20px;
+    margin-top: 16px;
+  }
+
+  .result-card.error-card {
+    background: rgba(255,107,107,0.08);
+    border-color: rgba(255,107,107,0.25);
+  }
+
+  .result-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 14px;
+  }
+
+  .result-icon {
+    font-size: 1.6rem;
+  }
+
+  .result-title {
+    font-weight: 700;
+    font-size: 1rem;
+    color: #fff;
+  }
+
+  .result-meta {
+    display: flex;
+    gap: 20px;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+  }
+
+  .result-meta-item {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .result-meta-label {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .result-meta-value {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: #fff;
+  }
+
+  .btn-download {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    width: 100%;
+    padding: 12px;
+    background: rgba(46,213,115,0.15);
+    border: 1.5px solid rgba(46,213,115,0.4);
+    border-radius: 12px;
+    color: var(--success-color);
+    font-weight: 700;
+    font-size: 0.95rem;
+    cursor: pointer;
+    text-decoration: none;
+    transition: all 0.2s;
+    font-family: var(--font-main);
+  }
+
+  .btn-download:hover {
+    background: rgba(46,213,115,0.25);
+    transform: translateY(-1px);
+    color: var(--success-color);
+  }
+
+  /* ── Quality Slider ── */
+  .quality-slider {
+    -webkit-appearance: none;
+    width: 100%;
+    height: 4px;
+    border-radius: 100px;
+    background: rgba(255,255,255,0.12);
+    outline: none;
+  }
+
+  .quality-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: var(--accent-color);
+    cursor: pointer;
+    box-shadow: 0 2px 8px rgba(78,205,196,0.4);
+  }
+
+  .quality-row {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    margin-top: 4px;
+  }
+
+  /* ── Info Pills ── */
+  .info-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 5px 12px;
+    background: rgba(78,205,196,0.1);
+    border: 1px solid rgba(78,205,196,0.2);
+    border-radius: 100px;
+    font-size: 0.78rem;
+    color: var(--accent-color);
+    margin-bottom: 16px;
+  }
+
+  /* ── Limit warning ── */
+  .limit-note {
+    font-size: 0.78rem;
+    color: var(--text-secondary);
+    text-align: center;
+    margin-top: 10px;
+    opacity: 0.7;
+  }
+
+  @media (max-width: 480px) {
+    .tab-btn { font-size: 0.78rem; padding: 8px 10px; min-width: 90px; }
+    .converter-header h1 { font-size: 1.4rem; }
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="converter-page">
+
+  <div class="converter-header">
+    <h1>🔄 檔案轉換器</h1>
+    <p>文件 · PDF · 圖片 · 一鍵完成</p>
+  </div>
+
+  <!-- Tab Navigation -->
+  <div class="tab-nav" role="tablist">
+    <button class="tab-btn active" onclick="switchTab('doc', this)" role="tab">
+      <span class="material-icons" style="font-size:16px;">description</span> 文件轉換
+    </button>
+    <button class="tab-btn" onclick="switchTab('pdf', this)" role="tab">
+      <span class="material-icons" style="font-size:16px;">picture_as_pdf</span> PDF 工具
+    </button>
+    <button class="tab-btn" onclick="switchTab('img', this)" role="tab">
+      <span class="material-icons" style="font-size:16px;">image</span> 圖片轉換
+    </button>
+  </div>
+
+  <!-- ════════════════════════════════════════════ -->
+  <!--  TAB 1 : 文件轉換                           -->
+  <!-- ════════════════════════════════════════════ -->
+  <div class="tab-panel active" id="panel-doc">
+
+    <div class="info-pill">
+      <span class="material-icons" style="font-size:13px;">info</span>
+      支援 Word / PPT / Excel / PDF / ODT / HTML → 各種格式
+    </div>
+
+    <div class="conv-card">
+      <h3><span class="material-icons">upload_file</span> 上傳文件</h3>
+
+      <div class="dropzone" id="dz-doc">
+        <input type="file" id="file-doc"
+               accept=".pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx,.odt,.odp,.ods,.rtf,.txt,.csv,.html,.htm">
+        <span class="dz-icon material-icons">cloud_upload</span>
+        <div class="dz-title">點擊或拖曳檔案至此</div>
+        <div class="dz-sub">最大 32 MB · PDF / Word / PPT / Excel / ODT / HTML…</div>
+        <div class="dz-selected" id="dz-doc-selected">
+          <span class="material-icons" style="font-size:16px;">insert_drive_file</span>
+          <span id="dz-doc-name"></span>
+        </div>
+      </div>
+
+      <div style="margin-top:20px; margin-bottom:8px;">
+        <label style="font-size:0.85rem; color:var(--text-secondary); font-weight:500; margin-bottom:10px; display:block;">轉換為</label>
+        <div class="format-grid" id="fmt-doc">
+          <button class="fmt-btn selected" data-fmt="pdf">PDF</button>
+          <button class="fmt-btn" data-fmt="docx">DOCX</button>
+          <button class="fmt-btn" data-fmt="pptx">PPTX</button>
+          <button class="fmt-btn" data-fmt="xlsx">XLSX</button>
+          <button class="fmt-btn" data-fmt="odt">ODT</button>
+          <button class="fmt-btn" data-fmt="txt">TXT</button>
+          <button class="fmt-btn" data-fmt="html">HTML</button>
+          <button class="fmt-btn" data-fmt="png">PNG（首頁）</button>
+        </div>
+      </div>
+
+      <button class="btn-convert" id="btn-doc" onclick="doConvert('doc')">
+        <span class="material-icons">swap_horiz</span> 開始轉換
+      </button>
+      <p class="limit-note">⚡ 使用 LibreOffice 本地轉換，資料不離開伺服器</p>
+
+      <div class="progress-wrap" id="prog-doc">
+        <div class="progress-bar-bg"><div class="progress-bar-fill" id="prog-doc-fill"></div></div>
+        <div class="progress-label" id="prog-doc-label">轉換中，請稍候…</div>
+      </div>
+      <div class="result-card" id="res-doc"></div>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════════════════ -->
+  <!--  TAB 2 : PDF 工具                           -->
+  <!-- ════════════════════════════════════════════ -->
+  <div class="tab-panel" id="panel-pdf">
+
+    <!-- Sub-tab nav -->
+    <div style="display:flex; gap:8px; margin-bottom:16px; flex-wrap:wrap;">
+      <button class="fmt-btn selected" onclick="switchPdfTool('unlock', this)" id="pdftool-unlock">🔓 解除密碼</button>
+      <button class="fmt-btn" onclick="switchPdfTool('compress', this)" id="pdftool-compress">🗜️ 壓縮 PDF</button>
+      <button class="fmt-btn" onclick="switchPdfTool('to_img', this)" id="pdftool-to_img">🖼️ 轉成圖片</button>
+    </div>
+
+    <!-- Unlock -->
+    <div id="pdf-tool-unlock">
+      <div class="conv-card">
+        <h3><span class="material-icons">lock_open</span> PDF 解除密碼</h3>
+        <div class="dropzone" id="dz-unlock">
+          <input type="file" id="file-unlock" accept=".pdf">
+          <span class="dz-icon material-icons">lock</span>
+          <div class="dz-title">上傳有密碼的 PDF</div>
+          <div class="dz-sub">最大 32 MB</div>
+          <div class="dz-selected" id="dz-unlock-selected">
+            <span class="material-icons" style="font-size:16px;">insert_drive_file</span>
+            <span id="dz-unlock-name"></span>
+          </div>
+        </div>
+        <div class="form-row" style="margin-top:16px;">
+          <div class="form-group">
+            <label>PDF 密碼</label>
+            <input type="password" id="pdf-password" placeholder="輸入 PDF 密碼" autocomplete="off">
+          </div>
+        </div>
+        <button class="btn-convert" onclick="doConvert('unlock')">
+          <span class="material-icons">no_encryption</span> 解除並下載無密碼 PDF
+        </button>
+        <div class="progress-wrap" id="prog-unlock">
+          <div class="progress-bar-bg"><div class="progress-bar-fill" id="prog-unlock-fill"></div></div>
+          <div class="progress-label">處理中…</div>
+        </div>
+        <div class="result-card" id="res-unlock"></div>
+      </div>
+    </div>
+
+    <!-- Compress -->
+    <div id="pdf-tool-compress" style="display:none;">
+      <div class="conv-card">
+        <h3><span class="material-icons">compress</span> 壓縮 PDF</h3>
+        <div class="dropzone" id="dz-compress">
+          <input type="file" id="file-compress" accept=".pdf">
+          <span class="dz-icon material-icons">cloud_upload</span>
+          <div class="dz-title">上傳 PDF 檔案</div>
+          <div class="dz-sub">最大 32 MB</div>
+          <div class="dz-selected" id="dz-compress-selected">
+            <span class="material-icons" style="font-size:16px;">insert_drive_file</span>
+            <span id="dz-compress-name"></span>
+          </div>
+        </div>
+        <div style="margin-top:20px;">
+          <label style="font-size:0.85rem; color:var(--text-secondary); font-weight:500; display:block; margin-bottom:10px;">壓縮品質</label>
+          <div class="format-grid" id="fmt-compress">
+            <button class="fmt-btn selected" data-fmt="low">低品質（最小）</button>
+            <button class="fmt-btn" data-fmt="medium">中品質（推薦）</button>
+            <button class="fmt-btn" data-fmt="high">高品質</button>
+          </div>
+        </div>
+        <button class="btn-convert" onclick="doConvert('compress')">
+          <span class="material-icons">compress</span> 開始壓縮
+        </button>
+        <div class="progress-wrap" id="prog-compress">
+          <div class="progress-bar-bg"><div class="progress-bar-fill" id="prog-compress-fill"></div></div>
+          <div class="progress-label">壓縮中…</div>
+        </div>
+        <div class="result-card" id="res-compress"></div>
+      </div>
+    </div>
+
+    <!-- PDF to Image -->
+    <div id="pdf-tool-to_img" style="display:none;">
+      <div class="conv-card">
+        <h3><span class="material-icons">photo_library</span> PDF 轉圖片</h3>
+        <div class="dropzone" id="dz-to_img">
+          <input type="file" id="file-to_img" accept=".pdf">
+          <span class="dz-icon material-icons">cloud_upload</span>
+          <div class="dz-title">上傳 PDF 檔案</div>
+          <div class="dz-sub">最大 32 MB · 多頁 PDF 會打包成 ZIP</div>
+          <div class="dz-selected" id="dz-to_img-selected">
+            <span class="material-icons" style="font-size:16px;">insert_drive_file</span>
+            <span id="dz-to_img-name"></span>
+          </div>
+        </div>
+        <div style="margin-top:16px;">
+          <label style="font-size:0.85rem; color:var(--text-secondary); font-weight:500; display:block; margin-bottom:10px;">輸出格式</label>
+          <div class="format-grid" id="fmt-to_img">
+            <button class="fmt-btn selected" data-fmt="png">PNG</button>
+            <button class="fmt-btn" data-fmt="jpg">JPG</button>
+          </div>
+        </div>
+        <button class="btn-convert" onclick="doConvert('to_img')">
+          <span class="material-icons">burst_mode</span> 轉換成圖片
+        </button>
+        <div class="progress-wrap" id="prog-to_img">
+          <div class="progress-bar-bg"><div class="progress-bar-fill" id="prog-to_img-fill"></div></div>
+          <div class="progress-label">轉換中…</div>
+        </div>
+        <div class="result-card" id="res-to_img"></div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ════════════════════════════════════════════ -->
+  <!--  TAB 3 : 圖片轉換                           -->
+  <!-- ════════════════════════════════════════════ -->
+  <div class="tab-panel" id="panel-img">
+
+    <div style="display:flex; gap:8px; margin-bottom:16px; flex-wrap:wrap;">
+      <button class="fmt-btn selected" onclick="switchImgTool('convert', this)">🖼️ 格式轉換</button>
+      <button class="fmt-btn" onclick="switchImgTool('to_pdf', this)">📄 轉成 PDF</button>
+    </div>
+
+    <!-- Image convert -->
+    <div id="img-tool-convert">
+      <div class="conv-card">
+        <h3><span class="material-icons">image</span> 圖片格式轉換 / 壓縮</h3>
+        <div class="dropzone" id="dz-img">
+          <input type="file" id="file-img" accept=".png,.jpg,.jpeg,.gif,.bmp,.webp,.tiff,.tif">
+          <span class="dz-icon material-icons">cloud_upload</span>
+          <div class="dz-title">點擊或拖曳圖片至此</div>
+          <div class="dz-sub">最大 32 MB · PNG / JPG / WebP / GIF / BMP / TIFF</div>
+          <div class="dz-selected" id="dz-img-selected">
+            <span class="material-icons" style="font-size:16px;">insert_drive_file</span>
+            <span id="dz-img-name"></span>
+          </div>
+        </div>
+
+        <div style="margin-top:20px; margin-bottom:8px;">
+          <label style="font-size:0.85rem; color:var(--text-secondary); font-weight:500; margin-bottom:10px; display:block;">輸出格式</label>
+          <div class="format-grid" id="fmt-img">
+            <button class="fmt-btn selected" data-fmt="png">PNG</button>
+            <button class="fmt-btn" data-fmt="jpg">JPG</button>
+            <button class="fmt-btn" data-fmt="webp">WebP</button>
+            <button class="fmt-btn" data-fmt="bmp">BMP</button>
+          </div>
+        </div>
+
+        <!-- Quality slider (shown only for JPG/WebP) -->
+        <div id="img-quality-wrap" style="margin-bottom:16px; display:none;">
+          <label style="font-size:0.85rem; color:var(--text-secondary); font-weight:500; display:flex; justify-content:space-between; margin-bottom:8px;">
+            <span>品質</span><span id="img-quality-val" style="color:var(--accent-color);">85%</span>
+          </label>
+          <input type="range" class="quality-slider" id="img-quality" min="10" max="100" value="85"
+                 oninput="document.getElementById('img-quality-val').textContent=this.value+'%'">
+          <div class="quality-row"><span>最小檔案</span><span>最高品質</span></div>
+        </div>
+
+        <button class="btn-convert" onclick="doConvert('img')">
+          <span class="material-icons">swap_horiz</span> 開始轉換
+        </button>
+        <div class="progress-wrap" id="prog-img">
+          <div class="progress-bar-bg"><div class="progress-bar-fill" id="prog-img-fill"></div></div>
+          <div class="progress-label">轉換中…</div>
+        </div>
+        <div class="result-card" id="res-img"></div>
+      </div>
+    </div>
+
+    <!-- Image to PDF -->
+    <div id="img-tool-to_pdf" style="display:none;">
+      <div class="conv-card">
+        <h3><span class="material-icons">picture_as_pdf</span> 圖片轉 PDF</h3>
+        <div class="dropzone" id="dz-img2pdf">
+          <input type="file" id="file-img2pdf" accept=".png,.jpg,.jpeg,.gif,.bmp,.webp,.tiff,.tif">
+          <span class="dz-icon material-icons">cloud_upload</span>
+          <div class="dz-title">上傳圖片</div>
+          <div class="dz-sub">最大 32 MB · 單張圖片轉為 PDF</div>
+          <div class="dz-selected" id="dz-img2pdf-selected">
+            <span class="material-icons" style="font-size:16px;">insert_drive_file</span>
+            <span id="dz-img2pdf-name"></span>
+          </div>
+        </div>
+        <button class="btn-convert" style="margin-top:16px;" onclick="doConvert('img2pdf')">
+          <span class="material-icons">picture_as_pdf</span> 轉成 PDF
+        </button>
+        <div class="progress-wrap" id="prog-img2pdf">
+          <div class="progress-bar-bg"><div class="progress-bar-fill" id="prog-img2pdf-fill"></div></div>
+          <div class="progress-label">轉換中…</div>
+        </div>
+        <div class="result-card" id="res-img2pdf"></div>
+      </div>
+    </div>
+
+  </div>
+
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// ──────────────────────────────────────────────
+// State
+// ──────────────────────────────────────────────
+const state = {
+  doc:     { file: null, fmt: 'pdf' },
+  unlock:  { file: null },
+  compress:{ file: null, fmt: 'medium' },
+  to_img:  { file: null, fmt: 'png' },
+  img:     { file: null, fmt: 'png' },
+  img2pdf: { file: null },
+};
+
+// ──────────────────────────────────────────────
+// Tab switching
+// ──────────────────────────────────────────────
+function switchTab(name, btn) {
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('panel-' + name).classList.add('active');
+  btn.classList.add('active');
+}
+
+function switchPdfTool(name, btn) {
+  ['unlock','compress','to_img'].forEach(t => {
+    document.getElementById('pdf-tool-' + t).style.display = t === name ? 'block' : 'none';
+  });
+  document.querySelectorAll('[id^="pdftool-"]').forEach(b => b.classList.remove('selected'));
+  document.getElementById('pdftool-' + name).classList.add('selected');
+}
+
+function switchImgTool(name, btn) {
+  ['convert','to_pdf'].forEach(t => {
+    document.getElementById('img-tool-' + t).style.display = t === name ? 'block' : 'none';
+  });
+  document.querySelectorAll('[onclick^="switchImgTool"]').forEach(b => b.classList.remove('selected'));
+  btn.classList.add('selected');
+}
+
+// ──────────────────────────────────────────────
+// Drop-zone setup
+// ──────────────────────────────────────────────
+function setupDropzone(dzId, fileInputId, selectedId, nameId, stateKey) {
+  const dz = document.getElementById(dzId);
+  const fi = document.getElementById(fileInputId);
+
+  fi.addEventListener('change', () => handleFile(fi.files[0], selectedId, nameId, stateKey));
+
+  dz.addEventListener('dragover', e => { e.preventDefault(); dz.classList.add('drag-over'); });
+  dz.addEventListener('dragleave', () => dz.classList.remove('drag-over'));
+  dz.addEventListener('drop', e => {
+    e.preventDefault();
+    dz.classList.remove('drag-over');
+    const file = e.dataTransfer.files[0];
+    if (file) {
+      handleFile(file, selectedId, nameId, stateKey);
+      // Patch native file input (for form compatibility) — skip if browser restricts
+      try {
+        const dt = new DataTransfer();
+        dt.items.add(file);
+        fi.files = dt.files;
+      } catch(_) {}
+    }
+  });
+}
+
+function handleFile(file, selectedId, nameId, stateKey) {
+  if (!file) return;
+  state[stateKey].file = file;
+  document.getElementById(nameId).textContent = `${file.name}  (${humanSize(file.size)})`;
+  const sel = document.getElementById(selectedId);
+  sel.style.display = 'flex';
+}
+
+setupDropzone('dz-doc',     'file-doc',     'dz-doc-selected',     'dz-doc-name',     'doc');
+setupDropzone('dz-unlock',  'file-unlock',  'dz-unlock-selected',  'dz-unlock-name',  'unlock');
+setupDropzone('dz-compress','file-compress','dz-compress-selected','dz-compress-name','compress');
+setupDropzone('dz-to_img',  'file-to_img',  'dz-to_img-selected',  'dz-to_img-name',  'to_img');
+setupDropzone('dz-img',     'file-img',     'dz-img-selected',     'dz-img-name',     'img');
+setupDropzone('dz-img2pdf', 'file-img2pdf', 'dz-img2pdf-selected', 'dz-img2pdf-name', 'img2pdf');
+
+// ──────────────────────────────────────────────
+// Format button groups
+// ──────────────────────────────────────────────
+function setupFmtGrid(gridId, stateKey) {
+  document.getElementById(gridId)?.querySelectorAll('.fmt-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.getElementById(gridId).querySelectorAll('.fmt-btn').forEach(b => b.classList.remove('selected'));
+      btn.classList.add('selected');
+      state[stateKey].fmt = btn.dataset.fmt;
+      // Show/hide quality slider for img
+      if (stateKey === 'img') {
+        const wrap = document.getElementById('img-quality-wrap');
+        wrap.style.display = (state.img.fmt === 'jpg' || state.img.fmt === 'webp') ? 'block' : 'none';
+      }
+    });
+  });
+}
+
+setupFmtGrid('fmt-doc',      'doc');
+setupFmtGrid('fmt-compress', 'compress');
+setupFmtGrid('fmt-to_img',   'to_img');
+setupFmtGrid('fmt-img',      'img');
+
+// ──────────────────────────────────────────────
+// Main convert function
+// ──────────────────────────────────────────────
+async function doConvert(mode) {
+  const map = {
+    doc:     { stateKey:'doc',     task:'doc_convert', progId:'prog-doc',     resId:'res-doc'     },
+    unlock:  { stateKey:'unlock',  task:'pdf_unlock',  progId:'prog-unlock',  resId:'res-unlock'  },
+    compress:{ stateKey:'compress',task:'pdf_compress',progId:'prog-compress',resId:'res-compress'},
+    to_img:  { stateKey:'to_img',  task:'pdf_to_img',  progId:'prog-to_img',  resId:'res-to_img'  },
+    img:     { stateKey:'img',     task:'img_convert', progId:'prog-img',     resId:'res-img'     },
+    img2pdf: { stateKey:'img2pdf', task:'img_to_pdf',  progId:'prog-img2pdf', resId:'res-img2pdf' },
+  };
+
+  const cfg = map[mode];
+  if (!cfg) return;
+
+  const file = state[cfg.stateKey].file;
+  if (!file) { alert('請先選擇要轉換的檔案！'); return; }
+
+  // Reset UI
+  const resEl  = document.getElementById(cfg.resId);
+  const progEl = document.getElementById(cfg.progId);
+  const fill   = document.getElementById(cfg.progId + '-fill');
+  resEl.style.display  = 'none';
+  resEl.innerHTML = '';
+  progEl.style.display = 'block';
+  if (fill) fill.style.width = '30%';
+
+  // Build FormData
+  const fd = new FormData();
+  fd.append('file', file);
+  fd.append('task', cfg.task);
+  fd.append('target_fmt', state[cfg.stateKey].fmt || 'pdf');
+
+  if (mode === 'unlock') {
+    const pw = document.getElementById('pdf-password').value;
+    if (!pw) { alert('請輸入 PDF 密碼'); progEl.style.display = 'none'; return; }
+    fd.append('password', pw);
+  }
+  if (mode === 'compress') fd.append('quality', state.compress.fmt || 'medium');
+  if (mode === 'img') fd.append('img_quality', document.getElementById('img-quality').value);
+
+  // Animate progress
+  let pct = 30;
+  const ticker = setInterval(() => {
+    pct = Math.min(pct + Math.random() * 8, 88);
+    if (fill) fill.style.width = pct + '%';
+  }, 600);
+
+  try {
+    const resp = await fetch("{{ url_for('converter.convert') }}", { method:'POST', body: fd });
+    const data = await resp.json();
+    clearInterval(ticker);
+    if (fill) fill.style.width = '100%';
+    setTimeout(() => { progEl.style.display = 'none'; }, 400);
+
+    if (data.success) {
+      resEl.className = 'result-card';
+      resEl.innerHTML = `
+        <div class="result-header">
+          <span class="result-icon">✅</span>
+          <div class="result-title">轉換成功！</div>
+        </div>
+        <div class="result-meta">
+          <div class="result-meta-item">
+            <span class="result-meta-label">原始大小</span>
+            <span class="result-meta-value">${data.orig_size}</span>
+          </div>
+          <div class="result-meta-item">
+            <span class="result-meta-label">轉換後大小</span>
+            <span class="result-meta-value">${data.output_size}</span>
+          </div>
+          <div class="result-meta-item">
+            <span class="result-meta-label">輸出檔名</span>
+            <span class="result-meta-value">${data.filename}</span>
+          </div>
+        </div>
+        <a href="${data.download_url}" class="btn-download">
+          <span class="material-icons">download</span> 下載檔案
+        </a>`;
+    } else {
+      resEl.className = 'result-card error-card';
+      resEl.innerHTML = `
+        <div class="result-header">
+          <span class="result-icon">❌</span>
+          <div class="result-title">轉換失敗</div>
+        </div>
+        <p style="color:var(--text-secondary); font-size:0.9rem;">${data.error}</p>`;
+    }
+    resEl.style.display = 'block';
+
+  } catch(err) {
+    clearInterval(ticker);
+    progEl.style.display = 'none';
+    resEl.className = 'result-card error-card';
+    resEl.innerHTML = `
+      <div class="result-header">
+        <span class="result-icon">❌</span>
+        <div class="result-title">網路錯誤</div>
+      </div>
+      <p style="color:var(--text-secondary); font-size:0.9rem;">${err.message}</p>`;
+    resEl.style.display = 'block';
+  }
+}
+
+// ──────────────────────────────────────────────
+// Helpers
+// ──────────────────────────────────────────────
+function humanSize(bytes) {
+  const units = ['B','KB','MB','GB'];
+  let i = 0;
+  while (bytes >= 1024 && i < units.length - 1) { bytes /= 1024; i++; }
+  return bytes.toFixed(1) + ' ' + units[i];
+}
+</script>
+{% endblock %}
