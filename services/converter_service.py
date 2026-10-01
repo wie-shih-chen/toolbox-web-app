@@ -18,6 +18,21 @@ try:
 except ImportError:
     HAS_PILLOW = False
 
+# Optional: pdf2docx — vastly better PDF→DOCX layout preservation
+try:
+    from pdf2docx import Converter as Pdf2DocxConverter
+    HAS_PDF2DOCX = True
+except ImportError:
+    HAS_PDF2DOCX = False
+
+# Optional: python-pptx — for PDF→PPTX via image-per-slide (perfect layout)
+try:
+    from pptx import Presentation
+    from pptx.util import Inches, Pt
+    HAS_PPTX = True
+except ImportError:
+    HAS_PPTX = False
+
 
 class ConverterService:
     """
@@ -61,33 +76,37 @@ class ConverterService:
     @staticmethod
     def _libreoffice_convert(src_path: str, out_format: str, out_dir: str) -> str:
         """
-        Run LibreOffice headless conversion.
-        out_format examples: 'pdf', 'docx', 'pptx', 'xlsx', 'png'
-        Returns the path of the output file.
+        Run LibreOffice headless conversion with an isolated user profile
+        (prevents profile-locking issues on shared servers like PythonAnywhere).
         """
-        # PythonAnywhere has 'soffice' in PATH; fallback to common locations
         soffice = shutil.which('soffice') or shutil.which('libreoffice') or '/usr/bin/soffice'
 
-        cmd = [
-            soffice,
-            '--headless',
-            '--norestore',
-            '--nofirststartwizard',
-            '--convert-to', out_format,
-            '--outdir', out_dir,
-            src_path
-        ]
-        result = subprocess.run(cmd, capture_output=True, text=True, timeout=120)
-        if result.returncode != 0:
-            raise RuntimeError(f"LibreOffice error: {result.stderr.strip() or result.stdout.strip()}")
+        # Each conversion gets its own temporary user profile —
+        # this prevents 'another LibreOffice is running' errors on shared hosts.
+        profile_dir = tempfile.mkdtemp(prefix='lo_profile_')
+        try:
+            cmd = [
+                soffice,
+                '--headless',
+                '--norestore',
+                '--nofirststartwizard',
+                f'--env:UserInstallation=file://{profile_dir}',
+                '--convert-to', out_format,
+                '--outdir', out_dir,
+                src_path
+            ]
+            result = subprocess.run(cmd, capture_output=True, text=True, timeout=120)
+            if result.returncode != 0:
+                raise RuntimeError(f"LibreOffice error: {result.stderr.strip() or result.stdout.strip()}")
+        finally:
+            shutil.rmtree(profile_dir, ignore_errors=True)
 
         # LibreOffice names the output: <basename>.<out_format>
-        # The format string can be e.g. "docx:writer8" so we split on ':'
+        # The format string can be e.g. "docx:MS Word 2007 XML" so split on ':'
         fmt_ext = out_format.split(':')[0]
         base = os.path.splitext(os.path.basename(src_path))[0]
         out_path = os.path.join(out_dir, f"{base}.{fmt_ext}")
         if not os.path.exists(out_path):
-            # Search for any newly created file in out_dir
             files = os.listdir(out_dir)
             candidates = [f for f in files if f.startswith(base)]
             if candidates:
@@ -166,8 +185,78 @@ class ConverterService:
 
     @staticmethod
     def pdf_to_docx(src_path: str, out_dir: str) -> str:
-        """Convert PDF → DOCX via LibreOffice (best-effort, layout may vary)."""
-        return ConverterService._libreoffice_convert(src_path, 'docx:MS Word 2007 XML', out_dir)
+        """
+        Convert PDF → DOCX.
+        Uses pdf2docx (PyMuPDF-based) when available for far better layout
+        preservation; falls back to LibreOffice if not installed.
+        """
+        base     = os.path.splitext(os.path.basename(src_path))[0]
+        out_path = os.path.join(out_dir, f"{base}.docx")
+
+        if HAS_PDF2DOCX:
+            try:
+                cv = Pdf2DocxConverter(src_path)
+                cv.convert(out_path, start=0, end=None)
+                cv.close()
+                if os.path.exists(out_path) and os.path.getsize(out_path) > 0:
+                    return out_path
+            except Exception:
+                pass  # Fall through to LibreOffice
+
+        # Fallback: LibreOffice
+        return ConverterService._libreoffice_convert(
+            src_path, 'docx:MS Word 2007 XML', out_dir)
+
+    @staticmethod
+    def pdf_to_pptx_via_images(src_path: str, out_dir: str, dpi: int = 150) -> str:
+        """
+        Convert PDF → PPTX by rendering each page as an image and
+        embedding it as a full-bleed slide.
+        This guarantees zero layout drift (each slide = exact PDF page image).
+        Requires python-pptx and Ghostscript.
+        """
+        if not HAS_PPTX:
+            raise RuntimeError(
+                'python-pptx 未安裝，無法使用圖片嵌入模式轉換 PPTX。')
+
+        # Step 1: Render all PDF pages to PNG via Ghostscript
+        pages = ConverterService.pdf_to_images(src_path, out_dir, fmt='png', dpi=dpi)
+        if not pages:
+            raise RuntimeError('PDF 譪染失敗，沒有產生圖片。')
+
+        # Step 2: Determine slide size from first page image
+        img0 = Image.open(pages[0]) if HAS_PILLOW else None
+        if img0:
+            px_w, px_h = img0.size
+            # Convert px at dpi to inches, then to EMU (914400 EMU/inch)
+            emu_w = int(px_w / dpi * 914400)
+            emu_h = int(px_h / dpi * 914400)
+            img0.close()
+        else:
+            # Default to A4 landscape (25.4cm x 19.05cm)
+            emu_w = int(10 * 914400)
+            emu_h = int(7.5 * 914400)
+
+        # Step 3: Build the presentation
+        prs = Presentation()
+        prs.slide_width  = emu_w
+        prs.slide_height = emu_h
+
+        blank_layout = prs.slide_layouts[6]  # completely blank layout
+
+        for img_path in pages:
+            slide = prs.slides.add_slide(blank_layout)
+            # Add image filling the entire slide
+            slide.shapes.add_picture(
+                img_path,
+                left=0, top=0,
+                width=emu_w, height=emu_h
+            )
+
+        base     = os.path.splitext(os.path.basename(src_path))[0]
+        out_path = os.path.join(out_dir, f"{base}.pptx")
+        prs.save(out_path)
+        return out_path
 
     @staticmethod
     def doc_to_format(src_path: str, target_fmt: str, out_dir: str) -> str:
@@ -175,6 +264,17 @@ class ConverterService:
         src_ext = ConverterService._ext(src_path)
         # Validate: raises ValueError for unsupported combos (e.g. docx→pptx)
         ConverterService.validate_conversion(src_ext, target_fmt)
+
+        # PDF → DOCX: use pdf2docx for better layout
+        if src_ext == '.pdf' and target_fmt == 'docx':
+            return ConverterService.pdf_to_docx(src_path, out_dir)
+
+        # PDF → PPTX: embed each page as a slide image (zero layout drift)
+        if src_ext == '.pdf' and target_fmt == 'pptx':
+            if HAS_PPTX:
+                return ConverterService.pdf_to_pptx_via_images(src_path, out_dir)
+            # fallback: LibreOffice (poor quality but better than nothing)
+
         lo_fmt = ConverterService._LO_FILTERS.get(target_fmt, target_fmt)
         return ConverterService._libreoffice_convert(src_path, lo_fmt, out_dir)
 

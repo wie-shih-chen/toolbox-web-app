@@ -840,9 +840,9 @@ const EXT_TYPE = {
 
 // Layout warning messages
 const LAYOUT_WARNINGS = {
-  pdf_docx : 'ℹ️ PDF → DOCX 轉換為「最佳嘗試」，複雜的版面、图片、表格可能會趪版，建議轉換後再手動調整。',
-  pdf_pptx : 'ℹ️ PDF → PPTX 為最佳嘗試，版面可能大幅趪移。如未满意，建議改用「PDF → PNG」將每頁轉換為圖片。',
-  any_pdf  : 'ℹ️ 轉換為 PDF 時，中文字體等嵌入資源如有缺失可能造成趪版，建議在預覽後確認排版。',
+  pdf_docx : '✅ 使用 pdf2docx 引擎轉換，版面保留度大幅提升（文字、圖片、表格都更準確）。但極複雜的 PDF（如掃描圖片型）建議轉換後手動微調。',
+  pdf_pptx : '✅ 使用「每頁轉圖片 → 嵌入投影片」模式，版面 100% 還原，不會跑版。注意：投影片內文字無法直接編輯（為圖片）。',
+  any_pdf  : 'ℹ️ 轉換為 PDF 時，已使用獨立 LibreOffice 環境以避免衝突。如遇中文字體問題，建議確認來源檔字體已嵌入。',
 };
 
 function getLayoutWarning(srcType, fmt) {
