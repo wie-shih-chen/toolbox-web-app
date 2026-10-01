@@ -72,7 +72,8 @@ def inject_globals():
             'period.dashboard': {'title': '生理期', 'icon': 'water_drop', 'ep_match': 'period'},
             'vocab.index': {'title': '單字', 'icon': 'spellcheck', 'ep_match': 'vocab'},
             'group.index': {'title': '群組', 'icon': 'group', 'ep_match': 'group'},
-            'credit.index': {'title': '學分', 'icon': 'school', 'ep_match': 'credit'}
+            'credit.index': {'title': '學分', 'icon': 'school', 'ep_match': 'credit'},
+            'converter.index': {'title': '轉換器', 'icon': 'swap_horiz', 'ep_match': 'converter'},
         }
         
         items = []
