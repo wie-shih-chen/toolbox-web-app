@@ -277,25 +277,25 @@ class ConverterService:
     def pdf_to_docx(src_path: str, out_dir: str) -> str:
         """
         Convert PDF → DOCX.
-        Uses pdf2docx (PyMuPDF-based) when available for far better layout
-        preservation; falls back to LibreOffice if not installed.
+        Uses pdf2docx (PyMuPDF-based). LibreOffice cannot export PDF to DOCX.
         """
         base     = os.path.splitext(os.path.basename(src_path))[0]
         out_path = os.path.join(out_dir, f"{base}.docx")
 
-        if HAS_PDF2DOCX:
-            try:
-                cv = Pdf2DocxConverter(src_path)
-                cv.convert(out_path, start=0, end=None)
-                cv.close()
-                if os.path.exists(out_path) and os.path.getsize(out_path) > 0:
-                    return out_path
-            except Exception:
-                pass  # Fall through to LibreOffice
+        if not HAS_PDF2DOCX:
+            raise RuntimeError(
+                'pdf2docx 未安裝，無法將 PDF 轉換為 DOCX。'
+                '請先在伺服器執行: pip install pdf2docx')
 
-        # Fallback: LibreOffice
-        return ConverterService._libreoffice_convert(
-            src_path, 'docx:MS Word 2007 XML', out_dir)
+        try:
+            cv = Pdf2DocxConverter(src_path)
+            cv.convert(out_path, start=0, end=None)
+            cv.close()
+            if os.path.exists(out_path) and os.path.getsize(out_path) > 0:
+                return out_path
+            raise RuntimeError('pdf2docx 未產生檔案')
+        except Exception as e:
+            raise RuntimeError(f'PDF 轉 DOCX 失敗: {e}')
 
     @staticmethod
     def pdf_to_pptx_via_images(src_path: str, out_dir: str, dpi: int = 150) -> str:
@@ -375,8 +375,7 @@ class ConverterService:
 
         # PDF → PPTX: embed each page as a slide image (zero layout drift)
         if src_ext == '.pdf' and target_fmt == 'pptx':
-            if HAS_PPTX:
-                return ConverterService.pdf_to_pptx_via_images(src_path, out_dir)
+            return ConverterService.pdf_to_pptx_via_images(src_path, out_dir)
 
         lo_fmt = ConverterService._LO_FILTERS.get(target_fmt, target_fmt)
         return ConverterService._libreoffice_convert(src_path, lo_fmt, out_dir)
