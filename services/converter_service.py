@@ -83,28 +83,20 @@ class ConverterService:
     @staticmethod
     def _libreoffice_convert(src_path: str, out_format: str, out_dir: str) -> str:
         """
-        Run LibreOffice headless conversion with an isolated user profile
-        (prevents profile-locking issues on shared servers like PythonAnywhere).
+        Run LibreOffice headless conversion.
         """
         soffice = shutil.which('soffice') or shutil.which('libreoffice') or '/usr/bin/soffice'
 
-        # Each conversion gets its own temporary user profile —
-        # this prevents 'another LibreOffice is running' errors on shared hosts.
-        profile_dir = tempfile.mkdtemp(prefix='lo_profile_')
-        try:
-            cmd = [
-                soffice,
-                '--headless',
-                '--norestore',
-                '--nofirststartwizard',
-                f'--env:UserInstallation=file://{profile_dir}',
-                '--convert-to', out_format,
-                '--outdir', out_dir,
-                src_path
-            ]
-            result = subprocess.run(cmd, capture_output=True, text=True, timeout=120)
-        finally:
-            shutil.rmtree(profile_dir, ignore_errors=True)
+        cmd = [
+            soffice,
+            '--headless',
+            '--norestore',
+            '--nofirststartwizard',
+            '--convert-to', out_format,
+            '--outdir', out_dir,
+            src_path
+        ]
+        result = subprocess.run(cmd, capture_output=True, text=True, timeout=120)
 
         # Known non-fatal warnings that LibreOffice outputs on servers without Java.
         # These appear in stderr but the conversion still succeeds.
@@ -148,8 +140,13 @@ class ConverterService:
 
 
         if not real_error_msg:
-            raise RuntimeError(
-                'LibreOffice 未產生輸出檔案。可能是不支援該格式的轉換，或來源檔案損毀 / 討證保護。')
+            # If stderr had no real errors, check stdout
+            out_msg = result.stdout.strip()
+            if out_msg:
+                raise RuntimeError(f'LibreOffice 轉換失敗 (stdout)：{out_msg}')
+            else:
+                raise RuntimeError(
+                    'LibreOffice 未產生輸出檔案。可能是不支援該格式的轉換，或來源檔案損毀 / 討證保護。')
 
         raise RuntimeError(f'LibreOffice 轉換失敗：{real_error_msg}')
 
