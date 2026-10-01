@@ -96,24 +96,51 @@ class ConverterService:
                 src_path
             ]
             result = subprocess.run(cmd, capture_output=True, text=True, timeout=120)
-            if result.returncode != 0:
-                raise RuntimeError(f"LibreOffice error: {result.stderr.strip() or result.stdout.strip()}")
         finally:
             shutil.rmtree(profile_dir, ignore_errors=True)
 
-        # LibreOffice names the output: <basename>.<out_format>
-        # The format string can be e.g. "docx:MS Word 2007 XML" so split on ':'
-        fmt_ext = out_format.split(':')[0]
-        base = os.path.splitext(os.path.basename(src_path))[0]
+        # Known non-fatal warnings that LibreOffice outputs on servers without Java.
+        # These appear in stderr but the conversion still succeeds.
+        NON_FATAL_PATTERNS = [
+            'failed to launch javaldx',
+            'java may not function',
+            'javaldx',
+            'WARNING',
+            'Warning',
+        ]
+
+        # Determine the expected output path first
+        fmt_ext  = out_format.split(':')[0]
+        base     = os.path.splitext(os.path.basename(src_path))[0]
         out_path = os.path.join(out_dir, f"{base}.{fmt_ext}")
-        if not os.path.exists(out_path):
-            files = os.listdir(out_dir)
-            candidates = [f for f in files if f.startswith(base)]
-            if candidates:
-                out_path = os.path.join(out_dir, candidates[0])
-            else:
-                raise RuntimeError("LibreOffice did not produce an output file.")
-        return out_path
+
+        # If file was created → success, regardless of warnings in stderr
+        if os.path.exists(out_path) and os.path.getsize(out_path) > 0:
+            return out_path
+
+        # File not found — search for any candidate produced in out_dir
+        candidates = [
+            f for f in os.listdir(out_dir)
+            if f.startswith(base) and f != os.path.basename(src_path)
+        ]
+        if candidates:
+            return os.path.join(out_dir, candidates[0])
+
+        # Still nothing — check if it's a real error or just warnings
+        stderr = result.stderr.strip()
+        is_only_warnings = all(
+            any(p in line for p in NON_FATAL_PATTERNS)
+            for line in stderr.splitlines()
+            if line.strip()
+        )
+
+        if is_only_warnings:
+            raise RuntimeError(
+                'LibreOffice 未產生輸出檔案，但沒有明確錯誤訊息。'
+                '可能是不支援該格式的轉換，或來源檔案損毀。')
+
+        raise RuntimeError(f'LibreOffice 轉換失敗：{stderr or result.stdout.strip()}')
+
 
     # ------------------------------------------------------------------ #
     # Public: Document conversion
