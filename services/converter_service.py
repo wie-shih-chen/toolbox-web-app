@@ -138,11 +138,14 @@ class ConverterService:
             'failed to launch javaldx', 'java may not function',
             'javaldx', 'WARNING', 'Warning',
         ]
+        
+        raw_stderr = result.stderr.strip() if result.stderr else ''
         real_errors = [
-            line for line in stderr.splitlines()
+            line for line in raw_stderr.splitlines()
             if line.strip() and not any(kw in line for kw in warning_keywords)
         ]
         real_error_msg = '\n'.join(real_errors).strip()
+
 
         if not real_error_msg:
             raise RuntimeError(
