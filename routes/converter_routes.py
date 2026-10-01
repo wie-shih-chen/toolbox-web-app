@@ -78,8 +78,9 @@ def convert():
         src_path  = os.path.join(tmp_dir, safe_name)
         f.save(src_path)
 
-        orig_ext = ConverterService._ext(f.filename)
-        out_path = None
+        orig_ext  = ConverterService._ext(f.filename)
+        orig_stem = os.path.splitext(f.filename)[0]   # original filename without extension
+        out_path  = None
 
         # ── Task routing ── #
 
@@ -130,9 +131,15 @@ def convert():
         if not out_path or not os.path.exists(out_path):
             return jsonify({'success': False, 'error': '轉換失敗：未產生輸出檔案'}), 500
 
+        # ── Build friendly output filename: original_name_targetfmt.ext ── #
+        out_ext = os.path.splitext(out_path)[1]  # extension from LibreOffice/Ghostscript output
+        fmt_label = out_ext.lstrip('.').upper()
+        friendly_name = f"{orig_stem}_{fmt_label}{out_ext}"
+
         # Move output to stable downloads folder so send_file works
-        dl_dir    = _get_download_dir()
-        final_name = f"{uuid.uuid4().hex}_{os.path.basename(out_path)}"
+        dl_dir     = _get_download_dir()
+        token      = uuid.uuid4().hex          # random token to avoid collisions
+        final_name = f"{token}_{friendly_name}"
         final_path = os.path.join(dl_dir, final_name)
         shutil.move(out_path, final_path)
 
@@ -142,7 +149,7 @@ def convert():
         return jsonify({
             'success': True,
             'download_url': url_for('converter.download', filename=final_name),
-            'filename': os.path.basename(out_path),
+            'filename': friendly_name,
             'orig_size': orig_size,
             'output_size': output_size,
         })
@@ -172,8 +179,8 @@ def download(filename):
         flash('下載連結已過期，請重新轉換', 'danger')
         return redirect(url_for('converter.index'))
 
-    # Derive a friendly filename (strip leading UUID hex)
+    # Derive friendly filename: strip leading token (32-char hex + underscore)
     parts = filename.split('_', 1)
-    friendly = parts[1] if len(parts) == 2 else filename
+    friendly = parts[1] if len(parts) == 2 and len(parts[0]) == 32 else filename
 
     return send_file(file_path, as_attachment=True, download_name=friendly)

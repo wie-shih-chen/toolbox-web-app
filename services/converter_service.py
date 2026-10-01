@@ -100,37 +100,82 @@ class ConverterService:
     # Public: Document conversion
     # ------------------------------------------------------------------ #
 
+    # Which LibreOffice application handles which extension
+    WRITER_EXTS  = {'.doc', '.docx', '.odt', '.rtf', '.txt', '.html', '.htm'}
+    IMPRESS_EXTS = {'.ppt', '.pptx', '.odp'}
+    CALC_EXTS    = {'.xls', '.xlsx', '.ods', '.csv'}
+
+    # Valid (src_type → target_fmt) combinations
+    _ALLOWED_CONVERSIONS = {
+        'writer':  {'pdf', 'docx', 'doc', 'odt', 'txt', 'html', 'png'},
+        'impress': {'pdf', 'pptx', 'ppt', 'odp', 'png'},
+        'calc':    {'pdf', 'xlsx', 'xls', 'ods', 'csv', 'html'},
+        'pdf':     {'docx', 'pptx', 'png'},   # best-effort
+        'image':   {'pdf'},
+    }
+
+    # Explicit LibreOffice filter strings (improves accuracy)
+    _LO_FILTERS = {
+        'pdf':  'pdf:writer_pdf_Export',
+        'docx': 'docx:MS Word 2007 XML',
+        'doc':  'doc:MS Word 97',
+        'odt':  'odt:writer8',
+        'txt':  'txt:Text',
+        'html': 'html:HTML (StarWriter)',
+        'pptx': 'pptx:Impress MS PowerPoint 2007 XML',
+        'ppt':  'ppt:MS PowerPoint 97',
+        'odp':  'odp:impress8',
+        'xlsx': 'xlsx:Calc MS Excel 2007 XML',
+        'xls':  'xls:MS Excel 97',
+        'ods':  'ods:calc8',
+        'csv':  'csv:Text - txt - csv (StarCalc)',
+        'png':  'png:draw_png_Export',
+    }
+
     @staticmethod
-    def doc_to_pdf(src_path: str, out_dir: str) -> str:
-        """Convert Word/PPT/Excel/etc. → PDF via LibreOffice."""
-        return ConverterService._libreoffice_convert(src_path, 'pdf', out_dir)
+    def _src_type(ext: str) -> str:
+        """Return the LibreOffice application type for a given source extension."""
+        e = ext.lower()
+        if e in ConverterService.WRITER_EXTS:  return 'writer'
+        if e in ConverterService.IMPRESS_EXTS: return 'impress'
+        if e in ConverterService.CALC_EXTS:    return 'calc'
+        if e == '.pdf':                         return 'pdf'
+        if e in ConverterService.IMAGE_INPUT_EXTS: return 'image'
+        return 'unknown'
+
+    @staticmethod
+    def validate_conversion(src_ext: str, target_fmt: str) -> None:
+        """
+        Raise ValueError if the conversion is not supported.
+        This prevents impossible conversions (e.g. docx → pptx).
+        """
+        src_type = ConverterService._src_type(src_ext)
+        allowed  = ConverterService._ALLOWED_CONVERSIONS.get(src_type, set())
+        if target_fmt not in allowed:
+            src_label = {
+                'writer':  'Word/文字文件',
+                'impress': 'PowerPoint/簡報',
+                'calc':    'Excel/試算表',
+                'pdf':     'PDF',
+                'image':   '圖片',
+            }.get(src_type, src_ext)
+            raise ValueError(
+                f'不支援此轉換：{src_label} → .{target_fmt.upper()}。'
+                f'支援的輸出格式：{", ".join(sorted(allowed)) or "無"}')
+
 
     @staticmethod
     def pdf_to_docx(src_path: str, out_dir: str) -> str:
         """Convert PDF → DOCX via LibreOffice (best-effort, layout may vary)."""
-        return ConverterService._libreoffice_convert(src_path, 'docx', out_dir)
+        return ConverterService._libreoffice_convert(src_path, 'docx:MS Word 2007 XML', out_dir)
 
     @staticmethod
     def doc_to_format(src_path: str, target_fmt: str, out_dir: str) -> str:
-        """Generic document conversion via LibreOffice."""
-        fmt_map = {
-            'pdf':  'pdf',
-            'docx': 'docx',
-            'doc':  'doc',
-            'pptx': 'pptx',
-            'ppt':  'ppt',
-            'xlsx': 'xlsx',
-            'xls':  'xls',
-            'odt':  'odt',
-            'odp':  'odp',
-            'ods':  'ods',
-            'txt':  'txt',
-            'html': 'html',
-            'png':  'png',      # Export first slide / page as image
-        }
-        lo_fmt = fmt_map.get(target_fmt)
-        if not lo_fmt:
-            raise ValueError(f"Unsupported target format: {target_fmt}")
+        """Generic document conversion with validation + explicit LibreOffice filters."""
+        src_ext = ConverterService._ext(src_path)
+        # Validate: raises ValueError for unsupported combos (e.g. docx→pptx)
+        ConverterService.validate_conversion(src_ext, target_fmt)
+        lo_fmt = ConverterService._LO_FILTERS.get(target_fmt, target_fmt)
         return ConverterService._libreoffice_convert(src_path, lo_fmt, out_dir)
 
     # ------------------------------------------------------------------ #

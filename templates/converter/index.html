@@ -487,7 +487,13 @@
 
     <div class="info-pill">
       <span class="material-icons" style="font-size:13px;">info</span>
-      支援 Word / PPT / Excel / PDF / ODT / HTML → 各種格式
+      格式選項會根據上傳的檔案類型自動調整
+    </div>
+
+    <!-- Layout warning -->
+    <div id="layout-warning" style="display:none; background:rgba(255,180,0,0.08); border:1px solid rgba(255,180,0,0.25); border-radius:14px; padding:12px 16px; margin-bottom:16px; font-size:0.83rem; color:#ffd060; display:flex; align-items:flex-start; gap:10px;">
+      <span class="material-icons" style="font-size:16px; margin-top:1px; flex-shrink:0;">warning_amber</span>
+      <span id="layout-warning-text"></span>
     </div>
 
     <div class="conv-card">
@@ -508,14 +514,8 @@
       <div style="margin-top:20px; margin-bottom:8px;">
         <label style="font-size:0.85rem; color:var(--text-secondary); font-weight:500; margin-bottom:10px; display:block;">轉換為</label>
         <div class="format-grid" id="fmt-doc">
-          <button class="fmt-btn selected" data-fmt="pdf">PDF</button>
-          <button class="fmt-btn" data-fmt="docx">DOCX</button>
-          <button class="fmt-btn" data-fmt="pptx">PPTX</button>
-          <button class="fmt-btn" data-fmt="xlsx">XLSX</button>
-          <button class="fmt-btn" data-fmt="odt">ODT</button>
-          <button class="fmt-btn" data-fmt="txt">TXT</button>
-          <button class="fmt-btn" data-fmt="html">HTML</button>
-          <button class="fmt-btn" data-fmt="png">PNG（首頁）</button>
+          <!-- Populated dynamically by JS based on uploaded file type -->
+          <span style="font-size:0.82rem; color:var(--text-secondary); opacity:0.6;">請先上傳檔案</span>
         </div>
       </div>
 
@@ -795,12 +795,112 @@ function setupDropzone(dzId, fileInputId, selectedId, nameId, stateKey) {
   });
 }
 
+// ──────────────────────────────────────────────
+// Format options per source type
+// ──────────────────────────────────────────────
+const DOC_FORMATS = {
+  writer:  [
+    { fmt:'pdf',  label:'PDF' },
+    { fmt:'docx', label:'DOCX' },
+    { fmt:'doc',  label:'DOC' },
+    { fmt:'odt',  label:'ODT' },
+    { fmt:'txt',  label:'TXT' },
+    { fmt:'html', label:'HTML' },
+    { fmt:'png',  label:'PNG (首頁)' },
+  ],
+  impress: [
+    { fmt:'pdf',  label:'PDF' },
+    { fmt:'pptx', label:'PPTX' },
+    { fmt:'ppt',  label:'PPT' },
+    { fmt:'odp',  label:'ODP' },
+    { fmt:'png',  label:'PNG (首頁)' },
+  ],
+  calc: [
+    { fmt:'pdf',  label:'PDF' },
+    { fmt:'xlsx', label:'XLSX' },
+    { fmt:'xls',  label:'XLS' },
+    { fmt:'ods',  label:'ODS' },
+    { fmt:'csv',  label:'CSV' },
+    { fmt:'html', label:'HTML' },
+  ],
+  pdf: [
+    { fmt:'docx', label:'DOCX (最佳嘗試)' },
+    { fmt:'pptx', label:'PPTX (最佳嘗試)' },
+    { fmt:'png',  label:'PNG (第 1 頁)' },
+  ],
+};
+
+const EXT_TYPE = {
+  '.doc':'writer','.docx':'writer','.odt':'writer','.rtf':'writer',
+  '.txt':'writer','.html':'writer','.htm':'writer',
+  '.ppt':'impress','.pptx':'impress','.odp':'impress',
+  '.xls':'calc','.xlsx':'calc','.ods':'calc','.csv':'calc',
+  '.pdf':'pdf',
+};
+
+// Layout warning messages
+const LAYOUT_WARNINGS = {
+  pdf_docx : 'ℹ️ PDF → DOCX 轉換為「最佳嘗試」，複雜的版面、图片、表格可能會趪版，建議轉換後再手動調整。',
+  pdf_pptx : 'ℹ️ PDF → PPTX 為最佳嘗試，版面可能大幅趪移。如未满意，建議改用「PDF → PNG」將每頁轉換為圖片。',
+  any_pdf  : 'ℹ️ 轉換為 PDF 時，中文字體等嵌入資源如有缺失可能造成趪版，建議在預覽後確認排版。',
+};
+
+function getLayoutWarning(srcType, fmt) {
+  if (srcType === 'pdf' && fmt === 'docx') return LAYOUT_WARNINGS.pdf_docx;
+  if (srcType === 'pdf' && fmt === 'pptx') return LAYOUT_WARNINGS.pdf_pptx;
+  if (fmt === 'pdf') return LAYOUT_WARNINGS.any_pdf;
+  return null;
+}
+
+function updateDocFmtGrid(srcExt) {
+  const srcType = EXT_TYPE[srcExt] || 'writer';
+  const formats = DOC_FORMATS[srcType] || DOC_FORMATS.writer;
+  const grid    = document.getElementById('fmt-doc');
+  grid.innerHTML = '';
+
+  formats.forEach((f, i) => {
+    const btn = document.createElement('button');
+    btn.className = 'fmt-btn' + (i === 0 ? ' selected' : '');
+    btn.dataset.fmt = f.fmt;
+    btn.textContent = f.label;
+    btn.addEventListener('click', () => {
+      grid.querySelectorAll('.fmt-btn').forEach(b => b.classList.remove('selected'));
+      btn.classList.add('selected');
+      state.doc.fmt = f.fmt;
+      // Update layout warning
+      const warn = getLayoutWarning(srcType, f.fmt);
+      const box  = document.getElementById('layout-warning');
+      const txt  = document.getElementById('layout-warning-text');
+      if (warn) {
+        txt.textContent = warn;
+        box.style.display = 'flex';
+      } else {
+        box.style.display = 'none';
+      }
+    });
+    grid.appendChild(btn);
+  });
+
+  // Set default fmt & initial warning
+  state.doc.fmt = formats[0].fmt;
+  const warn = getLayoutWarning(srcType, formats[0].fmt);
+  const box  = document.getElementById('layout-warning');
+  const txt  = document.getElementById('layout-warning-text');
+  if (warn) { txt.textContent = warn; box.style.display = 'flex'; }
+  else       { box.style.display = 'none'; }
+}
+
 function handleFile(file, selectedId, nameId, stateKey) {
   if (!file) return;
   state[stateKey].file = file;
   document.getElementById(nameId).textContent = `${file.name}  (${humanSize(file.size)})`;
   const sel = document.getElementById(selectedId);
   sel.style.display = 'flex';
+  // For doc tab: rebuild format grid based on file type
+  if (stateKey === 'doc') {
+    const ext = ('.' + file.name.split('.').pop()).toLowerCase();
+    updateDocFmtGrid(ext);
+  }
 }
 
 setupDropzone('dz-doc',     'file-doc',     'dz-doc-selected',     'dz-doc-name',     'doc');
@@ -811,7 +911,7 @@ setupDropzone('dz-img',     'file-img',     'dz-img-selected',     'dz-img-name'
 setupDropzone('dz-img2pdf', 'file-img2pdf', 'dz-img2pdf-selected', 'dz-img2pdf-name', 'img2pdf');
 
 // ──────────────────────────────────────────────
-// Format button groups
+// Format button groups (non-doc tabs)
 // ──────────────────────────────────────────────
 function setupFmtGrid(gridId, stateKey) {
   document.getElementById(gridId)?.querySelectorAll('.fmt-btn').forEach(btn => {
@@ -828,10 +928,10 @@ function setupFmtGrid(gridId, stateKey) {
   });
 }
 
-setupFmtGrid('fmt-doc',      'doc');
 setupFmtGrid('fmt-compress', 'compress');
 setupFmtGrid('fmt-to_img',   'to_img');
 setupFmtGrid('fmt-img',      'img');
+
 
 // ──────────────────────────────────────────────
 // Main convert function
