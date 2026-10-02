@@ -329,7 +329,7 @@
       <div class="rank-badge">{{ loop.index }}</div>
       <div class="member-avatar">
         {% if data.user.avatar_type == 'upload' %}
-        <img src="{{ url_for('static', filename='uploads/avatars/' + data.user.avatar_val) }}"
+        <img src="{{ data.user.avatar_val }}"
              style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">
         {% else %}
         {{ data.user.avatar_val if data.user.avatar_val != 'default' else '👤' }}

@@ -493,18 +493,28 @@ def upload_avatar():
         return redirect(url_for('auth.settings'))
         
     if file:
-        filename = secure_filename(f"user_{current_user.id}_{int(datetime.now().timestamp())}.png")
-        save_path = os.path.join(current_app.root_path, 'static', 'uploads', 'avatars', filename)
-        
-        # Ensure directory exists
-        os.makedirs(os.path.dirname(save_path), exist_ok=True)
-        
-        file.save(save_path)
-        
-        current_user.avatar_type = 'upload'
-        current_user.avatar_val = filename
-        db.session.commit()
-        flash('頭像上傳成功')
+        try:
+            from PIL import Image
+            import base64
+            from io import BytesIO
+            
+            img = Image.open(file.stream)
+            if img.mode != 'RGB':
+                img = img.convert('RGB')
+            # Resize image to save space in database
+            img.thumbnail((256, 256))
+            
+            buffer = BytesIO()
+            img.save(buffer, format="JPEG", quality=85)
+            img_str = base64.b64encode(buffer.getvalue()).decode('utf-8')
+            base64_data = f"data:image/jpeg;base64,{img_str}"
+            
+            current_user.avatar_type = 'upload'
+            current_user.avatar_val = base64_data
+            db.session.commit()
+            flash('頭像上傳成功')
+        except Exception as e:
+            flash(f'處理圖片失敗：{e}')
         
     return redirect(url_for('auth.settings'))
 

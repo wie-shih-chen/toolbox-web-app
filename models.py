@@ -14,7 +14,7 @@ class User(UserMixin, db.Model):
     
     # Avatar
     avatar_type = db.Column(db.String(20), default='preset') # 'preset' or 'upload'
-    avatar_val = db.Column(db.String(255), default='default') # preset name or file path
+    avatar_val = db.Column(db.Text, default='default') # preset name or base64 string
     
     # Roles and Permissions
     role = db.Column(db.String(10), default='member')  # 'admin' | 'member'
@@ -249,7 +249,7 @@ class UserCalendar(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     name = db.Column(db.String(100), nullable=False)
     source_type = db.Column(db.String(10), nullable=False)  # 'url' or 'file'
-    source = db.Column(db.String(500), nullable=False)       # URL or absolute file path
+    source = db.Column(db.Text, nullable=False)             # URL or raw file content / base64
     color = db.Column(db.String(10), default='#4285F4')
     notify_enabled = db.Column(db.Boolean, default=True)    # Per-calendar mute toggle
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
@@ -396,7 +396,7 @@ class ProductImage(db.Model):
     __tablename__ = 'product_images'
     id          = db.Column(db.Integer, primary_key=True)
     product_id  = db.Column(db.Integer, db.ForeignKey('products.id'), nullable=False)
-    filename    = db.Column(db.String(255), nullable=False)
+    filename    = db.Column(db.Text, nullable=False) # Stores base64 string now
     is_primary  = db.Column(db.Boolean, default=False)
     order_index = db.Column(db.Integer, default=0)
 

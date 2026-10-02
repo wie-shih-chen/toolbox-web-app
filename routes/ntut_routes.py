@@ -158,12 +158,12 @@ def add_calendar():
         f     = request.files.get('file')
         if not f:
             return jsonify({'error': '請選擇 .ics 檔案'}), 400
-        upload_dir = _get_upload_dir()
-        filename   = f'{uuid.uuid4().hex}.ics'
-        filepath   = os.path.join(upload_dir, filename)
-        f.save(filepath)
+        
+        # Read the file directly into a string and store it in the database
+        raw_ics = f.read().decode('utf-8', errors='ignore')
+        
         cal = UserCalendar(user_id=current_user.id, name=name,
-                           source_type='file', source=filepath, color=color)
+                           source_type='file', source=raw_ics, color=color)
 
     db.session.add(cal)
     db.session.commit()
@@ -180,8 +180,7 @@ def delete_calendar(cal_id):
     cal = UserCalendar.query.filter_by(id=cal_id, user_id=current_user.id).first()
     if not cal:
         return jsonify({'error': '找不到日曆'}), 404
-    if cal.source_type == 'file' and os.path.exists(cal.source):
-        os.remove(cal.source)
+    # No longer need to delete file since it's stored in the database
     db.session.delete(cal)
     db.session.commit()
     return jsonify({'success': True})
@@ -226,8 +225,8 @@ def get_events(cal_id):
             resp    = http_req.get(cal.source, timeout=15)
             content = resp.content
         else:
-            with open(cal.source, 'rb') as f:
-                content = f.read()
+            # It's raw text stored in the db
+            content = cal.source.encode('utf-8')
         return jsonify(_parse_ics(content, cal.color))
     except Exception as e:
         return jsonify({'error': str(e)}), 500

@@ -44,7 +44,7 @@
       <div class="draft-img-wrap" onclick="openLightbox({{ p.images | map(attribute='filename') | list | tojson }}, 0)"
         title="點擊預覽">
         {% if p.primary_image %}
-        <img src="{{ url_for('static', filename='uploads/' + p.primary_image.filename) }}" alt="" loading="lazy">
+        <img src="{{ p.primary_image.filename }}" alt="" loading="lazy">
         {% else %}
         <div class="draft-img-placeholder">📦</div>
         {% endif %}
@@ -125,7 +125,7 @@
         <div class="product-img-wrap"
           onclick="openLightbox({{ p.images | map(attribute='filename') | list | tojson }}, 0)" title="點擊放大">
           {% if p.primary_image %}
-          <img src="{{ url_for('static', filename='uploads/' + p.primary_image.filename) }}"
+          <img src="{{ p.primary_image.filename }}"
             alt="{{ p.name or p.code }}" loading="lazy">
           {% else %}
           <div class="product-img-placeholder">📦</div>

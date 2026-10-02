@@ -86,7 +86,7 @@
       style="display:flex;justify-content:space-between;align-items:center;font-size:0.875rem;padding:0.35rem 0;border-bottom:1px solid var(--border)">
       <span>
         {% if item.product and item.product.primary_image %}
-        <img src="{{ url_for('static', filename='uploads/' + item.product.primary_image.filename) }}"
+        <img src="{{ item.product.primary_image.filename }}"
           style="width:36px;height:36px;object-fit:cover;border-radius:4px;vertical-align:middle;margin-right:0.4rem;cursor:pointer"
           data-lb>
         {% endif %}

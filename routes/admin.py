@@ -26,12 +26,22 @@ def allowed_file(filename):
 
 
 def save_image(file):
-    """儲存上傳圖片，回傳 filename"""
-    ext = file.filename.rsplit('.', 1)[1].lower()
-    filename = f"{uuid.uuid4().hex}.{ext}"
-    path = os.path.join(current_app.config['UPLOAD_FOLDER'], filename)
-    file.save(path)
-    return filename
+    """儲存上傳圖片，改為回傳 Base64 字串存入資料庫"""
+    from PIL import Image
+    import base64
+    from io import BytesIO
+    try:
+        img = Image.open(file.stream)
+        if img.mode != 'RGB':
+            img = img.convert('RGB')
+        img.thumbnail((800, 800))
+        buffer = BytesIO()
+        img.save(buffer, format="JPEG", quality=85)
+        img_str = base64.b64encode(buffer.getvalue()).decode('utf-8')
+        return f"data:image/jpeg;base64,{img_str}"
+    except Exception as e:
+        print("Image processing error:", e)
+        return ""
 
 
 # ─── 統計首頁 ───────────────────────────────────────────
@@ -314,16 +324,28 @@ def import_products_zip():
                     zip_img_path = f"{base_dir}images/{img_filename}"
                     if zip_img_path in zf.namelist():
                         img_data = zf.read(zip_img_path)
-                        save_path = os.path.join(upload_dir, img_filename)
-                        with open(save_path, 'wb') as f:
-                            f.write(img_data)
-                        
-                        pi = ProductImage(
-                            product_id=new_product.id,
-                            filename=img_filename,
-                            is_primary=(idx == 0)
-                        )
-                        db.session.add(pi)
+                        # 轉換 zip 內的圖片為 base64
+                        from PIL import Image
+                        import base64
+                        from io import BytesIO
+                        try:
+                            img = Image.open(BytesIO(img_data))
+                            if img.mode != 'RGB':
+                                img = img.convert('RGB')
+                            img.thumbnail((800, 800))
+                            buffer = BytesIO()
+                            img.save(buffer, format="JPEG", quality=85)
+                            img_str = base64.b64encode(buffer.getvalue()).decode('utf-8')
+                            base64_data = f"data:image/jpeg;base64,{img_str}"
+                            
+                            pi = ProductImage(
+                                product_id=new_product.id,
+                                filename=base64_data,
+                                is_primary=(idx == 0)
+                            )
+                            db.session.add(pi)
+                        except Exception as e:
+                            print(f"Error processing {img_filename} from zip: {e}")
                         
                 imported_count += 1
                 
