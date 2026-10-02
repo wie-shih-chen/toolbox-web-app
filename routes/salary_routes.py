@@ -144,8 +144,10 @@ def update_company(company_id):
 
     db.session.commit()
     
-    # Recalculate historical records so changes to break rules/hourly rate apply retroactively
-    service.recalculate_company_records(company.id)
+    # Only recalculate historical records if pay-affecting fields changed
+    needs_recalc = 'hourly_rate' in data or 'break_rules' in data or 'enable_overtime' in data
+    if needs_recalc:
+        service.recalculate_company_records(company.id)
     
     return jsonify({'success': True})
 
