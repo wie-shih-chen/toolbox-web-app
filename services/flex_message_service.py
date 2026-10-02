@@ -7,8 +7,17 @@ Flex Message Service
 import os
 from datetime import datetime
 
-# 基礎 URL，用於按鈕連結
+# 基礎 URL，用於按鈕連結 (透過環境變數或動態抓取)
 WEB_BASE = os.environ.get('WEB_BASE', 'https://weishihchen.pythonanywhere.com')
+
+def get_base_url():
+    try:
+        from flask import request
+        if request and request.host_url:
+            return request.host_url.rstrip('/')
+    except:
+        pass
+    return WEB_BASE
 
 class FlexMessageService:
 
@@ -217,7 +226,7 @@ class FlexMessageService:
                     {"type": "text", "text": "最近 10 筆", "weight": "bold", "color": "#8b949e", "size": "sm", "margin": "lg"},
                     {"type": "box", "layout": "vertical", "margin": "md", "contents": record_rows or [{"type":"text","text":"暫無資料","color":"#555555"}]},
                     {"type": "box", "layout": "vertical", "margin": "xl", "contents": [
-                        {"type": "button", "action": {"type": "uri", "label": "查看全部記錄 →", "uri": f"{WEB_BASE}/expense/"}, "style": "primary", "color": "#03a9f4", "height": "sm"}
+                        {"type": "button", "action": {"type": "uri", "label": "查看全部記錄 →", "uri": f"{get_base_url()}/expense/"}, "style": "primary", "color": "#03a9f4", "height": "sm"}
                     ]}
                 ]
             }
@@ -281,7 +290,7 @@ class FlexMessageService:
                     {"type": "text", "text": "最近 10 筆", "weight": "bold", "color": "#8b949e", "size": "sm", "margin": "lg"},
                     {"type": "box", "layout": "vertical", "margin": "md", "contents": record_rows or [{"type":"text","text":"暫無資料","color":"#555555"}]},
                     {"type": "box", "layout": "vertical", "margin": "xl", "contents": [
-                        {"type": "button", "action": {"type": "uri", "label": "查看全部薪資記錄 →", "uri": f"{WEB_BASE}/salary/"}, "style": "primary", "color": "#03a9f4", "height": "sm"}
+                        {"type": "button", "action": {"type": "uri", "label": "查看全部薪資記錄 →", "uri": f"{get_base_url()}/salary/"}, "style": "primary", "color": "#03a9f4", "height": "sm"}
                     ]}
                 ]
             }
