@@ -1,6 +1,9 @@
 import os
 from sqlalchemy import create_engine, MetaData
 from sqlalchemy.orm import sessionmaker
+from sqlalchemy import text
+from app import app
+from models import db
 
 def migrate(sqlite_url, postgres_url):
     print("🚀 開始準備資料庫搬家...")
@@ -9,26 +12,35 @@ def migrate(sqlite_url, postgres_url):
     sqlite_engine = create_engine(sqlite_url)
     postgres_engine = create_engine(postgres_url)
     
-    # 讀取 SQLite 的資料表結構
-    meta = MetaData()
-    meta.reflect(bind=sqlite_engine)
-    
-    # 建立 Postgres 的資料表
+    # 使用 ORM 模型建立 Postgres 的資料表結構（避免 SQLite 的 Boolean 0/1 語法不相容 Postgres）
     print("📦 正在雲端建立資料表結構...")
-    meta.create_all(bind=postgres_engine)
+    with app.app_context():
+        # 設定 app 的 DB URL 為 postgres，並建立所有表
+        app.config['SQLALCHEMY_DATABASE_URI'] = postgres_url
+        db.create_all()
+        
+    # 讀取 SQLite 的資料表結構（僅用來知道有哪些表跟讀取資料）
+    sqlite_meta = MetaData()
+    sqlite_meta.reflect(bind=sqlite_engine)
+    
+    # 建立 Postgres 的資料表反射（用來插入資料）
+    postgres_meta = MetaData()
+    postgres_meta.reflect(bind=postgres_engine)
     
     # 開始搬運每個資料表的資料
     sqlite_session = sessionmaker(bind=sqlite_engine)()
     postgres_session = sessionmaker(bind=postgres_engine)()
     
-    from sqlalchemy import text
-    # 關閉 Postgres 的外鍵檢查（避免搬運順序報錯）
-    postgres_session.execute(text("SET session_replication_role = 'replica';"))
-    
-    for table in meta.sorted_tables:
+    for table in sqlite_meta.sorted_tables:
         print(f"📥 正在搬運表格: {table.name} ...")
+        
+        # 取得目標 Postgres 表格
+        if table.name not in postgres_meta.tables:
+            continue
+        target_table = postgres_meta.tables[table.name]
+        
         # 清空目標表格（避免重複）
-        postgres_session.execute(table.delete())
+        postgres_session.execute(target_table.delete())
         
         # 從 SQLite 讀取所有資料
         records = sqlite_session.execute(table.select()).fetchall()
@@ -36,13 +48,11 @@ def migrate(sqlite_url, postgres_url):
         if records:
             # 轉換為字典格式並寫入 Postgres
             data = [dict(zip(table.columns.keys(), record)) for record in records]
-            postgres_session.execute(table.insert(), data)
+            postgres_session.execute(target_table.insert(), data)
             print(f"   ✅ 成功搬運 {len(records)} 筆資料！")
         else:
             print(f"   - 表格為空，跳過。")
             
-    # 恢復外鍵檢查並儲存
-    postgres_session.execute(text("SET session_replication_role = 'origin';"))
     postgres_session.commit()
     print("🎉 資料搬家大成功！舊資料已經全部上傳到 Neon 雲端了！")
 
