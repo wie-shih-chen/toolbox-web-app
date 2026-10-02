@@ -211,6 +211,7 @@ def analyze_roster():
     if not company_id:
         return jsonify({'error': '未指定公司'}), 400
         
+    employee_name = request.form.get('employee_name', '').strip()
     file = request.files['image']
     gemini_key = current_app.config.get('GEMINI_API_KEY')
     if not gemini_key:
@@ -240,6 +241,11 @@ def analyze_roster():
         若沒有辨識到任何班表，請回傳 []。
         """
         
+        if employee_name:
+            prompt += f"\n【重要指示】請「只」擷取名字或代號為「{employee_name}」的班表！如果這張班表上有多人的班，請絕對忽略其他人，只回傳屬於 {employee_name} 的排班紀錄。"
+        else:
+            prompt += "\n（如果你看到很多人，但無法確定是誰的班表，請盡可能找出主要的排班紀錄）"
+            
         response = client.models.generate_content(
             model='gemini-3.8-flash',
             contents=[prompt, image_part]

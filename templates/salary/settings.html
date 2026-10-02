@@ -214,6 +214,12 @@
             </div>
 
             <div class="settings-form-group" style="margin-top: 15px;">
+                <label>班表上的名字 (選填)</label>
+                <input type="text" id="rosterEmployeeName" name="employee_name" class="settings-input" placeholder="例如：王大明 (若班表有多人，請務必填寫)">
+                <p class="settings-help-text" style="margin-top: 5px;">系統會自動記住這個名字，並請 AI 只提取您的班表。</p>
+            </div>
+
+            <div class="settings-form-group" style="margin-top: 15px;">
                 <label>班表圖片上傳</label>
                 <input type="file" id="rosterImageInput" name="image" accept="image/*" required class="settings-input" style="padding: 10px; margin-top: 5px;">
             </div>
@@ -305,6 +311,13 @@
 document.addEventListener('DOMContentLoaded', () => {
     document.body.appendChild(document.getElementById('company-modal-overlay'));
     document.body.appendChild(document.getElementById('legacy-modal'));
+    
+    // 載入儲存的員工名稱
+    const savedName = localStorage.getItem('rosterEmployeeName');
+    if (savedName) {
+        const nameInput = document.getElementById('rosterEmployeeName');
+        if (nameInput) nameInput.value = savedName;
+    }
 });
 
 // ======== Company Management ========
@@ -368,6 +381,13 @@ document.getElementById('aiRosterForm')?.addEventListener('submit', async functi
     const resultText = document.getElementById('rosterResultText');
     
     const formData = new FormData(this);
+    const employeeName = formData.get('employee_name');
+    if (employeeName) {
+        localStorage.setItem('rosterEmployeeName', employeeName.trim());
+    } else {
+        localStorage.removeItem('rosterEmployeeName');
+    }
+    
     btn.disabled = true;
     btn.innerHTML = '<span class="material-icons" style="vertical-align: middle; margin-right: 5px; animation: spin 1s linear infinite;">autorenew</span> 分析中...這可能需要 10-30 秒';
     resultBox.style.display = 'none';
