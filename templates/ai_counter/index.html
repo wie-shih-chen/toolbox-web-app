@@ -223,19 +223,25 @@
                 body: formData
             });
 
-            const data = await response.json();
-
             resultBox.style.display = 'block';
             if (response.ok) {
+                const data = await response.json();
                 resultBox.className = 'result-card';
                 resultIcon.textContent = 'check_circle';
                 resultTitle.textContent = '分析結果';
                 resultText.textContent = data.result;
             } else {
+                let errorMsg = '發生未知錯誤';
+                try {
+                    const data = await response.json();
+                    errorMsg = data.error || errorMsg;
+                } catch(e) {
+                    errorMsg = '伺服器無回應 (狀態碼 ' + response.status + ')';
+                }
                 resultBox.className = 'result-card error-card';
                 resultIcon.textContent = 'error';
                 resultTitle.textContent = '分析失敗';
-                resultText.textContent = data.error || '發生未知錯誤';
+                resultText.textContent = errorMsg;
             }
         } catch (error) {
             console.error('Error:', error);

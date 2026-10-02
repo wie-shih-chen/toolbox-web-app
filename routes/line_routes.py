@@ -455,6 +455,18 @@ def register_line_handlers(handler):
             import io
             img = Image.open(io.BytesIO(image_bytes))
             
+            # 轉換為 RGB 並調整大小，避免大圖片造成 OOM
+            if img.mode != 'RGB':
+                img = img.convert('RGB')
+            img.thumbnail((1024, 1024), Image.Resampling.LANCZOS)
+            
+            output_io = io.BytesIO()
+            img.save(output_io, format='JPEG', quality=85)
+            compressed_bytes = output_io.getvalue()
+            
+            from google.genai import types
+            image_part = types.Part.from_bytes(data=compressed_bytes, mime_type='image/jpeg')
+            
             LineService.push_message(user_id, "🤖 收到圖片！正在請 AI 幫你分析與算數中，請稍候...")
 
             from google import genai
@@ -467,7 +479,7 @@ def register_line_handlers(handler):
                 try:
                     response = client.models.generate_content(
                         model='gemini-3.8-flash',
-                        contents=[prompt, img]
+                        contents=[prompt, image_part]
                     )
                     break
                 except Exception as e:

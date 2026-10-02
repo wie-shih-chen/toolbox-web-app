@@ -29,6 +29,18 @@ def analyze():
         img_bytes = file.read()
         img = Image.open(io.BytesIO(img_bytes))
         
+        # 轉換為 RGB 並調整大小，避免大圖片造成 503 OOM
+        if img.mode != 'RGB':
+            img = img.convert('RGB')
+        img.thumbnail((1024, 1024), Image.Resampling.LANCZOS)
+        
+        output_io = io.BytesIO()
+        img.save(output_io, format='JPEG', quality=85)
+        compressed_bytes = output_io.getvalue()
+        
+        from google.genai import types
+        image_part = types.Part.from_bytes(data=compressed_bytes, mime_type='image/jpeg')
+        
         client = genai.Client(api_key=gemini_key)
         prompt = "你是一個幫助使用者計數與分析圖片內容的 AI 小幫手。請幫我仔細算算這張圖片裡有幾顆藥丸（或其他物品）？請先簡短說明你看到了什麼，然後給出一個精確的數量。"
         
@@ -38,7 +50,7 @@ def analyze():
             try:
                 response = client.models.generate_content(
                     model='gemini-3.8-flash',
-                    contents=[prompt, img]
+                    contents=[prompt, image_part]
                 )
                 break
             except Exception as e:
