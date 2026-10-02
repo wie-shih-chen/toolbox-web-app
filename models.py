@@ -73,6 +73,7 @@ class Company(db.Model):
     notify_weekly_day     = db.Column(db.String(10), default='sunday')
     notify_weekly_time    = db.Column(db.String(5), default='20:00')
     break_rules = db.Column(db.Text, default='[]') # JSON list of rules e.g. [{"threshold": 4.0, "deduct": 0.5}]
+    shift_codes = db.Column(db.Text, default='[]') # JSON list of shift codes e.g. [{"code": "1N", "start": "09:00", "end": "21:00"}]
     default_start_time    = db.Column(db.String(5), default='')
     default_end_time      = db.Column(db.String(5), default='')
     enable_overtime       = db.Column(db.Boolean, default=False)

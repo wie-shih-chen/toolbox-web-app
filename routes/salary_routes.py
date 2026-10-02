@@ -68,6 +68,7 @@ def get_companies():
             'shift_reminders': shift_reminders,
             'upcoming_schedules': upcoming_schedules,
             'break_rules': c.break_rules or '[]',
+            'shift_codes': c.shift_codes or '[]',
             'default_start_time': c.default_start_time or '',
             'default_end_time': c.default_end_time or '',
             'enable_overtime': c.enable_overtime
@@ -94,6 +95,7 @@ def create_company():
         notify_weekly_day=data.get('notify_weekly_day', 'sunday'),
         notify_weekly_time=data.get('notify_weekly_time', '20:00'),
         break_rules=data.get('break_rules', '[]'),
+        shift_codes=data.get('shift_codes', '[]'),
         default_start_time=data.get('default_start_time', ''),
         default_end_time=data.get('default_end_time', ''),
         enable_overtime=bool(data.get('enable_overtime', False))
@@ -119,6 +121,7 @@ def update_company(company_id):
     if 'notify_weekly_day' in data: company.notify_weekly_day = data['notify_weekly_day']
     if 'notify_weekly_time' in data: company.notify_weekly_time = data['notify_weekly_time']
     if 'break_rules' in data: company.break_rules = data['break_rules']
+    if 'shift_codes' in data: company.shift_codes = data['shift_codes']
     if 'default_start_time' in data: company.default_start_time = data['default_start_time']
     if 'default_end_time' in data: company.default_end_time = data['default_end_time']
     if 'enable_overtime' in data: company.enable_overtime = bool(data['enable_overtime'])
@@ -232,17 +235,33 @@ def analyze_roster():
         image_part = types.Part.from_bytes(data=compressed_bytes, mime_type='image/jpeg')
         client = genai.Client(api_key=gemini_key)
         
-        prompt = """
+        # Load shift code mappings from the company
+        company = Company.query.filter_by(id=int(company_id), user_id=current_user.id).first()
+        shift_codes_raw = '[]'
+        if company and company.shift_codes:
+            shift_codes_raw = company.shift_codes
+        try:
+            shift_codes_list = json.loads(shift_codes_raw)
+        except Exception:
+            shift_codes_list = []
+        
+        today_year = (datetime.utcnow() + timedelta(hours=8)).year
+        
+        prompt = f"""
         這是一張排班表（可能是班表照片或截圖）。請從中辨識出排班時間，並以 JSON 陣列格式回傳，請只回傳 JSON，不要加上 Markdown 標記（如 ```json）。
         每個元素必須包含以下欄位：
-        - date (字串格式: YYYY-MM-DD，若圖片沒標示年份請預設為今年，若無法確定月份請根據前後文推敲)
+        - date (字串格式: YYYY-MM-DD，若圖片沒標示年份請使用今年 {today_year}，若無法確定月份請根據前後文推敲)
         - start_time (字串格式: HH:MM，24小時制)
         - end_time (字串格式: HH:MM，24小時制)
         若沒有辨識到任何班表，請回傳 []。
         """
         
+        if shift_codes_list:
+            codes_str = '\n'.join([f"  - 「{s['code']}」= 上班 {s['start']}，下班 {s['end']}" for s in shift_codes_list if s.get('code') and s.get('start') and s.get('end')])
+            prompt += f"\n\n【班別對照表】班表中的格子可能使用以下代碼，請依照此對照表轉換為實際時間：\n{codes_str}\n若看到這些代碼以外的文字（例如 X、XX、公休），請忽略該格。"
+        
         if employee_name:
-            prompt += f"\n【重要指示】請「只」擷取名字或代號為「{employee_name}」的班表！如果這張班表上有多人的班，請絕對忽略其他人，只回傳屬於 {employee_name} 的排班紀錄。"
+            prompt += f"\n\n【重要指示】請「只」擷取名字或代號為「{employee_name}」的班表！如果這張班表上有多人的班，請絕對忽略其他人，只回傳屬於 {employee_name} 的排班紀錄。"
         else:
             prompt += "\n（如果你看到很多人，但無法確定是誰的班表，請盡可能找出主要的排班紀錄）"
             
