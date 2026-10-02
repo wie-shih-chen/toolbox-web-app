@@ -100,6 +100,16 @@ def inject_globals():
 with app.app_context():
     db.create_all() # Create tables if they don't exist (checkfirst is default in SQLAlchemy 2.x)
 
+    # Auto-migrations: add new columns if they don't exist
+    from sqlalchemy import text as sa_text
+    try:
+        db.session.execute(sa_text("ALTER TABLE company ADD COLUMN shift_codes TEXT DEFAULT '[]'"))
+        db.session.commit()
+        print("✅ Migration: added company.shift_codes")
+    except Exception:
+        db.session.rollback()
+        # Column already exists, ignore
+
     from routes.main_routes import main_bp
     from routes.salary_routes import salary_bp
     from routes.download_routes import download_bp
