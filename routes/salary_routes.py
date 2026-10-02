@@ -195,6 +195,123 @@ def get_legacy_count():
     count = SalaryRecord.query.filter_by(user_id=current_user.id, company_id=None).count()
     return jsonify({'count': count})
 
+@salary_bp.route('/api/analyze-roster', methods=['POST'])
+@login_required
+def analyze_roster():
+    from flask import current_app
+    from google import genai
+    from google.genai import types
+    import io
+    from PIL import Image
+
+    if 'image' not in request.files:
+        return jsonify({'error': '未提供圖片'}), 400
+        
+    company_id = request.form.get('company_id')
+    if not company_id:
+        return jsonify({'error': '未指定公司'}), 400
+        
+    file = request.files['image']
+    gemini_key = current_app.config.get('GEMINI_API_KEY')
+    if not gemini_key:
+        return jsonify({'error': '系統未設定 Gemini API 金鑰'}), 500
+        
+    try:
+        img_bytes = file.read()
+        img = Image.open(io.BytesIO(img_bytes))
+        
+        if img.mode != 'RGB':
+            img = img.convert('RGB')
+        img.thumbnail((1536, 1536), Image.Resampling.LANCZOS)
+        
+        output_io = io.BytesIO()
+        img.save(output_io, format='JPEG', quality=85)
+        compressed_bytes = output_io.getvalue()
+        
+        image_part = types.Part.from_bytes(data=compressed_bytes, mime_type='image/jpeg')
+        client = genai.Client(api_key=gemini_key)
+        
+        prompt = """
+        這是一張排班表（可能是班表照片或截圖）。請從中辨識出排班時間，並以 JSON 陣列格式回傳，請只回傳 JSON，不要加上 Markdown 標記（如 ```json）。
+        每個元素必須包含以下欄位：
+        - date (字串格式: YYYY-MM-DD，若圖片沒標示年份請預設為今年，若無法確定月份請根據前後文推敲)
+        - start_time (字串格式: HH:MM，24小時制)
+        - end_time (字串格式: HH:MM，24小時制)
+        若沒有辨識到任何班表，請回傳 []。
+        """
+        
+        response = client.models.generate_content(
+            model='gemini-3.8-flash',
+            contents=[prompt, image_part]
+        )
+        
+        res_text = response.text.strip()
+        if res_text.startswith('```json'):
+            res_text = res_text[7:]
+        if res_text.endswith('```'):
+            res_text = res_text[:-3]
+        res_text = res_text.strip()
+        
+        roster_data = json.loads(res_text)
+        
+        if not isinstance(roster_data, list):
+            return jsonify({'error': 'AI 回傳格式錯誤'}), 500
+            
+        valid_roster = []
+        for item in roster_data:
+            if item.get('date') and item.get('start_time') and item.get('end_time'):
+                valid_roster.append({
+                    'date': item['date'],
+                    'start_time': item['start_time'],
+                    'end_time': item['end_time']
+                })
+            
+        return jsonify({
+            'success': True,
+            'company_id': company_id,
+            'roster': valid_roster
+        })
+        
+    except Exception as e:
+        import traceback
+        print("Analyze Roster Error:", traceback.format_exc())
+        return jsonify({'error': f'AI 分析時發生錯誤: {str(e)}'}), 500
+
+@salary_bp.route('/api/save-roster', methods=['POST'])
+@login_required
+def save_roster():
+    data = request.json or {}
+    company_id = data.get('company_id')
+    roster = data.get('roster', [])
+    
+    if not company_id:
+        return jsonify({'error': '未指定公司'}), 400
+        
+    if not isinstance(roster, list) or not roster:
+        return jsonify({'error': '未提供班表資料'}), 400
+        
+    count = 0
+    for item in roster:
+        if not item.get('date') or not item.get('start_time') or not item.get('end_time'):
+            continue
+            
+        record_data = {
+            'date': item['date'],
+            'type': 'shift',
+            'start_time': item['start_time'],
+            'end_time': item['end_time'],
+            'note': '由 AI 辨識匯入',
+            'company_id': int(company_id)
+        }
+        service.add_record(record_data)
+        count += 1
+        
+    return jsonify({
+        'success': True,
+        'count': count,
+        'message': f"成功匯入 {count} 筆排班紀錄！"
+    })
+
 @salary_bp.route('/api/companies/summary', methods=['GET'])
 @login_required
 def get_companies_summary():

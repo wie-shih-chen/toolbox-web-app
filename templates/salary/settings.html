@@ -192,6 +192,44 @@
             新增公司
         </button>
     </div>
+
+    <!-- AI Roster Import -->
+    <div class="glass" style="padding: 30px; margin-top: 20px;">
+        <h3 class="settings-section-title">
+            <span class="material-icons" style="color: var(--accent-color)">document_scanner</span>
+            AI 自動匯入班表
+        </h3>
+        <p style="color: var(--text-secondary); font-size: 0.9rem; margin-bottom: 20px;">
+            上傳包含排班表的圖片，AI 會自動辨識日期與時間，並建立排班紀錄。
+        </p>
+
+        <form id="aiRosterForm" enctype="multipart/form-data">
+            <div class="settings-form-group">
+                <label>請選擇公司</label>
+                <div class="settings-input-wrapper">
+                    <select name="company_id" id="rosterCompanySelect" class="settings-input" required>
+                        <option value="">(讀取中...)</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="settings-form-group" style="margin-top: 15px;">
+                <label>班表圖片上傳</label>
+                <input type="file" id="rosterImageInput" name="image" accept="image/*" required class="settings-input" style="padding: 10px; margin-top: 5px;">
+            </div>
+
+            <div class="settings-save-row">
+                <button type="submit" id="btnImportRoster" class="btn btn-primary btn-block">
+                    <span class="material-icons" style="vertical-align: middle; margin-right: 5px;">auto_awesome</span> 開始分析與匯入
+                </button>
+            </div>
+            
+            <div id="rosterResultBox" style="display: none; margin-top: 15px; padding: 15px; border-radius: 8px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);">
+                <div style="font-weight: 600; margin-bottom: 8px; color: #4ade80;" id="rosterResultTitle">分析完成</div>
+                <div id="rosterResultText" style="font-size: 0.9rem; color: rgba(255,255,255,0.8); white-space: pre-wrap;"></div>
+            </div>
+        </form>
+    </div>
 </div>
 
 <!-- Add / Edit Form Modal -->
@@ -282,10 +320,18 @@ async function loadCompanies() {
 
 function renderCompanyList() {
     const list = document.getElementById('companyList');
+    const select = document.getElementById('rosterCompanySelect');
+    
     if (!companiesCache.length) {
         list.innerHTML = '<div style="color: var(--text-secondary); font-size: 0.9rem; padding: 8px 0;">尚未新增任何公司。</div>';
+        if (select) select.innerHTML = '<option value="">請先新增公司...</option>';
         return;
     }
+    
+    if (select) {
+        select.innerHTML = '<option value="">請選擇公司...</option>' + companiesCache.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+    }
+    
     list.innerHTML = companiesCache.map(c => `
         <div class="company-card">
             <div class="company-color-bar" style="background: ${c.color};"></div>
@@ -309,6 +355,106 @@ function renderCompanyList() {
             </div>
         </div>
     `).join('');
+}
+
+let pendingRosterData = null;
+let pendingCompanyId = null;
+
+document.getElementById('aiRosterForm')?.addEventListener('submit', async function(e) {
+    e.preventDefault();
+    const btn = document.getElementById('btnImportRoster');
+    const resultBox = document.getElementById('rosterResultBox');
+    const resultTitle = document.getElementById('rosterResultTitle');
+    const resultText = document.getElementById('rosterResultText');
+    
+    const formData = new FormData(this);
+    btn.disabled = true;
+    btn.innerHTML = '<span class="material-icons" style="vertical-align: middle; margin-right: 5px; animation: spin 1s linear infinite;">autorenew</span> 分析中...這可能需要 10-30 秒';
+    resultBox.style.display = 'none';
+
+    try {
+        const response = await fetch('{{ url_for("salary.analyze_roster") }}', {
+            method: 'POST',
+            body: formData
+        });
+        
+        const data = await response.json();
+        resultBox.style.display = 'block';
+        
+        if (response.ok) {
+            resultTitle.textContent = '分析完成！請確認班表';
+            resultTitle.style.color = '#4ade80';
+            
+            if (data.roster && data.roster.length > 0) {
+                pendingRosterData = data.roster;
+                pendingCompanyId = data.company_id;
+                
+                let html = '<div style="margin-bottom: 15px;">AI 共辨識出 ' + data.roster.length + ' 筆排班：</div>';
+                html += '<div style="max-height: 200px; overflow-y: auto; background: rgba(0,0,0,0.2); border-radius: 8px; padding: 10px; margin-bottom: 15px;">';
+                data.roster.forEach(r => {
+                    html += `<div style="padding: 5px 0; border-bottom: 1px solid rgba(255,255,255,0.1);">📅 ${r.date} &nbsp; 🕒 ${r.start_time} - ${r.end_time}</div>`;
+                });
+                html += '</div>';
+                html += `<button type="button" class="btn btn-primary" onclick="confirmImportRoster()" id="btnConfirmRoster" style="width: 100%;">確認匯入</button>`;
+                
+                resultText.innerHTML = html;
+            } else {
+                resultText.innerHTML = 'AI 沒有在圖片中辨識到任何班表時間，請確認圖片內容。';
+            }
+        } else {
+            resultTitle.textContent = '分析失敗';
+            resultTitle.style.color = '#f87171';
+            resultText.innerHTML = data.error || '發生未知錯誤。';
+        }
+    } catch (error) {
+        resultBox.style.display = 'block';
+        resultTitle.textContent = '系統錯誤';
+        resultTitle.style.color = '#f87171';
+        resultText.innerHTML = '無法連線至伺服器或發生例外狀況。';
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<span class="material-icons" style="vertical-align: middle; margin-right: 5px;">auto_awesome</span> 開始分析與匯入';
+    }
+});
+
+async function confirmImportRoster() {
+    if (!pendingRosterData || !pendingCompanyId) return;
+    
+    const btn = document.getElementById('btnConfirmRoster');
+    btn.disabled = true;
+    btn.innerHTML = '匯入中...';
+    
+    try {
+        const response = await fetch('{{ url_for("salary.save_roster") }}', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                company_id: pendingCompanyId,
+                roster: pendingRosterData
+            })
+        });
+        
+        const data = await response.json();
+        if (response.ok) {
+            document.getElementById('rosterResultTitle').textContent = '匯入成功！';
+            document.getElementById('rosterResultText').innerHTML = data.message;
+            document.getElementById('rosterImageInput').value = '';
+            pendingRosterData = null;
+            pendingCompanyId = null;
+        } else {
+            document.getElementById('rosterResultTitle').textContent = '匯入失敗';
+            document.getElementById('rosterResultTitle').style.color = '#f87171';
+            document.getElementById('rosterResultText').innerHTML = data.error || '發生未知錯誤';
+            btn.disabled = false;
+            btn.innerHTML = '重試匯入';
+        }
+    } catch (error) {
+        document.getElementById('rosterResultTitle').textContent = '系統錯誤';
+        document.getElementById('rosterResultTitle').style.color = '#f87171';
+        document.getElementById('rosterResultText').innerHTML = '無法連線至伺服器。';
+        btn.disabled = false;
+        btn.innerHTML = '重試匯入';
+    }
 }
 
 function openCompanyForm(id) {
