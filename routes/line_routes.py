@@ -1,7 +1,7 @@
 from flask import Blueprint, request, abort, current_app
 from linebot import LineBotApi, WebhookHandler
 from linebot.exceptions import InvalidSignatureError
-from linebot.models import MessageEvent, TextMessage, TextSendMessage
+from linebot.models import MessageEvent, TextMessage, TextSendMessage, ImageMessage
 from services.line_service import LineService
 from models import db, UserSettings, LineBinding, User
 import os, json
@@ -427,5 +427,49 @@ def register_line_handlers(handler):
 
 # Hacky way to register handlers on import or first request?
 # Better: In app factory, call a setup function.
+
+    @handler.add(MessageEvent, message=ImageMessage)
+    def handle_image(event):
+        user_id = event.source.user_id
+        message_id = event.message.id
+
+        # Check binding
+        binding = LineBinding.query.filter_by(line_user_id=user_id).first()
+        if not binding:
+            LineService.push_message(user_id, "🤖 請先綁定帳號後才能使用 AI 視覺功能喔！")
+            return
+
+        gemini_key = current_app.config.get('GEMINI_API_KEY')
+        if not gemini_key:
+            LineService.push_message(user_id, "❌ 系統未設定 Gemini API 金鑰，無法使用 AI 視覺功能。")
+            return
+
+        try:
+            line_bot_api = LineService._line_bot_api
+            message_content = line_bot_api.get_message_content(message_id)
+            image_bytes = b""
+            for chunk in message_content.iter_content():
+                image_bytes += chunk
+                
+            from PIL import Image
+            import io
+            img = Image.open(io.BytesIO(image_bytes))
+            
+            LineService.push_message(user_id, "🤖 收到圖片！正在請 AI 幫你分析與算數中，請稍候...")
+
+            from google import genai
+            client = genai.Client(api_key=gemini_key)
+            prompt = "你是一個幫助使用者計數與分析圖片內容的 AI 小幫手。請幫我仔細算算這張圖片裡有幾顆藥丸（或其他物品）？請先簡短說明你看到了什麼，然後給出一個精確的數量。"
+            
+            response = client.models.generate_content(
+                model='gemini-2.5-flash',
+                contents=[prompt, img]
+            )
+            
+            LineService.push_message(user_id, response.text.strip())
+            
+        except Exception as e:
+            current_app.logger.error(f"[line_routes] 圖片處理失敗: {e}")
+            LineService.push_message(user_id, "❌ AI 圖片分析失敗，請稍後再試。")
 
 
