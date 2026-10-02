@@ -1,0 +1,113 @@
+{% extends "base.html" %}
+
+{% block title %}AI 拍照計數{% endblock %}
+{% block page_title %}AI 拍照計數{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8 col-lg-6">
+        <div class="card shadow-sm border-0 rounded-4 mt-3">
+            <div class="card-body p-4">
+                <h5 class="card-title text-center mb-4 fw-bold" style="color: var(--text-primary);">
+                    <span class="material-icons text-primary align-middle me-2">camera_alt</span>拍照或上傳圖片
+                </h5>
+                <p class="text-center text-muted mb-4">
+                    選擇一張圖片，AI 會幫你自動算出裡面的藥丸或其他物品數量喔！
+                </p>
+
+                <form id="aiCounterForm" enctype="multipart/form-data">
+                    <div class="mb-4">
+                        <input class="form-control form-control-lg" type="file" id="imageInput" name="image" accept="image/*" required>
+                    </div>
+
+                    <div id="imagePreviewContainer" class="text-center mb-4 d-none">
+                        <img id="imagePreview" src="" alt="預覽圖片" class="img-fluid rounded shadow-sm" style="max-height: 300px; object-fit: contain;">
+                    </div>
+
+                    <button type="submit" id="submitBtn" class="btn btn-primary w-100 rounded-pill py-3 fw-bold shadow-sm" style="font-size: 1.1rem; transition: all 0.2s ease;">
+                        <span class="material-icons align-middle me-1">auto_awesome</span> 開始分析
+                    </button>
+                </form>
+
+                <!-- Loading State -->
+                <div id="loadingState" class="text-center mt-4 d-none">
+                    <div class="spinner-border text-primary mb-3" role="status" style="width: 3rem; height: 3rem;">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                    <p class="fw-bold" style="color: var(--text-secondary);">AI 正在努力看圖數數中...<br><small class="text-muted">這大概需要 5 到 10 秒鐘</small></p>
+                </div>
+
+                <!-- Result Box -->
+                <div id="resultBox" class="mt-4 p-4 rounded-4 d-none" style="background: rgba(17, 153, 142, 0.1); border-left: 4px solid #11998e;">
+                    <h6 class="fw-bold mb-2" style="color: #11998e;"><span class="material-icons align-middle fs-5 me-1">check_circle</span>分析結果：</h6>
+                    <div id="resultText" class="text-body" style="white-space: pre-wrap; line-height: 1.6;"></div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const imageInput = document.getElementById('imageInput');
+    const imagePreviewContainer = document.getElementById('imagePreviewContainer');
+    const imagePreview = document.getElementById('imagePreview');
+    const form = document.getElementById('aiCounterForm');
+    const submitBtn = document.getElementById('submitBtn');
+    const loadingState = document.getElementById('loadingState');
+    const resultBox = document.getElementById('resultBox');
+    const resultText = document.getElementById('resultText');
+
+    // 圖片預覽
+    imageInput.addEventListener('change', function() {
+        if (this.files && this.files[0]) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                imagePreview.src = e.target.result;
+                imagePreviewContainer.classList.remove('d-none');
+            }
+            reader.readAsDataURL(this.files[0]);
+        } else {
+            imagePreviewContainer.classList.add('d-none');
+        }
+    });
+
+    // 表單提交
+    form.addEventListener('submit', async function(e) {
+        e.preventDefault();
+        
+        // UI 狀態更新
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>分析中...';
+        loadingState.classList.remove('d-none');
+        resultBox.classList.add('d-none');
+
+        const formData = new FormData(form);
+
+        try {
+            const response = await fetch('{{ url_for("ai_counter.analyze") }}', {
+                method: 'POST',
+                body: formData
+            });
+
+            const data = await response.json();
+
+            if (response.ok) {
+                resultText.textContent = data.result;
+                resultBox.classList.remove('d-none');
+                resultBox.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            } else {
+                alert(data.error || '發生未知錯誤');
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            alert('網路連線失敗，請稍後再試。');
+        } finally {
+            // 恢復 UI
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = '<span class="material-icons align-middle me-1">auto_awesome</span> 開始分析';
+            loadingState.classList.add('d-none');
+        }
+    });
+</script>
+{% endblock %}

@@ -138,7 +138,9 @@ with app.app_context():
     app.register_blueprint(countdown_bp)
 
     from routes.vocab_routes import vocab_bp
+    from routes.ai_counter_routes import ai_counter_bp
     app.register_blueprint(vocab_bp, url_prefix='/vocab')
+    app.register_blueprint(ai_counter_bp, url_prefix='/ai-counter')
 
     from routes.custom_vocab_routes import custom_vocab_bp
     app.register_blueprint(custom_vocab_bp, url_prefix='/vocab')
