@@ -74,6 +74,7 @@ def inject_globals():
             'group.index': {'title': '群組', 'icon': 'group', 'ep_match': 'group'},
             'credit.index': {'title': '學分', 'icon': 'school', 'ep_match': 'credit'},
             'converter.index': {'title': '轉換器', 'icon': 'swap_horiz', 'ep_match': 'converter'},
+            'ai_counter.index': {'title': 'AI計數', 'icon': 'camera', 'ep_match': 'ai_counter'},
         }
         
         items = []
