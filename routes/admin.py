@@ -70,8 +70,8 @@ def dashboard():
 @login_required
 @admin_required
 def products():
-    published = Product.query.filter_by(status='published').order_by(Product.created_at.desc()).all()
-    drafts    = Product.query.filter_by(status='draft').order_by(Product.created_at.desc()).all()
+    published = Product.query.filter_by(status='published').order_by(Product.created_at.desc()).limit(500).all()
+    drafts    = Product.query.filter_by(status='draft').order_by(Product.created_at.desc()).limit(500).all()
     return render_template('admin/products.html', published=published, drafts=drafts,
                            sizes=Config.SIZES)
 
@@ -219,7 +219,7 @@ def bulk_toggle():
 @admin_required
 def export_products():
     """匯出已上架商品及圖片為 ZIP"""
-    products = Product.query.filter_by(status='published').order_by(Product.created_at.desc()).all()
+    products = Product.query.filter_by(status='published').order_by(Product.created_at.desc()).limit(1000).all()
     data = []
     
     # 建立 in-memory ZIP 檔案
@@ -369,7 +369,7 @@ def orders():
     q = Order.query.order_by(Order.created_at.desc())
     if status_filter:
         q = q.filter_by(status=status_filter)
-    all_orders = q.all()
+    all_orders = q.limit(500).all()
 
     today    = datetime.utcnow().date()
     week_ago = datetime.utcnow() - timedelta(days=7)
@@ -388,7 +388,7 @@ def orders():
 @admin_required
 def export_orders():
     """匯出未付款訂單為 CSV（已付款不匯出）"""
-    orders = Order.query.filter_by(is_paid=False).order_by(Order.created_at.desc()).all()
+    orders = Order.query.filter_by(is_paid=False).order_by(Order.created_at.desc()).limit(2000).all()
     output = io.StringIO()
     writer = csv.writer(output)
     writer.writerow(['訂單編號','日期','會員','狀態','付款','商品','尺寸','顏色','數量','單價','小計','備註'])
@@ -459,7 +459,7 @@ def clear_paid_orders():
 @login_required
 @admin_required
 def users():
-    all_users = User.query.order_by(User.created_at.desc()).all()
+    all_users = User.query.order_by(User.created_at.desc()).limit(500).all()
     return render_template('admin/users.html', users=all_users)
 
 

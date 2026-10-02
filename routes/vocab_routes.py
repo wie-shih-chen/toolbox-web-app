@@ -113,7 +113,7 @@ def settings():
 @vocab_bp.route('/history')
 @login_required
 def history():
-    logs = VocabHistoryLog.query.filter_by(user_id=current_user.id).order_by(VocabHistoryLog.created_at.desc()).all()
+    logs = VocabHistoryLog.query.filter_by(user_id=current_user.id).order_by(VocabHistoryLog.created_at.desc()).limit(3000).all()
     
     history_data = {}
     from datetime import timedelta
@@ -159,9 +159,17 @@ def api_words():
     
     # 歷史複習過濾
     if review_date:
-        from datetime import timedelta
-        logs = VocabHistoryLog.query.filter_by(user_id=current_user.id).all()
-        reviewed_words = [log.word for log in logs if (log.created_at + timedelta(hours=8)).strftime('%Y-%m-%d') == review_date]
+        from datetime import datetime, timedelta
+        target_date = datetime.strptime(review_date, '%Y-%m-%d')
+        start_utc = target_date - timedelta(hours=8)
+        end_utc = start_utc + timedelta(days=1)
+        
+        logs = VocabHistoryLog.query.filter(
+            VocabHistoryLog.user_id == current_user.id,
+            VocabHistoryLog.created_at >= start_utc,
+            VocabHistoryLog.created_at < end_utc
+        ).limit(3000).all()
+        reviewed_words = list(set([log.word for log in logs]))
         if not reviewed_words:
             return jsonify({'words': [], 'total': 0, 'offset': offset, 'length': 0})
         filters['in_words'] = reviewed_words
@@ -181,7 +189,7 @@ def api_words():
     # 取得使用者進度 map
     user_progress = {
         vp.word: {'correct': vp.correct, 'incorrect': vp.incorrect}
-        for vp in VocabProgress.query.filter_by(user_id=current_user.id).all()
+        for vp in VocabProgress.query.filter_by(user_id=current_user.id).limit(10000).all()
     }
     
     for w in page:
@@ -194,7 +202,7 @@ def api_words():
 @vocab_bp.route('/api/progress', methods=['GET'])
 @login_required
 def get_progress():
-    records = VocabProgress.query.filter_by(user_id=current_user.id).all()
+    records = VocabProgress.query.filter_by(user_id=current_user.id).limit(10000).all()
     result = {}
     for r in records:
         result[r.word] = {

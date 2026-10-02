@@ -20,21 +20,38 @@ def get_companies():
     # ?lite=1 skips the expensive upcoming schedule computation (used by settings page)
     lite = request.args.get('lite', '0') == '1'
     
+    # Pre-fetch all active reminders for all user's companies to avoid N+1 query
+    company_ids = [c.id for c in companies]
+    all_reminders = CompanyShiftReminder.query.filter(
+        CompanyShiftReminder.company_id.in_(company_ids),
+        CompanyShiftReminder.is_active == True
+    ).all() if company_ids else []
+    
+    reminders_by_company = {cid: [] for cid in company_ids}
+    for r in all_reminders:
+        reminders_by_company[r.company_id].append(r)
+        
+    # Pre-fetch all future shifts if we need to compute upcoming schedules
+    shifts_by_company = {cid: [] for cid in company_ids}
+    now_tw = datetime.utcnow() + timedelta(hours=8)
+    if not lite and company_ids:
+        today_str = now_tw.strftime('%Y-%m-%d')
+        all_shifts = SalaryRecord.query.filter(
+            SalaryRecord.company_id.in_(company_ids),
+            SalaryRecord.type == 'shift',
+            SalaryRecord.date >= today_str
+        ).all()
+        for s in all_shifts:
+            shifts_by_company[s.company_id].append(s)
+            
     result = []
     for c in companies:
-        reminders = CompanyShiftReminder.query.filter_by(company_id=c.id, is_active=True).all()
+        reminders = reminders_by_company.get(c.id, [])
         shift_reminders = [{'id': r.id, 'offset_minutes': r.offset_minutes, 'message_template': r.message_template} for r in reminders]
         
         upcoming_schedules = []
         if reminders and not lite:
-            now_tw = datetime.utcnow() + timedelta(hours=8)
-            today_str = now_tw.strftime('%Y-%m-%d')
-            shifts = SalaryRecord.query.filter(
-                SalaryRecord.company_id == c.id,
-                SalaryRecord.type == 'shift',
-                SalaryRecord.date >= today_str
-            ).all()
-            
+            shifts = shifts_by_company.get(c.id, [])
             for s in shifts:
                 try:
                     if s.start_time:
