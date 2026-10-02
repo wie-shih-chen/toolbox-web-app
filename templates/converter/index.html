@@ -491,7 +491,7 @@
     </div>
 
     <!-- Layout warning -->
-    <div id="layout-warning" style="display:none; background:rgba(255,180,0,0.08); border:1px solid rgba(255,180,0,0.25); border-radius:14px; padding:12px 16px; margin-bottom:16px; font-size:0.83rem; color:#ffd060; display:flex; align-items:flex-start; gap:10px;">
+    <div id="layout-warning" style="display:none; background:rgba(255,180,0,0.08); border:1px solid rgba(255,180,0,0.25); border-radius:14px; padding:12px 16px; margin-bottom:16px; font-size:0.83rem; color:#ffd060; align-items:flex-start; gap:10px;">
       <span class="material-icons" style="font-size:16px; margin-top:1px; flex-shrink:0;">warning_amber</span>
       <span id="layout-warning-text"></span>
     </div>
@@ -948,6 +948,11 @@ function resetDropzone(stateKey) {
   if(m) {
     document.getElementById(m.fi).value = '';
     document.getElementById(m.sel).style.display = 'none';
+  }
+  
+  if (stateKey === 'doc') {
+    const warnBox = document.getElementById('layout-warning');
+    if (warnBox) warnBox.style.display = 'none';
   }
 }
 
