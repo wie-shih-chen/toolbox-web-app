@@ -461,10 +461,20 @@ def register_line_handlers(handler):
             client = genai.Client(api_key=gemini_key)
             prompt = "你是一個幫助使用者計數與分析圖片內容的 AI 小幫手。請幫我仔細算算這張圖片裡有幾顆藥丸（或其他物品）？請先簡短說明你看到了什麼，然後給出一個精確的數量。"
             
-            response = client.models.generate_content(
-                model='gemini-3.8-flash',
-                contents=[prompt, img]
-            )
+            import time
+            response = None
+            for attempt in range(3):
+                try:
+                    response = client.models.generate_content(
+                        model='gemini-3.8-flash',
+                        contents=[prompt, img]
+                    )
+                    break
+                except Exception as e:
+                    if '503' in str(e) and attempt < 2:
+                        time.sleep(2)
+                        continue
+                    raise e
             
             LineService.push_message(user_id, response.text.strip())
             
