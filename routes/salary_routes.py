@@ -16,17 +16,17 @@ service = SalaryService()
 def get_companies():
     companies = Company.query.filter_by(user_id=current_user.id, is_active=True)\
         .order_by(Company.created_at.asc()).all()
+    
+    # ?lite=1 skips the expensive upcoming schedule computation (used by settings page)
+    lite = request.args.get('lite', '0') == '1'
+    
     result = []
     for c in companies:
         reminders = CompanyShiftReminder.query.filter_by(company_id=c.id, is_active=True).all()
-        shift_reminders = [{
-            'id': r.id,
-            'offset_minutes': r.offset_minutes,
-            'message_template': r.message_template
-        } for r in reminders]
+        shift_reminders = [{'id': r.id, 'offset_minutes': r.offset_minutes, 'message_template': r.message_template} for r in reminders]
         
         upcoming_schedules = []
-        if reminders:
+        if reminders and not lite:
             now_tw = datetime.utcnow() + timedelta(hours=8)
             today_str = now_tw.strftime('%Y-%m-%d')
             shifts = SalaryRecord.query.filter(
@@ -53,7 +53,6 @@ def get_companies():
             upcoming_schedules.sort(key=lambda x: x['notify_time'])
             upcoming_schedules = upcoming_schedules[:3]
             
-        
         result.append({
             'id': c.id,
             'name': c.name,
@@ -73,6 +72,7 @@ def get_companies():
             'default_end_time': c.default_end_time or '',
             'enable_overtime': c.enable_overtime
         })
+
     return jsonify(result)
 
 @salary_bp.route('/api/companies', methods=['POST'])

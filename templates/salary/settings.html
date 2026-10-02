@@ -392,7 +392,7 @@ document.addEventListener('DOMContentLoaded', () => {
 let companiesCache = [];
 
 async function loadCompanies() {
-    const res = await fetch('{{ url_for("salary.get_companies") }}');
+    const res = await fetch('{{ url_for("salary.get_companies") }}?lite=1');
     if (!res.ok) return;
     companiesCache = await res.json();
     renderCompanyList();
