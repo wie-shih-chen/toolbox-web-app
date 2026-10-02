@@ -85,6 +85,51 @@
         font-size: 0.9rem;
         width: 120px;
     }
+
+    /* ---- Shift Code Section ---- */
+    .shift-code-section-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 12px 14px;
+        background: linear-gradient(135deg, rgba(99,102,241,0.08) 0%, rgba(168,85,247,0.06) 100%);
+        border: 1px solid rgba(99,102,241,0.2);
+        border-radius: 10px;
+        margin-bottom: 8px;
+    }
+
+    .shift-code-section-header .label {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 0.9rem;
+        font-weight: 600;
+        color: rgba(168,85,247,0.9);
+    }
+
+    #cf-shift-codes-container {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+    }
+
+    .btn-add-code {
+        background: linear-gradient(135deg, rgba(99,102,241,0.15), rgba(168,85,247,0.1));
+        border: 1px solid rgba(99,102,241,0.3);
+        border-radius: 8px;
+        color: rgba(168,85,247,0.9);
+        font-size: 0.8rem;
+        padding: 5px 10px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        display: flex;
+        align-items: center;
+        gap: 4px;
+    }
+    .btn-add-code:hover {
+        background: linear-gradient(135deg, rgba(99,102,241,0.25), rgba(168,85,247,0.18));
+        border-color: rgba(99,102,241,0.5);
+    }
 </style>
 {% endblock %}
 
@@ -283,19 +328,29 @@
         </div>
 
         <!-- Shift Codes Section -->
-        <div class="settings-form-group" style="margin-top: 16px;">
-            <label style="display:flex; justify-content:space-between; align-items:center;">
-                <span>班別代碼對照表 (AI 匯入用)</span>
-                <button class="btn btn-secondary" onclick="addShiftCode()" style="padding: 4px 8px; font-size: 0.8rem;">+ 新增代碼</button>
-            </label>
-            <div id="cf-shift-codes-container" style="display:flex; flex-direction:column; gap: 8px; margin-top: 8px;">
+        <div class="settings-form-group" style="margin-top: 20px;">
+            <div class="shift-code-section-header">
+                <div class="label">
+                    <span class="material-icons" style="font-size: 18px;">table_chart</span>
+                    班別代碼對照表 <span style="font-size: 0.75rem; font-weight: 400; opacity: 0.7; margin-left: 4px;">(AI 匯入用)</span>
+                </div>
+                <button class="btn-add-code" onclick="addShiftCode()">
+                    <span class="material-icons" style="font-size: 14px;">add</span>
+                    新增代碼
+                </button>
+            </div>
+            <div id="cf-shift-codes-container">
                 <!-- Shift codes will be injected here -->
             </div>
-            <p class="settings-help-text">例如：「1N」= 09:00 ~ 21:00。AI 匯入班表時會自動將代碼轉換為實際時間。</p>
+            <p class="settings-help-text" style="margin-top: 8px;">
+                例如：「<strong style="color: rgba(168,85,247,0.9);">1N</strong>」→ 09:00 – 21:00。AI 匯入班表時會依代碼自動轉換時間。
+            </p>
         </div>
 
-        <div style="display: flex; gap: 10px; margin-top: 24px;">
-            <button class="btn btn-primary" style="flex: 1;" onclick="saveCompany()">儲存</button>
+        <div style="display: flex; gap: 10px; margin-top: 28px;">
+            <button class="btn btn-primary" style="flex: 1;" onclick="saveCompany()">
+                <span class="material-icons" style="vertical-align: middle; font-size: 18px; margin-right: 4px;">save</span>儲存
+            </button>
             <button class="btn btn-secondary" style="flex: 1;" onclick="closeCompanyForm()">取消</button>
         </div>
     </div>
@@ -814,7 +869,7 @@ function renderShiftCodes(shiftCodes) {
     const container = document.getElementById('cf-shift-codes-container');
     container.innerHTML = '';
     if (!shiftCodes || shiftCodes.length === 0) {
-        container.innerHTML = '<div style="color:var(--text-secondary); font-size:0.9rem; text-align:center; padding: 12px 0;">(尚未設定班別代碼)</div>';
+        showShiftCodeEmpty(container);
         return;
     }
     shiftCodes.forEach(s => {
@@ -822,27 +877,98 @@ function renderShiftCodes(shiftCodes) {
     });
 }
 
+function showShiftCodeEmpty(container) {
+    container.innerHTML = `
+        <div style="text-align:center; padding: 16px; color: var(--text-secondary); font-size: 0.85rem; border: 1px dashed rgba(255,255,255,0.1); border-radius: 8px;">
+            <span class="material-icons" style="display:block; font-size: 28px; margin-bottom: 6px; opacity: 0.4;">table_chart</span>
+            尚未設定班別代碼
+        </div>`;
+}
+
 function createShiftCodeRow(code = '', start = '', end = '') {
     const row = document.createElement('div');
     row.className = 'shift-code-row';
-    row.style.cssText = 'display:flex; gap:8px; align-items:center; background: rgba(255,255,255,0.03); border-radius: 8px; padding: 8px 10px; border: 1px solid rgba(255,255,255,0.08);';
-    row.innerHTML = `
-        <input type="text" class="settings-input sc-code" value="${code}" placeholder="代碼 e.g. 1N" style="width: 80px; padding: 4px 8px; text-align:center; font-weight: bold;">
-        <span style="color: var(--text-secondary); font-size: 0.85rem;">= </span>
-        <input type="time" class="settings-input sc-start" value="${start}" style="flex:1; padding: 4px 8px;">
-        <span style="color: var(--text-secondary);">~</span>
-        <input type="time" class="settings-input sc-end" value="${end}" style="flex:1; padding: 4px 8px;">
-        <button onclick="this.closest('.shift-code-row').remove(); if(!document.querySelector('.shift-code-row')) document.getElementById('cf-shift-codes-container').innerHTML='<div style=\"color:var(--text-secondary); font-size:0.9rem; text-align:center; padding: 12px 0;\">(尚未設定班別代碼)</div>';" style="background:none; border:none; color: var(--text-secondary); cursor:pointer; padding: 2px;"><span class="material-icons" style="font-size: 18px;">close</span></button>
+    row.style.cssText = `
+        display: flex; align-items: center; gap: 8px;
+        background: linear-gradient(135deg, rgba(99,102,241,0.08) 0%, rgba(168,85,247,0.06) 100%);
+        border: 1px solid rgba(99,102,241,0.25);
+        border-radius: 10px; padding: 10px 12px;
+        transition: all 0.2s ease;
     `;
+
+    // Badge label
+    const badge = document.createElement('span');
+    badge.style.cssText = 'font-size:0.7rem; color: rgba(168,85,247,0.8); text-transform:uppercase; letter-spacing:1px; white-space:nowrap; flex-shrink:0;';
+    badge.textContent = '代碼';
+    row.appendChild(badge);
+
+    // Code input
+    const codeInput = document.createElement('input');
+    codeInput.type = 'text';
+    codeInput.className = 'settings-input sc-code';
+    codeInput.value = code;
+    codeInput.placeholder = '1N';
+    codeInput.style.cssText = 'width: 64px; padding: 5px 8px; text-align:center; font-weight: 700; font-size: 1rem; letter-spacing: 1px; border-color: rgba(99,102,241,0.3); flex-shrink:0;';
+    row.appendChild(codeInput);
+
+    // Arrow
+    const arrow = document.createElement('span');
+    arrow.style.cssText = 'color: rgba(99,102,241,0.6); font-size: 1rem; flex-shrink:0;';
+    arrow.innerHTML = '→';
+    row.appendChild(arrow);
+
+    // Start time input
+    const startInput = document.createElement('input');
+    startInput.type = 'time';
+    startInput.className = 'settings-input sc-start';
+    startInput.value = start;
+    startInput.style.cssText = 'flex:1; padding: 5px 8px; min-width: 0;';
+    row.appendChild(startInput);
+
+    // Separator
+    const sep = document.createElement('span');
+    sep.style.cssText = 'color: var(--text-secondary); flex-shrink:0;';
+    sep.textContent = '–';
+    row.appendChild(sep);
+
+    // End time input
+    const endInput = document.createElement('input');
+    endInput.type = 'time';
+    endInput.className = 'settings-input sc-end';
+    endInput.value = end;
+    endInput.style.cssText = 'flex:1; padding: 5px 8px; min-width: 0;';
+    row.appendChild(endInput);
+
+    // Delete button
+    const delBtn = document.createElement('button');
+    delBtn.type = 'button';
+    delBtn.title = '刪除';
+    delBtn.style.cssText = 'background: rgba(248,113,113,0.1); border: 1px solid rgba(248,113,113,0.2); border-radius: 6px; color: rgba(248,113,113,0.8); cursor:pointer; padding: 4px 6px; flex-shrink:0; transition: all 0.2s ease; line-height:1; display:flex; align-items:center;';
+    delBtn.innerHTML = '<span class="material-icons" style="font-size: 16px;">close</span>';
+    delBtn.addEventListener('mouseenter', () => { delBtn.style.background = 'rgba(248,113,113,0.2)'; delBtn.style.color = '#f87171'; });
+    delBtn.addEventListener('mouseleave', () => { delBtn.style.background = 'rgba(248,113,113,0.1)'; delBtn.style.color = 'rgba(248,113,113,0.8)'; });
+    delBtn.addEventListener('click', () => {
+        row.remove();
+        const container = document.getElementById('cf-shift-codes-container');
+        if (!container.querySelector('.shift-code-row')) {
+            showShiftCodeEmpty(container);
+        }
+    });
+    row.appendChild(delBtn);
+
     return row;
 }
 
 function addShiftCode() {
     const container = document.getElementById('cf-shift-codes-container');
-    const placeholder = container.querySelector('div');
-    if (placeholder) container.innerHTML = '';
-    container.appendChild(createShiftCodeRow());
+    // Remove placeholder if present
+    const placeholder = container.querySelector('div:not(.shift-code-row)');
+    if (placeholder && !container.querySelector('.shift-code-row')) container.innerHTML = '';
+    const newRow = createShiftCodeRow();
+    container.appendChild(newRow);
+    newRow.querySelector('.sc-code').focus();
 }
+
 
 async function deleteCompany(id, name) {
     if (!confirm(`確定要刪除「${name}」嗎？`)) return;
