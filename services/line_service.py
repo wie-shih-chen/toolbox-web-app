@@ -24,7 +24,7 @@ class LineService:
         return cls._handler
 
     @classmethod
-    def push_message(cls, user_id, text, quick_reply=None):
+    def push_message(cls, user_id, text, quick_reply=None, reply_token=None):
         if not cls._line_bot_api:
             return False
             
@@ -33,32 +33,50 @@ class LineService:
             max_length = 4000
             
             if len(text) <= max_length:
-                cls._line_bot_api.push_message(user_id, TextSendMessage(text=text, quick_reply=quick_reply))
+                msg = TextSendMessage(text=text, quick_reply=quick_reply)
+                if reply_token:
+                    cls._line_bot_api.reply_message(reply_token, msg)
+                else:
+                    cls._line_bot_api.push_message(user_id, msg)
             else:
                 # Split into chunks
                 chunks = [text[i:i+max_length] for i in range(0, len(text), max_length)]
+                messages = []
                 for i, chunk in enumerate(chunks):
                     # Only add quick reply to the last chunk
                     qr = quick_reply if i == len(chunks) - 1 else None
-                    cls._line_bot_api.push_message(user_id, TextSendMessage(text=chunk, quick_reply=qr))
+                    messages.append(TextSendMessage(text=chunk, quick_reply=qr))
+                
+                if reply_token:
+                    # reply_message can take up to 5 messages at once
+                    cls._line_bot_api.reply_message(reply_token, messages[:5])
+                    if len(messages) > 5:
+                        for m in messages[5:]:
+                            cls._line_bot_api.push_message(user_id, m)
+                else:
+                    for m in messages:
+                        cls._line_bot_api.push_message(user_id, m)
                     
             return True
         except Exception as e:
-            print(f"LINE Push Error: {e}")
+            print(f"LINE Push/Reply Error: {e}")
             return False
 
     @classmethod
-    def push_flex(cls, user_id, alt_text, flex_contents, quick_reply=None):
+    def push_flex(cls, user_id, alt_text, flex_contents, quick_reply=None, reply_token=None):
         """Send a Flex Message card. flex_contents is a dict (bubble/carousel)"""
         if not cls._line_bot_api:
             return False
         try:
             from linebot.models import FlexSendMessage
             message = FlexSendMessage(alt_text=alt_text, contents=flex_contents, quick_reply=quick_reply)
-            cls._line_bot_api.push_message(user_id, message)
+            if reply_token:
+                cls._line_bot_api.reply_message(reply_token, message)
+            else:
+                cls._line_bot_api.push_message(user_id, message)
             return True
         except Exception as e:
-            print(f"LINE Push Flex Error: {e}")
+            print(f"LINE Push/Reply Flex Error: {e}")
             return False
 
     @classmethod
