@@ -146,6 +146,44 @@ class FlexMessageService:
         }
 
     @staticmethod
+    def build_action_confirm(intent_name, display_fields):
+        """建立等待使用者確認寫入的 Flex Message"""
+        contents = [
+            {"type": "text", "text": "🤖 AI 解析完成", "weight": "bold", "color": "#f59e0b", "size": "sm"},
+            {"type": "text", "text": f"準備記錄{intent_name}", "weight": "bold", "size": "xl", "margin": "md"}
+        ]
+        
+        info_rows = []
+        for label, val in display_fields.items():
+            info_rows.append({
+                "type": "box", "layout": "baseline", "spacing": "sm", "contents": [
+                    {"type": "text", "text": label, "color": "#aaaaaa", "size": "sm", "flex": 3},
+                    {"type": "text", "text": str(val), "wrap": True, "color": "#666666", "size": "sm", "flex": 7}
+                ]
+            })
+            
+        contents.append({"type": "box", "layout": "vertical", "margin": "lg", "spacing": "sm", "contents": info_rows})
+        
+        return {
+            "type": "bubble", "size": "kilo",
+            "body": {
+                "type": "box", "layout": "vertical", "contents": contents
+            },
+            "footer": {
+                "type": "box", "layout": "horizontal", "spacing": "sm", "contents": [
+                    {
+                        "type": "button", "style": "primary", "height": "sm", "color": "#1DB446",
+                        "action": {"type": "postback", "label": "✅ 確認", "data": "action=confirm_write"}
+                    },
+                    {
+                        "type": "button", "style": "secondary", "height": "sm",
+                        "action": {"type": "postback", "label": "❌ 取消", "data": "action=cancel_write"}
+                    }
+                ]
+            }
+        }
+
+    @staticmethod
     def build_salary_confirm(record_type, date, amount, hours=0, start_time=None, end_time=None, note=None, ai=False):
         """建立薪資紀錄成功的確認卡片"""
         title = "打工排班" if record_type == 'shift' else "獎金/其他"

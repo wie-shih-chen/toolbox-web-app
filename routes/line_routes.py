@@ -1,7 +1,7 @@
 from flask import Blueprint, request, abort, current_app
 from linebot import LineBotApi, WebhookHandler
 from linebot.exceptions import InvalidSignatureError
-from linebot.models import MessageEvent, TextMessage, TextSendMessage, ImageMessage
+from linebot.models import MessageEvent, TextMessage, TextSendMessage, ImageMessage, PostbackEvent
 from services.line_service import LineService
 from models import db, UserSettings, LineBinding, User
 import os, json
@@ -157,6 +157,36 @@ def register_line_handlers(handler):
                 LineService.push_flex(user_id, alt or '工具箱通知', payload)
             else:
                 LineService.push_message(user_id, payload)
+                
+        def _send_confirmation(action, data):
+            _save_session('CONFIRMING', action, data, [])
+            intent_names = {'expense': '記帳', 'shift': '排班', 'bonus': '獎金', 'period': '生理期', 'countdown': '倒數/紀念日'}
+            name = intent_names.get(action, '')
+            from services.flex_message_service import FlexMessageService
+            
+            display = {}
+            if action == 'expense':
+                display['項目'] = data.get('name', '')
+                display['金額'] = f"${data.get('amount', 0)}"
+                display['日期'] = data.get('date', '')
+                display['類別'] = data.get('category', '')
+            elif action == 'shift':
+                display['日期'] = data.get('date', '')
+                display['時間'] = f"{data.get('start_time', '')} ~ {data.get('end_time', '')}"
+            elif action == 'bonus':
+                display['日期'] = data.get('date', '')
+                display['金額'] = f"${data.get('amount', 0)}"
+                display['備註'] = data.get('note', '')
+            elif action == 'period':
+                display['狀態'] = '開始' if data.get('type') == 'start' else '結束'
+                display['日期'] = data.get('date', '')
+            elif action == 'countdown':
+                display['名稱'] = data.get('title', '')
+                display['日期'] = data.get('target_date', '')
+                
+            display = {k: v for k, v in display.items() if v}
+            flex = FlexMessageService.build_action_confirm(name, display)
+            LineService.push_flex(user_id, f"確認{name}", flex)
 
         # ── 4. 取消指令：清除 session ────────────────────────────────────
         if msg in ("取消", "算了", "不用了", "cancel", "Cancel"):
@@ -208,10 +238,8 @@ def register_line_handlers(handler):
                 _save_session('COLLECTING', intent, collected, still_missing)
                 LineService.push_message(user_id, build_question(still_missing[0]))
             else:
-                # 資料齊全，執行寫入
-                _reset_session()
-                result = execute_write(intent, collected, user_obj, setting, has_perm)
-                _push_result(result)
+                # 資料齊全，送出確認卡片
+                _send_confirmation(intent, collected)
             return
 
         # ── 6. IDLE：只保留兩個無需 AI 的固定指令快速通道 ──────────────
@@ -404,9 +432,8 @@ def register_line_handlers(handler):
         if action in ('expense', 'shift', 'bonus', 'period', 'countdown'):
             missing = get_missing_fields(action, data)
             if not missing:
-                # 資料齊全，直接寫入
-                result = execute_write(action, data, user_obj, setting, has_perm)
-                _push_result(result)
+                # 資料齊全，送出確認卡片
+                _send_confirmation(action, data)
             else:
                 # 資料不足，建立 session 開始追問
                 _save_session('COLLECTING', action, data, missing)
@@ -493,5 +520,64 @@ def register_line_handlers(handler):
         except Exception as e:
             current_app.logger.error(f"[line_routes] 圖片處理失敗: {e}")
             LineService.push_message(user_id, "❌ AI 圖片分析失敗，請稍後再試。")
+
+    @handler.add(PostbackEvent)
+    def handle_postback(event):
+        user_id = event.source.user_id
+        postback_data = event.postback.data
+        
+        from urllib.parse import parse_qs
+        qs = parse_qs(postback_data)
+        action = qs.get('action', [''])[0]
+        
+        from models import LineConversationSession
+        session = LineConversationSession.query.filter_by(line_user_id=user_id).first()
+        if not session or session.state != 'CONFIRMING':
+            if action in ('confirm_write', 'cancel_write'):
+                LineService.push_message(user_id, "💡 這個確認動作已經過期或處理過囉，請重新輸入！")
+            return
+            
+        if action == 'cancel_write':
+            session.state = 'IDLE'
+            session.intent = None
+            session.collected_data = '{}'
+            session.pending_fields = '[]'
+            db.session.commit()
+            LineService.push_message(user_id, "✅ 已取消，隨時可以重新開始！")
+            
+        elif action == 'confirm_write':
+            intent = session.intent
+            try:
+                collected = json.loads(session.collected_data)
+            except:
+                collected = {}
+                
+            binding = LineBinding.query.filter_by(line_user_id=user_id).first()
+            user_obj = User.query.get(binding.user_id) if binding else None
+            setting = UserSettings.query.filter_by(user_id=binding.user_id).first() if binding else None
+            
+            def has_perm(perm):
+                try:
+                    perms = json.loads(binding.permissions or '[]')
+                    return perm in perms
+                except: return False
+                
+            from services.ai_chat_service import execute_write
+            result = execute_write(intent, collected, user_obj, setting, has_perm)
+            
+            # Reset session after write
+            session.state = 'IDLE'
+            session.intent = None
+            session.collected_data = '{}'
+            session.pending_fields = '[]'
+            db.session.commit()
+            
+            rtype, payload, alt = result
+            if rtype == 'error':
+                LineService.push_message(user_id, payload)
+            elif rtype == 'flex':
+                LineService.push_flex(user_id, alt or '工具箱通知', payload)
+            else:
+                LineService.push_message(user_id, payload)
 
 
