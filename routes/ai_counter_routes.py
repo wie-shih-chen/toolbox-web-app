@@ -1,7 +1,7 @@
 from flask import Blueprint, render_template, request, jsonify, current_app
 from flask_login import login_required
 from google import genai
-import io
+import io, json
 from PIL import Image
 
 ai_counter_bp = Blueprint('ai_counter', __name__)
@@ -29,10 +29,10 @@ def analyze():
         img_bytes = file.read()
         img = Image.open(io.BytesIO(img_bytes))
         
-        # 轉換為 RGB 並調整大小，避免大圖片造成 503 OOM
         if img.mode != 'RGB':
             img = img.convert('RGB')
         img.thumbnail((1024, 1024), Image.Resampling.LANCZOS)
+        img_w, img_h = img.size
         
         output_io = io.BytesIO()
         img.save(output_io, format='JPEG', quality=85)
@@ -42,7 +42,24 @@ def analyze():
         image_part = types.Part.from_bytes(data=compressed_bytes, mime_type='image/jpeg')
         
         client = genai.Client(api_key=gemini_key)
-        prompt = "你是一個幫助使用者計數與分析圖片內容的 AI 小幫手。請幫我仔細算算這張圖片裡有幾顆藥丸（或其他物品）？請先簡短說明你看到了什麼，然後給出一個精確的數量。"
+
+        # 請 Gemini 回傳每個物件的 bounding box（normalized 0~1000）
+        prompt = """請仔細辨識這張圖片中的所有物件（例如藥丸、零件、水果等）。
+對每一個可辨識的物件，輸出其標準化邊框座標（範圍 0~1000，左上角為 0,0）。
+
+請只回傳以下格式的 JSON，不要有任何說明文字或 markdown：
+{
+  "objects": [
+    {"box": [ymin, xmin, ymax, xmax]},
+    ...
+  ],
+  "total": 數量
+}
+
+注意：
+- box 格式為 [ymin, xmin, ymax, xmax]，值域均為 0~1000
+- objects 陣列長度必須等於 total
+- 若物件太多（超過 200 個），抽樣計數並在 total 填入估計總數即可"""
         
         import time
         response = None
@@ -55,11 +72,27 @@ def analyze():
                 break
             except Exception as e:
                 if '503' in str(e) and attempt < 2:
-                    time.sleep(2)  # 等待 2 秒後重試
+                    time.sleep(2)
                     continue
                 raise e
         
-        return jsonify({'result': response.text.strip()})
+        raw = response.text.strip()
+        # 清理 markdown 包裝
+        if '```' in raw:
+            parts = raw.split('```')
+            raw = parts[1] if len(parts) > 1 else parts[0]
+            if raw.startswith('json'):
+                raw = raw[4:]
+        raw = raw.strip()
+
+        parsed = json.loads(raw)
+        return jsonify({
+            'objects': parsed.get('objects', []),
+            'total':   parsed.get('total', 0),
+            'img_w':   img_w,
+            'img_h':   img_h,
+        })
+
     except Exception as e:
         current_app.logger.error(f"[AI Counter] 分析失敗: {e}")
         return jsonify({'error': f'分析失敗: {e}'}), 500

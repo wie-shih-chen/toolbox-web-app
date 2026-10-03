@@ -5,7 +5,7 @@
 {% block extra_css %}
 <style>
   .counter-page {
-    max-width: 600px;
+    max-width: 620px;
     margin: 0 auto;
     padding-bottom: 60px;
     animation: fade-in 0.4s ease-out;
@@ -68,21 +68,6 @@
     font-size: 0.82rem;
     color: var(--text-secondary);
   }
-  #imagePreviewContainer {
-    display: none;
-    margin-top: 16px;
-    text-align: center;
-    border-radius: 12px;
-    overflow: hidden;
-    background: rgba(0,0,0,0.2);
-    padding: 10px;
-  }
-  #imagePreview {
-    max-width: 100%;
-    max-height: 300px;
-    border-radius: 8px;
-    object-fit: contain;
-  }
   .btn-convert {
     width: 100%;
     padding: 14px;
@@ -108,42 +93,55 @@
     opacity: 0.5;
     cursor: not-allowed;
   }
-  
-  .result-card {
+
+  /* Canvas result area */
+  #resultSection {
     display: none;
-    background: rgba(46,213,115,0.08);
-    border: 1px solid rgba(46,213,115,0.25);
-    border-radius: 16px;
-    padding: 20px;
     margin-top: 20px;
   }
-  .result-header {
+  #canvasWrapper {
+    position: relative;
+    border-radius: 14px;
+    overflow: hidden;
+    background: rgba(0,0,0,0.2);
+    line-height: 0;
+  }
+  #resultCanvas {
+    width: 100%;
+    height: auto;
+    display: block;
+    border-radius: 14px;
+  }
+  .count-badge {
+    margin-top: 16px;
     display: flex;
     align-items: center;
-    gap: 10px;
-    margin-bottom: 14px;
+    justify-content: center;
+    gap: 12px;
+    background: rgba(78,205,196,0.12);
+    border: 1px solid rgba(78,205,196,0.3);
+    border-radius: 14px;
+    padding: 16px 24px;
   }
-  .result-icon {
-    font-size: 1.6rem;
-    color: var(--success-color);
+  .count-number {
+    font-size: 2.8rem;
+    font-weight: 900;
+    color: var(--accent-color);
+    line-height: 1;
   }
-  .result-title {
-    font-weight: 700;
+  .count-label {
     font-size: 1rem;
-    color: #fff;
-  }
-  #resultText {
-    font-size: 0.95rem;
-    color: rgba(255,255,255,0.9);
-    white-space: pre-wrap;
-    line-height: 1.6;
+    color: rgba(255,255,255,0.7);
+    font-weight: 500;
   }
   .error-card {
     background: rgba(255,107,107,0.08);
-    border-color: rgba(255,107,107,0.25);
-  }
-  .error-card .result-icon, .error-card .result-title {
-    color: var(--danger-color);
+    border: 1px solid rgba(255,107,107,0.25);
+    border-radius: 14px;
+    padding: 16px 20px;
+    margin-top: 16px;
+    color: #ff6b6b;
+    font-size: 0.95rem;
   }
 </style>
 {% endblock %}
@@ -152,7 +150,7 @@
 <div class="counter-page">
     <div class="counter-header">
         <h1>AI 拍照計數</h1>
-        <p>上傳圖片，讓 AI 幫你自動算出物品數量</p>
+        <p>上傳圖片，讓 AI 幫你自動圈出並計算物品數量</p>
     </div>
 
     <div class="conv-card">
@@ -164,56 +162,67 @@
                 <div class="dz-sub">支援 JPG, PNG 等常見格式</div>
             </div>
 
-            <div id="imagePreviewContainer">
-                <img id="imagePreview" src="" alt="預覽圖片">
-            </div>
-
             <button type="submit" id="submitBtn" class="btn-convert">
                 <span class="material-icons">auto_awesome</span> 開始分析
             </button>
         </form>
-        
-        <div id="resultBox" class="result-card">
-            <div class="result-header">
-                <span class="material-icons result-icon">check_circle</span>
-                <span class="result-title">分析結果</span>
+
+        <!-- Result Section -->
+        <div id="resultSection">
+            <div id="canvasWrapper">
+                <canvas id="resultCanvas"></canvas>
             </div>
-            <div id="resultText"></div>
+            <div class="count-badge">
+                <div class="count-number" id="countNumber">0</div>
+                <div class="count-label">個物件</div>
+            </div>
         </div>
+
+        <div id="errorCard" class="error-card" style="display:none;"></div>
     </div>
 </div>
 
 <script>
-    const imageInput = document.getElementById('imageInput');
-    const imagePreviewContainer = document.getElementById('imagePreviewContainer');
-    const imagePreview = document.getElementById('imagePreview');
-    const form = document.getElementById('aiCounterForm');
-    const submitBtn = document.getElementById('submitBtn');
-    const resultBox = document.getElementById('resultBox');
-    const resultText = document.getElementById('resultText');
-    const resultIcon = resultBox.querySelector('.result-icon');
-    const resultTitle = resultBox.querySelector('.result-title');
+    const imageInput  = document.getElementById('imageInput');
+    const form        = document.getElementById('aiCounterForm');
+    const submitBtn   = document.getElementById('submitBtn');
+    const resultSection = document.getElementById('resultSection');
+    const canvas      = document.getElementById('resultCanvas');
+    const ctx         = canvas.getContext('2d');
+    const countNumber = document.getElementById('countNumber');
+    const errorCard   = document.getElementById('errorCard');
+
+    // Store loaded image so we can draw on it after analysis
+    let loadedImage = null;
 
     imageInput.addEventListener('change', function() {
         if (this.files && this.files[0]) {
             const reader = new FileReader();
             reader.onload = function(e) {
-                imagePreview.src = e.target.result;
-                imagePreviewContainer.style.display = 'block';
-            }
+                const img = new Image();
+                img.onload = () => {
+                    loadedImage = img;
+                    // Preview without boxes
+                    canvas.width  = img.naturalWidth;
+                    canvas.height = img.naturalHeight;
+                    ctx.drawImage(img, 0, 0);
+                    resultSection.style.display = 'block';
+                    countNumber.textContent = '—';
+                };
+                img.src = e.target.result;
+            };
             reader.readAsDataURL(this.files[0]);
-        } else {
-            imagePreviewContainer.style.display = 'none';
         }
-        resultBox.style.display = 'none';
+        errorCard.style.display = 'none';
     });
 
     form.addEventListener('submit', async function(e) {
         e.preventDefault();
-        
+        if (!imageInput.files || !imageInput.files[0]) return;
+
         submitBtn.disabled = true;
-        submitBtn.innerHTML = '<span class="material-icons" style="animation: spin 1s linear infinite;">hourglass_empty</span> 分析中...';
-        resultBox.style.display = 'none';
+        submitBtn.innerHTML = '<span class="material-icons" style="animation:spin 1s linear infinite">hourglass_empty</span> 分析中...';
+        errorCard.style.display = 'none';
 
         const formData = new FormData(form);
 
@@ -223,45 +232,112 @@
                 body: formData
             });
 
-            resultBox.style.display = 'block';
             if (response.ok) {
                 const data = await response.json();
-                resultBox.className = 'result-card';
-                resultIcon.textContent = 'check_circle';
-                resultTitle.textContent = '分析結果';
-                resultText.textContent = data.result;
+                drawResults(data);
             } else {
-                let errorMsg = '發生未知錯誤';
-                try {
-                    const data = await response.json();
-                    errorMsg = data.error || errorMsg;
-                } catch(e) {
-                    errorMsg = '伺服器無回應 (狀態碼 ' + response.status + ')';
-                }
-                resultBox.className = 'result-card error-card';
-                resultIcon.textContent = 'error';
-                resultTitle.textContent = '分析失敗';
-                resultText.textContent = errorMsg;
+                const data = await response.json().catch(() => ({}));
+                showError(data.error || '伺服器回傳錯誤 ' + response.status);
             }
-        } catch (error) {
-            console.error('Error:', error);
-            resultBox.style.display = 'block';
-            resultBox.className = 'result-card error-card';
-            resultIcon.textContent = 'wifi_off';
-            resultTitle.textContent = '網路錯誤';
-            resultText.textContent = '連線失敗，請稍後再試。';
+        } catch (err) {
+            showError('連線失敗，請稍後再試。');
         } finally {
             submitBtn.disabled = false;
             submitBtn.innerHTML = '<span class="material-icons">auto_awesome</span> 重新分析';
         }
     });
 
-    // Add spin keyframe dynamically if not present
+    function drawResults(data) {
+        const objects = data.objects || [];
+        const total   = data.total   || objects.length;
+
+        if (!loadedImage) return;
+
+        const W = loadedImage.naturalWidth;
+        const H = loadedImage.naturalHeight;
+
+        canvas.width  = W;
+        canvas.height = H;
+
+        // Draw original image
+        ctx.drawImage(loadedImage, 0, 0);
+
+        // Color palette (cycle)
+        const COLORS = [
+            '#FF5252','#FF9800','#FFEB3B','#4CAF50','#00BCD4',
+            '#3F51B5','#9C27B0','#E91E63','#00E5FF','#76FF03'
+        ];
+
+        // Hue-based radius: estimate radius from box size (ellipse per object)
+        objects.forEach((obj, idx) => {
+            const [yn, xn, yn2, xn2] = obj.box;   // normalized 0~1000
+
+            // Convert to pixel coords
+            const x1 = xn  / 1000 * W;
+            const y1 = yn  / 1000 * H;
+            const x2 = xn2 / 1000 * W;
+            const y2 = yn2 / 1000 * H;
+
+            const cx = (x1 + x2) / 2;
+            const cy = (y1 + y2) / 2;
+            const rx = Math.max((x2 - x1) / 2, 6);
+            const ry = Math.max((y2 - y1) / 2, 6);
+
+            const color = COLORS[idx % COLORS.length];
+
+            // Draw ellipse outline
+            ctx.beginPath();
+            ctx.ellipse(cx, cy, rx, ry, 0, 0, Math.PI * 2);
+            ctx.strokeStyle = color;
+            ctx.lineWidth = Math.max(2, Math.min(rx, ry) * 0.18);
+            ctx.shadowColor = 'rgba(0,0,0,0.7)';
+            ctx.shadowBlur = 4;
+            ctx.stroke();
+            ctx.shadowBlur = 0;
+
+            // Label: small circle at center with number
+            const label = String(idx + 1);
+            const fontSize = Math.max(9, Math.min(rx, ry) * 0.7);
+            ctx.font = `bold ${fontSize}px sans-serif`;
+            const textW = ctx.measureText(label).width;
+            const padX = Math.max(textW / 2 + 3, 6);
+            const padY = fontSize * 0.6;
+
+            // Background pill
+            ctx.fillStyle = color;
+            ctx.globalAlpha = 0.85;
+            ctx.beginPath();
+            ctx.roundRect(cx - padX, cy - padY, padX * 2, padY * 2, padY);
+            ctx.fill();
+            ctx.globalAlpha = 1;
+
+            // Number text
+            ctx.fillStyle = '#000';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(label, cx, cy);
+        });
+
+        // Reset canvas state
+        ctx.textAlign = 'left';
+        ctx.textBaseline = 'alphabetic';
+
+        // Update count badge
+        countNumber.textContent = total;
+        resultSection.style.display = 'block';
+    }
+
+    function showError(msg) {
+        errorCard.textContent = '❌ ' + msg;
+        errorCard.style.display = 'block';
+    }
+
+    // Spin keyframe
     if (!document.querySelector('style#spinKeyframe')) {
-        const style = document.createElement('style');
-        style.id = 'spinKeyframe';
-        style.textContent = '@keyframes spin { 100% { transform: rotate(360deg); } }';
-        document.head.appendChild(style);
+        const s = document.createElement('style');
+        s.id = 'spinKeyframe';
+        s.textContent = '@keyframes spin { 100% { transform: rotate(360deg); } }';
+        document.head.appendChild(s);
     }
 </script>
 {% endblock %}
