@@ -173,12 +173,13 @@ def register_line_handlers(handler):
             """統一處理 execute_write / execute_query 的回傳結果。"""
             rtype, payload, alt = result
             qr = get_quick_replies(intent)
+            token = getattr(event, 'reply_token', None)
             if rtype == 'error':
-                LineService.push_message(user_id, payload, quick_reply=qr)
+                LineService.push_message(user_id, payload, quick_reply=qr, reply_token=token)
             elif rtype == 'flex':
-                LineService.push_flex(user_id, alt or '工具箱通知', payload, quick_reply=qr)
+                LineService.push_flex(user_id, alt or '工具箱通知', payload, quick_reply=qr, reply_token=token)
             else:
-                LineService.push_message(user_id, payload, quick_reply=qr)
+                LineService.push_message(user_id, payload, quick_reply=qr, reply_token=token)
 
         def _send_confirmation(action, data):
             _save_session('CONFIRMING', action, data, [])
@@ -208,15 +209,17 @@ def register_line_handlers(handler):
                 
             display = {k: v for k, v in display.items() if v}
             flex = FlexMessageService.build_action_confirm(name, display)
-            LineService.push_flex(user_id, f"確認{name}", flex)
+            token = getattr(event, 'reply_token', None)
+            LineService.push_flex(user_id, f"確認{name}", flex, reply_token=token)
 
         # ── 4. 取消指令：清除 session ────────────────────────────────────
         if msg in ("取消", "算了", "不用了", "cancel", "Cancel"):
+            token = getattr(event, 'reply_token', None)
             if session.state == 'COLLECTING':
                 _reset_session()
-                LineService.push_message(user_id, "✅ 已取消，隨時可以重新開始！")
+                LineService.push_message(user_id, "✅ 已取消，隨時可以重新開始！", reply_token=token)
             else:
-                LineService.push_message(user_id, "💡 目前沒有進行中的操作喔！")
+                LineService.push_message(user_id, "💡 目前沒有進行中的操作喔！", reply_token=token)
             return
 
         # ── 5. COLLECTING 狀態：AI 繼續填入欄位 ─────────────────────────
@@ -329,23 +332,23 @@ def register_line_handlers(handler):
                     category = parts[3] if len(parts) >= 4 else '飲食'
                     if not name:
                         if not has_perm('expense'):
-                            LineService.push_message(user_id, '⛔ 此帳號無記帳權限，請聯絡帳號擁有者開啟。')
+                            LineService.push_message(user_id, '⛔ 此帳號無記帳權限，請聯絡帳號擁有者開啟。', reply_token=getattr(event, 'reply_token', None))
                             return
                         from services.ai_chat_service import build_question
                         _save_session('COLLECTING', 'expense',
                                       {'amount': amount, 'category': category}, ['name'])
                         LineService.push_message(user_id,
-                            f'⚠️ 記帳項目名稱是必填的！\n\n{build_question("name")}')
+                            f'⚠️ 記帳項目名稱是必填的！\n\n{build_question("name")}', reply_token=getattr(event, 'reply_token', None))
                     else:
                         from services.ai_chat_service import execute_write
                         result = execute_write('expense',
                             {'amount': amount, 'name': name, 'category': category},
                             user_obj, setting, has_perm)
-                        _push_result(result)
+                        _push_result(result, 'expense')
                 except ValueError:
-                    LineService.push_message(user_id, _expense_fmt)
+                    LineService.push_message(user_id, _expense_fmt, reply_token=getattr(event, 'reply_token', None))
             else:
-                LineService.push_message(user_id, _expense_fmt)
+                LineService.push_message(user_id, _expense_fmt, reply_token=getattr(event, 'reply_token', None))
             return
 
         # 6d. 快速排班：排班 <開始> <結束> [YYYY-MM-DD]
@@ -557,8 +560,11 @@ def register_line_handlers(handler):
             from services.flex_message_service import FlexMessageService
             LineService.push_flex(user_id, "工具箱說明 — 左右滑動查看所有功能", FlexMessageService.build_help_carousel())
             return
-        elif action in ('start_expense', 'start_shift'):
-            # openKeyboard 已經自動開啟輸入法，我們不需要特別回覆
+        elif action == 'start_expense':
+            LineService.push_message(user_id, "好的！請直接輸入你的記帳內容，例如：\n「午餐 150」\n「搭高鐵 1200 交通」")
+            return
+        elif action == 'start_shift':
+            LineService.push_message(user_id, "好的！請直接輸入你的排班時間，例如：\n「排班 14:00 21:00」\n「明天排班 1000 1800」")
             return
         
         from models import LineConversationSession
@@ -605,11 +611,12 @@ def register_line_handlers(handler):
             
             rtype, payload, alt = result
             qr = get_quick_replies(intent)
+            token = getattr(event, 'reply_token', None)
             if rtype == 'error':
-                LineService.push_message(user_id, payload, quick_reply=qr)
+                LineService.push_message(user_id, payload, quick_reply=qr, reply_token=token)
             elif rtype == 'flex':
-                LineService.push_flex(user_id, alt or '工具箱通知', payload, quick_reply=qr)
+                LineService.push_flex(user_id, alt or '工具箱通知', payload, quick_reply=qr, reply_token=token)
             else:
-                LineService.push_message(user_id, payload, quick_reply=qr)
+                LineService.push_message(user_id, payload, quick_reply=qr, reply_token=token)
 
 
