@@ -35,6 +35,27 @@ def callback():
 # or just define it here. Since handler is global in LineService, we need to register creates there or use a local one.
 # For simplicity in this structure, we'll define a function to register handlers.
 
+def get_quick_replies(intent=None):
+    from linebot.models import QuickReply, QuickReplyButton, MessageAction
+    items = []
+    if intent in ('expense', 'query_expense'):
+        items = [
+            QuickReplyButton(action=MessageAction(label="💰 繼續記帳", text="我要記帳")),
+            QuickReplyButton(action=MessageAction(label="📊 查詢本月收支", text="查詢本月記帳"))
+        ]
+    elif intent in ('shift', 'query_salary'):
+        items = [
+            QuickReplyButton(action=MessageAction(label="🕒 繼續排班", text="我要排班")),
+            QuickReplyButton(action=MessageAction(label="💵 查詢本月薪水", text="查詢本月薪水"))
+        ]
+    else:
+        items = [
+            QuickReplyButton(action=MessageAction(label="💰 記帳", text="我要記帳")),
+            QuickReplyButton(action=MessageAction(label="🕒 排班", text="我要排班")),
+            QuickReplyButton(action=MessageAction(label="❓ 說明", text="說明")),
+        ]
+    return QuickReply(items=items)
+
 def register_line_handlers(handler):
     if not handler: return
 
@@ -148,16 +169,17 @@ def register_line_handlers(handler):
             session.updated_at = datetime.utcnow()
             db.session.commit()
 
-        def _push_result(result):
+        def _push_result(result, intent=None):
             """統一處理 execute_write / execute_query 的回傳結果。"""
             rtype, payload, alt = result
+            qr = get_quick_replies(intent)
             if rtype == 'error':
-                LineService.push_message(user_id, payload)
+                LineService.push_message(user_id, payload, quick_reply=qr)
             elif rtype == 'flex':
-                LineService.push_flex(user_id, alt or '工具箱通知', payload)
+                LineService.push_flex(user_id, alt or '工具箱通知', payload, quick_reply=qr)
             else:
-                LineService.push_message(user_id, payload)
-                
+                LineService.push_message(user_id, payload, quick_reply=qr)
+
         def _send_confirmation(action, data):
             _save_session('CONFIRMING', action, data, [])
             intent_names = {'expense': '記帳', 'shift': '排班', 'bonus': '獎金', 'period': '生理期', 'countdown': '倒數/紀念日'}
@@ -582,11 +604,12 @@ def register_line_handlers(handler):
             db.session.commit()
             
             rtype, payload, alt = result
+            qr = get_quick_replies(intent)
             if rtype == 'error':
-                LineService.push_message(user_id, payload)
+                LineService.push_message(user_id, payload, quick_reply=qr)
             elif rtype == 'flex':
-                LineService.push_flex(user_id, alt or '工具箱通知', payload)
+                LineService.push_flex(user_id, alt or '工具箱通知', payload, quick_reply=qr)
             else:
-                LineService.push_message(user_id, payload)
+                LineService.push_message(user_id, payload, quick_reply=qr)
 
 

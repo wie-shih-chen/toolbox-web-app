@@ -24,7 +24,7 @@ class LineService:
         return cls._handler
 
     @classmethod
-    def push_message(cls, user_id, text):
+    def push_message(cls, user_id, text, quick_reply=None):
         if not cls._line_bot_api:
             return False
             
@@ -33,12 +33,14 @@ class LineService:
             max_length = 4000
             
             if len(text) <= max_length:
-                cls._line_bot_api.push_message(user_id, TextSendMessage(text=text))
+                cls._line_bot_api.push_message(user_id, TextSendMessage(text=text, quick_reply=quick_reply))
             else:
                 # Split into chunks
                 chunks = [text[i:i+max_length] for i in range(0, len(text), max_length)]
-                for chunk in chunks:
-                    cls._line_bot_api.push_message(user_id, TextSendMessage(text=chunk))
+                for i, chunk in enumerate(chunks):
+                    # Only add quick reply to the last chunk
+                    qr = quick_reply if i == len(chunks) - 1 else None
+                    cls._line_bot_api.push_message(user_id, TextSendMessage(text=chunk, quick_reply=qr))
                     
             return True
         except Exception as e:
@@ -46,13 +48,13 @@ class LineService:
             return False
 
     @classmethod
-    def push_flex(cls, user_id, alt_text, flex_contents):
+    def push_flex(cls, user_id, alt_text, flex_contents, quick_reply=None):
         """Send a Flex Message card. flex_contents is a dict (bubble/carousel)"""
         if not cls._line_bot_api:
             return False
         try:
             from linebot.models import FlexSendMessage
-            message = FlexSendMessage(alt_text=alt_text, contents=flex_contents)
+            message = FlexSendMessage(alt_text=alt_text, contents=flex_contents, quick_reply=quick_reply)
             cls._line_bot_api.push_message(user_id, message)
             return True
         except Exception as e:
