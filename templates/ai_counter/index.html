@@ -280,8 +280,9 @@
 
             const cx = (x1 + x2) / 2;
             const cy = (y1 + y2) / 2;
-            const rx = Math.max((x2 - x1) / 2, 6);
-            const ry = Math.max((y2 - y1) / 2, 6);
+            // 往外擴張 15%，讓圓框不要太緊
+            const rx = Math.max((x2 - x1) / 2 * 1.15, 8);
+            const ry = Math.max((y2 - y1) / 2 * 1.15, 8);
 
             const color = COLORS[idx % COLORS.length];
 

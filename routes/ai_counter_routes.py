@@ -29,6 +29,10 @@ def analyze():
         img_bytes = file.read()
         img = Image.open(io.BytesIO(img_bytes))
         
+        # ⚠️ 套用 EXIF 旋轉（手機照片必須，否則 Gemini 看到的方向跟瀏覽器不同）
+        from PIL import ImageOps
+        img = ImageOps.exif_transpose(img)
+        
         if img.mode != 'RGB':
             img = img.convert('RGB')
         img.thumbnail((1024, 1024), Image.Resampling.LANCZOS)
