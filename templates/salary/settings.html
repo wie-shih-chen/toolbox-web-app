@@ -371,6 +371,25 @@
         </div>
     </div>
 </div>
+
+<!-- AI Roster Confirm Modal -->
+<div id="roster-confirm-modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.6); z-index:9999; align-items:center; justify-content:center; padding:16px;">
+    <div class="glass animated-modal" style="padding: 24px; max-width: 450px; width: 100%; max-height: 85vh; border-radius: 16px; display: flex; flex-direction: column;">
+        <h3 style="margin-bottom: 16px; color: var(--accent-color); display: flex; align-items: center; gap: 8px;">
+            <span class="material-icons">event_available</span> 確認匯入班表
+        </h3>
+        <p id="roster-confirm-count" style="margin-bottom: 12px; font-weight: 600;"></p>
+        <div id="roster-confirm-list" style="overflow-y: auto; flex: 1; background: rgba(0,0,0,0.2); border-radius: 8px; padding: 12px; margin-bottom: 20px;">
+            <!-- Roster items will be injected here -->
+        </div>
+        <div style="display: flex; gap: 10px;">
+            <button class="btn btn-primary" style="flex: 1;" onclick="confirmImportRoster()" id="btnConfirmRosterModal">
+                匯入
+            </button>
+            <button class="btn btn-secondary" style="flex: 1;" onclick="cancelImportRoster()">取消</button>
+        </div>
+    </div>
+</div>
 {% endblock %}
 
 {% block extra_js %}
@@ -379,6 +398,7 @@
 document.addEventListener('DOMContentLoaded', () => {
     document.body.appendChild(document.getElementById('company-modal-overlay'));
     document.body.appendChild(document.getElementById('legacy-modal'));
+    document.body.appendChild(document.getElementById('roster-confirm-modal'));
     
     // 載入儲存的員工名稱
     const savedName = localStorage.getItem('rosterEmployeeName');
@@ -467,29 +487,31 @@ document.getElementById('aiRosterForm')?.addEventListener('submit', async functi
         });
         
         const data = await response.json();
-        resultBox.style.display = 'block';
         
         if (response.ok) {
-            resultTitle.textContent = '分析完成！請確認班表';
-            resultTitle.style.color = '#4ade80';
-            
             if (data.roster && data.roster.length > 0) {
                 pendingRosterData = data.roster;
                 pendingCompanyId = data.company_id;
                 
-                let html = '<div style="margin-bottom: 15px;">AI 共辨識出 ' + data.roster.length + ' 筆排班：</div>';
-                html += '<div style="max-height: 200px; overflow-y: auto; background: rgba(0,0,0,0.2); border-radius: 8px; padding: 10px; margin-bottom: 15px;">';
+                document.getElementById('roster-confirm-count').textContent = `AI 共辨識出 ${data.roster.length} 筆排班：`;
+                let html = '';
                 data.roster.forEach(r => {
-                    html += `<div style="padding: 5px 0; border-bottom: 1px solid rgba(255,255,255,0.1);">📅 ${r.date} &nbsp; 🕒 ${r.start_time} - ${r.end_time}</div>`;
+                    html += `<div style="padding: 8px; border-bottom: 1px solid rgba(255,255,255,0.1); display: flex; justify-content: space-between; align-items: center;">
+                                <span><span class="material-icons" style="font-size:16px; vertical-align:middle; color:var(--text-secondary);">calendar_today</span> ${r.date}</span>
+                                <span style="font-weight:600;">${r.start_time} - ${r.end_time}</span>
+                             </div>`;
                 });
-                html += '</div>';
-                html += `<button type="button" class="btn btn-primary" onclick="confirmImportRoster()" id="btnConfirmRoster" style="width: 100%;">確認匯入</button>`;
-                
-                resultText.innerHTML = html;
+                document.getElementById('roster-confirm-list').innerHTML = html;
+                document.getElementById('roster-confirm-modal').style.display = 'flex';
+                document.body.style.overflow = 'hidden';
             } else {
-                resultText.innerHTML = 'AI 沒有在圖片中辨識到任何班表時間，請確認圖片內容。';
+                resultBox.style.display = 'block';
+                resultTitle.textContent = '分析完成';
+                resultTitle.style.color = '#f59e0b';
+                resultText.innerHTML = 'AI 沒有在圖片中辨識到任何班表時間，請確認圖片內容或名字是否填寫正確。';
             }
         } else {
+            resultBox.style.display = 'block';
             resultTitle.textContent = '分析失敗';
             resultTitle.style.color = '#f87171';
             resultText.innerHTML = data.error || '發生未知錯誤。';
@@ -505,10 +527,18 @@ document.getElementById('aiRosterForm')?.addEventListener('submit', async functi
     }
 });
 
-async function confirmImportRoster() {
+function cancelImportRoster() {
+    document.getElementById('roster-confirm-modal').style.display = 'none';
+    document.body.style.overflow = '';
+    document.getElementById('rosterImageInput').value = '';
+    pendingRosterData = null;
+    pendingCompanyId = null;
+}
+
+async function confirmImportRoster(force = false) {
     if (!pendingRosterData || !pendingCompanyId) return;
     
-    const btn = document.getElementById('btnConfirmRoster');
+    const btn = document.getElementById('btnConfirmRosterModal');
     btn.disabled = true;
     btn.innerHTML = '匯入中...';
     
@@ -518,28 +548,37 @@ async function confirmImportRoster() {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 company_id: pendingCompanyId,
-                roster: pendingRosterData
+                roster: pendingRosterData,
+                force: force
             })
         });
         
         const data = await response.json();
+        
+        if (response.status === 409 && data.error === 'overlap') {
+            btn.disabled = false;
+            btn.innerHTML = '匯入';
+            const msg = "⚠️ 發現有部分班表時間與現有紀錄衝突：\n\n" + data.overlaps.join('\n') + "\n\n確定仍要匯入這些排班嗎？";
+            if (confirm(msg)) {
+                await confirmImportRoster(true); // Retry with force
+            }
+            return;
+        }
+        
         if (response.ok) {
+            cancelImportRoster(); // Close modal and clean up
+            const resultBox = document.getElementById('rosterResultBox');
+            resultBox.style.display = 'block';
             document.getElementById('rosterResultTitle').textContent = '匯入成功！';
+            document.getElementById('rosterResultTitle').style.color = '#4ade80';
             document.getElementById('rosterResultText').innerHTML = data.message;
-            document.getElementById('rosterImageInput').value = '';
-            pendingRosterData = null;
-            pendingCompanyId = null;
         } else {
-            document.getElementById('rosterResultTitle').textContent = '匯入失敗';
-            document.getElementById('rosterResultTitle').style.color = '#f87171';
-            document.getElementById('rosterResultText').innerHTML = data.error || '發生未知錯誤';
+            alert(data.error || '匯入發生錯誤');
             btn.disabled = false;
             btn.innerHTML = '重試匯入';
         }
     } catch (error) {
-        document.getElementById('rosterResultTitle').textContent = '系統錯誤';
-        document.getElementById('rosterResultTitle').style.color = '#f87171';
-        document.getElementById('rosterResultText').innerHTML = '無法連線至伺服器。';
+        alert('系統連線錯誤，請重試。');
         btn.disabled = false;
         btn.innerHTML = '重試匯入';
     }

@@ -340,6 +340,37 @@ def save_roster():
     if not isinstance(roster, list) or not roster:
         return jsonify({'error': '未提供班表資料'}), 400
         
+    force = data.get('force', False)
+    
+    if not force:
+        overlaps = []
+        for item in roster:
+            if not item.get('date') or not item.get('start_time') or not item.get('end_time'):
+                continue
+            date_str = item['date']
+            st_str = item['start_time']
+            et_str = item['end_time']
+            
+            existing = SalaryRecord.query.filter_by(user_id=current_user.id, date=date_str, type='shift').all()
+            for ex in existing:
+                if not ex.start_time or not ex.end_time: continue
+                try:
+                    ex_st_dt = datetime.strptime(f"{ex.date} {ex.start_time}", "%Y-%m-%d %H:%M")
+                    ex_et_dt = datetime.strptime(f"{ex.date} {ex.end_time}", "%Y-%m-%d %H:%M")
+                    if ex_et_dt <= ex_st_dt: ex_et_dt += timedelta(days=1)
+                    
+                    new_st_dt = datetime.strptime(f"{date_str} {st_str}", "%Y-%m-%d %H:%M")
+                    new_et_dt = datetime.strptime(f"{date_str} {et_str}", "%Y-%m-%d %H:%M")
+                    if new_et_dt <= new_st_dt: new_et_dt += timedelta(days=1)
+                    
+                    if new_st_dt < ex_et_dt and ex_st_dt < new_et_dt:
+                        overlaps.append(f"{date_str} {st_str}-{et_str} (與 {ex.start_time}-{ex.end_time} 衝突)")
+                except Exception:
+                    pass
+                    
+        if overlaps:
+            return jsonify({'error': 'overlap', 'overlaps': list(set(overlaps))}), 409
+            
     count = 0
     for item in roster:
         if not item.get('date') or not item.get('start_time') or not item.get('end_time'):
