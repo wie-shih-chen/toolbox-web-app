@@ -530,6 +530,15 @@ def register_line_handlers(handler):
         qs = parse_qs(postback_data)
         action = qs.get('action', [''])[0]
         
+        # 處理 Rich Menu 的非狀態改變 action
+        if action == 'help':
+            from services.flex_message_service import FlexMessageService
+            LineService.push_flex(user_id, "工具箱說明 — 左右滑動查看所有功能", FlexMessageService.build_help_carousel())
+            return
+        elif action in ('start_expense', 'start_shift'):
+            # openKeyboard 已經自動開啟輸入法，我們不需要特別回覆
+            return
+        
         from models import LineConversationSession
         session = LineConversationSession.query.filter_by(line_user_id=user_id).first()
         if not session or session.state != 'CONFIRMING':
