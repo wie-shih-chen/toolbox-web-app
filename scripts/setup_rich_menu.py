@@ -7,38 +7,11 @@ current_dir = os.path.dirname(os.path.abspath(__file__))
 parent_dir = os.path.dirname(current_dir)
 load_dotenv(os.path.join(parent_dir, '.env'))
 
-def create_rich_menu_image(filename="rich_menu.jpg"):
-    from PIL import Image, ImageDraw, ImageFont
-    
-    # 建立 2500x843 的圖片 (LINE Rich Menu 推薦尺寸 3欄)
-    img = Image.new('RGB', (2500, 843), color=(240, 245, 250))
-    draw = ImageDraw.Draw(img)
-    
-    # 畫框線
-    draw.line([(833, 0), (833, 843)], fill=(200, 200, 200), width=6)
-    draw.line([(1666, 0), (1666, 843)], fill=(200, 200, 200), width=6)
-    
-    # 字體
-    try:
-        font = ImageFont.truetype("/System/Library/Fonts/STHeiti Medium.ttc", 130)
-    except:
-        try:
-            font = ImageFont.truetype("/System/Library/Fonts/Supplemental/Arial Unicode.ttf", 130)
-        except:
-            font = ImageFont.load_default()
-            
-    # 文字置中 (每格寬度 833，文字大概寬 520)
-    draw.text((150, 340), "快速記帳", fill=(50, 50, 50), font=font)
-    draw.text((983, 340), "新增排班", fill=(50, 50, 50), font=font)
-    draw.text((1816, 340), "查看說明", fill=(50, 50, 50), font=font)
-    
-    filepath = os.path.join(current_dir, filename)
-    img.save(filepath, quality=95)
-    return filepath
+from build_beautiful_menu import create_beautiful_menu as create_rich_menu_image
 
 if __name__ == '__main__':
     from linebot import LineBotApi
-    from linebot.models import RichMenu, RichMenuSize, RichMenuArea, RichMenuBounds, MessageAction
+    from linebot.models import RichMenu, RichMenuSize, RichMenuArea, RichMenuBounds, PostbackAction
     
     token = os.environ.get('LINE_CHANNEL_ACCESS_TOKEN')
     if not token:
@@ -56,15 +29,31 @@ if __name__ == '__main__':
         areas=[
             RichMenuArea(
                 bounds=RichMenuBounds(x=0, y=0, width=833, height=843),
-                action=MessageAction(label='快速記帳', text='我要記帳')
+                action=PostbackAction(
+                    label='快速記帳', 
+                    data='action=start_expense', 
+                    display_text='我要記帳',
+                    input_option='openKeyboard',
+                    fill_in_text='記帳 '
+                )
             ),
             RichMenuArea(
                 bounds=RichMenuBounds(x=833, y=0, width=833, height=843),
-                action=MessageAction(label='新增排班', text='我要排班')
+                action=PostbackAction(
+                    label='新增排班', 
+                    data='action=start_shift', 
+                    display_text='我要排班',
+                    input_option='openKeyboard',
+                    fill_in_text='排班 '
+                )
             ),
             RichMenuArea(
                 bounds=RichMenuBounds(x=1666, y=0, width=834, height=843),
-                action=MessageAction(label='查看說明', text='說明')
+                action=PostbackAction(
+                    label='查看說明', 
+                    data='action=help',
+                    display_text='說明'
+                )
             )
         ]
     )
