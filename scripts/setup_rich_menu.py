@@ -18,16 +18,19 @@ def create_rich_menu_image(filename="rich_menu.jpg"):
     draw.line([(833, 0), (833, 843)], fill=(200, 200, 200), width=6)
     draw.line([(1666, 0), (1666, 843)], fill=(200, 200, 200), width=6)
     
-    # 字體 (macOS 內建 PingFang)
+    # 字體
     try:
-        font = ImageFont.truetype("/System/Library/Fonts/PingFang.ttc", 100)
+        font = ImageFont.truetype("/System/Library/Fonts/STHeiti Medium.ttc", 130)
     except:
-        font = ImageFont.load_default()
-        
-    # 文字
-    draw.text((280, 360), "快速記帳", fill=(50, 50, 50), font=font)
-    draw.text((1110, 360), "新增排班", fill=(50, 50, 50), font=font)
-    draw.text((1950, 360), "查看說明", fill=(50, 50, 50), font=font)
+        try:
+            font = ImageFont.truetype("/System/Library/Fonts/Supplemental/Arial Unicode.ttf", 130)
+        except:
+            font = ImageFont.load_default()
+            
+    # 文字置中 (每格寬度 833，文字大概寬 520)
+    draw.text((150, 340), "快速記帳", fill=(50, 50, 50), font=font)
+    draw.text((983, 340), "新增排班", fill=(50, 50, 50), font=font)
+    draw.text((1816, 340), "查看說明", fill=(50, 50, 50), font=font)
     
     filepath = os.path.join(current_dir, filename)
     img.save(filepath, quality=95)
