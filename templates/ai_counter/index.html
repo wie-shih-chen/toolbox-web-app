@@ -240,7 +240,8 @@
                 showError(data.error || '伺服器回傳錯誤 ' + response.status);
             }
         } catch (err) {
-            showError('連線失敗，請稍後再試。');
+            console.error(err);
+            showError('發生錯誤：' + err.message);
         } finally {
             submitBtn.disabled = false;
             submitBtn.innerHTML = '<span class="material-icons">auto_awesome</span> 重新分析';
@@ -270,7 +271,10 @@
 
         // Hue-based radius: estimate radius from box size (ellipse per object)
         objects.forEach((obj, idx) => {
+            if (!obj || !Array.isArray(obj.box) || obj.box.length !== 4) return;
             const [yn, xn, yn2, xn2] = obj.box;   // normalized 0~1000
+
+            if (isNaN(yn) || isNaN(xn) || isNaN(yn2) || isNaN(xn2)) return;
 
             // Convert to pixel coords
             const x1 = xn  / 1000 * W;
