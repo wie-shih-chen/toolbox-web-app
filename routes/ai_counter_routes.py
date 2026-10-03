@@ -51,11 +51,10 @@ def analyze():
         prompt = """請仔細辨識這張圖片中的所有物件（例如藥丸、零件、水果等）。
 對每一個可辨識的物件，輸出其標準化邊框座標（範圍 0~1000，左上角為 0,0）。
 
-請只回傳以下格式的 JSON，不要有任何說明文字或 markdown：
+請回傳以下格式的 JSON 結構：
 {
   "objects": [
-    {"box": [ymin, xmin, ymax, xmax]},
-    ...
+    {"box": [ymin, xmin, ymax, xmax]}
   ],
   "total": 數量
 }
@@ -71,7 +70,11 @@ def analyze():
             try:
                 response = client.models.generate_content(
                     model='gemini-3.8-flash',
-                    contents=[prompt, image_part]
+                    contents=[prompt, image_part],
+                    config=types.GenerateContentConfig(
+                        response_mime_type="application/json",
+                        temperature=0.2
+                    )
                 )
                 break
             except Exception as e:
@@ -81,13 +84,6 @@ def analyze():
                 raise e
         
         raw = response.text.strip()
-        # 清理 markdown 包裝
-        if '```' in raw:
-            parts = raw.split('```')
-            raw = parts[1] if len(parts) > 1 else parts[0]
-            if raw.startswith('json'):
-                raw = raw[4:]
-        raw = raw.strip()
 
         parsed = json.loads(raw)
         return jsonify({
